@@ -145,7 +145,7 @@ public sealed class SshView : IArlecchinoView
         });
     }
 
-    private static IReadOnlyList<string> Execute(Connection ssh, string command)
+    private static List<string> Execute(Connection ssh, string command)
     {
         try
         {
@@ -168,11 +168,11 @@ public sealed class SshView : IArlecchinoView
         }
     }
 
-    private static IReadOnlyList<string> Split(string text) => text.Length == 0
+    private static string[] Split(string text) => text.Length == 0
         ? []
         : text.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
 
-    private static IArlecchinoColor Style(string line)
+    private static TermColor Style(string line)
     {
         if (line.StartsWith("$ ", StringComparison.Ordinal))
         {

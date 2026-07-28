@@ -263,12 +263,12 @@ public sealed class SftpSource : IFileSource
         error is SshException or SocketException or IOException or ObjectDisposedException
             or UnauthorizedAccessException;
 
-    public void Move(string from, string to)
+    public void Move(string from, string target)
     {
         using var lease = _pool.Take();
         var client = lease.Client;
 
-        Guarded(() => client.RenameFile(from, to));
+        Guarded(() => client.RenameFile(from, target));
     }
 
     public void Dispose()
@@ -282,11 +282,11 @@ public sealed class SftpSource : IFileSource
         _pool.Dispose();
     }
 
-    private static Stream Leased(SftpPool.Lease lease, Func<Stream> open)
+    private static LeasedStream Leased(SftpPool.Lease lease, Func<Stream> open)
     {
         try
         {
-            return new LeasedStream(Guarded(open), lease);
+            return new(Guarded(open), lease);
         }
         catch
         {

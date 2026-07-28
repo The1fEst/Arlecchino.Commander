@@ -180,7 +180,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     private static string Keys() => Path.Combine(Listing.Home(), ".ssh");
 
-    private static IReadOnlyList<string> Aliases(IReadOnlyList<SshHost> saved)
+    private static List<string> Aliases(IReadOnlyList<SshHost> saved)
     {
         var names = new List<string>(saved.Count + 1) { "" };
 

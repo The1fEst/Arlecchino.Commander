@@ -103,7 +103,7 @@ public static class Listing
         {
             var root = Path.GetPathRoot(Path.GetFullPath(path));
 
-            return root is null ? "" : $"{Sizes.Short(new DriveInfo(root).AvailableFreeSpace)} free";
+            return root is null ? "" : $"{Sizes.Brief(new DriveInfo(root).AvailableFreeSpace)} free";
         }
         catch (Exception error) when (error is ArgumentException or IOException or UnauthorizedAccessException)
         {

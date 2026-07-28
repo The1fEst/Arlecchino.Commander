@@ -9,7 +9,7 @@ public static class Sizes
 
     private static readonly string[] Units = ["B", "K", "M", "G", "T"];
 
-    public static string Short(long bytes)
+    public static string Brief(long bytes)
     {
         double size = bytes;
         var unit = 0;

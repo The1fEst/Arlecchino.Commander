@@ -43,7 +43,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
                 new()
                 {
                     Header = () => Marked("Size", Sorting.Size),
-                    Cell = static entry => entry.IsFolder ? "<DIR>" : Sizes.Short(entry.Size),
+                    Cell = static entry => entry.IsFolder ? "<DIR>" : Sizes.Brief(entry.Size),
                     Width = SizeWidth,
                     AlignRight = true,
                 },
@@ -367,7 +367,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         ? $"{header} {(_state.Descending ? "↓" : "↑")}"
         : header;
 
-    private IArlecchinoColor Paint(FileEntry entry)
+    private TermColor Paint(FileEntry entry)
     {
         if (_state.Marks.Contains(entry.Name))
         {

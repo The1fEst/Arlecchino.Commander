@@ -89,7 +89,7 @@ public sealed class ViewerView : IArlecchinoView
     }
 
     private static string Truncated(string kind, int read, long size) =>
-        read < size ? $"{kind}, first {Sizes.Short(read)}" : kind;
+        read < size ? $"{kind}, first {Sizes.Brief(read)}" : kind;
 
     private static byte[] Head(IFileSource source, string path)
     {

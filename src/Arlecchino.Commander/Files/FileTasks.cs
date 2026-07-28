@@ -34,24 +34,28 @@ public static class FileTasks
         var folders = 0;
         var bytes = 0L;
 
-        Spread(source, entries, token, entry =>
-        {
-            if (!entry.IsFolder)
+        Spread(
+            source,
+            entries,
+            entry =>
             {
-                Interlocked.Increment(ref files);
-                Interlocked.Add(ref bytes, entry.Size);
+                if (!entry.IsFolder)
+                {
+                    Interlocked.Increment(ref files);
+                    Interlocked.Add(ref bytes, entry.Size);
 
-                return;
-            }
+                    return;
+                }
 
-            Interlocked.Increment(ref folders);
+                Interlocked.Increment(ref folders);
 
-            var below = Measure(source, Children(source, entry), token);
+                var below = Measure(source, Children(source, entry), token);
 
-            Interlocked.Add(ref files, below.Files);
-            Interlocked.Add(ref folders, below.Folders);
-            Interlocked.Add(ref bytes, below.Bytes);
-        });
+                Interlocked.Add(ref files, below.Files);
+                Interlocked.Add(ref folders, below.Folders);
+                Interlocked.Add(ref bytes, below.Bytes);
+            },
+            token);
 
         return new(files, folders, bytes);
     }
@@ -60,7 +64,7 @@ public static class FileTasks
     /// What is inside a folder, without the entry that leads back out of it. A folder that cannot be
     /// read counts as empty here — the work itself will report why when it gets there.
     /// </summary>
-    private static IReadOnlyList<FileEntry> Children(IFileSource source, FileEntry folder)
+    private static List<FileEntry> Children(IFileSource source, FileEntry folder)
     {
         IReadOnlyList<FileEntry> listed;
 
@@ -176,7 +180,7 @@ public static class FileTasks
 
             var children = Children(source, entry);
 
-            Spread(source, children, token, child => DeleteOne(source, child, outcome, token));
+            Spread(source, children, child => DeleteOne(source, child, outcome, token), token);
 
             if (token.IsCancellationRequested)
             {
@@ -204,8 +208,8 @@ public static class FileTasks
     private static void Spread(
         IFileSource source,
         IReadOnlyList<FileEntry> entries,
-        CancellationToken token,
-        Action<FileEntry> work)
+        Action<FileEntry> work,
+        CancellationToken token)
     {
         if (source.Concurrency <= 1 || entries.Count < 2)
         {
@@ -266,8 +270,8 @@ public static class FileTasks
             Spread(
                 from.Concurrency <= to.Concurrency ? to : from,
                 Children(from, source),
-                token,
-                child => CopyOne(from, child, to, to.Combine(target, child.Name), outcome, token));
+                child => CopyOne(from, child, to, to.Combine(target, child.Name), outcome, token),
+                token);
         }
         catch (Exception error) when (IsExpected(error))
         {

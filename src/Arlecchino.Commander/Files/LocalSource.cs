@@ -45,15 +45,15 @@ public sealed class LocalSource : IFileSource
         File.Delete(entry.Path);
     }
 
-    public void Move(string from, string to)
+    public void Move(string from, string target)
     {
         if (Directory.Exists(from))
         {
-            Directory.Move(from, to);
+            Directory.Move(from, target);
             return;
         }
 
-        File.Move(from, to, true);
+        File.Move(from, target, true);
     }
 
     public void Dispose()

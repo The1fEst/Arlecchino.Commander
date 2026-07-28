@@ -155,15 +155,17 @@ public sealed class Operations : IArlecchinoStore
         });
     }
 
-    private void Redraw(CancellationToken token) => Task.Run(async () =>
-    {
-        while (!token.IsCancellationRequested && IsBusy)
+    private void Redraw(CancellationToken token) => Task.Run(
+        async () =>
         {
-            await Task.Delay(RedrawInterval, CancellationToken.None);
+            while (!token.IsCancellationRequested && IsBusy)
+            {
+                await Task.Delay(RedrawInterval, CancellationToken.None);
 
-            FrameThread.Post(_state.Invalidate);
-        }
-    });
+                FrameThread.Post(_state.Invalidate);
+            }
+        },
+        CancellationToken.None);
 
     private void Finish(Outcome outcome, string verb, bool stopped)
     {

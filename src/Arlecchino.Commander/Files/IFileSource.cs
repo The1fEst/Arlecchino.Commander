@@ -48,5 +48,5 @@ public interface IFileSource : IDisposable
 
     void Delete(FileEntry entry);
 
-    void Move(string from, string to);
+    void Move(string from, string target);
 }

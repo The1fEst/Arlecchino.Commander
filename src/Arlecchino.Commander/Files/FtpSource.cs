@@ -153,11 +153,11 @@ public sealed class FtpSource : IFileSource
         }
     }
 
-    public void Move(string from, string to)
+    public void Move(string from, string target)
     {
         lock (_gate)
         {
-            Guarded(() => _client.Rename(from, to));
+            Guarded(() => _client.Rename(from, target));
         }
     }
 
