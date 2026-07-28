@@ -1,0 +1,10 @@
+bin/
+obj/
+artifacts/
+coverage/
+.vs/
+.idea/
+*.user
+TestResults/
+inspect.json
+inspect.sarif
