@@ -7,15 +7,8 @@ using System.Diagnostics;
 using System.IO;
 using SkiaSharp;
 
-const int FontSize = 32;
-const int Padding = 40;
-const int TitleBar = 104;
-const int Radius = 24;
-
 var repository = Directory.GetCurrentDirectory();
 var output = Path.Combine(repository, "assets", "screenshots");
-
-Directory.CreateDirectory(output);
 
 var commander = repository;
 var framework = Path.Combine(Directory.GetParent(repository)!.FullName, "Arlecchino");
@@ -25,12 +18,6 @@ var scratchLeft = Path.Combine(fixture, "project");
 var scratchRight = Path.Combine(fixture, "backup");
 var pretend = Path.Combine(fixture, "home");
 
-Fixture.Lay(fixture, scratchLeft, scratchRight);
-Fixture.Pretend(pretend);
-
-// The panels show the two repositories, because a screenshot of a real tree says more than a made-up
-// one. The scenes that actually copy work on a scratch fixture instead, so a picture never writes
-// into a repository.
 // The host the server scenes use. A `~/.ssh/config` entry, so the shots say nothing about anyone's
 // credentials; scenes that name it are skipped when the host does not answer.
 var host = Environment.GetEnvironmentVariable("ARLECCHINO_SHOT_HOST") ?? "ubuntu";
@@ -39,66 +26,184 @@ var host = Environment.GetEnvironmentVariable("ARLECCHINO_SHOT_HOST") ?? "ubuntu
 // carries anyone's servers.
 const string Pretending = "made-up";
 
-(string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] scenes =
-[
-    ("panels", "132x26", "", "", false, "", "two panels over a local disk"),
-    ("marks", "132x26", "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
-    ("sorted", "132x26", "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
-    ("menu", "132x26", "F9", "", false, "", "the menu, opened by F9"),
-    ("file-menu", "132x26", "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
-    ("copy", "132x26", "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
-    ("delete", "132x26", "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
-    ("viewer", "132x26", "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
-    ("filter", "132x26", "F4,s,r", "", false, "", "the panel filtered by name"),
-    ("hosts", "132x26", "Ctrl+K", "", false, "made-up", "hosts read from ~/.ssh/config"),
-    ("palette", "132x26", ":", "", false, "", "the command palette, which comes with the framework"),
-    ("help", "132x26", "F1", "", false, "", "the keys screen, which comes with it too"),
-    ("server", "132x26", "", "", false, host, "a panel browsing a server over SFTP"),
-    ("ssh", "132x26", "F9,Down,Down,Enter,Down,Down,Down,Enter,Enter,l,s,Enter", "3000", false, host,
-        "a command run on that server"),
-    ("progress", "132x26", "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
-    ("notification", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
-    ("done", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
-];
-
-var typeface = Typeface("JetBrainsMonoNLNerdFontMono-Regular.ttf");
-var boldface = Typeface("JetBrainsMonoNLNerdFontMono-Bold.ttf");
-var font = new SKFont(typeface, FontSize);
-var bold = new SKFont(boldface, FontSize);
-var fallbacks = new Dictionary<int, SKFont>();
-
-var cellWidth = font.MeasureText("MMMMMMMMMM") / 10f;
-var metrics = font.Metrics;
-var cellHeight = MathF.Round(-metrics.Ascent + metrics.Descent + 4f);
-
-foreach (var scene in scenes)
+if (args is ["tape", ..])
 {
-    if (scene.Scratch)
+    Tape();
+    return;
+}
+
+Shots();
+
+void Shots()
+{
+    Directory.CreateDirectory(output);
+
+    Fixture.Lay(fixture, scratchLeft, scratchRight);
+    Fixture.Pretend(pretend);
+
+    // The panels show the two repositories, because a screenshot of a real tree says more than a
+    // made-up one. The scenes that actually copy work on a scratch fixture instead, so a picture never
+    // writes into a repository.
+    (string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] scenes =
+    [
+        ("panels", "132x26", "", "", false, "", "two panels over a local disk"),
+        ("marks", "132x26", "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
+        ("sorted", "132x26", "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
+        ("menu", "132x26", "F9", "", false, "", "the menu, opened by F9"),
+        ("file-menu", "132x26", "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
+        ("copy", "132x26", "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
+        ("delete", "132x26", "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
+        ("viewer", "132x26", "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
+        ("filter", "132x26", "F4,s,r", "", false, "", "the panel filtered by name"),
+        ("hosts", "132x26", "Ctrl+K", "", false, "made-up", "hosts read from ~/.ssh/config"),
+        ("help", "132x26", "F1", "", false, "", "the keys screen, which comes with the framework"),
+        ("server", "132x26", "", "", false, host, "a panel browsing a server over SFTP"),
+        ("ssh", "132x26", "F9,Down,Down,Enter,Down,Down,Down,Enter,Enter,l,s,Enter", "3000", false, host,
+            "a command run on that server"),
+        ("progress", "132x26", "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
+        ("notification", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
+        ("done", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
+    ];
+
+    using var paper = new Paper(32f);
+
+    foreach (var scene in scenes)
     {
-        Fixture.Reset(scratchRight);
+        if (scene.Scratch)
+        {
+            Fixture.Reset(scratchRight);
+        }
+
+        var ansi = Capture(
+            "--frame",
+            scene.Size,
+            scene.Keys,
+            scene.Wait,
+            scene.Scratch ? scratchLeft : framework,
+            scene.Scratch ? scratchRight : commander,
+            scene.Connect);
+        var grid = Terminal.Parse(ansi);
+
+        if (grid.Count == 0)
+        {
+            Console.WriteLine($"{scene.Name}: nothing came back");
+            continue;
+        }
+
+        var (columns, rows) = Measure(scene.Size);
+        var path = Path.Combine(output, $"{scene.Name}.png");
+
+        using var picture = paper.Draw(Fit(grid, columns, rows), scene.Caption);
+        using var image = SKImage.FromBitmap(picture);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        using var file = File.Create(path);
+
+        data.SaveTo(file);
+
+        Console.WriteLine($"{scene.Name}: {grid[0].Count}x{grid.Count} → {path}");
+    }
+}
+
+// Records the animation the framework's readme opens with. One run of the application plays the whole
+// script and draws a frame wherever the script says `shot`, so the bar that fills and the entry that
+// finishes are caught while they happen rather than staged one process at a time.
+void Tape()
+{
+    const string Size = "104x26";
+    const string Caption = "arlecchino.commander";
+
+    // How long each frame is held is how long a hand would have waited there: a moment to see where
+    // the cursor is, a longer one over a dialog that has to be read, and no two presses exactly alike.
+    // A step with no key of its own is the recording watching work that is already running.
+    (string Key, int Hold)[] beats =
+    [
+        ("", 1500),
+        ("Down", 340), ("Space", 280), ("Space", 240), ("Space", 700),
+        ("F5", 1600),
+        ("Enter", 260), ("", 220), ("", 260),
+        ("Ctrl+N", 600),
+        ("Enter", 420), ("", 380), ("", 900),
+        ("Esc", 700), ("wait2500", 1600),
+        ("Esc", 900),
+        ("F1", 2400),
+    ];
+
+    var steps = new List<string>();
+
+    foreach (var (key, hold) in beats)
+    {
+        if (key.Length > 0)
+        {
+            steps.Add(key);
+        }
+
+        steps.Add($"shot{hold}");
     }
 
-    var ansi = Capture(
-        scene.Size,
-        scene.Keys,
-        scene.Wait,
-        scene.Scratch ? scratchLeft : framework,
-        scene.Scratch ? scratchRight : commander,
-        scene.Connect);
-    var grid = Terminal.Parse(ansi);
+    steps.Add("Esc");
 
-    if (grid.Count == 0)
+    var script = string.Join(',', steps);
+
+    Playground.Lay();
+
+    var ansi = Capture("--tape", Size, script, "", Playground.Left, Playground.Right, "");
+    var (columns, rows) = Measure(Size);
+    using var paper = new Paper(15f);
+    var frames = new List<(SKBitmap Image, int Hold)>();
+
+    foreach (var (hold, text) in Reel(ansi))
     {
-        Console.WriteLine($"{scene.Name}: nothing came back");
-        continue;
+        var grid = Terminal.Parse(text);
+
+        if (grid.Count == 0)
+        {
+            continue;
+        }
+
+        frames.Add((paper.Draw(Fit(grid, columns, rows), Caption), hold));
     }
 
-    var (columns, rows) = Measure(scene.Size);
-    var path = Path.Combine(output, $"{scene.Name}.png");
+    if (frames.Count == 0)
+    {
+        Console.WriteLine("tape: nothing came back");
+        return;
+    }
 
-    Paint(Fit(grid, columns, rows), scene.Caption, path);
+    var target = Path.Combine(Directory.Exists(framework) ? framework : commander, "assets", "demo.gif");
+    var shape = $"{frames[0].Image.Width}x{frames[0].Image.Height}";
 
-    Console.WriteLine($"{scene.Name}: {grid[0].Count}x{grid.Count} → {path}");
+    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+    Gif.Write(target, frames, 128);
+
+    foreach (var (image, _) in frames)
+    {
+        image.Dispose();
+    }
+
+    var written = new FileInfo(target).Length;
+
+    Console.WriteLine($"tape: {frames.Count} frames, {shape}, {written / 1024d / 1024d:0.0} MB → {target}");
+}
+
+// Splits a recording into its frames. Each is announced by a record separator and the milliseconds it
+// is to be held for, so the reel carries the timing the application ran at rather than a guess.
+static List<(int Hold, string Ansi)> Reel(string text)
+{
+    var frames = new List<(int Hold, string Ansi)>();
+
+    foreach (var piece in text.Split('', StringSplitOptions.RemoveEmptyEntries))
+    {
+        var line = piece.IndexOf('\n');
+
+        if (line < 0 || !int.TryParse(piece[..line].Trim(), out var hold))
+        {
+            continue;
+        }
+
+        frames.Add((hold, piece[(line + 1)..]));
+    }
+
+    return frames;
 }
 
 // Every picture is the size its scene asked for, whatever the screen happened to draw: a dialog over
@@ -131,10 +236,10 @@ static List<List<Cell>> Fit(List<List<Cell>> grid, int columns, int rows)
     return grid;
 }
 
-string Capture(string size, string keys, string wait, string leftPanel, string rightPanel, string connect)
+string Capture(string mode, string size, string keys, string wait, string leftPanel, string rightPanel, string connect)
 {
     var arguments = $"run --project src/Arlecchino.Commander --no-build -- " +
-                    $"--frame {size} --left \"{leftPanel}\" --right \"{rightPanel}\"";
+                    $"{mode} {size} --left \"{leftPanel}\" --right \"{rightPanel}\"";
 
     if (connect.Length > 0 && connect != Pretending)
     {
@@ -175,114 +280,232 @@ string Capture(string size, string keys, string wait, string leftPanel, string r
     return text;
 }
 
-void Paint(IReadOnlyList<List<Cell>> grid, string caption, string path)
+readonly record struct Cell(string Symbol, SKColor Foreground, SKColor Background, bool Bold);
+
+/// <summary>
+/// Draws a grid of cells as a window: the terminal on a rounded plate, three lamps and a caption above
+/// it. The size of the type sets everything else, so the same drawing serves a screenshot at one scale
+/// and an animation at another.
+/// </summary>
+sealed class Paper : IDisposable
 {
-    var columns = grid[0].Count;
-    var width = (int)MathF.Ceiling(columns * cellWidth) + (Padding * 2);
-    var height = (int)(grid.Count * cellHeight) + (Padding * 2) + TitleBar;
+    private readonly SKTypeface _typeface;
+    private readonly SKTypeface _boldface;
+    private readonly SKFont _font;
+    private readonly SKFont _bold;
+    private readonly Dictionary<int, SKFont> _fallbacks = [];
+    private readonly SKFontMetrics _metrics;
+    private readonly float _size;
+    private readonly float _padding;
+    private readonly float _titleBar;
+    private readonly float _radius;
+    private readonly float _cellWidth;
+    private readonly float _cellHeight;
 
-    using var bitmap = new SKBitmap(width, height);
-    using var canvas = new SKCanvas(bitmap);
-
-    canvas.Clear(SKColors.Transparent);
-
-    using var window = new SKPaint { Color = Terminal.Background, IsAntialias = true };
-    canvas.DrawRoundRect(new SKRect(0, 0, width, height), Radius, Radius, window);
-
-    DrawTitleBar(canvas, width, caption);
-
-    using var ink = new SKPaint { IsAntialias = true };
-
-    for (var row = 0; row < grid.Count; row++)
+    /// <summary>Sets the type up and measures the cell everything is laid out on.</summary>
+    /// <param name="size">Type size in pixels.</param>
+    public Paper(float size)
     {
-        var line = grid[row];
-        var top = Padding + TitleBar + (row * cellHeight);
+        _typeface = Face("JetBrainsMonoNLNerdFontMono-Regular.ttf");
+        _boldface = Face("JetBrainsMonoNLNerdFontMono-Bold.ttf");
+        _font = new(_typeface, size);
+        _bold = new(_boldface, size);
 
-        for (var column = 0; column < line.Count; column++)
+        _size = size;
+        _padding = MathF.Round(size * 1.25f);
+        _titleBar = MathF.Round(size * 3.25f);
+        _radius = MathF.Round(size * 0.75f);
+
+        _metrics = _font.Metrics;
+        _cellWidth = _font.MeasureText("MMMMMMMMMM") / 10f;
+        _cellHeight = MathF.Round(-_metrics.Ascent + _metrics.Descent + (size / 8f));
+    }
+
+    /// <summary>Draws one frame.</summary>
+    /// <param name="grid">The cells, already padded to the size the scene asked for.</param>
+    /// <param name="caption">What the title bar says.</param>
+    /// <returns>The picture, for the caller to encode or dispose.</returns>
+    public SKBitmap Draw(IReadOnlyList<List<Cell>> grid, string caption)
+    {
+        ArgumentNullException.ThrowIfNull(grid);
+
+        var columns = grid[0].Count;
+        var width = (int)MathF.Ceiling(columns * _cellWidth) + (int)(_padding * 2);
+        var height = (int)(grid.Count * _cellHeight) + (int)(_padding * 2) + (int)_titleBar;
+
+        var bitmap = new SKBitmap(width, height);
+
+        using var canvas = new SKCanvas(bitmap);
+
+        canvas.Clear(SKColors.Transparent);
+
+        using var window = new SKPaint { Color = Terminal.Background, IsAntialias = true };
+        canvas.DrawRoundRect(new SKRect(0, 0, width, height), _radius, _radius, window);
+
+        DrawTitleBar(canvas, width, caption);
+
+        using var ink = new SKPaint { IsAntialias = true };
+
+        for (var row = 0; row < grid.Count; row++)
         {
-            var cell = line[column];
-            var left = Padding + (column * cellWidth);
+            var line = grid[row];
+            var top = _padding + _titleBar + (row * _cellHeight);
 
-            if (cell.Background != Terminal.Background)
+            for (var column = 0; column < line.Count; column++)
             {
-                ink.Color = cell.Background;
-                canvas.DrawRect(new SKRect(left, top, left + cellWidth + 0.6f, top + cellHeight), ink);
+                var cell = line[column];
+                var left = _padding + (column * _cellWidth);
+
+                if (cell.Background != Terminal.Background)
+                {
+                    ink.Color = cell.Background;
+                    canvas.DrawRect(new SKRect(left, top, left + _cellWidth + 0.6f, top + _cellHeight), ink);
+                }
+
+                if (cell.Symbol is " " or "")
+                {
+                    continue;
+                }
+
+                ink.Color = cell.Foreground;
+
+                if (Lines.Draw(canvas, ink, cell.Symbol, left, top, _cellWidth, _cellHeight))
+                {
+                    continue;
+                }
+
+                canvas.DrawText(cell.Symbol, left, top - _metrics.Ascent + (_size / 16f), SKTextAlign.Left,
+                    Pick(cell.Symbol, cell.Bold), ink);
             }
+        }
 
-            if (cell.Symbol is " " or "")
-            {
-                continue;
-            }
+        return bitmap;
+    }
 
-            ink.Color = cell.Foreground;
+    /// <summary>Lets go of the type, fallbacks included.</summary>
+    public void Dispose()
+    {
+        _font.Dispose();
+        _bold.Dispose();
+        _typeface.Dispose();
+        _boldface.Dispose();
 
-            if (Lines.Draw(canvas, ink, cell.Symbol, left, top, cellWidth, cellHeight))
-            {
-                continue;
-            }
-
-            canvas.DrawText(cell.Symbol, left, top - metrics.Ascent + 2f, SKTextAlign.Left,
-                Pick(cell.Symbol, cell.Bold), ink);
+        foreach (var fallback in _fallbacks.Values)
+        {
+            fallback.Dispose();
         }
     }
 
-    using var image = SKImage.FromBitmap(bitmap);
-    using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-    using var file = File.Create(path);
+    private SKFont Pick(string symbol, bool heavy)
+    {
+        var chosen = heavy ? _bold : _font;
+        var point = char.ConvertToUtf32(symbol, 0);
 
-    data.SaveTo(file);
+        if ((heavy ? _boldface : _typeface).GetGlyph(point) != 0)
+        {
+            return chosen;
+        }
+
+        if (_fallbacks.TryGetValue(point, out var known))
+        {
+            return known;
+        }
+
+        var face = SKFontManager.Default.MatchCharacter(point);
+        var fallback = face is null ? chosen : new SKFont(face, _size);
+
+        _fallbacks[point] = fallback;
+        return fallback;
+    }
+
+    private void DrawTitleBar(SKCanvas canvas, int width, string caption)
+    {
+        SKColor[] lamps = [new(0xC9, 0x38, 0x2B), new(0xD0, 0x8A, 0x2C), new(0x8A, 0x81, 0x89)];
+
+        using var lamp = new SKPaint { IsAntialias = true };
+
+        for (var i = 0; i < lamps.Length; i++)
+        {
+            lamp.Color = lamps[i];
+            canvas.DrawCircle(_padding + (_size / 2f) + (i * _size * 1.5f), _titleBar / 2f, _size * 0.44f, lamp);
+        }
+
+        using var text = new SKPaint { Color = new(0xC5, 0xBC, 0xB0), IsAntialias = true };
+        using var small = new SKFont(_boldface, _size * 1.05f);
+
+        canvas.DrawText(caption.ToUpperInvariant(), width / 2f, (_titleBar / 2f) + (small.Size / 3f), SKTextAlign.Center,
+            small, text);
+    }
+
+    private static SKTypeface Face(string file) =>
+        SKTypeface.FromFile(FontPath(file))
+        ?? SKTypeface.FromFile(FontPath("CascadiaMono.ttf"))
+        ?? SKTypeface.FromFamilyName("Consolas");
+
+    private static string FontPath(string file) =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts", file);
 }
 
-SKFont Pick(string symbol, bool heavy)
+/// <summary>
+/// The tree the animation runs over. It sits in a folder of its own, well away from any repository,
+/// because the recording copies it: a demo that writes has to write somewhere it is welcome to.
+/// </summary>
+static class Playground
 {
-    var chosen = heavy ? bold : font;
-    var point = char.ConvertToUtf32(symbol, 0);
+    private const int Pages = 2400;
+    private const int PageSize = 30_000;
 
-    if ((heavy ? boldface : typeface).GetGlyph(point) != 0)
+    public static string Root { get; } =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Playground");
+
+    public static string Left { get; } = Path.Combine(Root, "project");
+
+    public static string Right { get; } = Path.Combine(Root, "backup");
+
+    /// <summary>Lays the tree out from scratch, so a second recording starts where the first did.</summary>
+    public static void Lay()
     {
-        return chosen;
+        if (Directory.Exists(Left))
+        {
+            Directory.Delete(Left, true);
+        }
+
+        if (Directory.Exists(Right))
+        {
+            Directory.Delete(Right, true);
+        }
+
+        Directory.CreateDirectory(Left);
+        Directory.CreateDirectory(Right);
+
+        Fill(Path.Combine(Left, "assets"), Pages);
+        Fill(Path.Combine(Left, "docs"), Pages);
+        Fill(Path.Combine(Left, "src"), Pages);
+
+        (string Name, int Size)[] files =
+        [
+            ("Arlecchino.slnx", 640), ("Directory.Build.props", 1_180), ("README.md", 7_400),
+            ("CHANGELOG.md", 12_600), ("LICENSE", 1_100), ("banner.svg", 14_200), ("notes.txt", 210),
+        ];
+
+        foreach (var (name, size) in files)
+        {
+            File.WriteAllText(Path.Combine(Left, name), new string('x', size));
+        }
+
+        File.WriteAllText(Path.Combine(Right, "one.txt"), "kept");
     }
 
-    if (fallbacks.TryGetValue(point, out var known))
+    private static void Fill(string folder, int count)
     {
-        return known;
+        var made = Directory.CreateDirectory(folder);
+
+        for (var index = 0; index < count; index++)
+        {
+            File.WriteAllText(Path.Combine(made.FullName, $"part{index:000}.cs"), new string('x', PageSize));
+        }
     }
-
-    var face = SKFontManager.Default.MatchCharacter(point);
-    var fallback = face is null ? chosen : new SKFont(face, FontSize);
-
-    fallbacks[point] = fallback;
-    return fallback;
 }
-
-void DrawTitleBar(SKCanvas canvas, int width, string caption)
-{
-    SKColor[] lamps = [new(0xC9, 0x38, 0x2B), new(0xD0, 0x8A, 0x2C), new(0x8A, 0x81, 0x89)];
-
-    using var lamp = new SKPaint { IsAntialias = true };
-
-    for (var i = 0; i < lamps.Length; i++)
-    {
-        lamp.Color = lamps[i];
-        canvas.DrawCircle(Padding + 16 + (i * 48), TitleBar / 2f, 14, lamp);
-    }
-
-    using var text = new SKPaint { Color = new(0xC5, 0xBC, 0xB0), IsAntialias = true };
-    using var small = new SKFont(boldface, FontSize * 1.05f);
-
-    canvas.DrawText(caption.ToUpperInvariant(), width / 2f, (TitleBar / 2f) + (small.Size / 3f), SKTextAlign.Center,
-        small, text);
-}
-
-static SKTypeface Typeface(string file) =>
-    SKTypeface.FromFile(FontPath(file))
-    ?? SKTypeface.FromFile(FontPath("CascadiaMono.ttf"))
-    ?? SKTypeface.FromFamilyName("Consolas");
-
-static string FontPath(string file) =>
-    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts", file);
-
-readonly record struct Cell(string Symbol, SKColor Foreground, SKColor Background, bool Bold);
 
 /// <summary>
 /// The folders the screenshots are taken of. Shooting the repository itself would put whatever the
@@ -653,5 +876,488 @@ static class Terminal
         }
 
         return Foreground;
+    }
+}
+
+/// <summary>
+/// Writes an animation as a GIF. The pictures share one colour table, chosen from what the frames
+/// actually hold, and every frame after the first carries only the rectangle that changed — a terminal
+/// mostly stands still, so that is what keeps the file small enough for a readme.
+/// </summary>
+static class Gif
+{
+    private const int MaximumCodes = 4096;
+
+    /// <summary>Encodes the frames and writes them out.</summary>
+    /// <param name="path">Where the file goes.</param>
+    /// <param name="frames">The pictures and how long each is held, in milliseconds.</param>
+    /// <param name="colors">How many entries the colour table may hold, up to 256.</param>
+    public static void Write(string path, IReadOnlyList<(SKBitmap Image, int Hold)> frames, int colors)
+    {
+        ArgumentNullException.ThrowIfNull(frames);
+
+        var width = frames[0].Image.Width;
+        var height = frames[0].Image.Height;
+        var palette = Palette.Choose(frames, colors);
+        var bits = Bits(palette.Count);
+
+        using var file = File.Create(path);
+        using var writer = new BinaryWriter(file);
+
+        Header(writer, width, height, bits, palette);
+
+        byte[]? previous = null;
+        var pending = 0;
+
+        for (var index = 0; index < frames.Count; index++)
+        {
+            var (image, hold) = frames[index];
+            var current = palette.Map(image);
+            var box = Changed(previous, current, width, height);
+
+            if (box is null)
+            {
+                pending += hold;
+                continue;
+            }
+
+            Frame(writer, current, width, box.Value, hold + pending, bits);
+
+            pending = 0;
+            previous = current;
+        }
+
+        writer.Write((byte)0x3B);
+    }
+
+    private static int Bits(int count)
+    {
+        var bits = 1;
+
+        while (1 << bits < count)
+        {
+            bits++;
+        }
+
+        return Math.Min(8, bits);
+    }
+
+    private static void Header(BinaryWriter writer, int width, int height, int bits, Palette palette)
+    {
+        writer.Write("GIF89a"u8);
+        writer.Write((ushort)width);
+        writer.Write((ushort)height);
+        writer.Write((byte)(0xF0 | (bits - 1)));
+        writer.Write((byte)0);
+        writer.Write((byte)0);
+
+        for (var index = 0; index < 1 << bits; index++)
+        {
+            var color = index < palette.Count ? palette[index] : SKColors.Black;
+
+            writer.Write(color.Red);
+            writer.Write(color.Green);
+            writer.Write(color.Blue);
+        }
+
+        writer.Write((byte)0x21);
+        writer.Write((byte)0xFF);
+        writer.Write((byte)0x0B);
+        writer.Write("NETSCAPE2.0"u8);
+        writer.Write((byte)0x03);
+        writer.Write((byte)0x01);
+        writer.Write((ushort)0);
+        writer.Write((byte)0);
+    }
+
+    private static void Frame(
+        BinaryWriter writer,
+        byte[] indices,
+        int width,
+        (int Left, int Top, int Width, int Height) box,
+        int hold,
+        int bits)
+    {
+        writer.Write((byte)0x21);
+        writer.Write((byte)0xF9);
+        writer.Write((byte)0x04);
+        writer.Write((byte)0x04);
+        writer.Write((ushort)Math.Max(2, hold / 10));
+        writer.Write((byte)0);
+        writer.Write((byte)0);
+
+        writer.Write((byte)0x2C);
+        writer.Write((ushort)box.Left);
+        writer.Write((ushort)box.Top);
+        writer.Write((ushort)box.Width);
+        writer.Write((ushort)box.Height);
+        writer.Write((byte)0);
+
+        var cut = new byte[box.Width * box.Height];
+
+        for (var row = 0; row < box.Height; row++)
+        {
+            Array.Copy(indices, ((box.Top + row) * width) + box.Left, cut, row * box.Width, box.Width);
+        }
+
+        var minimum = Math.Max(2, bits);
+
+        writer.Write((byte)minimum);
+        Blocks(writer, Lzw(cut, minimum));
+        writer.Write((byte)0);
+    }
+
+    /// <summary>
+    /// The rectangle two frames differ in, or nothing when they are the same picture. Rewriting only
+    /// what moved is what a screen of unchanging text costs almost nothing to animate.
+    /// </summary>
+    private static (int Left, int Top, int Width, int Height)? Changed(byte[]? previous, byte[] current, int width, int height)
+    {
+        if (previous is null)
+        {
+            return (0, 0, width, height);
+        }
+
+        var left = width;
+        var right = -1;
+        var top = height;
+        var bottom = -1;
+
+        for (var row = 0; row < height; row++)
+        {
+            var start = row * width;
+
+            for (var column = 0; column < width; column++)
+            {
+                if (previous[start + column] == current[start + column])
+                {
+                    continue;
+                }
+
+                left = Math.Min(left, column);
+                right = Math.Max(right, column);
+                top = Math.Min(top, row);
+                bottom = Math.Max(bottom, row);
+            }
+        }
+
+        return right < 0 ? null : (left, top, right - left + 1, bottom - top + 1);
+    }
+
+    private static void Blocks(BinaryWriter writer, byte[] data)
+    {
+        var offset = 0;
+
+        while (offset < data.Length)
+        {
+            var length = Math.Min(255, data.Length - offset);
+
+            writer.Write((byte)length);
+            writer.Write(data, offset, length);
+
+            offset += length;
+        }
+    }
+
+    private static byte[] Lzw(byte[] indices, int minimum)
+    {
+        var clear = 1 << minimum;
+        var end = clear + 1;
+        var next = end + 1;
+        var size = minimum + 1;
+
+        var dictionary = new Dictionary<int, int>();
+        var bits = new BitWriter();
+
+        bits.Write(clear, size);
+
+        var prefix = -1;
+
+        foreach (var symbol in indices)
+        {
+            if (prefix < 0)
+            {
+                prefix = symbol;
+                continue;
+            }
+
+            var key = (prefix << 8) | symbol;
+
+            if (dictionary.TryGetValue(key, out var known))
+            {
+                prefix = known;
+                continue;
+            }
+
+            bits.Write(prefix, size);
+            dictionary[key] = next++;
+
+            if (next > MaximumCodes)
+            {
+                bits.Write(clear, size);
+                dictionary.Clear();
+                next = end + 1;
+                size = minimum + 1;
+            }
+            else if (next - 1 == 1 << size && size < 12)
+            {
+                size++;
+            }
+
+            prefix = symbol;
+        }
+
+        if (prefix >= 0)
+        {
+            bits.Write(prefix, size);
+        }
+
+        bits.Write(end, size);
+
+        return bits.Drain();
+    }
+
+    private sealed class BitWriter
+    {
+        private readonly List<byte> _bytes = [];
+        private int _bits;
+        private int _count;
+
+        public void Write(int code, int size)
+        {
+            _bits |= code << _count;
+            _count += size;
+
+            while (_count >= 8)
+            {
+                _bytes.Add((byte)(_bits & 0xFF));
+                _bits >>= 8;
+                _count -= 8;
+            }
+        }
+
+        public byte[] Drain()
+        {
+            if (_count > 0)
+            {
+                _bytes.Add((byte)(_bits & 0xFF));
+                _bits = 0;
+                _count = 0;
+            }
+
+            return [.. _bytes];
+        }
+    }
+
+    /// <summary>
+    /// The colours the animation is drawn with, cut out of what the frames hold. Text drawn with
+    /// smoothed edges carries far more shades than a table can name, so the shades are counted, the
+    /// crowd is split until there are as many boxes as entries, and each box gives up its average.
+    /// </summary>
+    private sealed class Palette
+    {
+        private readonly SKColor[] _entries;
+        private readonly Dictionary<int, byte> _known = [];
+
+        private Palette(SKColor[] entries) => _entries = entries;
+
+        public int Count => _entries.Length;
+
+        public SKColor this[int index] => _entries[index];
+
+        public static Palette Choose(IReadOnlyList<(SKBitmap Image, int Hold)> frames, int wanted)
+        {
+            var counts = new Dictionary<int, int>();
+
+            foreach (var (image, _) in frames)
+            {
+                foreach (var pixel in image.Pixels)
+                {
+                    var key = Key(pixel);
+                    counts[key] = counts.TryGetValue(key, out var seen) ? seen + 1 : 1;
+                }
+            }
+
+            List<List<KeyValuePair<int, int>>> boxes = [[.. counts]];
+
+            while (boxes.Count < wanted)
+            {
+                var widest = -1;
+                var spread = -1;
+                var channel = 0;
+
+                for (var index = 0; index < boxes.Count; index++)
+                {
+                    if (boxes[index].Count < 2)
+                    {
+                        continue;
+                    }
+
+                    var (found, range) = Widest(boxes[index]);
+
+                    if (range > spread)
+                    {
+                        spread = range;
+                        widest = index;
+                        channel = found;
+                    }
+                }
+
+                if (widest < 0)
+                {
+                    break;
+                }
+
+                var box = boxes[widest];
+                box.Sort((left, right) => Channel(left.Key, channel).CompareTo(Channel(right.Key, channel)));
+
+                var half = Half(box);
+
+                boxes[widest] = box[..half];
+                boxes.Add(box[half..]);
+            }
+
+            var entries = new SKColor[boxes.Count];
+
+            for (var index = 0; index < boxes.Count; index++)
+            {
+                entries[index] = Average(boxes[index]);
+            }
+
+            return new(entries);
+        }
+
+        /// <summary>Turns a picture into one index per pixel.</summary>
+        /// <param name="image">The picture.</param>
+        /// <returns>The indices, row by row.</returns>
+        public byte[] Map(SKBitmap image)
+        {
+            var pixels = image.Pixels;
+            var indices = new byte[pixels.Length];
+
+            for (var index = 0; index < pixels.Length; index++)
+            {
+                var key = Key(pixels[index]);
+
+                if (!_known.TryGetValue(key, out var entry))
+                {
+                    entry = Nearest(pixels[index]);
+                    _known[key] = entry;
+                }
+
+                indices[index] = entry;
+            }
+
+            return indices;
+        }
+
+        private byte Nearest(SKColor color)
+        {
+            var best = 0;
+            var closest = int.MaxValue;
+
+            for (var index = 0; index < _entries.Length; index++)
+            {
+                var red = color.Red - _entries[index].Red;
+                var green = color.Green - _entries[index].Green;
+                var blue = color.Blue - _entries[index].Blue;
+                var distance = (red * red * 3) + (green * green * 6) + (blue * blue);
+
+                if (distance >= closest)
+                {
+                    continue;
+                }
+
+                closest = distance;
+                best = index;
+            }
+
+            return (byte)best;
+        }
+
+        private static int Key(SKColor color) =>
+            ((color.Red >> 3) << 10) | ((color.Green >> 3) << 5) | (color.Blue >> 3);
+
+        private static int Channel(int key, int channel) => channel switch
+        {
+            0 => (key >> 10) & 0x1F,
+            1 => (key >> 5) & 0x1F,
+            _ => key & 0x1F,
+        };
+
+        private static (int Channel, int Range) Widest(List<KeyValuePair<int, int>> box)
+        {
+            var found = 0;
+            var widest = -1;
+
+            for (var channel = 0; channel < 3; channel++)
+            {
+                var low = 0x1F;
+                var high = 0;
+
+                foreach (var entry in box)
+                {
+                    var value = Channel(entry.Key, channel);
+
+                    low = Math.Min(low, value);
+                    high = Math.Max(high, value);
+                }
+
+                if (high - low <= widest)
+                {
+                    continue;
+                }
+
+                widest = high - low;
+                found = channel;
+            }
+
+            return (found, widest);
+        }
+
+        /// <summary>Where a box splits: the point half its pixels lie on either side of.</summary>
+        private static int Half(List<KeyValuePair<int, int>> box)
+        {
+            var total = 0L;
+
+            foreach (var entry in box)
+            {
+                total += entry.Value;
+            }
+
+            var walked = 0L;
+
+            for (var index = 0; index < box.Count - 1; index++)
+            {
+                walked += box[index].Value;
+
+                if (walked * 2 >= total)
+                {
+                    return index + 1;
+                }
+            }
+
+            return box.Count / 2;
+        }
+
+        private static SKColor Average(List<KeyValuePair<int, int>> box)
+        {
+            long red = 0, green = 0, blue = 0, total = 0;
+
+            foreach (var entry in box)
+            {
+                var weight = entry.Value;
+
+                red += (long)((Channel(entry.Key, 0) << 3) + 4) * weight;
+                green += (long)((Channel(entry.Key, 1) << 3) + 4) * weight;
+                blue += (long)((Channel(entry.Key, 2) << 3) + 4) * weight;
+                total += weight;
+            }
+
+            return total == 0
+                ? SKColors.Black
+                : new((byte)Math.Min(255, red / total), (byte)Math.Min(255, green / total),
+                    (byte)Math.Min(255, blue / total));
+        }
     }
 }

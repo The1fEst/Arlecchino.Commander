@@ -15,6 +15,8 @@ public static class HeadlessFrame
 {
     private const int RemoteSettleMilliseconds = 4000;
     private const int PollInterval = 25;
+    private const int ClosingMilliseconds = 1600;
+    private const char Separator = '';
 
     /// <summary>
     /// Draws one frame and returns, for a screenshot or a check that needs no terminal. A process
@@ -29,6 +31,42 @@ public static class HeadlessFrame
     /// <param name="wait">How long to let the network and the background work answer, in milliseconds.</param>
     public static void Render(string size, string script, string left, string right, string connect, int wait)
     {
+        using var provider = Open(size, left, right, connect);
+        var settle = Settling(wait, connect);
+
+        Settle(settle);
+        Play(provider, script);
+        Settle(settle);
+
+        provider.GetRequiredService<Screen>().DrawOnce();
+
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Plays a script and writes a frame wherever it asks for one, which is how a recording is made
+    /// without a terminal to record. A <c>shot</c> step draws the screen and then lets that many
+    /// milliseconds pass, so the application is running between frames and a bar that fills or an
+    /// entry that finishes is caught as it happens. Every frame is preceded by a record separator and
+    /// the milliseconds it is to be held for, and one more is drawn once the script has run out.
+    /// </summary>
+    /// <param name="size">Frame size as <c>columns x rows</c>.</param>
+    /// <param name="script">Keys and <c>shot</c> steps to play.</param>
+    /// <param name="left">Folder the left panel opens on.</param>
+    /// <param name="right">Folder the right panel opens on.</param>
+    /// <param name="connect">A link or a <c>~/.ssh/config</c> host to open the left panel on.</param>
+    /// <param name="wait">How long to let the network answer before the script starts, in milliseconds.</param>
+    public static void Record(string size, string script, string left, string right, string connect, int wait)
+    {
+        using var provider = Open(size, left, right, connect);
+
+        Settle(Settling(wait, connect));
+        Play(provider, script);
+        Shot(provider, ClosingMilliseconds);
+    }
+
+    private static ServiceProvider Open(string size, string left, string right, string connect)
+    {
         Colour();
 
         var services = new ServiceCollection();
@@ -41,7 +79,7 @@ public static class HeadlessFrame
             .AddGeneratedCommands()
             .WithoutHostedService();
 
-        using var provider = services.BuildServiceProvider();
+        var provider = services.BuildServiceProvider();
 
         var (width, height) = Size(size);
         provider.GetRequiredService<Surface>().SetFixedSize(width, height);
@@ -56,15 +94,19 @@ public static class HeadlessFrame
 
         provider.GetRequiredService<Navigator>().Apply(ViewKind.Commander);
 
-        var settle = wait > 0 ? wait : connect.Length > 0 ? RemoteSettleMilliseconds : 0;
+        return provider;
+    }
 
-        Settle(settle);
-        Play(provider, script);
-        Settle(settle);
+    private static int Settling(int wait, string connect) =>
+        wait > 0 ? wait : connect.Length > 0 ? RemoteSettleMilliseconds : 0;
 
+    private static void Shot(IServiceProvider provider, int hold)
+    {
+        Console.Out.Write($"{Separator}{hold}\n");
         provider.GetRequiredService<Screen>().DrawOnce();
+        Console.Out.Write('\n');
 
-        Console.WriteLine();
+        Settle(hold);
     }
 
     private static void Colour()
@@ -122,6 +164,13 @@ public static class HeadlessFrame
                 int.TryParse(piece[4..], out var pause))
             {
                 Settle(pause);
+                continue;
+            }
+
+            if (piece.StartsWith("shot", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(piece[4..], out var hold))
+            {
+                Shot(provider, hold);
                 continue;
             }
 

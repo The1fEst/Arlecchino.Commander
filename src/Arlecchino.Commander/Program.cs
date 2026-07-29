@@ -10,15 +10,23 @@ using Microsoft.Extensions.Hosting;
 var left = args.Length >= 1 && Directory.Exists(args[0]) ? args[0] : Directory.GetCurrentDirectory();
 var right = args.Length >= 2 && Directory.Exists(args[1]) ? args[1] : left;
 
-if (args is ["--frame", ..])
+if (args is ["--frame", ..] or ["--tape", ..])
 {
-    HeadlessFrame.Render(
-        args.Length >= 2 ? args[1] : "120x34",
-        Option(args, "--keys") ?? "",
-        Option(args, "--left") ?? Directory.GetCurrentDirectory(),
-        Option(args, "--right") ?? Directory.GetCurrentDirectory(),
-        Option(args, "--connect") ?? "",
-        int.TryParse(Option(args, "--wait"), out var wait) ? wait : 0);
+    var size = args.Length >= 2 ? args[1] : "120x34";
+    var script = Option(args, "--keys") ?? "";
+    var leftPanel = Option(args, "--left") ?? Directory.GetCurrentDirectory();
+    var rightPanel = Option(args, "--right") ?? Directory.GetCurrentDirectory();
+    var connect = Option(args, "--connect") ?? "";
+    var wait = int.TryParse(Option(args, "--wait"), out var milliseconds) ? milliseconds : 0;
+
+    if (args[0] == "--tape")
+    {
+        HeadlessFrame.Record(size, script, leftPanel, rightPanel, connect, wait);
+    }
+    else
+    {
+        HeadlessFrame.Render(size, script, leftPanel, rightPanel, connect, wait);
+    }
 
     return;
 }
