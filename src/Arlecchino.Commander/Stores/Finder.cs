@@ -34,7 +34,11 @@ public sealed class Finder : IArlecchinoStore
 
     public Finder(ArlecchinoState state) => _state = state;
 
-    public List<Hit> Found { get; } = [];
+    /// <summary>
+    /// What the walk has found so far. A list atom rather than a list, so that a batch landing on the
+    /// drawing thread marks the frame stale by itself and the results appear as they are found.
+    /// </summary>
+    public LocalAtomsList<Hit> Found { get; } = new();
 
     public bool IsRunning { get; private set; }
 
@@ -162,11 +166,7 @@ public sealed class Finder : IArlecchinoStore
 
         batch.Clear();
 
-        FrameThread.Post(() =>
-        {
-            Found.AddRange(carried);
-            _state.Invalidate();
-        });
+        FrameThread.Post(() => Found.Add(carried));
     }
 
     private static IReadOnlyList<FileEntry> Listed(IFileSource source, string folder)

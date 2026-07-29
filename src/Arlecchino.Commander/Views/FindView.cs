@@ -43,7 +43,7 @@ public sealed class FindView : IArlecchinoView
             Render = Under,
             ItemStyle = static _ => Theme.Default,
             OnActivate = Open,
-            Items = finder.Found,
+            Items = finder.Found.Value,
         };
 
         var status = new StatusBar
