@@ -256,7 +256,7 @@ public sealed class CommanderView : IArlecchinoView
             () => OpenHistory(Active())),
         ViewCommand.For(new KeyBinding(ConsoleKey.Y, ConsoleModifiers.Alt), static () => "back", Back),
         ViewCommand.For(new KeyBinding(ConsoleKey.U, ConsoleModifiers.Alt), static () => "forward", Forward),
-        ViewCommand.For(new KeyBinding(ConsoleKey.Oem5, ConsoleModifiers.Control, ConsoleKey.B,
+        ViewCommand.For(new KeyBinding(ConsoleKey.B, ConsoleModifiers.Control, ConsoleKey.Oem5,
             ConsoleModifiers.Control), static () => "hotlist", OpenHotlist),
         ViewCommand.For(new KeyBinding(ConsoleKey.I, ConsoleModifiers.Alt), static () => "both panels here",
             () => Passive().GoTo(Active().Folder)),
