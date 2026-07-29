@@ -24,7 +24,12 @@ public sealed class Runner : IArlecchinoStore
 
     public Runner(ArlecchinoState state) => _state = state;
 
-    public List<string> Lines { get; } = [];
+    /// <summary>
+    /// What the commands have said, oldest first, trimmed to the newest two thousand lines. A list
+    /// atom rather than a list, so output landing on the drawing thread marks the frame stale by
+    /// itself, and a trim is one change rather than one per line dropped.
+    /// </summary>
+    public LocalAtomsList<string> Lines { get; } = new();
 
     public List<string> History { get; } = [];
 
@@ -65,13 +70,12 @@ public sealed class Runner : IArlecchinoStore
                 IsRunning = false;
                 _running = null;
 
-                Lines.AddRange(said);
+                Lines.Add(said);
                 Trim();
 
                 _state.Output = $"{command} · Ctrl+O reads what it said";
 
                 finished();
-                _state.Invalidate();
             });
         });
     }
