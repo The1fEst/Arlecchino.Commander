@@ -22,11 +22,13 @@ namespace Arlecchino.Commander.Views;
 
 public sealed class CommanderView : IArlecchinoView
 {
-    private const int FooterRows = 2;
+    private const int FooterRows = 3;
+    private const int PromptRoom = 24;
     private const int BarCells = 22;
     private const int SpinnerCells = 2;
     private const string Hints = "Tab panel   Enter open   Space mark   Backspace up";
     private const string StopsHint = "Esc stops";
+    private const string PrefixHint = "Ctrl+X · p path, t marked names, h hotlist, j jobs";
     private const string AddHot = "Add this folder";
     private const string DropHot = "Forget a folder";
 
@@ -78,6 +80,7 @@ public sealed class CommanderView : IArlecchinoView
         "Invert the marks",
         "Filter",
         "Run a command over SSH",
+        "What the commands said",
         "Reload both panels",
     ];
 
@@ -115,14 +118,19 @@ public sealed class CommanderView : IArlecchinoView
     };
     private readonly FocusRing _focus;
     private readonly PaneTree _layout;
+    private readonly Runner _runner;
+    private readonly CommandLine _line;
+    private readonly ArlecchinoKeymap _keymap;
 
     private int _seen;
+    private bool _prefix;
 
     public CommanderView(
         Surface surface,
         Panels panels,
         Remote remote,
         Operations operations,
+        Runner runner,
         ArlecchinoState state,
         ArlecchinoOptions options,
         IServiceProvider services,
@@ -132,9 +140,12 @@ public sealed class CommanderView : IArlecchinoView
         _panels = panels;
         _remote = remote;
         _operations = operations;
+        _runner = runner;
         _state = state;
         _services = services;
         _lifetime = lifetime;
+        _line = new(runner.History);
+        _keymap = options.Keymap;
 
         _left = new(panels.Left, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
         _right = new(panels.Right, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
@@ -144,7 +155,7 @@ public sealed class CommanderView : IArlecchinoView
             Rows,
             PaneSize.CellsFromEnd(FooterRows),
             Branch(Columns, Leaf(_left, () => _left.Title), Leaf(_right, () => _right.Title)),
-            Branch(Rows, 1, Leaf(DrawStatus), Leaf(DrawFunctionKeys)));
+            Branch(Rows, 1, Leaf(DrawStatus), Branch(Rows, 1, Leaf(DrawCommandLine), Leaf(DrawFunctionKeys))));
 
         _focus = _layout.AsFocusRing(options.Keymap);
         _focus.Focus(panels.RightIsActive.Value ? _right : _left);
@@ -169,8 +180,36 @@ public sealed class CommanderView : IArlecchinoView
         _layout.Draw(_surface.Content);
     }
 
+    /// <summary>
+    /// Keys the screen itself takes before the panels see them: the second half of a <c>Ctrl+X</c>
+    /// pair, and everything the command line claims while there is something typed on it.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns>Where to go, which is nowhere for all of these.</returns>
     public ViewRoute Handle(ConsoleKeyInfo key)
     {
+        if (_prefix)
+        {
+            _prefix = false;
+
+            Prefixed(key);
+
+            return ViewRoute.None;
+        }
+
+        if (key is { Modifiers: ConsoleModifiers.Control, Key: ConsoleKey.X })
+        {
+            _prefix = true;
+            _state.Output = PrefixHint;
+
+            return ViewRoute.None;
+        }
+
+        if (!Active().IsSearching && Typed(key))
+        {
+            return ViewRoute.None;
+        }
+
         var route = _focus.Handle(key);
 
         _panels.RightIsActive.Value = _right.IsFocused;
@@ -228,12 +267,27 @@ public sealed class CommanderView : IArlecchinoView
         ViewCommand.For(ConsoleKey.F10, static () => "quit", _lifetime.StopApplication),
         new()
         {
+            Binding = new(ConsoleKey.O, ConsoleModifiers.Control),
+            Label = static () => "what the commands said",
+            Run = static () => ViewKind.Output,
+        },
+        ViewCommand.For(new KeyBinding(ConsoleKey.Enter, ConsoleModifiers.Alt),
+            static () => "name onto the command line", Insert),
+        new()
+        {
             Binding = new(ConsoleKey.Escape),
             Label = static () => "stop what is running",
-            IsEnabled = () => _operations.IsBusy,
+            IsEnabled = () => _operations.IsBusy || _runner.IsRunning,
             Run = () =>
             {
-                _operations.Cancel();
+                if (_runner.IsRunning)
+                {
+                    _runner.Stop();
+                }
+                else
+                {
+                    _operations.Cancel();
+                }
 
                 return ViewRoute.None;
             },
@@ -531,6 +585,9 @@ public sealed class CommanderView : IArlecchinoView
             case "Run a command over SSH":
                 Navigation.Apply(ViewKind.Ssh);
                 break;
+            case "What the commands said":
+                Navigation.Apply(ViewKind.Output);
+                break;
             default:
                 Reload();
                 break;
@@ -654,6 +711,104 @@ public sealed class CommanderView : IArlecchinoView
 
         _left.GoTo(_right.Folder);
         _right.GoTo(here);
+    }
+
+    /// <summary>
+    /// Gives the key to the command line, which takes it only when there is something typed — an
+    /// empty line leaves Space, Enter, Backspace and the marking keys to the panel.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns><c>true</c> when the line took it.</returns>
+    private bool Typed(ConsoleKeyInfo key)
+    {
+        if (_line.IsEmpty || !_keymap.Confirm.Matches(key))
+        {
+            return _line.Handle(key);
+        }
+
+        Run();
+
+        return true;
+    }
+
+    private void Prefixed(ConsoleKeyInfo key)
+    {
+        var panel = Active();
+
+        switch (char.ToLowerInvariant(key.KeyChar))
+        {
+            case 'p':
+                _line.Insert(panel.Folder);
+                break;
+            case 't':
+                foreach (var entry in panel.Targets())
+                {
+                    _line.Insert(entry.Name);
+                }
+
+                break;
+            case 'h':
+                Remember(panel.Folder);
+                break;
+            case 'j':
+                Navigation.Apply(Routes.Notifications);
+                break;
+            default:
+                _state.Output = PrefixHint;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Runs what is on the command line where the panel is looking. A <c>cd</c> is not run at all: it
+    /// moves the panel, because a shell started for one command would forget it the moment it ended.
+    /// </summary>
+    private void Run()
+    {
+        var command = _line.Take();
+        var panel = Active();
+
+        if (command.Length == 0 || Chdir(panel, command))
+        {
+            return;
+        }
+
+        _runner.Run(command, panel.Folder, panel.Source, panel.Reload);
+    }
+
+    private bool Chdir(FilePanel panel, string command)
+    {
+        if (command != "cd" && !command.StartsWith("cd ", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var wanted = command.Length > 3 ? command[3..].Trim().Trim('"') : "";
+        var where = wanted switch
+        {
+            "" or "~" => panel.Source.Home,
+            ".." => panel.Source.Parent(panel.Folder) ?? panel.Folder,
+            _ => panel.Source.FolderExists(wanted) ? wanted : panel.Source.Combine(panel.Folder, wanted),
+        };
+
+        if (panel.Source.FolderExists(where))
+        {
+            panel.GoTo(where);
+        }
+        else
+        {
+            _state.Output = $"No folder {wanted}";
+        }
+
+        return true;
+    }
+
+    private void Insert()
+    {
+        if (Active().Current is { IsParent: false } current)
+        {
+            _line.Insert(current.Name);
+        }
     }
 
     private void Group(bool marking)
@@ -793,6 +948,16 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
+        if (_runner.IsRunning)
+        {
+            _spinner.Advance();
+
+            status.Write(0, 0, $"{_spinner.Current} {_runner.Last}", Theme.Accent);
+            status.WriteLine(0, StopsHint, Theme.Muted, Align.Right);
+
+            return;
+        }
+
         var said = _state.Output;
 
         if (said.Length > 0)
@@ -836,6 +1001,9 @@ public sealed class CommanderView : IArlecchinoView
         status.Write(0, column, TextWidth.Truncate(text, room), Theme.Accent);
         status.WriteLine(0, StopsHint, Theme.Muted, Align.Right);
     }
+
+    private void DrawCommandLine(SurfaceRegion line) =>
+        _line.Draw(line, $"{TextWidth.Truncate(Active().Folder, PromptRoom)}> ");
 
     private static void DrawFunctionKeys(SurfaceRegion keys)
     {

@@ -17,10 +17,26 @@ public static class KeyScript
         }
 
         return Named(name) is { } key
-            ? new((char)0, key, modifiers.HasFlag(ConsoleModifiers.Shift), modifiers.HasFlag(ConsoleModifiers.Alt),
-                modifiers.HasFlag(ConsoleModifiers.Control))
+            ? new(Character(key), key, modifiers.HasFlag(ConsoleModifiers.Shift),
+                modifiers.HasFlag(ConsoleModifiers.Alt), modifiers.HasFlag(ConsoleModifiers.Control))
             : Typed(name, modifiers);
     }
+
+    /// <summary>
+    /// The character a terminal sends along with a named key. Space is the one that matters: a screen
+    /// that reads what was typed sees a space, not a key with no character to it.
+    /// </summary>
+    /// <param name="key">The key the name stood for.</param>
+    /// <returns>The character, or nothing for keys that carry none.</returns>
+    private static char Character(ConsoleKey key) => key switch
+    {
+        ConsoleKey.Spacebar => ' ',
+        ConsoleKey.Enter => '\r',
+        ConsoleKey.Tab => '\t',
+        ConsoleKey.Escape => '\e',
+        ConsoleKey.Backspace => '\b',
+        _ => (char)0,
+    };
 
     private static (ConsoleModifiers Modifier, string Tail)? Prefix(string name)
     {

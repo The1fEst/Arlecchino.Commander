@@ -44,6 +44,11 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
   middle and the bottom, `Ctrl+PgUp` and `Ctrl+PgDn` leave and enter a folder, `Alt+H` lists the
   folders the panel has been in with `Alt+Y` and `Alt+U` stepping through them, `Ctrl+B` keeps a
   hotlist, `Alt+I` sends the other panel here and `Alt+O` sends it into the folder under the cursor.
+- **A command line under the panels.** Typing goes to it while the panel keeps the cursor, `Enter`
+  runs it where the panel is looking — on the server itself when that panel is connected — `cd` moves
+  the panel instead of a shell that would forget it, `Alt+P` and `Alt+N` walk the history, `Alt+Enter`
+  puts the name under the cursor on the line, `Ctrl+X P` the path, `Ctrl+X T` the marked names, and
+  `Ctrl+O` reads back everything the commands printed.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
 - **Hosts from `~/.ssh/config`.** `Ctrl+K` lists the `Host` entries and opens one, reusing its

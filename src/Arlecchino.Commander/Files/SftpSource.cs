@@ -25,9 +25,11 @@ public sealed class SftpSource : IFileSource
     {
         _connection = connection;
         _pool = pool;
+
+        Label = connection.Label;
     }
 
-    public string Label => _connection.Label;
+    public string Label { get; }
 
     public bool IsRemote => true;
 
@@ -191,6 +193,36 @@ public sealed class SftpSource : IFileSource
                 _shellRefused = true;
 
                 return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Runs a command on the server over the session already open, in the folder the panel is showing.
+    /// </summary>
+    /// <param name="command">What was typed.</param>
+    /// <param name="folder">Where to run it.</param>
+    /// <returns>What it said and how it ended, or <c>null</c> when the server offers no shell.</returns>
+    public (string Output, int Status)? Run(string command, string folder)
+    {
+        lock (_shellGate)
+        {
+            if (Shell() is not { } shell)
+            {
+                return null;
+            }
+
+            try
+            {
+                using var running = shell.RunCommand(RemoteShells.Within(Kind(shell), folder, command));
+
+                return (running.Result + running.Error, running.ExitStatus ?? -1);
+            }
+            catch (Exception error) when (IsShellFailure(error))
+            {
+                _shellRefused = true;
+
+                return null;
             }
         }
     }

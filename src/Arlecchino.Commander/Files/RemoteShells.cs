@@ -74,6 +74,23 @@ public static class RemoteShells
     };
 
     /// <summary>
+    /// A command run where the panel is looking, written for that shell. A command line that says
+    /// <c>ls</c> means the folder on screen, not whatever the server drops a session into.
+    /// </summary>
+    /// <param name="kind">What is answering.</param>
+    /// <param name="folder">The folder to run it in, as SFTP spells it.</param>
+    /// <param name="command">What the user typed.</param>
+    /// <returns>The command to send.</returns>
+    public static string Within(RemoteShellKind kind, string folder, string command) => kind switch
+    {
+        RemoteShellKind.Posix => $"cd '{folder.Replace("'", @"'\''", StringComparison.Ordinal)}' && {command}",
+        RemoteShellKind.WindowsCommand => $"cd /d \"{Local(folder)}\" && {command}",
+        RemoteShellKind.PowerShell =>
+            $"Set-Location -LiteralPath '{Local(folder).Replace("'", "''", StringComparison.Ordinal)}'; {command}",
+        _ => command,
+    };
+
+    /// <summary>
     /// The Windows spelling of a path SFTP reports as <c>/C:/Users/…</c>, which neither
     /// <c>cmd.exe</c> nor PowerShell will accept as it stands.
     /// </summary>

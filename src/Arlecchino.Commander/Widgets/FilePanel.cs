@@ -79,6 +79,9 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     public FileEntry? Current => _table.SelectedRow;
 
+    /// <summary>Whether the search that runs while you type is on, in which case typing is its own.</summary>
+    public bool IsSearching => _searching;
+
     public string Title
     {
         get
