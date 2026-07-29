@@ -1,4 +1,15 @@
-# Arlecchino.Commander
+<p align="center">
+  <img src="assets/commander-banner.svg" alt="Arlecchino Commander" width="820">
+</p>
+
+<p align="center">
+  <a href="https://github.com/The1fEst/Arlecchino.Commander/releases/latest"><img src="https://img.shields.io/github/v/release/The1fEst/Arlecchino.Commander?logo=github&color=C9382B&labelColor=141317" alt="Release"></a>
+  <a href="https://github.com/The1fEst/Arlecchino.Commander/releases"><img src="https://img.shields.io/github/downloads/The1fEst/Arlecchino.Commander/total?color=C9382B&labelColor=141317" alt="Downloads"></a>
+  <a href="https://github.com/The1fEst/Arlecchino.Commander/actions/workflows/build.yml"><img src="https://github.com/The1fEst/Arlecchino.Commander/actions/workflows/build.yml/badge.svg" alt="Build"></a>
+  <img src="https://img.shields.io/badge/windows%20%7C%20macos%20%7C%20linux-EDE6D9?labelColor=141317" alt="Platforms">
+  <a href="https://github.com/The1fEst/Arlecchino"><img src="https://img.shields.io/badge/built%20on-Arlecchino-C9382B?labelColor=141317" alt="Built on Arlecchino"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-EDE6D9?labelColor=141317" alt="MIT"></a>
+</p>
 
 A Midnight Commander for the terminal, written on [Arlecchino](https://github.com/The1fEst/Arlecchino):
 two panels, the function keys where they have always been, and the same panel over a local disk, an
