@@ -44,6 +44,10 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
   middle and the bottom, `Ctrl+PgUp` and `Ctrl+PgDn` leave and enter a folder, `Alt+H` lists the
   folders the panel has been in with `Alt+Y` and `Alt+U` stepping through them, `Ctrl+B` keeps a
   hotlist, `Alt+I` sends the other panel here and `Alt+O` sends it into the folder under the cursor.
+- **The operations behind `Ctrl+X`.** `Ctrl+X C` sets permissions — through SFTP's own request, FTP's
+  `SITE CHMOD`, or the file mode on a Unix disk — `Ctrl+X O` hands a `chown` to the shell where the
+  panel is looking, `Ctrl+X S` and `Ctrl+X L` make a symbolic or a hard link into the other panel,
+  and `Ctrl+X D` marks in both panels every file the other one does not have the same of.
 - **A command line under the panels.** Typing goes to it while the panel keeps the cursor, `Enter`
   runs it where the panel is looking — on the server itself when that panel is connected — `cd` moves
   the panel instead of a shell that would forget it, `Alt+P` and `Alt+N` walk the history, `Alt+Enter`

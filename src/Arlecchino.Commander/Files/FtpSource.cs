@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -48,6 +49,62 @@ public sealed class FtpSource : IFileSource
 
         return new(connection, client);
     }
+
+    /// <summary>
+    /// The permissions the server reports, which it does only when it speaks the <c>MLSD</c> or
+    /// <c>LIST</c> dialect that carries them; the rest say nothing and get an empty answer.
+    /// </summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <returns>The octal digits, or an empty string.</returns>
+    public string Mode(FileEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        lock (_gate)
+        {
+            try
+            {
+                var mode = _client.GetChmod(entry.Path);
+
+                return mode <= 0 ? "" : mode.ToString(CultureInfo.InvariantCulture);
+            }
+            catch (Exception error) when (IsExpected(error))
+            {
+                return "";
+            }
+        }
+    }
+
+    public bool TryChangeMode(FileEntry entry, string mode)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        if (Modes.AsDigits(mode) is not { } wanted)
+        {
+            return false;
+        }
+
+        lock (_gate)
+        {
+            try
+            {
+                _client.Chmod(entry.Path, wanted);
+
+                return true;
+            }
+            catch (Exception error) when (IsExpected(error))
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <summary>FTP has no request for a link of either kind.</summary>
+    /// <param name="path">Where the link would go.</param>
+    /// <param name="target">What it would point at.</param>
+    /// <param name="hard">Whether it would be a hard link.</param>
+    /// <returns>Always <c>false</c>.</returns>
+    public bool TryLink(string path, string target, bool hard) => false;
 
     public string Combine(string folder, string name) => RemotePaths.Combine(folder, name);
 

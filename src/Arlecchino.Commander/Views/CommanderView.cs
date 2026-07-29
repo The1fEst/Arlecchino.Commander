@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Arlecchino.Commander.Files;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -28,7 +29,10 @@ public sealed class CommanderView : IArlecchinoView
     private const int SpinnerCells = 2;
     private const string Hints = "Tab panel   Enter open   Space mark   Backspace up";
     private const string StopsHint = "Esc stops";
-    private const string PrefixHint = "Ctrl+X · p path, t marked names, h hotlist, j jobs";
+    private const string PrefixHint =
+        "Ctrl+X · c permissions, o owner, s symlink, l hard link, d compare, p path, t names, h hotlist, j jobs";
+
+    private const int SameSecond = 2;
     private const string AddHot = "Add this folder";
     private const string DropHot = "Forget a folder";
 
@@ -66,6 +70,10 @@ public sealed class CommanderView : IArlecchinoView
         "Move",
         "Rename",
         "Make folder",
+        "Permissions",
+        "Owner",
+        "Symbolic link",
+        "Hard link",
         "Delete",
     ];
 
@@ -73,6 +81,7 @@ public sealed class CommanderView : IArlecchinoView
     [
         "Swap panels",
         "Both panels here",
+        "Compare directories",
         "Folders been in",
         "Hotlist",
         "Mark a group",
@@ -365,6 +374,163 @@ public sealed class CommanderView : IArlecchinoView
         });
     }
 
+    /// <summary>
+    /// Sets the permissions of what is marked. The box opens on the permissions the first of them
+    /// already has, so raising one bit does not mean typing the other eight from memory.
+    /// </summary>
+    private void Chmod()
+    {
+        var panel = Active();
+        var targets = panel.Targets();
+
+        if (Nothing(targets))
+        {
+            return;
+        }
+
+        var current = panel.Source.Mode(targets[0]);
+
+        _state.RequestText($"Permissions of {Counted(targets)}", current.Length == 0 ? "644" : current, Octal, mode =>
+        {
+            var refused = 0;
+
+            foreach (var entry in targets)
+            {
+                refused += panel.Source.TryChangeMode(entry, mode) ? 0 : 1;
+            }
+
+            _state.Output = refused == 0
+                ? $"{Counted(targets)} now {mode}"
+                : $"{refused} of {targets.Count} would not take {mode}";
+
+            panel.Reload();
+        });
+    }
+
+    /// <summary>
+    /// Hands a chown to the shell where the panel is looking. Ownership is the one thing none of the
+    /// three protocols carries a request for, and a shell has said <c>chown user:group</c> for fifty
+    /// years.
+    /// </summary>
+    private void Chown()
+    {
+        var panel = Active();
+        var targets = panel.Targets();
+
+        if (Nothing(targets))
+        {
+            return;
+        }
+
+        _state.RequestText($"Owner of {Counted(targets)}", "", Filled, owner =>
+        {
+            var command = new StringBuilder("chown ").Append(owner.Trim());
+
+            foreach (var entry in targets)
+            {
+                command.Append(" \"").Append(entry.Name).Append('"');
+            }
+
+            _runner.Run(command.ToString(), panel.Folder, panel.Source, panel.Reload);
+        });
+    }
+
+    /// <summary>
+    /// Links what is under the cursor into the other panel when both are on the same source, and
+    /// beside itself when they are not — a link across two machines would point at nothing.
+    /// </summary>
+    /// <param name="hard">Whether to make a hard link rather than a symbolic one.</param>
+    private void Link(bool hard)
+    {
+        var panel = Active();
+        var other = Passive();
+
+        if (panel.Current is not { IsParent: false } current)
+        {
+            _state.Output = "Nothing to link to";
+            return;
+        }
+
+        var beside = Alike(panel.Source, other.Source) ? other : panel;
+        var kind = hard ? "Hard link" : "Symbolic link";
+
+        _state.RequestText($"{kind} to {current.Name} in {beside.Folder}, named", current.Name, Filled, name =>
+        {
+            if (beside.Source.TryLink(beside.Source.Combine(beside.Folder, name.Trim()), current.Path, hard))
+            {
+                _state.Output = $"{kind} {name.Trim()} made";
+                beside.Reload();
+
+                return;
+            }
+
+            _state.Output = $"{beside.Source.Label} would not make that {kind.ToLowerInvariant()}";
+        });
+    }
+
+    /// <summary>
+    /// Whether two panels are looking at the same machine. Each panel holds a source of its own even
+    /// when both are local, so this asks what the source reaches rather than which object it is.
+    /// </summary>
+    /// <param name="one">One panel's source.</param>
+    /// <param name="other">The other's.</param>
+    /// <returns><c>true</c> when a path from one means the same thing to the other.</returns>
+    private static bool Alike(IFileSource one, IFileSource other) =>
+        one.IsRemote == other.IsRemote && one.Label == other.Label;
+
+    /// <summary>
+    /// Marks, in both panels, everything the other panel does not have the same of — missing, a
+    /// different size, or written at a different time. What is left unmarked is what matches.
+    /// </summary>
+    private void Compare()
+    {
+        _left.State.Marks.Clear();
+        _right.State.Marks.Clear();
+
+        var marked = Odd(_left, _right) + Odd(_right, _left);
+
+        _state.Output = marked == 0 ? "The two panels hold the same files" : $"{marked} differ";
+    }
+
+    private static int Odd(FilePanel panel, FilePanel other)
+    {
+        var marked = 0;
+
+        foreach (var entry in panel.Entries)
+        {
+            if (entry.IsParent || entry.IsFolder || Same(entry, Find(other, entry.Name)))
+            {
+                continue;
+            }
+
+            panel.State.Marks.Add(entry.Name);
+            marked++;
+        }
+
+        return marked;
+    }
+
+    private static FileEntry? Find(FilePanel panel, string name)
+    {
+        foreach (var entry in panel.Entries)
+        {
+            if (string.Equals(entry.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return entry;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool Same(FileEntry entry, FileEntry? other) =>
+        other is not null &&
+        entry.Size == other.Size &&
+        Math.Abs((entry.Modified - other.Modified).TotalSeconds) < SameSecond;
+
+    private static string? Octal(string text) =>
+        Modes.Read(text) is null ? "Three octal digits, as 755" : null;
+
     private void Delete()
     {
         var panel = Active();
@@ -548,6 +714,18 @@ public sealed class CommanderView : IArlecchinoView
             case "Make folder":
                 MakeFolder();
                 break;
+            case "Permissions":
+                Chmod();
+                break;
+            case "Owner":
+                Chown();
+                break;
+            case "Symbolic link":
+                Link(hard: false);
+                break;
+            case "Hard link":
+                Link(hard: true);
+                break;
             default:
                 Delete();
                 break;
@@ -563,6 +741,9 @@ public sealed class CommanderView : IArlecchinoView
                 break;
             case "Both panels here":
                 Passive().GoTo(Active().Folder);
+                break;
+            case "Compare directories":
+                Compare();
                 break;
             case "Folders been in":
                 OpenHistory(Active());
@@ -737,6 +918,21 @@ public sealed class CommanderView : IArlecchinoView
 
         switch (char.ToLowerInvariant(key.KeyChar))
         {
+            case 'c':
+                Chmod();
+                break;
+            case 'o':
+                Chown();
+                break;
+            case 's':
+                Link(hard: false);
+                break;
+            case 'l':
+                Link(hard: true);
+                break;
+            case 'd':
+                Compare();
+                break;
             case 'p':
                 _line.Insert(panel.Folder);
                 break;

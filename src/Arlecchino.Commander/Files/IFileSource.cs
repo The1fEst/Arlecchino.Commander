@@ -28,6 +28,26 @@ public interface IFileSource : IDisposable
 
     string Home { get; }
 
+    /// <summary>
+    /// The permissions of an entry as the octal digits a chmod is written in, <c>755</c> and the like.
+    /// </summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <returns>The digits, or an empty string on a source that keeps no permissions.</returns>
+    string Mode(FileEntry entry);
+
+    /// <summary>Sets the permissions of an entry.</summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <param name="mode">The octal digits, as typed.</param>
+    /// <returns><c>false</c> when the source keeps no permissions, or refused.</returns>
+    bool TryChangeMode(FileEntry entry, string mode);
+
+    /// <summary>Makes a link to something that is already there.</summary>
+    /// <param name="path">Where the link goes.</param>
+    /// <param name="target">What it points at.</param>
+    /// <param name="hard">Whether it is a hard link rather than a symbolic one.</param>
+    /// <returns><c>false</c> when the source cannot make that kind of link.</returns>
+    bool TryLink(string path, string target, bool hard);
+
     string Combine(string folder, string name);
 
     string? Parent(string folder);

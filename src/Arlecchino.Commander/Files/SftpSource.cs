@@ -71,6 +71,77 @@ public sealed class SftpSource : IFileSource
 
     public string Free(string folder) => "";
 
+    public string Mode(FileEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        using var lease = _pool.Take();
+        var client = lease.Client;
+
+        try
+        {
+            return Modes.Write(RemotePaths.ModeOf(client.GetAttributes(entry.Path)));
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException)
+        {
+            return "";
+        }
+    }
+
+    public bool TryChangeMode(FileEntry entry, string mode)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        if (Modes.AsDigits(mode) is not { } wanted)
+        {
+            return false;
+        }
+
+        using var lease = _pool.Take();
+        var client = lease.Client;
+
+        try
+        {
+            client.ChangePermissions(entry.Path, (short)wanted);
+
+            return true;
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Makes a link on the server. SFTP has a request of its own for a symbolic link; a hard link it
+    /// has none for, so that one is asked of the shell.
+    /// </summary>
+    /// <param name="path">Where the link goes.</param>
+    /// <param name="target">What it points at.</param>
+    /// <param name="hard">Whether it is a hard link.</param>
+    /// <returns><c>false</c> when the server refused it.</returns>
+    public bool TryLink(string path, string target, bool hard)
+    {
+        if (hard)
+        {
+            return Run($"ln '{target}' '{path}'", RemotePaths.Parent(path) ?? RemotePaths.Root) is { Status: 0 };
+        }
+
+        using var lease = _pool.Take();
+        var client = lease.Client;
+
+        try
+        {
+            client.SymbolicLink(target, path);
+
+            return true;
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException)
+        {
+            return false;
+        }
+    }
+
     public IReadOnlyList<FileEntry> List(string folder, bool showHidden)
     {
         using var lease = _pool.Take();

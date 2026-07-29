@@ -11,6 +11,10 @@ namespace Arlecchino.Commander.Files;
 /// Runs what was typed on the command line through the shell of the machine this is running on, and
 /// hands back what it said. Nothing is interactive here: a command that asks a question gets no
 /// answer, so it is sent with its input closed and whatever it printed is collected.
+///
+/// Windows takes the command as one raw string behind <c>/s /c</c>, which is the only spelling
+/// <c>cmd.exe</c> reads back unchanged; handed the same command as an escaped argument it eats a
+/// quote and leaves a path in half.
 /// </summary>
 public static class Shells
 {
@@ -28,8 +32,15 @@ public static class Shells
             CreateNoWindow = true,
         };
 
-        started.ArgumentList.Add(windows ? "/c" : "-c");
-        started.ArgumentList.Add(command);
+        if (windows)
+        {
+            started.Arguments = $"/s /c \"{command}\"";
+        }
+        else
+        {
+            started.ArgumentList.Add("-c");
+            started.ArgumentList.Add(command);
+        }
 
         try
         {

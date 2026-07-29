@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
 using Arlecchino.Commander.Files;
@@ -90,8 +92,7 @@ public sealed class Runner : IArlecchinoStore
             running.Kill(entireProcessTree: true);
             _state.Output = "Stopped";
         }
-        catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception
-                                          or NotSupportedException)
+        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
         {
             _state.Output = $"Could not stop it: {error.Message}";
         }
@@ -118,7 +119,7 @@ public sealed class Runner : IArlecchinoStore
         {
             return Shells.Collect(started);
         }
-        catch (Exception error) when (error is InvalidOperationException or System.IO.IOException)
+        catch (Exception error) when (error is InvalidOperationException or IOException)
         {
             return [$"[failed] {error.Message}"];
         }

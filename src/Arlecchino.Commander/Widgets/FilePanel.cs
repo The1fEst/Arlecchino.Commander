@@ -82,6 +82,9 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     /// <summary>Whether the search that runs while you type is on, in which case typing is its own.</summary>
     public bool IsSearching => _searching;
 
+    /// <summary>What the panel is showing, in the order it is shown.</summary>
+    public IReadOnlyList<FileEntry> Entries => _entries;
+
     public string Title
     {
         get
