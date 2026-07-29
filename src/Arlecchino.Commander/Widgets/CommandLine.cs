@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Hosting;
 using Arlecchino.Input;
 using Arlecchino.Rendering;
 
@@ -15,6 +16,7 @@ public sealed class CommandLine
 {
     private readonly List<string> _history;
     private readonly KeyText _keys;
+    private readonly ArlecchinoKeymap _keymap;
 
     private string _text = "";
     private int _cursor;
@@ -26,18 +28,25 @@ public sealed class CommandLine
     /// Turns a key press into the character it types. Asking this rather than reading the key's own
     /// character is what lets a command be typed with a Cyrillic layout left switched on.
     /// </param>
-    public CommandLine(List<string> history, KeyText keys)
+    /// <param name="keymap">The keys the application obeys, which the line edits by.</param>
+    public CommandLine(List<string> history, KeyText keys, ArlecchinoKeymap keymap)
     {
         ArgumentNullException.ThrowIfNull(history);
 
         _history = history;
         _keys = keys;
+        _keymap = keymap;
         _place = history.Count;
     }
 
     public bool IsEmpty => _text.Length == 0;
 
-    /// <summary>Offers a key to the line.</summary>
+    /// <summary>
+    /// Offers a key to the line. Every key it recognises is matched against the application's own
+    /// bindings rather than against a <see cref="ConsoleKey"/>, because a terminal that reports no
+    /// virtual key still sends the character — and a Backspace the line failed to recognise is a
+    /// Backspace the panel takes, which walks out of the folder mid-command.
+    /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it and the panel should not see it.</returns>
     public bool Handle(ConsoleKeyInfo key)
@@ -52,7 +61,100 @@ public sealed class CommandLine
             };
         }
 
-        return key.Modifiers.HasFlag(ConsoleModifiers.Control) ? Held(key.Key) : Alone(key);
+        return IsEmpty ? Typed(key) : Editing(key);
+    }
+
+    /// <summary>
+    /// A key offered to a line that already has something on it, where the line claims everything it
+    /// knows what to do with.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns><c>true</c> when the line took it.</returns>
+    private bool Editing(ConsoleKeyInfo key)
+    {
+        if (_keymap.Erase.Matches(key))
+        {
+            Back();
+            return true;
+        }
+
+        if (_keymap.EraseWord.Matches(key))
+        {
+            Word();
+            return true;
+        }
+
+        if (_keymap.EraseToStart.Matches(key))
+        {
+            _text = _text[_cursor..];
+            _cursor = 0;
+
+            return true;
+        }
+
+        if (_keymap.DeleteForward.Matches(key))
+        {
+            Ahead();
+            return true;
+        }
+
+        if (!_keymap.Cancel.Matches(key))
+        {
+            return Moving(key) || Typed(key);
+        }
+
+        Clear();
+
+        return true;
+    }
+
+    private void Back()
+    {
+        if (_cursor == 0)
+        {
+            return;
+        }
+
+        _text = _text.Remove(_cursor - 1, 1);
+        _cursor--;
+    }
+
+    private void Ahead()
+    {
+        if (_cursor < _text.Length)
+        {
+            _text = _text.Remove(_cursor, 1);
+        }
+    }
+
+    private bool Moving(ConsoleKeyInfo key)
+    {
+        if (_keymap.MoveLeft.Matches(key))
+        {
+            _cursor = Math.Max(0, _cursor - 1);
+            return true;
+        }
+
+        if (_keymap.MoveRight.Matches(key))
+        {
+            _cursor = Math.Min(_text.Length, _cursor + 1);
+            return true;
+        }
+
+        if (_keymap.First.Matches(key))
+        {
+            _cursor = 0;
+            return true;
+        }
+
+        if (!_keymap.Last.Matches(key))
+        {
+            return false;
+        }
+
+        _cursor = _text.Length;
+
+        return true;
     }
 
     /// <summary>Takes what is typed, remembering it, and leaves the line empty.</summary>
@@ -109,72 +211,15 @@ public sealed class CommandLine
             Theme.Selected);
     }
 
-    private bool Held(ConsoleKey key)
-    {
-        if (IsEmpty)
-        {
-            return false;
-        }
-
-        switch (key)
-        {
-            case ConsoleKey.A:
-                _cursor = 0;
-                return true;
-            case ConsoleKey.E:
-                _cursor = _text.Length;
-                return true;
-            case ConsoleKey.K:
-                _text = _text[.._cursor];
-                return true;
-            case ConsoleKey.W:
-                Word();
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private bool Alone(ConsoleKeyInfo key)
-    {
-        switch (key.Key)
-        {
-            case ConsoleKey.Backspace when _cursor > 0:
-                _text = _text.Remove(_cursor - 1, 1);
-                _cursor--;
-                return true;
-            case ConsoleKey.Delete when _cursor < _text.Length:
-                _text = _text.Remove(_cursor, 1);
-                return true;
-            case ConsoleKey.LeftArrow when _cursor > 0:
-                _cursor--;
-                return true;
-            case ConsoleKey.RightArrow when _cursor < _text.Length:
-                _cursor++;
-                return true;
-            case ConsoleKey.Home when !IsEmpty:
-                _cursor = 0;
-                return true;
-            case ConsoleKey.End when !IsEmpty:
-                _cursor = _text.Length;
-                return true;
-            case ConsoleKey.Escape when !IsEmpty:
-                Clear();
-                return true;
-            case ConsoleKey.Spacebar when !IsEmpty:
-                return Typed(' ');
-            default:
-                return _keys.Resolve(key) is { } typed && Typed(typed);
-        }
-    }
-
     /// <summary>
     /// One typed character. An empty line leaves the panel its own keys: Space marks a file and
     /// <c>+</c>, <c>-</c> and <c>*</c> work the marks, so none of them start a command.
     /// </summary>
-    /// <param name="typed">The character.</param>
+    /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when it went into the line.</returns>
-    private bool Typed(char typed)
+    private bool Typed(ConsoleKeyInfo key) => _keys.Resolve(key) is { } typed && Put(typed);
+
+    private bool Put(char typed)
     {
         if (char.IsControl(typed))
         {

@@ -162,7 +162,7 @@ public sealed class CommanderView : IArlecchinoView
 
         var keys = KeyText.For(options.TextInput);
 
-        _line = new(runner.History, keys);
+        _line = new(runner.History, keys, options.Keymap);
         _left = new(panels.Left, options.Keymap, keys) { OnOpenFile = Open, OnGroup = Group };
         _right = new(panels.Right, options.Keymap, keys) { OnOpenFile = Open, OnGroup = Group };
         _seen = operations.Revision.Value;
