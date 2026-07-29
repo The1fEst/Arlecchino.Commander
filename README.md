@@ -8,6 +8,31 @@ SFTP server or an FTP one.
 dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
 ```
 
+![Two panels over a local disk](assets/screenshots/panels.png)
+
+<details>
+<summary><b>More screens</b> — marks, the menu, operations, servers, SSH, notifications</summary>
+
+![Three files marked, counted at the foot of the panel](assets/screenshots/marks.png)
+
+![The menu, opened by F9](assets/screenshots/menu.png)
+
+![Copying asks where to](assets/screenshots/copy.png)
+
+![A copy running in the background, with a bar and Esc to stop](assets/screenshots/progress.png)
+
+![The same copy opened in full, with Stop offered](assets/screenshots/notification.png)
+
+![Hosts read from ~/.ssh/config](assets/screenshots/hosts.png)
+
+![A panel browsing a server over SFTP](assets/screenshots/server.png)
+
+![A command run on that server](assets/screenshots/ssh.png)
+
+![A file read without leaving the panels](assets/screenshots/viewer.png)
+
+</details>
+
 ## What it does
 
 - **Two panels.** `Tab` switches, `Enter` opens, `Backspace` goes up, `Space` marks, and the columns

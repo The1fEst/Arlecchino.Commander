@@ -18,7 +18,7 @@ public static class KeyScript
         return keys;
     }
 
-    private static ConsoleKeyInfo One(string piece)
+    public static ConsoleKeyInfo One(string piece)
     {
         var modifiers = (ConsoleModifiers)0;
         var name = piece;

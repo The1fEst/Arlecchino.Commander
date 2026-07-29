@@ -75,11 +75,30 @@ public static class Listing
         }
     }
 
+    /// <summary>
+    /// The home folder. The environment is asked first, because that is what a shell, a container or
+    /// a screenshot run sets when it means somewhere else, while Windows answers
+    /// <c>GetFolderPath</c> from the account and ignores <c>USERPROFILE</c> entirely.
+    /// </summary>
+    /// <returns>The folder, or the working directory when nothing names one.</returns>
     public static string Home()
     {
-        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string[] wanted =
+        [
+            Environment.GetEnvironmentVariable("USERPROFILE") ?? "",
+            Environment.GetEnvironmentVariable("HOME") ?? "",
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ];
 
-        return home.Length > 0 && Directory.Exists(home) ? home : Directory.GetCurrentDirectory();
+        foreach (var home in wanted)
+        {
+            if (home.Length > 0 && Directory.Exists(home))
+            {
+                return home;
+            }
+        }
+
+        return Directory.GetCurrentDirectory();
     }
 
     public static IReadOnlyList<string> Drives()

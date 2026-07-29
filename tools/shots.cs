@@ -17,32 +17,48 @@ var output = Path.Combine(repository, "assets", "screenshots");
 
 Directory.CreateDirectory(output);
 
+var commander = repository;
+var framework = Path.Combine(Directory.GetParent(repository)!.FullName, "Arlecchino");
+
 var fixture = Path.Combine(Path.GetTempPath(), "arlecchino-shots");
-var left = Path.Combine(fixture, "project");
-var right = Path.Combine(fixture, "backup");
+var scratchLeft = Path.Combine(fixture, "project");
+var scratchRight = Path.Combine(fixture, "backup");
+var pretend = Path.Combine(fixture, "home");
 
-Fixture.Lay(fixture, left, right);
+Fixture.Lay(fixture, scratchLeft, scratchRight);
+Fixture.Pretend(pretend);
 
-(string Name, string Size, string Keys, string Wait, string Caption)[] scenes =
+// The panels show the two repositories, because a screenshot of a real tree says more than a made-up
+// one. The scenes that actually copy work on a scratch fixture instead, so a picture never writes
+// into a repository.
+// The host the server scenes use. A `~/.ssh/config` entry, so the shots say nothing about anyone's
+// credentials; scenes that name it are skipped when the host does not answer.
+var host = Environment.GetEnvironmentVariable("ARLECCHINO_SHOT_HOST") ?? "ubuntu";
+
+// A scene that shows the list of saved hosts runs against a made-up ~/.ssh/config, so no picture
+// carries anyone's servers.
+const string Pretending = "made-up";
+
+(string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] scenes =
 [
-    ("panels", "132x26", "", "", "two panels over a local disk"),
-    ("marks", "132x26", "Down,Space,Space,Space", "", "three files marked, counted at the foot of the panel"),
-    ("sorted", "132x26", "F9,Down,Down,Down,Down,Enter,Down,Enter", "", "the right panel sorted by size"),
-    ("menu", "132x26", "F9", "", "the menu, opened by F9"),
-    ("file-menu", "132x26", "F9,Down,Enter", "", "what can be done to what is marked"),
-    ("copy", "132x26", "Down,Space,Space,F5", "", "copying asks where to"),
-    ("delete", "132x26", "Down,Space,Space,F8", "", "deleting asks first, with no selected"),
-    ("progress", "132x26", "Down,F5,Enter", "40", "a copy running in the background, with a bar and Esc to stop"),
-    ("notifications", "132x26", "Down,F5,Enter,Ctrl+N", "60", "the same copy on the notifications screen"),
-    ("notification", "132x26", "Down,F5,Enter,Ctrl+N,Enter", "60", "opened in full, with Stop offered"),
-    ("done", "132x26", "Down,F5,Enter,Ctrl+N,Enter", "4000", "the same entry once the copy is over"),
-    ("viewer", "132x26", "End,Up,Up,F3", "", "a file read without leaving the panels"),
-    ("filter", "132x26", "F4,c,s", "", "the panel filtered by name"),
-    ("hosts", "132x26", "Ctrl+K", "", "hosts read from ~/.ssh/config"),
-    ("connect", "132x26", "F9,Enter,Down,Down,Down,Down,Down,Down,Enter", "", "connecting a panel to a server"),
-    ("ssh", "132x26", "F9,Down,Down,Enter,Down,Down,Down,Enter", "", "commands run over SSH"),
-    ("palette", "132x26", ":", "", "the command palette, which comes with the framework"),
-    ("help", "132x32", "F1", "", "the keys screen, which comes with it too"),
+    ("panels", "132x26", "", "", false, "", "two panels over a local disk"),
+    ("marks", "132x26", "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
+    ("sorted", "132x26", "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
+    ("menu", "132x26", "F9", "", false, "", "the menu, opened by F9"),
+    ("file-menu", "132x26", "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
+    ("copy", "132x26", "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
+    ("delete", "132x26", "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
+    ("viewer", "132x26", "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
+    ("filter", "132x26", "F4,s,r", "", false, "", "the panel filtered by name"),
+    ("hosts", "132x26", "Ctrl+K", "", false, "made-up", "hosts read from ~/.ssh/config"),
+    ("palette", "132x26", ":", "", false, "", "the command palette, which comes with the framework"),
+    ("help", "132x26", "F1", "", false, "", "the keys screen, which comes with it too"),
+    ("server", "132x26", "", "", false, host, "a panel browsing a server over SFTP"),
+    ("ssh", "132x26", "F9,Down,Down,Enter,Down,Down,Down,Enter,Enter,l,s,Enter", "3000", false, host,
+        "a command run on that server"),
+    ("progress", "132x26", "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
+    ("notification", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
+    ("done", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
 ];
 
 var typeface = Typeface("JetBrainsMonoNLNerdFontMono-Regular.ttf");
@@ -57,9 +73,18 @@ var cellHeight = MathF.Round(-metrics.Ascent + metrics.Descent + 4f);
 
 foreach (var scene in scenes)
 {
-    Fixture.Reset(right);
+    if (scene.Scratch)
+    {
+        Fixture.Reset(scratchRight);
+    }
 
-    var ansi = Capture(scene.Size, scene.Keys, scene.Wait);
+    var ansi = Capture(
+        scene.Size,
+        scene.Keys,
+        scene.Wait,
+        scene.Scratch ? scratchLeft : framework,
+        scene.Scratch ? scratchRight : commander,
+        scene.Connect);
     var grid = Terminal.Parse(ansi);
 
     if (grid.Count == 0)
@@ -68,16 +93,53 @@ foreach (var scene in scenes)
         continue;
     }
 
+    var (columns, rows) = Measure(scene.Size);
     var path = Path.Combine(output, $"{scene.Name}.png");
-    Paint(grid, scene.Caption, path);
+
+    Paint(Fit(grid, columns, rows), scene.Caption, path);
 
     Console.WriteLine($"{scene.Name}: {grid[0].Count}x{grid.Count} → {path}");
 }
 
-string Capture(string size, string keys, string wait)
+// Every picture is the size its scene asked for, whatever the screen happened to draw: a dialog over
+// an otherwise empty screen leaves the rest of the frame blank, and a gallery of pictures that are
+// each a different height reads as a mistake.
+static (int Columns, int Rows) Measure(string size)
+{
+    var parts = size.Split('x');
+
+    return (int.Parse(parts[0]), int.Parse(parts[1]));
+}
+
+static List<List<Cell>> Fit(List<List<Cell>> grid, int columns, int rows)
+{
+    var blank = new Cell(" ", Terminal.Foreground, Terminal.Background, false);
+
+    while (grid.Count < rows)
+    {
+        grid.Add([]);
+    }
+
+    foreach (var line in grid)
+    {
+        while (line.Count < columns)
+        {
+            line.Add(blank);
+        }
+    }
+
+    return grid;
+}
+
+string Capture(string size, string keys, string wait, string leftPanel, string rightPanel, string connect)
 {
     var arguments = $"run --project src/Arlecchino.Commander --no-build -- " +
-                    $"--frame {size} --left \"{left}\" --right \"{right}\"";
+                    $"--frame {size} --left \"{leftPanel}\" --right \"{rightPanel}\"";
+
+    if (connect.Length > 0 && connect != Pretending)
+    {
+        arguments += $" --connect {connect}";
+    }
 
     if (keys.Length > 0)
     {
@@ -98,6 +160,13 @@ string Capture(string size, string keys, string wait)
 
     start.Environment["COLORTERM"] = "truecolor";
     start.Environment["TERM"] = "xterm-256color";
+    start.Environment["ARLECCHINO_COLOR"] = "truecolor";
+
+    if (connect == Pretending)
+    {
+        start.Environment["USERPROFILE"] = pretend;
+        start.Environment["HOME"] = pretend;
+    }
 
     using var process = Process.Start(start)!;
     var text = process.StandardOutput.ReadToEnd();
@@ -229,7 +298,7 @@ static class Fixture
         ("build.yml", 1_020), ("icon.png", 62_000),
     ];
 
-    private static readonly string[] Folders = ["src", "docs", "assets", "tests", ".github"];
+    private static readonly string[] Folders = [".github", "assets", "docs", "src", "tests"];
 
     public static void Lay(string root, string left, string right)
     {
@@ -251,12 +320,48 @@ static class Fixture
             }
         }
 
+        var heavy = Directory.CreateDirectory(Path.Combine(left, "docs", "manual"));
+
+        for (var index = 0; index < 220; index++)
+        {
+            File.WriteAllText(Path.Combine(heavy.FullName, $"page{index:000}.md"), new string('x', 40_000));
+        }
+
         foreach (var (name, size) in Files)
         {
             File.WriteAllText(Path.Combine(left, name), new string('x', size));
         }
 
         File.WriteAllText(Path.Combine(right, "one.txt"), "kept");
+    }
+
+    /// <summary>
+    /// A home folder with a <c>~/.ssh/config</c> of invented servers, for the scene that lists them.
+    /// </summary>
+    /// <param name="home">Where to lay it.</param>
+    public static void Pretend(string home)
+    {
+        var ssh = Directory.CreateDirectory(Path.Combine(home, ".ssh"));
+
+        File.WriteAllText(Path.Combine(ssh.FullName, "config"), string.Join(
+            Environment.NewLine,
+            "Host staging",
+            "    HostName staging.example.com",
+            "    User deploy",
+            "",
+            "Host media",
+            "    HostName media.example.com",
+            "    User root",
+            "    Port 2222",
+            "",
+            "Host backups",
+            "    HostName backups.example.net",
+            "    User archive",
+            "",
+            "Host pi",
+            "    HostName raspberrypi.local",
+            "    User pi",
+            ""));
     }
 
     public static void Reset(string right)

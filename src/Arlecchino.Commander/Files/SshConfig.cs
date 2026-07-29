@@ -9,7 +9,7 @@ namespace Arlecchino.Commander.Files;
 public sealed record SshHost(string Alias, string HostName, string User, int Port, string KeyFile)
 {
     public Connection AsConnection(string folder) =>
-        new(Protocol.Sftp, HostName, Port, User, "", folder, KeyFile);
+        new(Protocol.Sftp, HostName, Port, User, "", folder, KeyFile, Alias);
 
     public string Describe() => Port == Connection.PortFor(Protocol.Sftp)
         ? $"{Alias}  ({User}@{HostName})"

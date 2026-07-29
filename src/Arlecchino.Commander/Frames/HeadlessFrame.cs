@@ -16,8 +16,21 @@ public static class HeadlessFrame
     private const int RemoteSettleMilliseconds = 4000;
     private const int PollInterval = 25;
 
+    /// <summary>
+    /// Draws one frame and returns, for a screenshot or a check that needs no terminal. A process
+    /// started without a console of its own is told there is no colour, which is right for a log and
+    /// wrong for a picture, so <c>ARLECCHINO_COLOR</c> says what to emit regardless.
+    /// </summary>
+    /// <param name="size">Frame size as <c>columns x rows</c>.</param>
+    /// <param name="script">Keys to play before the frame is drawn.</param>
+    /// <param name="left">Folder the left panel opens on.</param>
+    /// <param name="right">Folder the right panel opens on.</param>
+    /// <param name="connect">A link or a <c>~/.ssh/config</c> host to open the left panel on.</param>
+    /// <param name="wait">How long to let the network and the background work answer, in milliseconds.</param>
     public static void Render(string size, string script, string left, string right, string connect, int wait)
     {
+        Colour();
+
         var services = new ServiceCollection();
 
         services.AddSingleton<IHostApplicationLifetime, NullLifetime>();
@@ -52,6 +65,17 @@ public static class HeadlessFrame
         provider.GetRequiredService<Screen>().DrawOnce();
 
         Console.WriteLine();
+    }
+
+    private static void Colour()
+    {
+        TerminalCapabilities.Color = Environment.GetEnvironmentVariable("ARLECCHINO_COLOR")?.ToLowerInvariant() switch
+        {
+            "truecolor" or "24bit" => ColorSupport.TrueColor,
+            "256" or "palette" => ColorSupport.Palette,
+            "none" => ColorSupport.None,
+            _ => TerminalCapabilities.Color,
+        };
     }
 
     private static void Settle(int milliseconds)
@@ -92,9 +116,16 @@ public static class HeadlessFrame
 
         var router = provider.GetRequiredService<InputRouter>();
 
-        foreach (var key in KeyScript.Parse(script))
+        foreach (var piece in script.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            router.ProcessKey(key);
+            if (piece.StartsWith("wait", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(piece[4..], out var pause))
+            {
+                Settle(pause);
+                continue;
+            }
+
+            router.ProcessKey(KeyScript.One(piece));
             FrameThread.RunPending(static _ => { });
         }
     }
