@@ -39,19 +39,20 @@ public sealed class CommanderView : IArlecchinoView
     private static readonly (string Key, string Label)[] FunctionKeys =
     [
         ("1", "Help"),
-        ("2", "Drive"),
+        ("2", "Menu"),
         ("3", "View"),
         ("4", "Filter"),
         ("5", "Copy"),
         ("6", "Move"),
         ("7", "Mkdir"),
         ("8", "Delete"),
-        ("9", "Menu"),
+        ("9", "PullDn"),
         ("10", "Quit"),
     ];
 
     private static readonly string[] PanelItems =
     [
+        "Find file",
         "Sort by name",
         "Sort by size",
         "Sort by date",
@@ -128,10 +129,12 @@ public sealed class CommanderView : IArlecchinoView
     private readonly FocusRing _focus;
     private readonly PaneTree _layout;
     private readonly Runner _runner;
+    private readonly Finder _finder;
     private readonly CommandLine _line;
     private readonly ArlecchinoKeymap _keymap;
 
     private int _seen;
+    private int _moved;
     private bool _prefix;
 
     public CommanderView(
@@ -140,6 +143,7 @@ public sealed class CommanderView : IArlecchinoView
         Remote remote,
         Operations operations,
         Runner runner,
+        Finder finder,
         ArlecchinoState state,
         ArlecchinoOptions options,
         IServiceProvider services,
@@ -150,6 +154,7 @@ public sealed class CommanderView : IArlecchinoView
         _remote = remote;
         _operations = operations;
         _runner = runner;
+        _finder = finder;
         _state = state;
         _services = services;
         _lifetime = lifetime;
@@ -159,6 +164,7 @@ public sealed class CommanderView : IArlecchinoView
         _left = new(panels.Left, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
         _right = new(panels.Right, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
         _seen = operations.Revision.Value;
+        _moved = panels.Revision.Value;
 
         _layout = Branch(
             Rows,
@@ -182,6 +188,14 @@ public sealed class CommanderView : IArlecchinoView
             _seen = _operations.Revision.Value;
 
             Active().State.Marks.Clear();
+            _left.Reload();
+            _right.Reload();
+        }
+
+        if (_moved != _panels.Revision.Value)
+        {
+            _moved = _panels.Revision.Value;
+
             _left.Reload();
             _right.Reload();
         }
@@ -237,7 +251,17 @@ public sealed class CommanderView : IArlecchinoView
 
     public IReadOnlyList<ViewCommand> Commands() =>
     [
-        ViewCommand.For(ConsoleKey.F2, static () => "drive", ChooseDrive),
+        ViewCommand.For(ConsoleKey.F2, static () => "user menu", OpenUserMenu),
+        ViewCommand.For(new KeyBinding(ConsoleKey.F1, ConsoleModifiers.Alt), static () => "drive on the left",
+            () => ChooseDrive(_left)),
+        ViewCommand.For(new KeyBinding(ConsoleKey.F2, ConsoleModifiers.Alt), static () => "drive on the right",
+            () => ChooseDrive(_right)),
+        new()
+        {
+            Binding = new(ConsoleKey.F7, ConsoleModifiers.Alt),
+            Label = static () => "find file",
+            Run = Find,
+        },
         ViewCommand.Navigating(ConsoleKey.F3, static () => "view", View),
         ViewCommand.For(ConsoleKey.F4, static () => "filter", Filter),
         ViewCommand.For(ConsoleKey.F5, static () => "copy", Copy),
@@ -596,7 +620,100 @@ public sealed class CommanderView : IArlecchinoView
         return ViewRoute.None;
     }
 
-    private void ChooseDrive() => ChooseDrive(Active());
+    /// <summary>
+    /// The menu kept in a file, the way Midnight Commander keeps one. The first time it is opened
+    /// there is no file, so one is written with a few entries in it to be edited into whatever the
+    /// work at hand needs.
+    /// </summary>
+    private void OpenUserMenu()
+    {
+        var entries = UserMenu.Read();
+
+        if (entries.Count == 0)
+        {
+            _state.Output = UserMenu.WriteStarter()
+                ? $"Wrote a menu to start from in {UserMenu.Location}"
+                : $"No menu in {UserMenu.Location}";
+
+            return;
+        }
+
+        var titles = new List<string>(entries.Count);
+
+        foreach (var entry in entries)
+        {
+            titles.Add(entry.Title);
+        }
+
+        _state.RequestChoice("Menu", titles, chosen =>
+        {
+            foreach (var entry in entries)
+            {
+                if (entry.Title != chosen)
+                {
+                    continue;
+                }
+
+                RunEntry(entry);
+
+                return;
+            }
+        });
+    }
+
+    /// <summary>
+    /// Runs the commands of a menu entry, one after the other, with what the panels are pointing at
+    /// put in. They are joined rather than run one at a time so that a failure stops the rest.
+    /// </summary>
+    /// <param name="entry">The entry that was chosen.</param>
+    private void RunEntry(MenuEntry entry)
+    {
+        var panel = Active();
+        var other = Passive();
+        var marked = new StringBuilder();
+
+        foreach (var target in panel.Targets())
+        {
+            marked.Append(marked.Length == 0 ? "" : " ").Append(UserMenu.Quoted(target.Name));
+        }
+
+        var whole = new StringBuilder();
+
+        foreach (var command in entry.Commands)
+        {
+            whole
+                .Append(whole.Length == 0 ? "" : " && ")
+                .Append(UserMenu.Fill(
+                    command,
+                    panel.Current?.Name ?? "",
+                    marked.ToString(),
+                    panel.Folder,
+                    other.Folder,
+                    other.Current?.Name ?? ""));
+        }
+
+        _runner.Run(whole.ToString(), panel.Folder, panel.Source, panel.Reload);
+    }
+
+    /// <summary>
+    /// Asks what to look for and starts the walk, which runs on its own while the results screen
+    /// fills up.
+    /// </summary>
+    /// <returns>The results screen, or nowhere when nothing was asked for.</returns>
+    private ViewRoute Find()
+    {
+        var panel = Active();
+
+        _state.RequestText("Find files matching", "*", Filled, pattern =>
+            _state.RequestText("Holding the text", "", null, content =>
+            {
+                _finder.Start(panel.Source, panel.Folder, pattern.Trim(), content.Trim(), () => { });
+
+                Navigation.Apply(ViewKind.Find);
+            }));
+
+        return ViewRoute.None;
+    }
 
     private void ChooseDrive(FilePanel panel) =>
         _state.RequestChoice("Drive", Listing.Drives(), panel.GoTo, panel.Folder);
@@ -665,6 +782,9 @@ public sealed class CommanderView : IArlecchinoView
     {
         switch (item)
         {
+            case "Find file":
+                Navigation.Apply(Find());
+                break;
             case "Sort by name":
                 panel.SortBy(Sorting.Name);
                 break;

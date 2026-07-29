@@ -24,6 +24,14 @@ public sealed class Panels : IArlecchinoStore, IDisposable
     /// <summary>Folders kept by hand for jumping straight back to them.</summary>
     public List<string> Hotlist { get; } = [];
 
+    /// <summary>
+    /// Counts the times a panel was sent somewhere by a screen other than the panels themselves, so
+    /// that screen can put the cursor where it likes and the panels catch up when they are next drawn.
+    /// </summary>
+    public Atom<int> Revision { get; } = new LocalAtom<int>(0);
+
+    public void Moved() => Revision.Value++;
+
     public void Dispose()
     {
         Left.Source.Dispose();

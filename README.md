@@ -44,6 +44,13 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
   middle and the bottom, `Ctrl+PgUp` and `Ctrl+PgDn` leave and enter a folder, `Alt+H` lists the
   folders the panel has been in with `Alt+Y` and `Alt+U` stepping through them, `Ctrl+B` keeps a
   hotlist, `Alt+I` sends the other panel here and `Alt+O` sends it into the folder under the cursor.
+- **Find file.** `Alt+F7` walks down from the panel — over SFTP as readily as over a disk — matching
+  names against a shell pattern and, when asked for one, the text inside the files. Results fill in
+  while the walk runs, `F3` stops it, and `Enter` sends the panel to the file it found.
+- **A user menu on `F2`.** Kept in `~/.config/arlecchino-commander/menu` in the shape Midnight
+  Commander keeps one: a title in the first column, the commands under it indented, and `%f` `%t`
+  `%d` `%F` `%D` standing in for the file, the marked files, this folder and the other panel's. The
+  first `F2` writes a menu to start from.
 - **The operations behind `Ctrl+X`.** `Ctrl+X C` sets permissions — through SFTP's own request, FTP's
   `SITE CHMOD`, or the file mode on a Unix disk — `Ctrl+X O` hands a `chown` to the shell where the
   panel is looking, `Ctrl+X S` and `Ctrl+X L` make a symbolic or a hard link into the other panel,
