@@ -1,0 +1,122 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  # One native binary per platform, compiled ahead of time. Nothing is cross-published between
+  # operating systems here: a native build needs the linker of the system it is built for, so each
+  # one gets a runner of its own. The two macOS builds share a runner because Xcode holds both
+  # architectures, and only the ones that match their runner are run afterwards to prove they start.
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64, archive: zip, runs: true }
+          - { os: windows-11-arm, rid: win-arm64, archive: zip, runs: true }
+          - { os: ubuntu-latest, rid: linux-x64, archive: tar, runs: true }
+          - { os: ubuntu-24.04-arm, rid: linux-arm64, archive: tar, runs: true }
+          - { os: macos-latest, rid: osx-arm64, archive: tar, runs: true }
+          - { os: macos-latest, rid: osx-x64, archive: tar, runs: false }
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Read version from the tag
+        id: version
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" != "tag" ]; then
+            echo "::error::A release is a tag. Run this against a v* tag, not $GITHUB_REF_NAME." >&2
+            exit 1
+          fi
+
+          echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        shell: bash
+        run: >
+          dotnet publish src/Arlecchino.Commander/Arlecchino.Commander.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --output out
+          -p:PublishAot=true
+          -p:Version=${{ steps.version.outputs.value }}
+
+      - name: Run the frame it draws
+        if: matrix.runs
+        shell: bash
+        run: |
+          binary=out/Arlecchino.Commander
+          [ -f "$binary.exe" ] && binary="$binary.exe"
+
+          "$binary" --frame 120x30 --left . --right src
+
+      - name: Archive
+        id: archive
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          mkdir -p dist
+          name="arlecchino-commander-$VERSION-${{ matrix.rid }}"
+
+          rm -f out/*.pdb out/*.xml out/*.dwarf
+          rm -rf out/*.dSYM
+
+          if [ "${{ matrix.archive }}" = "zip" ]; then
+            7z a -tzip "dist/$name.zip" ./out/* > /dev/null
+          else
+            chmod +x out/Arlecchino.Commander
+            tar -C out -czf "dist/$name.tar.gz" .
+          fi
+
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.archive.outputs.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Release on GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+
+          case "$version" in
+            *-*) prerelease=--prerelease ;;
+            *) prerelease= ;;
+          esac
+
+          ls -la dist
+
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$version" \
+            --generate-notes \
+            $prerelease \
+            dist/*

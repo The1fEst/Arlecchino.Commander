@@ -25,3 +25,12 @@ jobs:
         run: >
           dotnet run --project src/Arlecchino.Commander --configuration Release --no-build
           -- --frame 120x30 --left . --right src
+
+      # The releases are compiled ahead of time, where anything reflection would only find at runtime
+      # is gone. Building one here, and running it, is what keeps that from being found out on a tag.
+      - name: Compile it ahead of time and run that
+        run: |
+          dotnet publish src/Arlecchino.Commander/Arlecchino.Commander.csproj \
+            --configuration Release --runtime linux-x64 --output aot -p:PublishAot=true
+
+          ./aot/Arlecchino.Commander --frame 120x30 --left . --right src

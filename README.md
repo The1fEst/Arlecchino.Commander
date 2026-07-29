@@ -33,6 +33,12 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
 
 </details>
 
+## Getting it
+
+Every tag builds a native binary for Windows, macOS and Linux on both architectures, compiled ahead
+of time — one file, nothing to install, no .NET on the machine required. They are on the
+[releases page](https://github.com/The1fEst/Arlecchino.Commander/releases).
+
 ## What it does
 
 - **Two panels.** `Tab` switches, `Enter` opens, `Backspace` goes up, `Space` marks, and the columns
