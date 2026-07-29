@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Atoms;
 using Arlecchino.Commander.Files;
 
 namespace Arlecchino.Commander.Model;
@@ -25,7 +26,12 @@ public sealed class PanelState
 
     public string Filter { get; set; } = "";
 
-    public HashSet<string> Marks { get; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// What is marked in this panel, by name. A set atom rather than a <c>HashSet</c>, so marking
+    /// marks the frame stale by itself and a mark made from anywhere but the drawing thread is
+    /// caught rather than tolerated.
+    /// </summary>
+    public LocalAtomsSet<string> Marks { get; } = new(comparer: StringComparer.OrdinalIgnoreCase);
 
     public bool ShowHidden { get; set; }
 

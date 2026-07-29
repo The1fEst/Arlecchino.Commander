@@ -214,7 +214,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
                 continue;
             }
 
-            if (!_state.Marks.Add(entry.Name))
+            if (!_state.Marks.TryAdd(entry.Name))
             {
                 _state.Marks.Remove(entry.Name);
             }
@@ -498,7 +498,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             return;
         }
 
-        if (!_state.Marks.Add(current.Name))
+        if (!_state.Marks.TryAdd(current.Name))
         {
             _state.Marks.Remove(current.Name);
         }
