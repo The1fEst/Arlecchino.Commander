@@ -27,8 +27,10 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     private readonly List<FileEntry> _entries = [];
 
     private string _error = "";
+    private string _typed = "";
     private int _width = TitleGuess;
     private bool _loading;
+    private bool _searching;
 
     public FilePanel(PanelState state, ArlecchinoKeymap keymap)
     {
@@ -62,6 +64,12 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     }
 
     public Func<FileEntry, ViewRoute>? OnOpenFile { get; init; }
+
+    /// <summary>
+    /// Asked for a shell pattern when <c>+</c> or <c>-</c> is typed. The panel cannot open a box of
+    /// its own, so the screen holding it does the asking and calls <see cref="MarkGroup"/> back.
+    /// </summary>
+    public Action<bool>? OnGroup { get; init; }
 
     public PanelState State => _state;
 
@@ -122,6 +130,82 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         Reload();
     }
 
+    /// <summary>Goes back to the folder this panel was in before this one.</summary>
+    /// <returns><c>false</c> when there is nothing behind it, or what is behind it is gone.</returns>
+    public bool Back() => Stepped(_state.Back());
+
+    /// <summary>Goes forward again after <see cref="Back"/>.</summary>
+    /// <returns><c>false</c> when it is already at the newest folder, or that folder is gone.</returns>
+    public bool Forward() => Stepped(_state.Forward());
+
+    /// <summary>Opens the folder under the cursor, the way Ctrl+PageDown does in Midnight Commander.</summary>
+    public void Descend()
+    {
+        if (Current is { IsFolder: true } current)
+        {
+            Activate(current);
+        }
+    }
+
+    /// <summary>Leaves for the folder above, the way Ctrl+PageUp does.</summary>
+    public void Ascend() => Up();
+
+    public void Top() => _table.Selected = 0;
+
+    public void Middle() => _table.Selected = _entries.Count / 2;
+
+    public void Bottom() => _table.Selected = Math.Max(0, _entries.Count - 1);
+
+    /// <summary>
+    /// Starts the search that runs while you type, which moves the cursor to the first name that
+    /// begins with what has been typed so far. Escape, Enter or any other key ends it.
+    /// </summary>
+    public void Search()
+    {
+        _searching = true;
+        _typed = "";
+    }
+
+    /// <summary>Marks, or unmarks, every file whose name fits a shell pattern.</summary>
+    /// <param name="pattern">The pattern, as <c>*.cs</c> or <c>a*,b*</c>.</param>
+    /// <param name="marking"><c>true</c> to mark what fits, <c>false</c> to unmark it.</param>
+    public void MarkGroup(string pattern, bool marking)
+    {
+        foreach (var entry in _entries)
+        {
+            if (entry.IsParent || entry.IsFolder || !Glob.Matches(entry.Name, pattern))
+            {
+                continue;
+            }
+
+            if (marking)
+            {
+                _state.Marks.Add(entry.Name);
+            }
+            else
+            {
+                _state.Marks.Remove(entry.Name);
+            }
+        }
+    }
+
+    /// <summary>Marks what is not marked and unmarks what is.</summary>
+    public void Invert()
+    {
+        foreach (var entry in _entries)
+        {
+            if (entry.IsParent || entry.IsFolder)
+            {
+                continue;
+            }
+
+            if (!_state.Marks.Add(entry.Name))
+            {
+                _state.Marks.Remove(entry.Name);
+            }
+        }
+    }
+
     public void Connect(IFileSource source, string folder)
     {
         _state.Connect(source, folder);
@@ -159,6 +243,88 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         _state.Sorting = sorting;
 
         Sort();
+    }
+
+    /// <summary>
+    /// Reads one key while the search is running. Anything that is not a letter to add or a rub-out
+    /// ends the search and is left for the panel itself, so a cursor key still moves the cursor.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns><c>true</c> when the search took it.</returns>
+    private bool Typing(ConsoleKeyInfo key)
+    {
+        if (key.Key is ConsoleKey.Backspace && _typed.Length > 0)
+        {
+            _typed = _typed[..^1];
+            Nearest();
+
+            return true;
+        }
+
+        if (key.Modifiers.HasFlag(ConsoleModifiers.Control) || key.Modifiers.HasFlag(ConsoleModifiers.Alt) ||
+            char.IsControl(key.KeyChar) || key.KeyChar == '\0')
+        {
+            _searching = false;
+
+            return key.Key is ConsoleKey.Escape or ConsoleKey.Enter;
+        }
+
+        _typed += key.KeyChar;
+        Nearest();
+
+        return true;
+    }
+
+    /// <summary>
+    /// The three keys Midnight Commander gives to marking by pattern. They are read as characters
+    /// rather than bound, because terminals disagree about which key a <c>+</c> came from.
+    /// </summary>
+    /// <param name="typed">The character that arrived.</param>
+    /// <returns><c>true</c> when it was one of them.</returns>
+    private bool Grouping(char typed)
+    {
+        switch (typed)
+        {
+            case '+':
+                OnGroup?.Invoke(true);
+                return true;
+            case '-':
+                OnGroup?.Invoke(false);
+                return true;
+            case '*':
+                Invert();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>Moves the cursor to the first name the typed letters begin, keeping it where it is otherwise.</summary>
+    private void Nearest()
+    {
+        for (var index = 0; index < _entries.Count; index++)
+        {
+            if (!_entries[index].Name.StartsWith(_typed, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            _table.Selected = index;
+
+            return;
+        }
+    }
+
+    private bool Stepped(string? folder)
+    {
+        if (folder is null)
+        {
+            return false;
+        }
+
+        Reload();
+
+        return true;
     }
 
     private void Point(string name)
@@ -205,16 +371,34 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         var (rows, footer) = region.SplitTop(region.Height - 1);
 
         _table.Draw(rows);
-        footer.WriteLine(0, _loading ? "loading…" : Summary(), Theme.Muted);
+
+        if (_searching)
+        {
+            footer.WriteLine(0, $"search: {_typed}", Theme.Accent);
+        }
+        else
+        {
+            footer.WriteLine(0, _loading ? "loading…" : Summary(), Theme.Muted);
+        }
 
         return region.Rows(region.Height, 0);
     }
 
     public FocusResult Handle(ConsoleKeyInfo key)
     {
+        if (_searching && Typing(key))
+        {
+            return FocusResult.Handled;
+        }
+
         if (_keymap.Mark.Matches(key) || key.Key == ConsoleKey.Insert)
         {
             Mark();
+            return FocusResult.Handled;
+        }
+
+        if (key.Modifiers == 0 && Grouping(key.KeyChar))
+        {
             return FocusResult.Handled;
         }
 

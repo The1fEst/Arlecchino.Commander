@@ -39,6 +39,11 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
   sort by name, size or date. The panel that has the focus is the one the operations work from.
 - **The function keys.** `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename, `F7` make
   folder, `F8` delete, `F9` menu, `F10` quit — and `F1` opens the framework's own key screen.
+- **Getting around the way Midnight Commander does.** `Ctrl+S` searches as you type, `+` and `-` mark
+  and unmark by shell pattern, `*` inverts the marks, `Alt+G` `Alt+R` `Alt+J` jump to the top, the
+  middle and the bottom, `Ctrl+PgUp` and `Ctrl+PgDn` leave and enter a folder, `Alt+H` lists the
+  folders the panel has been in with `Alt+Y` and `Alt+U` stepping through them, `Ctrl+B` keeps a
+  hotlist, `Alt+I` sends the other panel here and `Alt+O` sends it into the folder under the cursor.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
 - **Hosts from `~/.ssh/config`.** `Ctrl+K` lists the `Host` entries and opens one, reusing its

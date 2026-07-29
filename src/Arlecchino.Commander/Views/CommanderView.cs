@@ -27,6 +27,8 @@ public sealed class CommanderView : IArlecchinoView
     private const int SpinnerCells = 2;
     private const string Hints = "Tab panel   Enter open   Space mark   Backspace up";
     private const string StopsHint = "Esc stops";
+    private const string AddHot = "Add this folder";
+    private const string DropHot = "Forget a folder";
 
     private static readonly (string Key, string Label)[] FunctionKeys =
     [
@@ -69,6 +71,11 @@ public sealed class CommanderView : IArlecchinoView
     [
         "Swap panels",
         "Both panels here",
+        "Folders been in",
+        "Hotlist",
+        "Mark a group",
+        "Unmark a group",
+        "Invert the marks",
         "Filter",
         "Run a command over SSH",
         "Reload both panels",
@@ -129,8 +136,8 @@ public sealed class CommanderView : IArlecchinoView
         _services = services;
         _lifetime = lifetime;
 
-        _left = new(panels.Left, options.Keymap) { OnOpenFile = Open };
-        _right = new(panels.Right, options.Keymap) { OnOpenFile = Open };
+        _left = new(panels.Left, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
+        _right = new(panels.Right, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
         _seen = operations.Revision.Value;
 
         _layout = Branch(
@@ -194,7 +201,28 @@ public sealed class CommanderView : IArlecchinoView
         ViewCommand.For(new KeyBinding(ConsoleKey.R, ConsoleModifiers.Control), static () => "reload", Reload),
         ViewCommand.For(new KeyBinding(ConsoleKey.H, ConsoleModifiers.Control), static () => "hidden files",
             ToggleHidden),
-        ViewCommand.For(new KeyBinding(ConsoleKey.O, ConsoleModifiers.Control), static () => "swap panels", Swap),
+        ViewCommand.For(new KeyBinding(ConsoleKey.U, ConsoleModifiers.Control), static () => "swap panels", Swap),
+        ViewCommand.For(new KeyBinding(ConsoleKey.S, ConsoleModifiers.Control, ConsoleKey.S, ConsoleModifiers.Alt),
+            static () => "search as you type", () => Active().Search()),
+        ViewCommand.For(new KeyBinding(ConsoleKey.PageUp, ConsoleModifiers.Control), static () => "folder above",
+            () => Active().Ascend()),
+        ViewCommand.For(new KeyBinding(ConsoleKey.PageDown, ConsoleModifiers.Control), static () => "open folder",
+            () => Active().Descend()),
+        ViewCommand.For(new KeyBinding(ConsoleKey.G, ConsoleModifiers.Alt), static () => "top", () => Active().Top()),
+        ViewCommand.For(new KeyBinding(ConsoleKey.R, ConsoleModifiers.Alt), static () => "middle",
+            () => Active().Middle()),
+        ViewCommand.For(new KeyBinding(ConsoleKey.J, ConsoleModifiers.Alt), static () => "bottom",
+            () => Active().Bottom()),
+        ViewCommand.For(new KeyBinding(ConsoleKey.H, ConsoleModifiers.Alt), static () => "folders been in",
+            () => OpenHistory(Active())),
+        ViewCommand.For(new KeyBinding(ConsoleKey.Y, ConsoleModifiers.Alt), static () => "back", Back),
+        ViewCommand.For(new KeyBinding(ConsoleKey.U, ConsoleModifiers.Alt), static () => "forward", Forward),
+        ViewCommand.For(new KeyBinding(ConsoleKey.Oem5, ConsoleModifiers.Control, ConsoleKey.B,
+            ConsoleModifiers.Control), static () => "hotlist", OpenHotlist),
+        ViewCommand.For(new KeyBinding(ConsoleKey.I, ConsoleModifiers.Alt), static () => "both panels here",
+            () => Passive().GoTo(Active().Folder)),
+        ViewCommand.For(new KeyBinding(ConsoleKey.O, ConsoleModifiers.Alt), static () => "other panel into folder",
+            Beside),
         ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Control), static () => "open a saved host",
             () => OpenSaved(Active())),
         ViewCommand.For(ConsoleKey.F10, static () => "quit", _lifetime.StopApplication),
@@ -482,6 +510,21 @@ public sealed class CommanderView : IArlecchinoView
             case "Both panels here":
                 Passive().GoTo(Active().Folder);
                 break;
+            case "Folders been in":
+                OpenHistory(Active());
+                break;
+            case "Hotlist":
+                OpenHotlist();
+                break;
+            case "Mark a group":
+                Group(marking: true);
+                break;
+            case "Unmark a group":
+                Group(marking: false);
+                break;
+            case "Invert the marks":
+                Active().Invert();
+                break;
             case "Filter":
                 Filter(Active());
                 break;
@@ -611,6 +654,127 @@ public sealed class CommanderView : IArlecchinoView
 
         _left.GoTo(_right.Folder);
         _right.GoTo(here);
+    }
+
+    private void Group(bool marking)
+    {
+        var panel = Active();
+
+        _state.RequestText(marking ? "Mark files matching" : "Unmark files matching", "*", Filled, pattern =>
+        {
+            panel.MarkGroup(pattern.Trim(), marking);
+
+            _state.Output = $"{panel.State.Marks.Count} marked";
+        });
+    }
+
+    private void Back()
+    {
+        if (!Active().Back())
+        {
+            _state.Output = "Nothing behind this folder";
+        }
+    }
+
+    private void Forward()
+    {
+        if (!Active().Forward())
+        {
+            _state.Output = "This is the newest folder";
+        }
+    }
+
+    /// <summary>The other panel shows the folder under the cursor, or this one when a file is under it.</summary>
+    private void Beside()
+    {
+        var panel = Active();
+        var wanted = panel.Current is { IsFolder: true, IsParent: false } current ? current.Path : panel.Folder;
+
+        Passive().GoTo(wanted);
+    }
+
+    private void OpenHistory(FilePanel panel)
+    {
+        var been = panel.State.Visited;
+        var listed = new List<string>(been.Count);
+
+        for (var index = been.Count - 1; index >= 0; index--)
+        {
+            if (!Has(listed, been[index]))
+            {
+                listed.Add(been[index]);
+            }
+        }
+
+        if (listed.Count < 2)
+        {
+            _state.Output = "This panel has not been anywhere else";
+            return;
+        }
+
+        _state.RequestChoice("Folders been in", listed, panel.GoTo, panel.Folder);
+    }
+
+    /// <summary>
+    /// The kept folders, with the two entries that keep the list itself: adding where the panel is
+    /// now, and dropping one that has served its purpose.
+    /// </summary>
+    private void OpenHotlist()
+    {
+        var panel = Active();
+        var listed = new List<string>(_panels.Hotlist) { AddHot };
+
+        if (_panels.Hotlist.Count > 0)
+        {
+            listed.Add(DropHot);
+        }
+
+        _state.RequestChoice("Hotlist", listed, chosen =>
+        {
+            switch (chosen)
+            {
+                case AddHot:
+                    Remember(panel.Folder);
+                    break;
+                case DropHot:
+                    _state.RequestChoice("Forget", new List<string>(_panels.Hotlist), Forget);
+                    break;
+                default:
+                    panel.GoTo(chosen);
+                    break;
+            }
+        });
+    }
+
+    private void Remember(string folder)
+    {
+        if (Has(_panels.Hotlist, folder))
+        {
+            _state.Output = "Already on the hotlist";
+            return;
+        }
+
+        _panels.Hotlist.Add(folder);
+        _state.Output = $"{folder} is on the hotlist";
+    }
+
+    private static bool Has(IReadOnlyList<string> folders, string folder)
+    {
+        foreach (var kept in folders)
+        {
+            if (string.Equals(kept, folder, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void Forget(string folder)
+    {
+        _panels.Hotlist.Remove(folder);
+        _state.Output = $"{folder} is off the hotlist";
     }
 
     private void Reload()

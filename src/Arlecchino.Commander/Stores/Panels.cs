@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Arlecchino.Atoms;
 using Arlecchino.Commander.Files;
@@ -19,6 +20,9 @@ public sealed class Panels : IArlecchinoStore, IDisposable
     public IFileSource ViewingSource { get; set; } = new LocalSource();
 
     public long ViewingSize { get; set; }
+
+    /// <summary>Folders kept by hand for jumping straight back to them.</summary>
+    public List<string> Hotlist { get; } = [];
 
     public void Dispose()
     {
