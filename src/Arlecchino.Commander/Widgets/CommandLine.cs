@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Input;
 using Arlecchino.Rendering;
 
 namespace Arlecchino.Commander.Widgets;
@@ -13,16 +14,24 @@ namespace Arlecchino.Commander.Widgets;
 public sealed class CommandLine
 {
     private readonly List<string> _history;
+    private readonly KeyText _keys;
 
     private string _text = "";
     private int _cursor;
     private int _place;
 
-    public CommandLine(List<string> history)
+    /// <summary>Creates the line.</summary>
+    /// <param name="history">Commands run before, shared with whatever else remembers them.</param>
+    /// <param name="keys">
+    /// Turns a key press into the character it types. Asking this rather than reading the key's own
+    /// character is what lets a command be typed with a Cyrillic layout left switched on.
+    /// </param>
+    public CommandLine(List<string> history, KeyText keys)
     {
         ArgumentNullException.ThrowIfNull(history);
 
         _history = history;
+        _keys = keys;
         _place = history.Count;
     }
 
@@ -155,7 +164,7 @@ public sealed class CommandLine
             case ConsoleKey.Spacebar when !IsEmpty:
                 return Typed(' ');
             default:
-                return Typed(key.KeyChar);
+                return _keys.Resolve(key) is { } typed && Typed(typed);
         }
     }
 
@@ -167,7 +176,7 @@ public sealed class CommandLine
     /// <returns><c>true</c> when it went into the line.</returns>
     private bool Typed(char typed)
     {
-        if (typed == '\0' || char.IsControl(typed))
+        if (char.IsControl(typed))
         {
             return false;
         }

@@ -23,6 +23,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     private readonly PanelState _state;
     private readonly ArlecchinoKeymap _keymap;
+    private readonly KeyText _keys;
     private readonly Table<FileEntry> _table;
     private readonly List<FileEntry> _entries = [];
 
@@ -32,10 +33,18 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     private bool _loading;
     private bool _searching;
 
-    public FilePanel(PanelState state, ArlecchinoKeymap keymap)
+    /// <summary>Creates a panel over one side's state.</summary>
+    /// <param name="state">What that side is showing.</param>
+    /// <param name="keymap">Keys to obey.</param>
+    /// <param name="keys">
+    /// Turns a key press into the character it types, so the search that runs while you type and the
+    /// marking keys work with a Cyrillic layout switched on.
+    /// </param>
+    public FilePanel(PanelState state, ArlecchinoKeymap keymap, KeyText keys)
     {
         _state = state;
         _keymap = keymap;
+        _keys = keys;
 
         _table = new(keymap)
         {
@@ -268,14 +277,14 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         }
 
         if (key.Modifiers.HasFlag(ConsoleModifiers.Control) || key.Modifiers.HasFlag(ConsoleModifiers.Alt) ||
-            char.IsControl(key.KeyChar) || key.KeyChar == '\0')
+            _keys.Resolve(key) is not { } typed || char.IsControl(typed))
         {
             _searching = false;
 
             return key.Key is ConsoleKey.Escape or ConsoleKey.Enter;
         }
 
-        _typed += key.KeyChar;
+        _typed += typed;
         Nearest();
 
         return true;
@@ -403,7 +412,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             return FocusResult.Handled;
         }
 
-        if (key.Modifiers == 0 && Grouping(key.KeyChar))
+        if (key.Modifiers == 0 && _keys.Resolve(key) is { } marking && Grouping(marking))
         {
             return FocusResult.Handled;
         }

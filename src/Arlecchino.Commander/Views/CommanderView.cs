@@ -158,11 +158,13 @@ public sealed class CommanderView : IArlecchinoView
         _state = state;
         _services = services;
         _lifetime = lifetime;
-        _line = new(runner.History);
         _keymap = options.Keymap;
 
-        _left = new(panels.Left, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
-        _right = new(panels.Right, options.Keymap) { OnOpenFile = Open, OnGroup = Group };
+        var keys = KeyText.For(options.TextInput);
+
+        _line = new(runner.History, keys);
+        _left = new(panels.Left, options.Keymap, keys) { OnOpenFile = Open, OnGroup = Group };
+        _right = new(panels.Right, options.Keymap, keys) { OnOpenFile = Open, OnGroup = Group };
         _seen = operations.Revision.Value;
         _moved = panels.Revision.Value;
 
