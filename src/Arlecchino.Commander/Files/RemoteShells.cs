@@ -79,7 +79,7 @@ public static class RemoteShells
     /// </summary>
     /// <param name="path">The path as SFTP spells it.</param>
     /// <returns>The same path with a drive letter and backslashes.</returns>
-    public static string Local(string path)
+    private static string Local(string path)
     {
         var trimmed = path.StartsWith('/') && path.Length > 2 && path[2] == ':' ? path[1..] : path;
 

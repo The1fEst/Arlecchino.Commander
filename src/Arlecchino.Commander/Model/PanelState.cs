@@ -14,7 +14,7 @@ public sealed class PanelState
 
     public IFileSource Source { get; private set; }
 
-    public string Folder { get; set; }
+    public string Folder { get; private set; }
 
     public string Cursor { get; set; } = "";
 

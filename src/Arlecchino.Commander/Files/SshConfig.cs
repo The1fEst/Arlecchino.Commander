@@ -39,7 +39,7 @@ public static class SshConfig
         }
     }
 
-    public static IReadOnlyList<SshHost> Read(IReadOnlyList<string> lines)
+    private static List<SshHost> Read(IReadOnlyList<string> lines)
     {
         var hosts = new List<Draft>();
         var defaults = new Draft(DefaultsPattern);

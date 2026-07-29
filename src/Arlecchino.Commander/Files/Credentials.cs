@@ -31,7 +31,7 @@ public static class Credentials
         return new(connection.Host, connection.Port, connection.User, [.. methods]);
     }
 
-    public static IReadOnlyList<string> KeyFiles(Connection connection)
+    private static List<string> KeyFiles(Connection connection)
     {
         if (connection.KeyFile.Length > 0)
         {

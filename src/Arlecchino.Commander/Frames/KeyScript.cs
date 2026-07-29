@@ -1,23 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 
 namespace Arlecchino.Commander.Frames;
 
 public static class KeyScript
 {
-    public static IReadOnlyList<ConsoleKeyInfo> Parse(string script)
-    {
-        var keys = new List<ConsoleKeyInfo>();
-
-        foreach (var piece in script.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            keys.Add(One(piece));
-        }
-
-        return keys;
-    }
-
     public static ConsoleKeyInfo One(string piece)
     {
         var modifiers = (ConsoleModifiers)0;

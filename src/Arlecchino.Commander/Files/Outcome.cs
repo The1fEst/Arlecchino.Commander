@@ -18,13 +18,13 @@ public sealed class Outcome
     private bool _measured;
     private bool _swept;
 
-    public int Files => Volatile.Read(ref _files);
+    private int Files => Volatile.Read(ref _files);
 
-    public int Folders => Volatile.Read(ref _folders);
+    private int Folders => Volatile.Read(ref _folders);
 
-    public long Bytes => Interlocked.Read(ref _bytes);
+    private long Bytes => Interlocked.Read(ref _bytes);
 
-    public string Current => Volatile.Read(ref _current);
+    private string Current => Volatile.Read(ref _current);
 
     public IReadOnlyList<string> Errors
     {
@@ -52,7 +52,7 @@ public sealed class Outcome
     public bool IsMeasured => Volatile.Read(ref _measured);
 
     /// <summary>What there is to do in total, counted before the work started.</summary>
-    public Tally Planned
+    private Tally Planned
     {
         get
         {

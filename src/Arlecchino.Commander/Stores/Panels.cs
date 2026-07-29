@@ -8,15 +8,9 @@ namespace Arlecchino.Commander.Stores;
 
 public sealed class Panels : IArlecchinoStore, IDisposable
 {
-    public Panels()
-    {
-        Left = new(new LocalSource(), Directory.GetCurrentDirectory());
-        Right = new(new LocalSource(), Listing.Home());
-    }
+    public PanelState Left { get; } = new(new LocalSource(), Directory.GetCurrentDirectory());
 
-    public PanelState Left { get; }
-
-    public PanelState Right { get; }
+    public PanelState Right { get; } = new(new LocalSource(), Listing.Home());
 
     public Atom<bool> RightIsActive { get; } = new LocalAtom<bool>(false);
 

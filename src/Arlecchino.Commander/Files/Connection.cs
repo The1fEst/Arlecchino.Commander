@@ -15,9 +15,7 @@ public sealed record Connection(
     string Path,
     string KeyFile = "")
 {
-    public static Connection Empty { get; } = new(Protocol.Sftp, "", 22, "", "", "/");
-
-    public string Scheme => Protocol == Protocol.Sftp ? "sftp" : "ftp";
+    private string Scheme => Protocol == Protocol.Sftp ? "sftp" : "ftp";
 
     public string Label => $"{Scheme} {User}@{Host}";
 

@@ -61,7 +61,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         Reload();
     }
 
-    public Func<FileEntry, ViewRoute>? OnOpenFile { get; set; }
+    public Func<FileEntry, ViewRoute>? OnOpenFile { get; init; }
 
     public PanelState State => _state;
 
@@ -70,8 +70,6 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     public string Folder => _state.Folder;
 
     public FileEntry? Current => _table.SelectedRow;
-
-    public bool IsLoading => _loading;
 
     public string Title
     {
@@ -163,7 +161,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         Sort();
     }
 
-    public void Point(string name)
+    private void Point(string name)
     {
         for (var index = 0; index < _entries.Count; index++)
         {
