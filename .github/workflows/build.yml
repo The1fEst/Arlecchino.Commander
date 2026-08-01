@@ -21,6 +21,9 @@ jobs:
       - name: Build
         run: dotnet build Arlecchino.Commander.slnx --configuration Release
 
+      - name: Run the tests
+        run: dotnet test Arlecchino.Commander.slnx --configuration Release --no-build
+
       - name: Render a frame
         run: >
           dotnet run --project src/Arlecchino.Commander --configuration Release --no-build
