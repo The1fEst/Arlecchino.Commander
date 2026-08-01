@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Files;
@@ -148,11 +147,8 @@ public sealed class LocalSource : IFileSource
 
     private static bool Linked(string path, string target)
     {
-        var command = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? $"mklink /h \"{path}\" \"{target}\""
-            : $"ln \"{target}\" \"{path}\"";
-
-        if (Shells.Start(command, Path.GetDirectoryName(path) ?? ".") is not { } started)
+        if (Shells.Local.Link(path, target) is not { } command ||
+            Shells.Start(command, Path.GetDirectoryName(path) ?? ".") is not { } started)
         {
             return false;
         }

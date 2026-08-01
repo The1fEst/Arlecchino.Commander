@@ -12,18 +12,20 @@ namespace Arlecchino.Commander.Files;
 /// hands back what it said. Nothing is interactive here: a command that asks a question gets no
 /// answer, so it is sent with its input closed and whatever it printed is collected.
 ///
-/// Windows takes the command as one raw string behind <c>/s /c</c>, which is the only spelling
-/// <c>cmd.exe</c> reads back unchanged; handed the same command as an escaped argument it eats a
-/// quote and leaves a path in half.
+/// Which shell that is, and how a command line reaches it unchanged, belongs to <see cref="Shell"/> —
+/// the same dialects that answer over SSH.
 /// </summary>
 public static class Shells
 {
+    /// <summary>The shell of the machine this is running on.</summary>
+    public static Shell Local { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+        ? WindowsCommandShell.Instance
+        : PosixShell.Instance;
+
     public static Process? Start(string command, string folder)
     {
-        var windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         var started = new ProcessStartInfo
         {
-            FileName = windows ? "cmd.exe" : Interpreter(),
             WorkingDirectory = Directory.Exists(folder) ? folder : Environment.CurrentDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -32,15 +34,7 @@ public static class Shells
             CreateNoWindow = true,
         };
 
-        if (windows)
-        {
-            started.Arguments = $"/s /c \"{command}\"";
-        }
-        else
-        {
-            started.ArgumentList.Add("-c");
-            started.ArgumentList.Add(command);
-        }
+        Local.Hand(started, command);
 
         try
         {
@@ -75,7 +69,4 @@ public static class Shells
     public static string[] Split(string text) => text.Length == 0
         ? []
         : text.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
-
-    private static string Interpreter() =>
-        Environment.GetEnvironmentVariable("SHELL") is { Length: > 0 } shell ? shell : "/bin/sh";
 }

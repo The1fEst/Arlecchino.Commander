@@ -17,9 +17,9 @@ public sealed class SftpSource : IFileSource
     private readonly Connection _connection;
     private readonly Lock _shellGate = new();
 
-    private SshClient? _shell;
+    private SshClient? _session;
     private bool _shellRefused;
-    private RemoteShellKind _kind = RemoteShellKind.Unknown;
+    private Shell? _dialect;
 
     private SftpSource(Connection connection, SftpPool pool)
     {
@@ -124,7 +124,8 @@ public sealed class SftpSource : IFileSource
     {
         if (hard)
         {
-            return Run($"ln '{target}' '{path}'", RemotePaths.Parent(path) ?? RemotePaths.Root) is { Status: 0 };
+            return Linking(path, target) is { } command &&
+                Run(command, RemotePaths.Parent(path) ?? RemotePaths.Root) is { Status: 0 };
         }
 
         using var lease = _pool.Take();
@@ -233,7 +234,7 @@ public sealed class SftpSource : IFileSource
     }
 
     /// <summary>
-    /// Removes the tree with one <c>rm -rf</c> over SSH rather than a request per file. A server on
+    /// Removes the tree with one command over SSH rather than a request per file. A server on
     /// the other side of the world answers a delete in a fraction of a second, which a thousand times
     /// over is a coffee break; the same tree goes in one round trip this way.
     /// </summary>
@@ -248,7 +249,7 @@ public sealed class SftpSource : IFileSource
 
         lock (_shellGate)
         {
-            if (Shell() is not { } shell || RemoteShells.Sweep(Kind(shell), entry.Path) is not { } command)
+            if (Session() is not { } shell || Dialect(shell).Sweep(entry.Path) is not { } command)
             {
                 return false;
             }
@@ -269,6 +270,21 @@ public sealed class SftpSource : IFileSource
     }
 
     /// <summary>
+    /// Asks whatever is answering how it spells a hard link. It is worked out before
+    /// <see cref="Run"/> is called rather than inside it, so the two never hold the gate at once.
+    /// </summary>
+    /// <param name="path">Where the link goes.</param>
+    /// <param name="target">What it points at.</param>
+    /// <returns>The command, or <c>null</c> when there is no shell or it cannot make one.</returns>
+    private string? Linking(string path, string target)
+    {
+        lock (_shellGate)
+        {
+            return Session() is { } shell ? Dialect(shell).Link(path, target) : null;
+        }
+    }
+
+    /// <summary>
     /// Runs a command on the server over the session already open, in the folder the panel is showing.
     /// </summary>
     /// <param name="command">What was typed.</param>
@@ -278,14 +294,14 @@ public sealed class SftpSource : IFileSource
     {
         lock (_shellGate)
         {
-            if (Shell() is not { } shell)
+            if (Session() is not { } shell)
             {
                 return null;
             }
 
             try
             {
-                using var running = shell.RunCommand(RemoteShells.Within(Kind(shell), folder, command));
+                using var running = shell.RunCommand(Dialect(shell).Within(folder, command));
 
                 return (running.Result + running.Error, running.ExitStatus ?? -1);
             }
@@ -304,14 +320,14 @@ public sealed class SftpSource : IFileSource
     /// install, PowerShell on many others — and the three of them share no way of removing a folder.
     /// Asked once per connection and remembered.
     /// </summary>
-    private RemoteShellKind Kind(SshClient shell)
+    private Shell Dialect(SshClient shell)
     {
-        if (_kind != RemoteShellKind.Unknown)
+        if (_dialect is not null)
         {
-            return _kind;
+            return _dialect;
         }
 
-        _kind = RemoteShells.Ask(question =>
+        _dialect = Shell.Ask(question =>
         {
             try
             {
@@ -325,7 +341,7 @@ public sealed class SftpSource : IFileSource
             }
         });
 
-        return _kind;
+        return _dialect;
     }
 
     /// <summary>
@@ -333,29 +349,29 @@ public sealed class SftpSource : IFileSource
     /// saving when a hundred small folders are removed one after another.
     /// </summary>
     /// <returns>The session, or <c>null</c> when the server would not give one.</returns>
-    private SshClient? Shell()
+    private SshClient? Session()
     {
         if (_shellRefused)
         {
             return null;
         }
 
-        if (_shell is { IsConnected: true })
+        if (_session is { IsConnected: true })
         {
-            return _shell;
+            return _session;
         }
 
         try
         {
-            _shell?.Dispose();
-            _shell = new(Credentials.For(_connection));
-            _shell.Connect();
+            _session?.Dispose();
+            _session = new(Credentials.For(_connection));
+            _session.Connect();
 
-            return _shell;
+            return _session;
         }
         catch (Exception error) when (IsShellFailure(error))
         {
-            _shell = null;
+            _session = null;
             _shellRefused = true;
 
             return null;
@@ -378,8 +394,8 @@ public sealed class SftpSource : IFileSource
     {
         lock (_shellGate)
         {
-            _shell?.Dispose();
-            _shell = null;
+            _session?.Dispose();
+            _session = null;
         }
 
         _pool.Dispose();
