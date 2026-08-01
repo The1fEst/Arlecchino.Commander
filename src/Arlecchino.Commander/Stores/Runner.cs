@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
 using Arlecchino.Commander.Files;
@@ -20,7 +17,7 @@ public sealed class Runner : IArlecchinoStore
 
     private readonly ArlecchinoState _state;
 
-    private Process? _running;
+    private IShellRun? _running;
 
     public Runner(ArlecchinoState state) => _state = state;
 
@@ -63,7 +60,7 @@ public sealed class Runner : IArlecchinoStore
 
         Task.Run(() =>
         {
-            var said = source is SftpSource sftp ? Server(sftp, command, folder) : Here(command, folder);
+            var said = Say(source, command, folder);
 
             FrameThread.Post(() =>
             {
@@ -91,15 +88,9 @@ public sealed class Runner : IArlecchinoStore
             return;
         }
 
-        try
-        {
-            running.Kill(entireProcessTree: true);
-            _state.Output = "Stopped";
-        }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
-        {
-            _state.Output = $"Could not stop it: {error.Message}";
-        }
+        var refused = running.Interrupt();
+
+        _state.Output = refused.Length == 0 ? "Stopped" : refused;
     }
 
     public void Clear() => Lines.Clear();
@@ -110,33 +101,27 @@ public sealed class Runner : IArlecchinoStore
         History.Add(command);
     }
 
-    private List<string> Here(string command, string folder)
+    /// <summary>
+    /// Starts the command wherever the panel is looking and reads it to its end. Which of them that
+    /// is, the source answers; this knows only that a run can be held on to and stopped.
+    /// </summary>
+    /// <param name="source">The panel's source.</param>
+    /// <param name="command">What was typed.</param>
+    /// <param name="folder">The folder to run it in.</param>
+    /// <returns>What it said.</returns>
+    private List<string> Say(IFileSource source, string command, string folder)
     {
-        if (Shells.Start(command, folder) is not { } started)
+        if (source.Start(command, folder) is not { } run)
         {
-            return [$"[failed] {command} could not be started"];
+            return [$"[failed] {source.Label} runs no commands"];
         }
 
-        _running = started;
+        _running = run;
 
-        try
+        using (run)
         {
-            return Shells.Collect(started);
+            return run.Collect();
         }
-        catch (Exception error) when (error is InvalidOperationException or IOException)
-        {
-            return [$"[failed] {error.Message}"];
-        }
-    }
-
-    private static List<string> Server(SftpSource source, string command, string folder)
-    {
-        if (source.Run(command, folder) is not { } said)
-        {
-            return ["[failed] the server offered no shell"];
-        }
-
-        return [.. Shells.Split(said.Output), $"[exit {said.Status}]"];
     }
 
     private void Trim()

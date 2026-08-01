@@ -106,6 +106,23 @@ public sealed class FtpSource : IFileSource
     /// <returns>Always <c>false</c>.</returns>
     public bool TryLink(string path, string target, bool hard) => false;
 
+    /// <summary>FTP has no shell, so nothing runs here.</summary>
+    /// <param name="command">What was typed.</param>
+    /// <param name="folder">The folder it would run in.</param>
+    /// <returns><c>null</c>, always.</returns>
+    public IShellRun? Start(string command, string folder) => null;
+
+    public bool WalksCheaply => false;
+
+    /// <summary>
+    /// Always, since a server has one tree and a move within it never crosses a volume the way two
+    /// drives on a disk do.
+    /// </summary>
+    /// <param name="from">Where it is now.</param>
+    /// <param name="target">Where it is going.</param>
+    /// <returns><c>true</c>, always.</returns>
+    public bool SameVolume(string from, string target) => true;
+
     public string Combine(string folder, string name) => RemotePaths.Combine(folder, name);
 
     public string? Parent(string folder) => RemotePaths.Parent(folder);

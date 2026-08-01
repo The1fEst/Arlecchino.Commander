@@ -103,7 +103,7 @@ public sealed class Operations : IArlecchinoStore
     /// <param name="entries">What is about to be worked on.</param>
     /// <returns>How to count, or <c>null</c> to skip counting.</returns>
     private static Func<CancellationToken, Tally>? Sizing(IFileSource source, IReadOnlyList<FileEntry> entries) =>
-        source.IsRemote ? null : token => FileTasks.Measure(source, entries, token);
+        source.WalksCheaply ? token => FileTasks.Measure(source, entries, token) : null;
 
     /// <summary>
     /// Runs the work off the drawing thread — even on a local disk, where a folder deep enough would

@@ -48,6 +48,19 @@ public sealed class SftpSource : IFileSource
 
     public static SftpSource Connect(Connection connection) => new(connection, new(connection, Sessions));
 
+    public IShellRun Start(string command, string folder) => new RemoteRun(this, command, folder);
+
+    public bool WalksCheaply => false;
+
+    /// <summary>
+    /// Always, since a server has one tree and a move within it never crosses a volume the way two
+    /// drives on a disk do.
+    /// </summary>
+    /// <param name="from">Where it is now.</param>
+    /// <param name="target">Where it is going.</param>
+    /// <returns><c>true</c>, always.</returns>
+    public bool SameVolume(string from, string target) => true;
+
     public string Combine(string folder, string name) => RemotePaths.Combine(folder, name);
 
     public string? Parent(string folder) => RemotePaths.Parent(folder);

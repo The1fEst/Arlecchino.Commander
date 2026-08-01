@@ -48,6 +48,30 @@ public interface IFileSource : IDisposable
     /// <returns><c>false</c> when the source cannot make that kind of link.</returns>
     bool TryLink(string path, string target, bool hard);
 
+    /// <summary>
+    /// Starts a command where the panel is looking, when this source can run one at all.
+    /// </summary>
+    /// <param name="command">What was typed.</param>
+    /// <param name="folder">The folder to run it in.</param>
+    /// <returns>The running command, or <c>null</c> when this source runs none.</returns>
+    IShellRun? Start(string command, string folder);
+
+    /// <summary>
+    /// Whether walking a tree costs little enough to do it before the work rather than during it.
+    /// A local disk answers a folder at once; a server spends a round trip on each one, which is the
+    /// difference between a progress bar and a wait for one.
+    /// </summary>
+    bool WalksCheaply { get; }
+
+    /// <summary>
+    /// Whether a move from one path to the other stays on one volume, and so can be a rename rather
+    /// than a copy and a delete.
+    /// </summary>
+    /// <param name="from">Where it is now.</param>
+    /// <param name="target">Where it is going.</param>
+    /// <returns><c>true</c> when the move need not copy.</returns>
+    bool SameVolume(string from, string target);
+
     string Combine(string folder, string name);
 
     string? Parent(string folder);

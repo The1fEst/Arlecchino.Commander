@@ -287,7 +287,7 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
-        if (!ReferenceEquals(from, to) || !SameVolume(from, source.Path, target))
+        if (!ReferenceEquals(from, to) || !from.SameVolume(source.Path, target))
         {
             var copied = new Outcome();
 
@@ -332,18 +332,6 @@ public static class FileTasks
         return reading.CanSeek ? reading.Length : 0;
     }
 
-    private static bool SameVolume(IFileSource source, string from, string target)
-    {
-        if (source.IsRemote)
-        {
-            return true;
-        }
-
-        return string.Equals(
-            Path.GetPathRoot(Path.GetFullPath(from)),
-            Path.GetPathRoot(Path.GetFullPath(target)),
-            StringComparison.OrdinalIgnoreCase);
-    }
 
     private static bool IsExpected(Exception error) =>
         error is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException

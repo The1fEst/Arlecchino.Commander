@@ -97,6 +97,21 @@ public sealed class LocalSource : IFileSource
         }
     }
 
+    public IShellRun Start(string command, string folder) => new LocalRun(command, folder);
+
+    public bool WalksCheaply => true;
+
+    /// <summary>
+    /// Whether the two paths sit on one drive, which is what decides between a rename and a copy.
+    /// </summary>
+    /// <param name="from">Where it is now.</param>
+    /// <param name="target">Where it is going.</param>
+    /// <returns><c>true</c> when both are on the same root.</returns>
+    public bool SameVolume(string from, string target) => string.Equals(
+        Path.GetPathRoot(Path.GetFullPath(from)),
+        Path.GetPathRoot(Path.GetFullPath(target)),
+        StringComparison.OrdinalIgnoreCase);
+
     public string Combine(string folder, string name) => Path.Combine(folder, name);
 
     public string? Parent(string folder) => Listing.Parent(folder);

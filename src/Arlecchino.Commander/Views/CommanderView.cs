@@ -590,7 +590,7 @@ public sealed class CommanderView : IArlecchinoView
     private static string? Filled(string text) => text.Trim().Length == 0 ? "A name is needed" : null;
 
     private static string? Folder(FilePanel panel, string target) =>
-        panel.Source.IsRemote || panel.Source.FolderExists(target) ? Filled(target) : "That folder does not exist";
+        !panel.Source.WalksCheaply || panel.Source.FolderExists(target) ? Filled(target) : "That folder does not exist";
 
     private FilePanel Active() => _right.IsFocused ? _right : _left;
 
