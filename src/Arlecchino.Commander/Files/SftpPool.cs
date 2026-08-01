@@ -75,12 +75,19 @@ public sealed class SftpPool : IDisposable
     private SftpClient Open()
     {
         var client = new SftpClient(Credentials.For(_connection));
+        var check = Credentials.Watch(client, _connection);
 
         try
         {
             client.Connect();
 
             return client;
+        }
+        catch (SshException) when (check.Refusal.Length > 0)
+        {
+            client.Dispose();
+
+            throw new IOException(check.Refusal);
         }
         catch (SshAuthenticationException error)
         {

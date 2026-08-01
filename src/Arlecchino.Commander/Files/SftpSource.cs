@@ -382,6 +382,9 @@ public sealed class SftpSource : IFileSource
         {
             _session?.Dispose();
             _session = new(Credentials.For(_connection));
+
+            Credentials.Watch(_session, _connection);
+
             _session.Connect();
 
             return _session;

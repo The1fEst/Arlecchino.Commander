@@ -150,8 +150,16 @@ public sealed class SshView : IArlecchinoView
         try
         {
             using var client = new SshClient(Credentials.For(ssh));
+            var check = Credentials.Watch(client, ssh);
 
-            client.Connect();
+            try
+            {
+                client.Connect();
+            }
+            catch (SshException) when (check.Refusal.Length > 0)
+            {
+                return [check.Refusal];
+            }
 
             using var running = client.RunCommand(command);
             var lines = new List<string>();
