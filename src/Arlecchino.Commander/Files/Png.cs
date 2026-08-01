@@ -113,9 +113,6 @@ public static class Png
                 case "IEND":
                     at = bytes.Length;
                     break;
-
-                default:
-                    break;
             }
         }
 
