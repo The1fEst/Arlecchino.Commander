@@ -23,6 +23,7 @@ namespace Arlecchino.Commander.Views;
 public sealed class ViewerView : IArlecchinoView
 {
     private const int ReadLimit = 512 * 1024;
+    private const int ImageLimit = 32 * 1024 * 1024;
     private const int ChunkBytes = 8192;
     private const int BytesPerRow = 16;
     private const int TextProbe = 8192;
@@ -38,21 +39,21 @@ public sealed class ViewerView : IArlecchinoView
         _lifetime = lifetime;
 
         var path = panels.Viewing.Value;
-        var text = new TextView(options.Keymap);
-        var (body, kind, size) = Load(panels.ViewingSource, path, panels.ViewingSize);
-
-        text.Text = body;
+        var size = panels.ViewingSize;
+        var (body, kind, read) = Load(panels.ViewingSource, path, size, options);
 
         var status = new StatusBar
         {
-            Left = [() => $"{Sizes.Grouped(size)} bytes · {kind}"],
-            Right = [static () => "Esc back", static () => "↑↓ PgUp PgDn scroll"],
+            Left = [() => $"{Sizes.Grouped(read)} bytes · {kind}"],
+            Right = body is TextView
+                ? [static () => "Esc back", static () => "↑↓ PgUp PgDn scroll"]
+                : [static () => "Esc back"],
         };
 
         _layout = Branch(
             Rows,
             PaneSize.CellsFromEnd(1),
-            Leaf(text, () => Path.GetFileName(path)),
+            Leaf(body, () => Path.GetFileName(path)),
             Leaf(status));
 
         _focus = _layout.AsFocusRing(options.Keymap);
@@ -71,35 +72,69 @@ public sealed class ViewerView : IArlecchinoView
         ViewCommand.For(ConsoleKey.F10, static () => "quit", _lifetime.StopApplication),
     ];
 
-    private static (string Text, string Kind, long Size) Load(IFileSource source, string path, long size)
+    /// <summary>
+    /// Reads the file and decides what to show it with. A PNG is drawn as itself; anything else is
+    /// text or a hex dump, as it always was. A picture has to be read whole — a PNG is one deflate
+    /// stream from end to end, so the first half of one decodes to nothing — which is why the limit
+    /// is its own and larger than the one the text viewer reads under.
+    /// </summary>
+    /// <param name="source">Where the file lives.</param>
+    /// <param name="path">Which file.</param>
+    /// <param name="size">How large it is said to be.</param>
+    /// <param name="options">Supplies the keymap the text viewer scrolls by.</param>
+    /// <returns>What to draw, what to call it, and how much of it was read.</returns>
+    private static (IArlecchinoWidget Body, string Kind, long Read) Load(
+        IFileSource source,
+        string path,
+        long size,
+        ArlecchinoOptions options)
     {
         try
         {
-            var bytes = Head(source, path);
+            var head = Head(source, path, ReadLimit);
 
-            return IsBinary(bytes)
-                ? (Dump(bytes), Truncated("hex", bytes.Length, size), size)
-                : (Encoding.UTF8.GetString(bytes).Replace("\t", "    ", StringComparison.Ordinal),
-                    Truncated("text", bytes.Length, size), size);
+            if (Png.Starts(head))
+            {
+                var whole = head.Length >= size ? head : Head(source, path, ImageLimit);
+
+                if (Png.Read(whole) is { } raster)
+                {
+                    var picture = new Picture();
+
+                    picture.Show(raster.Pixels, raster.Width, raster.Height);
+
+                    return (picture, $"png, {raster.Width}×{raster.Height}", whole.Length);
+                }
+            }
+
+            var binary = IsBinary(head);
+            var text = new TextView(options.Keymap)
+            {
+                Text = binary
+                    ? Dump(head)
+                    : Encoding.UTF8.GetString(head).Replace("\t", "    ", StringComparison.Ordinal),
+            };
+
+            return (text, Truncated(binary ? "hex" : "text", head.Length, size), size);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return (error.Message, "unreadable", 0);
+            return (new TextView(options.Keymap) { Text = error.Message }, "unreadable", 0);
         }
     }
 
     private static string Truncated(string kind, int read, long size) =>
         read < size ? $"{kind}, first {Sizes.Brief(read)}" : kind;
 
-    private static byte[] Head(IFileSource source, string path)
+    private static byte[] Head(IFileSource source, string path, long limit)
     {
         using var stream = source.OpenRead(path);
         var held = new MemoryStream();
         var chunk = new byte[ChunkBytes];
 
-        while (held.Length < ReadLimit)
+        while (held.Length < limit)
         {
-            var read = stream.Read(chunk, 0, (int)Math.Min(chunk.Length, ReadLimit - held.Length));
+            var read = stream.Read(chunk, 0, (int)Math.Min(chunk.Length, limit - held.Length));
 
             if (read <= 0)
             {
