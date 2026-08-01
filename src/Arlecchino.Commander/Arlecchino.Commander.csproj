@@ -14,10 +14,6 @@
     <!-- Compiled ahead of time for the releases, so this code is held to it on every build: anything
          of ours that reflection would only find at runtime fails here rather than on someone's disk. -->
     <IsAotCompatible>true</IsAotCompatible>
-    <!-- FluentFTP trips two trim checks of its own: a version banner that asks for its own method,
-         and a stream type it would build from a name this application never sets. Neither path is
-         reachable from here, and neither is ours to fix; ours are caught by the line above. -->
-    <NoWarn>$(NoWarn);IL2104</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <ArlecchinoViewNamespace>Arlecchino.Commander.Views</ArlecchinoViewNamespace>
@@ -25,7 +21,6 @@
 
   <ItemGroup>
     <PackageReference Include="Arlecchino" Version="3.0.0" />
-    <PackageReference Include="FluentFTP" Version="54.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
     <PackageReference Include="SSH.NET" Version="2025.1.0" />
   </ItemGroup>
