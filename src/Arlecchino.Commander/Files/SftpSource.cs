@@ -250,6 +250,10 @@ public sealed class SftpSource : IFileSource
     /// Removes the tree with one command over SSH rather than a request per file. A server on
     /// the other side of the world answers a delete in a fraction of a second, which a thousand times
     /// over is a coffee break; the same tree goes in one round trip this way.
+    ///
+    /// Whether it worked is read from the exit status, so only a shell whose status means something
+    /// may offer a command here — <c>rm</c> and <c>Remove-Item</c> both answer one on a refusal, and
+    /// <see cref="WindowsCommandShell"/> offers none for exactly that reason.
     /// </summary>
     /// <param name="entry">The folder to remove.</param>
     /// <returns><c>false</c> when the server has no shell to run it, leaving the tree to be walked.</returns>

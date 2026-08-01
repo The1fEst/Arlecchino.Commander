@@ -158,12 +158,22 @@ public sealed class WindowsCommandShell : WindowsShell
     public static readonly WindowsCommandShell Instance = new();
 
     /// <summary>
-    /// Answers that there is no one-line way, so the tree is walked instead. <c>rmdir /s</c> takes a
-    /// read-only file with the rest and reports success, and <c>cmd.exe</c> has no switch that stops
-    /// it — the flag to leave off is not <c>/q</c>, which only answers the question it would ask.
+    /// Answers that there is no one-line way, so the tree is walked instead. Two things are wrong
+    /// with the command that would have done it, and either alone would be enough.
     ///
-    /// Walking costs a round trip per entry where one command would have done. That is the price of a
-    /// delete that stops at what it is not allowed to remove, and it is worth paying.
+    /// It takes what it was not asked to. <c>rmdir /s</c> removes a read-only file along with the
+    /// rest, and <c>cmd.exe</c> has no switch that stops it — the flag to leave off is not
+    /// <c>/q</c>, which only answers the question the command would ask. <c>del</c> without
+    /// <c>/f</c> does respect the attribute, but a <c>rmdir</c> after it takes the survivor anyway,
+    /// so the two do not combine into one that stops.
+    ///
+    /// And it does not say when it failed. <c>rmdir /s /q</c> over a file another process holds open
+    /// prints the reason and exits nought all the same; so does <c>del</c>. Since a shell command is
+    /// judged here by its exit status, every refusal would read as a removal — the tree would be
+    /// reported gone while it was still there.
+    ///
+    /// Walking costs a round trip per entry where one command would have done. It is worth it: SFTP
+    /// refuses what it may not remove and says so, which is the whole of what was wanted.
     /// </summary>
     /// <param name="path">The folder, as SFTP spells it.</param>
     /// <returns><c>null</c>, always.</returns>
