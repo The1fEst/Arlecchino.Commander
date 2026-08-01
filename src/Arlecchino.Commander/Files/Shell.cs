@@ -158,13 +158,16 @@ public sealed class WindowsCommandShell : WindowsShell
     public static readonly WindowsCommandShell Instance = new();
 
     /// <summary>
-    /// Removes the folder with <c>/q</c>, which answers the question <c>rmdir /s</c> asks before it
-    /// starts. That is not the same as forcing: it still refuses what it is not allowed to remove and
-    /// still says so. Without it the command waits on an answer nobody is there to give.
+    /// Answers that there is no one-line way, so the tree is walked instead. <c>rmdir /s</c> takes a
+    /// read-only file with the rest and reports success, and <c>cmd.exe</c> has no switch that stops
+    /// it — the flag to leave off is not <c>/q</c>, which only answers the question it would ask.
+    ///
+    /// Walking costs a round trip per entry where one command would have done. That is the price of a
+    /// delete that stops at what it is not allowed to remove, and it is worth paying.
     /// </summary>
     /// <param name="path">The folder, as SFTP spells it.</param>
-    /// <returns>The command.</returns>
-    public override string Sweep(string path) => $"rmdir /s /q {Quote(path)}";
+    /// <returns><c>null</c>, always.</returns>
+    public override string? Sweep(string path) => null;
 
     /// <inheritdoc/>
     public override string Link(string path, string target) => $"mklink /h {Quote(path)} {Quote(target)}";
