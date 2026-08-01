@@ -208,32 +208,32 @@ public static class FtpListings
     /// <returns>When it changed, or the default when the three do not read as a date.</returns>
     private static DateTime Listed(string month, string day, string last)
     {
-        if (last.Contains(':', StringComparison.Ordinal))
+        if (!last.Contains(':', StringComparison.Ordinal))
         {
-            if (!DateTime.TryParseExact(
-                    $"{month} {day} {last}",
-                    ["MMM d HH:mm", "MMM dd HH:mm"],
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out var recent))
-            {
-                return default;
-            }
-
-            var now = DateTime.Now;
-            var dated = new DateTime(now.Year, recent.Month, recent.Day, recent.Hour, recent.Minute, 0);
-
-            return dated > now.AddDays(1) ? dated.AddYears(-1) : dated;
+            return DateTime.TryParseExact(
+                $"{month} {day} {last}",
+                ["MMM d yyyy", "MMM dd yyyy"],
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var older)
+                ? older
+                : default;
         }
 
-        return DateTime.TryParseExact(
-            $"{month} {day} {last}",
-            ["MMM d yyyy", "MMM dd yyyy"],
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.None,
-            out var older)
-            ? older
-            : default;
+        if (!DateTime.TryParseExact(
+                $"{month} {day} {last}",
+                ["MMM d HH:mm", "MMM dd HH:mm"],
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var recent))
+        {
+            return default;
+        }
+
+        var now = DateTime.Now;
+        var dated = new DateTime(now.Year, recent.Month, recent.Day, recent.Hour, recent.Minute, 0);
+
+        return dated > now.AddDays(1) ? dated.AddYears(-1) : dated;
     }
 
     private static FtpEntry? Dos(string line)
