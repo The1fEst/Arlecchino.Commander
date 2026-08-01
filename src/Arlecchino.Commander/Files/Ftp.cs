@@ -46,6 +46,14 @@ public sealed class FtpConnection : IDisposable
 
     private bool _machineListing = true;
 
+    /// <summary>
+    /// The encoding commands go out in. It has to be one built here rather than
+    /// <see cref="Encoding.UTF8"/>, which writes a byte order mark before the first thing written —
+    /// and a server reading a command line finds three bytes in front of <c>USER</c> and does not
+    /// know the command.
+    /// </summary>
+    private static readonly UTF8Encoding Plain = new(encoderShouldEmitUTF8Identifier: false);
+
     private FtpConnection(TcpClient control, string host)
     {
         _control = control;
@@ -53,8 +61,8 @@ public sealed class FtpConnection : IDisposable
 
         var stream = control.GetStream();
 
-        _reader = new(stream, Encoding.UTF8, false, Chunk, leaveOpen: true);
-        _writer = new(stream, Encoding.UTF8, Chunk, leaveOpen: true) { AutoFlush = true, NewLine = "\r\n" };
+        _reader = new(stream, Plain, false, Chunk, leaveOpen: true);
+        _writer = new(stream, Plain, Chunk, leaveOpen: true) { AutoFlush = true, NewLine = "\r\n" };
     }
 
     /// <summary>Opens the control connection and signs in.</summary>
@@ -205,7 +213,7 @@ public sealed class FtpConnection : IDisposable
 
         Expect(began, command);
 
-        using var reading = new StreamReader(data.GetStream(), Encoding.UTF8);
+        using var reading = new StreamReader(data.GetStream(), Plain);
         var text = reading.ReadToEnd();
 
         data.Close();

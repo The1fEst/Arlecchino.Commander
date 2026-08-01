@@ -189,7 +189,51 @@ public static class FtpListings
 
         _ = long.TryParse(parts[4], NumberStyles.None, CultureInfo.InvariantCulture, out var size);
 
-        return new(name, line[0] == 'd', line[0] == 'd' ? 0 : size, default, Permissions(line));
+        return new(
+            name,
+            line[0] == 'd',
+            line[0] == 'd' ? 0 : size,
+            Listed(parts[5], parts[6], parts[7]),
+            Permissions(line));
+    }
+
+    /// <summary>
+    /// Reads the date <c>ls -l</c> writes, which is three words and a decision. Something changed
+    /// within the last half year is written with the time and no year at all — so the year is the one
+    /// that puts it in the past, since a listing cannot hold tomorrow.
+    /// </summary>
+    /// <param name="month">The month, as three letters.</param>
+    /// <param name="day">The day.</param>
+    /// <param name="last">Either the time or the year.</param>
+    /// <returns>When it changed, or the default when the three do not read as a date.</returns>
+    private static DateTime Listed(string month, string day, string last)
+    {
+        if (last.Contains(':', StringComparison.Ordinal))
+        {
+            if (!DateTime.TryParseExact(
+                    $"{month} {day} {last}",
+                    ["MMM d HH:mm", "MMM dd HH:mm"],
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var recent))
+            {
+                return default;
+            }
+
+            var now = DateTime.Now;
+            var dated = new DateTime(now.Year, recent.Month, recent.Day, recent.Hour, recent.Minute, 0);
+
+            return dated > now.AddDays(1) ? dated.AddYears(-1) : dated;
+        }
+
+        return DateTime.TryParseExact(
+            $"{month} {day} {last}",
+            ["MMM d yyyy", "MMM dd yyyy"],
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var older)
+            ? older
+            : default;
     }
 
     private static FtpEntry? Dos(string line)
