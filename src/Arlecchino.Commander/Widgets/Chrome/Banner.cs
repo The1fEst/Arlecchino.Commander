@@ -24,6 +24,8 @@ public sealed class Banner
     private readonly Sessions _sessions;
     private readonly List<(int Column, int Width, int Index)> _tabs = [];
 
+    private SurfaceRegion _band;
+
     /// <summary>Draws the band over a set of tabs.</summary>
     /// <param name="sessions">The sessions there are, and which of them is open.</param>
     public Banner(Sessions sessions) => _sessions = sessions;
@@ -36,6 +38,7 @@ public sealed class Banner
 
         header.Fill(coat.Text);
         header = header.Inset(new Margin(2, 0, 2, 0));
+        _band = header;
 
         if (header.Height < Height)
         {
@@ -85,14 +88,26 @@ public sealed class Banner
         _tabs.Add((column, 3, Fresh));
     }
 
-    /// <summary>Which tab a click landed on.</summary>
-    /// <param name="column">How far along the row it was.</param>
-    /// <returns>The session it belongs to, or nothing when it hit the gap between two.</returns>
-    public int? Tab(int column)
+    /// <summary>
+    /// Which tab a click landed on. The click arrives in frame cells and the tabs were measured inside
+    /// the band, which sits two cells in from a content area that is itself inset — so the two are put
+    /// in the same coordinates here rather than being assumed to already share them.
+    /// </summary>
+    /// <param name="row">Which row of the frame it was on.</param>
+    /// <param name="column">How far along that row.</param>
+    /// <returns>The session it belongs to, or nothing when it missed every tab.</returns>
+    public int? Tab(int row, int column)
     {
+        if (!_band.Contains(row, column))
+        {
+            return null;
+        }
+
+        var (_, along) = _band.ToLocal(row, column);
+
         foreach (var (at, width, index) in _tabs)
         {
-            if (column >= at && column < at + width)
+            if (along >= at && along < at + width)
             {
                 return index;
             }

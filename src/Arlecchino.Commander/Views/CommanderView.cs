@@ -106,7 +106,7 @@ public sealed class CommanderView : IArlecchinoView
         _gutter = new(sessions, _panels);
         _bar = new(_panels);
         _card = new(runner, state);
-        _commands = CommanderKeys.For(_doings, _panels, operations, runner, _typing, state, lifetime);
+        _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _typing, state, lifetime);
 
         _layout = Lay();
         _focus = _layout.AsFocusRing(_keymap);
@@ -171,13 +171,6 @@ public sealed class CommanderView : IArlecchinoView
             return ViewRoute.None;
         }
 
-        if (key is { Modifiers: ConsoleModifiers.Control, Key: ConsoleKey.PageDown or ConsoleKey.PageUp })
-        {
-            _sessions.Step(key.Key == ConsoleKey.PageDown);
-
-            return ViewRoute.None;
-        }
-
         if (!_panels.Active.IsSearching && _typing.Handle(key))
         {
             return ViewRoute.None;
@@ -194,7 +187,7 @@ public sealed class CommanderView : IArlecchinoView
     /// <returns>Where to go, which is nowhere.</returns>
     public ViewRoute HandleMouse(MouseEvent mouse)
     {
-        if (mouse is not { Action: MouseAction.Pressed, Row: 0 } || _banner.Tab(mouse.Column) is not { } index)
+        if (mouse.Action != MouseAction.Pressed || _banner.Tab(mouse.Row, mouse.Column) is not { } index)
         {
             return Routed(_focus.HandleMouse(mouse));
         }

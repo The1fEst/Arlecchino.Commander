@@ -22,6 +22,7 @@ public static class CommanderKeys
     /// <summary>Builds the table.</summary>
     /// <param name="doings">Everything the screen can do.</param>
     /// <param name="panels">The two panels on screen.</param>
+    /// <param name="sessions">The tabs, which four of these keys open, close and step between.</param>
     /// <param name="operations">The file work, which Escape calls off.</param>
     /// <param name="runner">The commands, which Escape stops.</param>
     /// <param name="typing">The command line, which Alt+Enter writes to.</param>
@@ -31,6 +32,7 @@ public static class CommanderKeys
     public static IReadOnlyList<ViewCommand> For(
         Doings doings,
         Pair panels,
+        Sessions sessions,
         Operations operations,
         Runner runner,
         Typing typing,
@@ -39,6 +41,7 @@ public static class CommanderKeys
     {
         ArgumentNullException.ThrowIfNull(doings);
         ArgumentNullException.ThrowIfNull(panels);
+        ArgumentNullException.ThrowIfNull(sessions);
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(lifetime);
 
@@ -98,6 +101,28 @@ public static class CommanderKeys
                 () => Menu.Palette(doings)),
             ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Alt), static () => "open a saved host",
                 () => doings.Dialling.Saved(panels.Active)),
+            ViewCommand.For(new KeyBinding(ConsoleKey.T, ConsoleModifiers.Alt), static () => "new tab", sessions.Add),
+            new()
+            {
+                Binding = new(ConsoleKey.W, ConsoleModifiers.Alt),
+                Label = static () => "close tab",
+                IsEnabled = () => sessions.All.Count > 1,
+                Run = () => Closed(sessions),
+            },
+            new()
+            {
+                Binding = new(ConsoleKey.PageDown, ConsoleModifiers.Alt),
+                Label = static () => "next tab",
+                IsEnabled = () => sessions.All.Count > 1,
+                Run = () => Stepped(sessions, forward: true),
+            },
+            new()
+            {
+                Binding = new(ConsoleKey.PageUp, ConsoleModifiers.Alt),
+                Label = static () => "previous tab",
+                IsEnabled = () => sessions.All.Count > 1,
+                Run = () => Stepped(sessions, forward: false),
+            },
             ViewCommand.For(ConsoleKey.F10, static () => "quit", lifetime.StopApplication),
             new()
             {
@@ -171,6 +196,27 @@ public static class CommanderKeys
                 state.Output = Loc(LocString.PrefixHint);
                 break;
         }
+    }
+
+    /// <summary>Closes the tab on screen.</summary>
+    /// <param name="sessions">The tabs.</param>
+    /// <returns>Nowhere: closing a tab uncovers another one rather than leaving the screen.</returns>
+    private static ViewRoute Closed(Sessions sessions)
+    {
+        sessions.Close(sessions.Current);
+
+        return ViewRoute.None;
+    }
+
+    /// <summary>Goes to the tab beside this one.</summary>
+    /// <param name="sessions">The tabs.</param>
+    /// <param name="forward">Which way.</param>
+    /// <returns>Nowhere.</returns>
+    private static ViewRoute Stepped(Sessions sessions, bool forward)
+    {
+        sessions.Step(forward);
+
+        return ViewRoute.None;
     }
 
     /// <summary>Puts the name under the cursor on the command line.</summary>

@@ -176,6 +176,67 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Equal(0, _app.Sessions.Open.Value);
     }
 
+    /// <summary>
+    /// Clicking the <c>+</c> at the end of the tabs opens one. It is three cells wide, so it is the one
+    /// place on the band where the hit-testing has to agree with the drawing exactly.
+    /// </summary>
+    [Fact]
+    public void ClickingThePlusOpensATab()
+    {
+        var lines = _app.FrameLines();
+        var row = Array.FindIndex(lines, static line => line.Contains("local ⇄", StringComparison.Ordinal));
+
+        Assert.True(row >= 0);
+
+        _app.Click(row, lines[row].IndexOf('+'));
+        _app.Settled();
+
+        Assert.Equal(2, _app.Sessions.All.Count);
+    }
+
+    /// <summary>A tab can be opened, stepped between and closed without touching the mouse.</summary>
+    [Fact]
+    public void TabsAreWorkedFromTheKeyboard()
+    {
+        _app.Press(ConsoleKey.T, alt: true);
+        _app.Settled();
+
+        Assert.Equal(2, _app.Sessions.All.Count);
+        Assert.Equal(1, _app.Sessions.Open.Value);
+
+        _app.Press(ConsoleKey.PageUp, alt: true);
+        _app.Frame();
+
+        Assert.Equal(0, _app.Sessions.Open.Value);
+
+        _app.Press(ConsoleKey.PageDown, alt: true);
+        _app.Frame();
+
+        Assert.Equal(1, _app.Sessions.Open.Value);
+
+        _app.Press(ConsoleKey.W, alt: true);
+        _app.Settled();
+
+        Assert.Single(_app.Sessions.All);
+    }
+
+    /// <summary>
+    /// <c>Ctrl+PageUp</c> goes to the folder above, the way it always has. It once meant the tab beside
+    /// this one as well, in code the router never reached — a view's commands are read before its
+    /// <c>Handle</c>, so the folder won every time and the tab could not be got to at all.
+    /// </summary>
+    [Fact]
+    public void ControlPageUpGoesToTheFolderAbove()
+    {
+        var above = Directory.GetParent(_app.Folder)!.FullName;
+
+        _app.Press(ConsoleKey.PageUp, control: true);
+        _app.Settled();
+
+        Assert.Equal(above, _app.Sessions.Left.Folder);
+        Assert.Single(_app.Sessions.All);
+    }
+
     /// <summary>The last tab stays: an application with no panels is not a state worth reaching.</summary>
     [Fact]
     public void TheLastTabWillNotClose()
