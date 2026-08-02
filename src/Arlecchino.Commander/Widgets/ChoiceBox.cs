@@ -65,7 +65,7 @@ public static class ChoiceBox
 
     private static string Counted(Choosing choosing) => choosing.Typed.Length == 0
         ? choosing.Items.Count == 1 ? "1" : $"{choosing.Items.Count}"
-        : $"{choosing.Matching.Count} of {choosing.Items.Count}";
+        : Loc(LocString.ChoosingCount, choosing.Matching.Count, choosing.Items.Count);
 
     /// <summary>
     /// The line what is typed lands on. It is drawn whether or not anything has been typed, so nobody
@@ -87,14 +87,14 @@ public static class ChoiceBox
         }
 
         inside.Write(2, 2, " ", Skin.Paint(Skin.Ink, Skin.Crimson));
-        inside.Write(2, 4, "type to narrow the list", coat.Ghost);
+        inside.Write(2, 4, Loc(LocString.ChoosingNarrow), coat.Ghost);
     }
 
     private static void Rows(SurfaceRegion inside, Choosing choosing, Skin.Coat coat, int shown)
     {
         if (choosing.Matching.Count == 0)
         {
-            inside.Write(4, 0, "nothing here goes by that name", coat.Label);
+            inside.Write(4, 0, Loc(LocString.ChoosingNothing), coat.Label);
 
             return;
         }

@@ -602,10 +602,10 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     private static string Describe(FileEntry entry)
     {
-        var what = entry.IsFolder ? "folder" : Sizes.Brief(entry.Size);
-        var said = $"{entry.Name} · {what}";
+        var what = entry.IsFolder ? Loc(LocString.PanelFolder) : Sizes.Brief(entry.Size);
+        var said = Loc(LocString.Joined, entry.Name, what);
 
-        return entry.IsReadOnly ? $"{said} · read-only" : said;
+        return entry.IsReadOnly ? Loc(LocString.PanelReadOnly, entry.Name, what) : said;
     }
 
     private string Shortened(string folder)
@@ -732,13 +732,13 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     {
         if (_loading)
         {
-            return "reading…";
+            return Loc(LocString.PanelReading);
         }
 
         var items = _entries.Count > 0 && _entries[0].IsParent ? _entries.Count - 1 : _entries.Count;
-        var counted = items == 1 ? "1 item" : $"{items} items";
+        var counted = items == 1 ? Loc(LocString.PanelOneItem) : Loc(LocString.PanelManyItems, items);
 
-        return _free.Length == 0 ? counted : $"{counted} · {_free}";
+        return _free.Length == 0 ? counted : Loc(LocString.Joined, counted, _free);
     }
 
     /// <summary>The column heads, in small capitals, with the sort arrow on the one that is sorted by.</summary>
@@ -748,16 +748,16 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     {
         var (name, size, date) = Widths(row.Width);
 
-        Head(row, Kinds.TagWidth, name, "NAME", Sorting.Name, coat, Align.Left);
+        Head(row, Kinds.TagWidth, name, Loc(LocString.PanelName), Sorting.Name, coat, Align.Left);
 
         if (size > 0)
         {
-            Head(row, Kinds.TagWidth + name + ColumnGap, size, "SIZE", Sorting.Size, coat, Align.Right);
+            Head(row, Kinds.TagWidth + name + ColumnGap, size, Loc(LocString.PanelSize), Sorting.Size, coat, Align.Right);
         }
 
         if (date > 0)
         {
-            Head(row, Kinds.TagWidth + name + ColumnGap + size + ColumnGap, date, "MODIFIED", Sorting.Modified,
+            Head(row, Kinds.TagWidth + name + ColumnGap + size + ColumnGap, date, Loc(LocString.PanelModified), Sorting.Modified,
                 coat, Align.Right);
         }
     }
@@ -816,7 +816,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
         if (size > 0)
         {
-            var what = entry.IsFolder ? "<DIR>" : Sizes.Brief(entry.Size);
+            var what = entry.IsFolder ? Loc(LocString.PanelFolderKind) : Sizes.Brief(entry.Size);
 
             row.Write(0, Kinds.TagWidth + name + ColumnGap + size - TextWidth.Of(what), what,
                 Quiet(cursor, chosen, marked, coat));
@@ -916,7 +916,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     {
         if (_searching)
         {
-            row.Write(0, 0, TextWidth.Truncate($"jump to  {_typed}", row.Width), coat.Accent);
+            row.Write(0, 0, TextWidth.Truncate(Loc(LocString.PanelJumpTo, _typed), row.Width), coat.Accent);
 
             return;
         }
@@ -931,29 +931,29 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             }
 
             var held = bytes > 0
-                ? $"{_state.Marks.Count} marked · {Sizes.Brief(bytes)}"
-                : $"{_state.Marks.Count} marked";
+                ? Loc(LocString.PanelMarkedSize, _state.Marks.Count, Sizes.Brief(bytes))
+                : Loc(LocString.PanelMarked, _state.Marks.Count);
 
             row.Fill(coat.MarkedRow);
             row.Write(0, 0, TextWidth.Truncate(held, row.Width), coat.Marked);
-            row.WriteLine(0, "+ / − mark by pattern · * invert", coat.MarkedMeta, Align.Right);
+            row.WriteLine(0, Loc(LocString.PanelMarkHints), coat.MarkedMeta, Align.Right);
 
             return;
         }
 
         if (_loading)
         {
-            row.Write(0, 0, "reading the folder…", coat.Faded);
+            row.Write(0, 0, Loc(LocString.PanelReadingFolder), coat.Faded);
 
             return;
         }
 
-        row.Write(0, 0, TextWidth.Truncate(Current is { } current ? Describe(current) : "nothing here", row.Width),
+        row.Write(0, 0, TextWidth.Truncate(Current is { } current ? Describe(current) : Loc(LocString.PanelNothingHere), row.Width),
             coat.Meta);
 
         if (IsFocused && Current is not null)
         {
-            row.WriteLine(0, "type to jump", coat.Ghost, Align.Right);
+            row.WriteLine(0, Loc(LocString.PanelTypeToJump), coat.Ghost, Align.Right);
         }
     }
 }

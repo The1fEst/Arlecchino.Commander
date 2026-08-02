@@ -15,7 +15,7 @@ namespace Arlecchino.Commander.Widgets;
 public sealed class CommandLine
 {
     private const int SideRoom = 2;
-    private const string Tail = "Ctrl+O — everything the commands printed";
+    private static string Tail => Loc(LocString.CommandLineTail);
 
     private readonly List<string> _history;
     private readonly KeyText _keys;

@@ -152,8 +152,7 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Press(ConsoleKey.Tab);
         _app.Until(() => false);
 
-        var field = Array.Find(_app.FrameLines(),
-            line => line.Contains($"{_app.Folder}/nes", StringComparison.Ordinal));
+        var field = Array.Find(_app.FrameLines(), line => line.Contains("/nes", StringComparison.Ordinal));
 
         Assert.NotNull(field);
         Assert.Contains("/nest", field, StringComparison.Ordinal);

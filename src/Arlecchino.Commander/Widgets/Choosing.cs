@@ -37,7 +37,7 @@ public sealed class Choosing
     public required Action<string> Chose { get; init; }
 
     /// <summary>What is written along the bottom.</summary>
-    public string Footer { get; init; } = "↑↓ pick · Enter choose · Esc close";
+    public string Footer { get; init; } = Loc(LocString.ChoosingHints);
 
     /// <summary>What has been typed to narrow the list.</summary>
     public string Typed

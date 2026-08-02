@@ -37,73 +37,77 @@ public sealed class CommanderView : IArlecchinoView
     private const int SideRoom = 2;
     private const int Fresh = -1;
     private const int PageRows = 10;
-    private const string StopsHint = "Esc stops";
-    private const string PrefixHint =
-        "Ctrl+X · c permissions, o owner, s symlink, l hard link, d compare, p path, t names, h hotlist, j jobs";
+    private static string StopsHint => Loc(LocString.SaidStops);
+    private static string PrefixHint => Loc(LocString.PrefixHint);
 
     private const int SameSecond = 2;
-    private const string AddHot = "Add this folder";
-    private const string DropHot = "Forget a folder";
+    private static string AddHot => Loc(LocString.HotlistAdd);
+    private static string DropHot => Loc(LocString.HotlistDrop);
 
-    private static readonly string[] PanelItems =
+    /// <summary>
+    /// What each menu holds, by name rather than by the words the name resolves to. A menu entry is
+    /// written twice — once in the list it appears in, once where choosing it is acted on — and naming
+    /// it both times is how the two used to drift apart in silence.
+    /// </summary>
+    private static readonly LocString[] PanelItems =
     [
-        "Find file",
-        "Sort by name",
-        "Sort by size",
-        "Sort by date",
-        "Show hidden files",
-        "Choose drive",
-        "Open a saved host",
-        "Connect to a server",
-        "Disconnect",
-        "Reload",
+        LocString.MenuFindFile,
+        LocString.MenuSortByName,
+        LocString.MenuSortBySize,
+        LocString.MenuSortByDate,
+        LocString.MenuShowHidden,
+        LocString.MenuChooseDrive,
+        LocString.MenuOpenSavedHost,
+        LocString.MenuConnectToServer,
+        LocString.MenuDisconnect,
+        LocString.MenuReload,
     ];
 
-    private static readonly string[] FileItems =
+    private static readonly LocString[] FileItems =
     [
-        "View",
-        "Copy",
-        "Move",
-        "Rename",
-        "Make folder",
-        "Permissions",
-        "Owner",
-        "Symbolic link",
-        "Hard link",
-        "Delete",
+        LocString.View,
+        LocString.Copy,
+        LocString.Move,
+        LocString.Rename,
+        LocString.MenuMakeFolder,
+        LocString.Permissions,
+        LocString.MenuOwner,
+        LocString.MenuSymbolicLink,
+        LocString.MenuHardLink,
+        LocString.Delete,
     ];
 
-    private static readonly string[] CommandItems =
+    private static readonly LocString[] CommandItems =
     [
-        "Swap panels",
-        "Both panels here",
-        "Compare directories",
-        "Folders been in",
-        "Hotlist",
-        "Mark a group",
-        "Unmark a group",
-        "Invert the marks",
-        "Filter",
-        "Run a command over SSH",
-        "What the commands said",
-        "Reload both panels",
+        LocString.MenuSwapPanels,
+        LocString.MenuBothPanelsHere,
+        LocString.MenuCompareDirectories,
+        LocString.FoldersBeenIn,
+        LocString.Hotlist,
+        LocString.MenuMarkGroup,
+        LocString.MenuUnmarkGroup,
+        LocString.MenuInvertMarks,
+        LocString.Filter,
+        LocString.MenuRunOverSsh,
+        LocString.MenuWhatCommandsSaid,
+        LocString.MenuReloadBoth,
     ];
 
-    private static readonly string[] OptionItems =
+    private static readonly LocString[] OptionItems =
     [
-        "Hidden files here",
-        "Hidden files there",
-        "Notifications",
-        "Keys",
+        LocString.MenuHiddenHere,
+        LocString.MenuHiddenThere,
+        LocString.MenuNotifications,
+        LocString.MenuKeys,
     ];
 
     private static readonly MenuSection[] Sections =
     [
-        new("Left", PanelItems),
-        new("File", FileItems),
-        new("Command", CommandItems),
-        new("Options", OptionItems),
-        new("Right", PanelItems),
+        new(LocString.MenuLeft, PanelItems),
+        new(LocString.MenuFile, FileItems),
+        new(LocString.MenuCommand, CommandItems),
+        new(LocString.MenuOptions, OptionItems),
+        new(LocString.MenuRight, PanelItems),
     ];
 
     private readonly Surface _surface;
@@ -293,10 +297,10 @@ public sealed class CommanderView : IArlecchinoView
         _state.Modal = new ChoiceListModal(
             new()
             {
-                Title = "Do anything",
+                Title = Loc(LocString.PaletteTitle),
                 Items = Everything(),
                 Chose = static _ => { },
-                Footer = "↑↓ pick · Enter run · Tab complete · Esc close",
+                Footer = Loc(LocString.PaletteHints),
             },
             _state,
             _keymap,
@@ -321,7 +325,11 @@ public sealed class CommanderView : IArlecchinoView
             {
                 var what = item;
 
-                everything.Add(new(item, section.Title.ToLowerInvariant(), "", () => Run(where, what)));
+                everything.Add(new(
+                    Loc(item),
+                    Loc(section.Title).ToLowerInvariant(),
+                    "",
+                    () => Run(where, what)));
             }
         }
 
@@ -336,7 +344,7 @@ public sealed class CommanderView : IArlecchinoView
 
             everything.Add(new(
                 Capitalised(command.Label()),
-                "key",
+                Loc(LocString.PaletteKey),
                 Written(command.Binding),
                 () => Navigation.Apply(run.Run())));
         }
@@ -693,12 +701,12 @@ public sealed class CommanderView : IArlecchinoView
 
         Ask(new()
         {
-            Title = $"Copy{Many(sources)}",
+            Title = sources.Count == 1 ? Loc(LocString.Copy) : Loc(LocString.CopyManyTitle, sources.Count),
             Key = "F5",
-            Verb = "Copy",
+            Verb = Loc(LocString.Copy),
             Weight = Weight.Moves,
             Items = sources,
-            FieldLabel = "where",
+            FieldLabel = Loc(LocString.OperationWhere),
             Host = to.Source.IsRemote ? to.Source.Label : "",
             Value = to.Folder,
             FieldHint = Carrying(sources, to),
@@ -723,12 +731,12 @@ public sealed class CommanderView : IArlecchinoView
 
         Ask(new()
         {
-            Title = $"Move{Many(sources)}",
+            Title = sources.Count == 1 ? Loc(LocString.Move) : Loc(LocString.MoveManyTitle, sources.Count),
             Key = "F6",
-            Verb = "Move",
+            Verb = Loc(LocString.Move),
             Weight = Weight.Moves,
             Items = sources,
-            FieldLabel = "where to",
+            FieldLabel = Loc(LocString.OperationWhereTo),
             Host = to.Source.IsRemote ? to.Source.Label : "",
             Value = to.Folder,
             FieldHint = across ? "copied first, removed after" : "nothing is copied, the names change",
@@ -748,14 +756,14 @@ public sealed class CommanderView : IArlecchinoView
 
         Ask(new()
         {
-            Title = "Rename",
+            Title = Loc(LocString.Rename),
             Subtitle = current.Name,
             Key = "Shift+F6",
-            Verb = "Rename",
+            Verb = Loc(LocString.Rename),
             Weight = Weight.Reversible,
-            FieldLabel = "new name",
+            FieldLabel = Loc(LocString.OperationNewName),
             Value = current.Name,
-            FieldHint = "the folder stays the same",
+            FieldHint = Loc(LocString.RenameSameFolder),
             Note = asking => Taken(panel, current.Name, asking.Value)
                 ? new("Something in this folder is called that already, and renaming onto it may replace it.",
                     true)
@@ -774,17 +782,17 @@ public sealed class CommanderView : IArlecchinoView
 
         Ask(new()
         {
-            Title = "New folder",
-            Subtitle = $"inside {Paths.Homed(panel.Source, panel.Folder)}",
+            Title = Loc(LocString.NewFolder),
+            Subtitle = Loc(LocString.NewFolderInside, Paths.Homed(panel.Source, panel.Folder)),
             Key = "F7",
-            Verb = "Create",
+            Verb = Loc(LocString.NewFolderVerb),
             Weight = Weight.Reversible,
-            FieldLabel = "name",
-            FieldHint = "slashes make nested folders",
+            FieldLabel = Loc(LocString.OperationName),
+            FieldHint = Loc(LocString.NewFolderSlashes),
             Note = static asking => asking.Value.Contains('/', StringComparison.Ordinal)
                 ? new("Every folder named along the way is made, not just the last one.")
                 : null,
-            Options = [new("jump the cursor onto it", true)],
+            Options = [new(Loc(LocString.NewFolderJumpTo), true)],
             Confirm = asking => Making(panel, asking),
         });
     }
@@ -798,7 +806,7 @@ public sealed class CommanderView : IArlecchinoView
 
         if (name.Trim().Length == 0)
         {
-            _state.Output = "A name is needed";
+            _state.Output = Loc(LocString.SaidNameNeeded);
 
             return;
         }
@@ -809,12 +817,12 @@ public sealed class CommanderView : IArlecchinoView
             {
                 if (created is null)
                 {
-                    _state.Output = $"Could not create {name}";
+                    _state.Output = Loc(LocString.SaidCouldNotCreate, name);
 
                     return;
                 }
 
-                if (asking.Ticked("jump the cursor onto it"))
+                if (asking.Ticked(Loc(LocString.NewFolderJumpTo)))
                 {
                     panel.State.Cursor = panel.Source.NameOf(created);
                 }
@@ -919,15 +927,15 @@ public sealed class CommanderView : IArlecchinoView
             () => panel.Source.ModeAsync(targets[0], CancellationToken.None),
             current => Ask(new()
             {
-                Title = $"Permissions{Many(targets)}",
+                Title = targets.Count == 1 ? Loc(LocString.Permissions) : Loc(LocString.PermissionsManyTitle, targets.Count),
                 Subtitle = panel.Source.IsRemote
                     ? "over SFTP, using the server's own request"
                     : $"in {Paths.Homed(panel.Source, panel.Folder)}",
                 Key = "Ctrl+X, C",
-                Verb = "Apply",
+                Verb = Loc(LocString.PermissionsVerb),
                 Weight = Weight.Reversible,
                 Items = targets,
-                FieldLabel = "mode",
+                FieldLabel = Loc(LocString.OperationMode),
                 Value = current.Length == 0 ? "644" : current,
                 FieldHint = folders > 0
                     ? $"{(folders == 1 ? "the folder keeps" : "the folders keep")} what is inside as it is"
@@ -938,8 +946,8 @@ public sealed class CommanderView : IArlecchinoView
                 Confirm = asking => Answering(() => Changing(panel, targets, asking.Value), refused =>
                 {
                     _state.Output = refused == 0
-                        ? $"{Counted(targets)} now {asking.Value}"
-                        : $"{refused} of {targets.Count} would not take {asking.Value}";
+                        ? Loc(LocString.SaidModeChanged, Counted(targets), asking.Value)
+                        : Loc(LocString.SaidModeRefused, refused, targets.Count, asking.Value);
 
                     panel.Reload();
                 }),
@@ -1019,13 +1027,13 @@ public sealed class CommanderView : IArlecchinoView
                 {
                     if (made)
                     {
-                        _state.Output = $"{kind} {name.Trim()} made";
+                        _state.Output = Loc(LocString.SaidLinkMade, kind, name.Trim());
                         beside.Reload();
 
                         return;
                     }
 
-                    _state.Output = $"{beside.Source.Label} would not make that {kind.ToLowerInvariant()}";
+                    _state.Output = Loc(LocString.SaidLinkRefused, beside.Source.Label, kind.ToLowerInvariant());
                 }));
     }
 
@@ -1050,7 +1058,7 @@ public sealed class CommanderView : IArlecchinoView
 
         var marked = Odd(_left, _right) + Odd(_right, _left);
 
-        _state.Output = marked == 0 ? "The two panels hold the same files" : $"{marked} differ";
+        _state.Output = marked == 0 ? "The two panels hold the same files" : Loc(LocString.SaidDiffer, marked);
     }
 
     private static int Odd(FilePanel panel, FilePanel other)
@@ -1113,13 +1121,13 @@ public sealed class CommanderView : IArlecchinoView
 
         Ask(new()
         {
-            Title = $"Delete{Many(sources)}",
-            Subtitle = $"from {Paths.Homed(panel.Source, panel.Folder)}",
+            Title = sources.Count == 1 ? Loc(LocString.Delete) : Loc(LocString.DeleteManyTitle, sources.Count),
+            Subtitle = Loc(LocString.DeleteFrom, Paths.Homed(panel.Source, panel.Folder)),
             Key = "F8",
-            Verb = "Delete",
+            Verb = Loc(LocString.Delete),
             Weight = Weight.Destroys,
             Items = sources,
-            ItemsLabel = "going away",
+            ItemsLabel = Loc(LocString.OperationGoingAway),
             Note = _ => new(bytes == 0 && folders > 0
                 ? $"Everything inside {(folders == 1 ? "the folder" : "the folders")}, however much that " +
                     "turns out to be. There is no undoing it."
@@ -1138,7 +1146,7 @@ public sealed class CommanderView : IArlecchinoView
             return false;
         }
 
-        _state.Output = "Nothing selected";
+        _state.Output = Loc(LocString.SaidNothingSelected);
 
         return true;
     }
@@ -1163,7 +1171,7 @@ public sealed class CommanderView : IArlecchinoView
     /// </summary>
     /// <param name="text">What was typed.</param>
     /// <returns>The complaint, or <c>null</c> when there is none.</returns>
-    private static string? Filled(string text) => text.Trim().Length == 0 ? "A name is needed" : null;
+    private static string? Filled(string text) => text.Trim().Length == 0 ? Loc(LocString.SaidNameNeeded) : null;
 
     private FilePanel Active() => _right.IsFocused ? _right : _left;
 
@@ -1291,7 +1299,7 @@ public sealed class CommanderView : IArlecchinoView
     }
 
     private void ChooseDrive(FilePanel panel) =>
-        Pick("Drive", Listing.Drives(), panel.GoTo);
+        Pick(Loc(LocString.PickDrive), Listing.Drives(), panel.GoTo);
 
     private void Filter() => Filter(Active());
 
@@ -1304,34 +1312,39 @@ public sealed class CommanderView : IArlecchinoView
 
     private void OpenMenu()
     {
-        var titles = new List<string>(Sections.Length);
+        var menus = new List<Pick>(Sections.Length);
 
-        foreach (var section in Sections)
-        {
-            titles.Add(section.Title);
-        }
-
-        Pick("Menu", titles, OpenSection);
-    }
-
-    private void OpenSection(string title)
-    {
         for (var index = 0; index < Sections.Length; index++)
         {
-            if (Sections[index].Title != title)
-            {
-                continue;
-            }
+            var which = index;
 
-            var section = Sections[index];
-            var chosen = index;
-
-            Pick(section.Title, section.Items, item => Run(chosen, item));
-            return;
+            menus.Add(new(Loc(Sections[index].Title), Run: () => OpenSection(which)));
         }
+
+        Pick(Loc(LocString.BarMenu), menus, static _ => { });
     }
 
-    private void Run(int section, string item)
+    /// <summary>
+    /// Opens one of the menus. Which entry was picked is carried as the string it names rather than
+    /// as the words on it, so acting on the choice never has to compare two sentences and hope.
+    /// </summary>
+    /// <param name="index">Which menu.</param>
+    private void OpenSection(int index)
+    {
+        var section = Sections[index];
+        var items = new List<Pick>(section.Items.Count);
+
+        foreach (var item in section.Items)
+        {
+            var what = item;
+
+            items.Add(new(Loc(item), Run: () => Run(index, what)));
+        }
+
+        Pick(Loc(section.Title), items, static _ => { });
+    }
+
+    private void Run(int section, LocString item)
     {
         switch (section)
         {
@@ -1353,35 +1366,35 @@ public sealed class CommanderView : IArlecchinoView
         }
     }
 
-    private void RunForPanel(FilePanel panel, string item)
+    private void RunForPanel(FilePanel panel, LocString item)
     {
         switch (item)
         {
-            case "Find file":
+            case LocString.MenuFindFile:
                 Navigation.Apply(Find());
                 break;
-            case "Sort by name":
+            case LocString.MenuSortByName:
                 panel.SortBy(Sorting.Name);
                 break;
-            case "Sort by size":
+            case LocString.MenuSortBySize:
                 panel.SortBy(Sorting.Size);
                 break;
-            case "Sort by date":
+            case LocString.MenuSortByDate:
                 panel.SortBy(Sorting.Modified);
                 break;
-            case "Show hidden files":
+            case LocString.MenuShowHidden:
                 ToggleHidden(panel);
                 break;
-            case "Choose drive":
+            case LocString.MenuChooseDrive:
                 ChooseDrive(panel);
                 break;
-            case "Open a saved host":
+            case LocString.MenuOpenSavedHost:
                 OpenSaved(panel);
                 break;
-            case "Connect to a server":
+            case LocString.MenuConnectToServer:
                 Connect(panel);
                 break;
-            case "Disconnect":
+            case LocString.MenuDisconnect:
                 Disconnect(panel);
                 break;
             default:
@@ -1390,35 +1403,35 @@ public sealed class CommanderView : IArlecchinoView
         }
     }
 
-    private void RunForFile(string item)
+    private void RunForFile(LocString item)
     {
         switch (item)
         {
-            case "View":
+            case LocString.View:
                 Navigation.Apply(View());
                 break;
-            case "Copy":
+            case LocString.Copy:
                 Copy();
                 break;
-            case "Move":
+            case LocString.Move:
                 Move();
                 break;
-            case "Rename":
+            case LocString.Rename:
                 Rename();
                 break;
-            case "Make folder":
+            case LocString.MenuMakeFolder:
                 MakeFolder();
                 break;
-            case "Permissions":
+            case LocString.Permissions:
                 Chmod();
                 break;
-            case "Owner":
+            case LocString.MenuOwner:
                 Chown();
                 break;
-            case "Symbolic link":
+            case LocString.MenuSymbolicLink:
                 Link(hard: false);
                 break;
-            case "Hard link":
+            case LocString.MenuHardLink:
                 Link(hard: true);
                 break;
             default:
@@ -1427,41 +1440,41 @@ public sealed class CommanderView : IArlecchinoView
         }
     }
 
-    private void RunForBoth(string item)
+    private void RunForBoth(LocString item)
     {
         switch (item)
         {
-            case "Swap panels":
+            case LocString.MenuSwapPanels:
                 Swap();
                 break;
-            case "Both panels here":
+            case LocString.MenuBothPanelsHere:
                 Passive().GoTo(Active().Folder);
                 break;
-            case "Compare directories":
+            case LocString.MenuCompareDirectories:
                 Compare();
                 break;
-            case "Folders been in":
+            case LocString.FoldersBeenIn:
                 OpenHistory(Active());
                 break;
-            case "Hotlist":
+            case LocString.Hotlist:
                 OpenHotlist();
                 break;
-            case "Mark a group":
+            case LocString.MenuMarkGroup:
                 Group(marking: true);
                 break;
-            case "Unmark a group":
+            case LocString.MenuUnmarkGroup:
                 Group(marking: false);
                 break;
-            case "Invert the marks":
+            case LocString.MenuInvertMarks:
                 Active().Invert();
                 break;
-            case "Filter":
+            case LocString.Filter:
                 Filter(Active());
                 break;
-            case "Run a command over SSH":
+            case LocString.MenuRunOverSsh:
                 Navigation.Apply(ViewKind.Ssh);
                 break;
-            case "What the commands said":
+            case LocString.MenuWhatCommandsSaid:
                 Navigation.Apply(ViewKind.Output);
                 break;
             default:
@@ -1470,17 +1483,17 @@ public sealed class CommanderView : IArlecchinoView
         }
     }
 
-    private void RunForOptions(string item)
+    private void RunForOptions(LocString item)
     {
         switch (item)
         {
-            case "Hidden files here":
+            case LocString.MenuHiddenHere:
                 ToggleHidden(_left);
                 break;
-            case "Hidden files there":
+            case LocString.MenuHiddenThere:
                 ToggleHidden(_right);
                 break;
-            case "Notifications":
+            case LocString.MenuNotifications:
                 Navigation.Apply(Routes.Notifications);
                 break;
             default:
@@ -1506,7 +1519,7 @@ public sealed class CommanderView : IArlecchinoView
             listed.Add(host.Describe());
         }
 
-        Pick("Saved hosts", listed, chosen =>
+        Pick(Loc(LocString.PickSavedHosts), listed, chosen =>
         {
             for (var index = 0; index < listed.Count; index++)
             {
@@ -1523,7 +1536,7 @@ public sealed class CommanderView : IArlecchinoView
 
     private void Dial(FilePanel panel, SshHost host, Connection wanted)
     {
-        _state.Output = $"Connecting to {host.Alias}…";
+        _state.Output = Loc(LocString.SaidConnecting, host.Alias);
 
         Connector.Start(
             wanted,
@@ -1531,7 +1544,7 @@ public sealed class CommanderView : IArlecchinoView
             {
                 _remote.Ssh = wanted;
                 panel.Connect(source, folder);
-                _state.Output = $"{host.Alias} · {folder}";
+                _state.Output = Loc(LocString.Joined, host.Alias, folder);
             },
             (message, denied) => AskPassword(panel, host, wanted, message, denied));
     }
@@ -1540,7 +1553,7 @@ public sealed class CommanderView : IArlecchinoView
     {
         if (!denied || wanted.Password.Length > 0)
         {
-            Say($"Could not open {host.Alias}", message);
+            Say(Loc(LocString.SaidCouldNotOpen, host.Alias), message);
             return;
         }
 
@@ -1559,7 +1572,7 @@ public sealed class CommanderView : IArlecchinoView
     {
         if (!panel.Source.IsRemote)
         {
-            _state.Output = "That panel is already local";
+            _state.Output = Loc(LocString.SaidPanelIsLocal);
             return;
         }
 
@@ -1567,7 +1580,7 @@ public sealed class CommanderView : IArlecchinoView
 
         panel.Connect(new LocalSource(), Environment.CurrentDirectory);
 
-        _state.Output = $"Disconnected from {label}";
+        _state.Output = Loc(LocString.SaidDisconnected, label);
     }
 
     private void ToggleHidden() => ToggleHidden(Active());
@@ -1577,7 +1590,7 @@ public sealed class CommanderView : IArlecchinoView
         panel.State.ShowHidden = !panel.State.ShowHidden;
         panel.Reload();
 
-        _state.Output = panel.State.ShowHidden ? "Hidden files shown" : "Hidden files skipped";
+        _state.Output = panel.State.ShowHidden ? Loc(LocString.SaidHiddenShown) : Loc(LocString.SaidHiddenSkipped);
     }
 
     private void Swap()
@@ -1679,7 +1692,7 @@ public sealed class CommanderView : IArlecchinoView
         {
             if (where is null)
             {
-                _state.Output = $"No folder {wanted}";
+                _state.Output = Loc(LocString.SaidNoFolder, wanted);
 
                 return;
             }
@@ -1777,7 +1790,7 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        Pick("Folders been in", listed, panel.GoTo);
+        Pick(Loc(LocString.FoldersBeenIn), listed, panel.GoTo);
     }
 
     /// <summary>
@@ -1794,19 +1807,19 @@ public sealed class CommanderView : IArlecchinoView
             listed.Add(DropHot);
         }
 
-        Pick("Hotlist", listed, chosen =>
+        Pick(Loc(LocString.Hotlist), listed, chosen =>
         {
-            switch (chosen)
+            if (chosen == AddHot)
             {
-                case AddHot:
-                    Remember(panel.Folder);
-                    break;
-                case DropHot:
-                    Pick("Forget", new List<string>(_panels.Hotlist), Forget);
-                    break;
-                default:
-                    panel.GoTo(chosen);
-                    break;
+                Remember(panel.Folder);
+            }
+            else if (chosen == DropHot)
+            {
+                Pick(Loc(LocString.PickForget), new List<string>(_panels.Hotlist), Forget);
+            }
+            else
+            {
+                panel.GoTo(chosen);
             }
         });
     }
@@ -1815,12 +1828,12 @@ public sealed class CommanderView : IArlecchinoView
     {
         if (Has(_panels.Hotlist, folder))
         {
-            _state.Output = "Already on the hotlist";
+            _state.Output = Loc(LocString.HotlistAlready);
             return;
         }
 
         _panels.Hotlist.Add(folder);
-        _state.Output = $"{folder} is on the hotlist";
+        _state.Output = Loc(LocString.HotlistOn, folder);
     }
 
     private static bool Has(IReadOnlyList<string> folders, string folder)
@@ -1839,7 +1852,7 @@ public sealed class CommanderView : IArlecchinoView
     private void Forget(string folder)
     {
         _panels.Hotlist.Remove(folder);
-        _state.Output = $"{folder} is off the hotlist";
+        _state.Output = Loc(LocString.HotlistOff, folder);
     }
 
     private void Reload()
@@ -1889,7 +1902,7 @@ public sealed class CommanderView : IArlecchinoView
         if (!running)
         {
             inside.Write(0, 0, TextWidth.Truncate(said, inside.Width), coat.Warning);
-            inside.Write(1, 0, "⏎ to read the rest", coat.Label);
+            inside.Write(1, 0, Loc(LocString.SaidToRead), coat.Label);
 
             return;
         }

@@ -125,7 +125,7 @@ public static class OperationBox
 
         if (operation.Items.Count > shown)
         {
-            inside.WriteLine(row + shown, $"and {operation.Items.Count - shown} more", coat.Label, Align.Right);
+            inside.WriteLine(row + shown, Loc(LocString.OperationAndMore, operation.Items.Count - shown), coat.Label, Align.Right);
         }
 
         return row + shown + 2;
@@ -190,7 +190,7 @@ public static class OperationBox
 
             if (here)
             {
-                inside.Write(row + index, inside.Width - 6, "space", coat.Ghost);
+                inside.Write(row + index, inside.Width - 6, Loc(LocString.OperationSpace), coat.Ghost);
             }
         }
 
@@ -237,15 +237,15 @@ public static class OperationBox
             return;
         }
 
-        var go = $"  Enter {operation.Verb}  ";
+        var go = "  " + Loc(LocString.OperationConfirm, operation.Verb) + "  ";
 
         inside.Write(row, 0, go, Skin.Paint(on, fill, TextStyle.Bold));
-        inside.Write(row, go.Length + 2, "  Esc Cancel  ", Skin.Paint(new(0xA7, 0x9F, 0xAE), Skin.Chip));
+        inside.Write(row, go.Length + 2, "  " + Loc(LocString.OperationCancel) + "  ", Skin.Paint(new(0xA7, 0x9F, 0xAE), Skin.Chip));
 
         var tab = operation.Over is not null
-            ? "Tab completes the path"
+            ? Loc(LocString.OperationTabCompletes)
             : operation.Options.Count > 0
-                ? "Tab reaches the switches"
+                ? Loc(LocString.OperationTabSwitches)
                 : "";
 
         if (tab.Length > 0)

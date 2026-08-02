@@ -30,6 +30,12 @@
     <CompilerVisibleProperty Include="ArlecchinoGenerateStores" />
     <CompilerVisibleProperty Include="ArlecchinoGenerateWidgets" />
     <CompilerVisibleProperty Include="ArlecchinoGenerateCommands" />
+    <CompilerVisibleProperty Include="ArlecchinoLocalizationFolder" />
+    <CompilerVisibleProperty Include="ArlecchinoLocalizationLanguage" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Localization\*.toml" />
   </ItemGroup>
 
 </Project>
