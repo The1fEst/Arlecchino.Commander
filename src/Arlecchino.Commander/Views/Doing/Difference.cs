@@ -1,6 +1,6 @@
 using System;
 using Arlecchino.Commander.Model;
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 
 namespace Arlecchino.Commander.Views.Doing;
 

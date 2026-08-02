@@ -48,20 +48,20 @@ public sealed class ViewerView : IArlecchinoView
     /// which fills in when the bytes arrive — the same shape a panel over a server has always had.
     /// </summary>
     /// <param name="surface">Where it draws.</param>
-    /// <param name="panels">Says which file is being viewed and where it lives.</param>
+    /// <param name="sessions">Says which file is being viewed and where it lives.</param>
     /// <param name="options">Supplies the keymap.</param>
     /// <param name="lifetime">Stops the application on F10.</param>
-    public ViewerView(Surface surface, Panels panels, ArlecchinoOptions options, IHostApplicationLifetime lifetime)
+    public ViewerView(Surface surface, Sessions sessions, ArlecchinoOptions options, IHostApplicationLifetime lifetime)
     {
-        ArgumentNullException.ThrowIfNull(panels);
+        ArgumentNullException.ThrowIfNull(sessions);
         ArgumentNullException.ThrowIfNull(options);
 
         _surface = surface;
         _lifetime = lifetime;
 
-        var path = panels.Viewing.Value;
-        var size = panels.ViewingSize;
-        var source = panels.ViewingSource;
+        var path = sessions.Viewing.Value;
+        var size = sessions.ViewingSize;
+        var source = sessions.ViewingSource;
 
         var empty = new TextView(options.Keymap) { Text = "" };
 

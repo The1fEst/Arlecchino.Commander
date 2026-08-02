@@ -5,7 +5,7 @@ using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
 using Arlecchino.Commander.Widgets.Chrome;
 
-namespace Arlecchino.Commander.Widgets.Panel;
+namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
 /// One file, as a row of a panel. Every span carries its own colour, and the row under the cursor

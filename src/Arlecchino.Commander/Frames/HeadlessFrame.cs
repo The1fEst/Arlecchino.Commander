@@ -87,7 +87,7 @@ public static class HeadlessFrame
 
         var (width, height) = Size(size);
         provider.GetRequiredService<Surface>().SetFixedSize(width, height);
-        var panels = provider.GetRequiredService<Panels>();
+        var panels = provider.GetRequiredService<Sessions>();
 
         panels.Start(left, right);
 
@@ -151,10 +151,10 @@ public static class HeadlessFrame
     /// nothing else to get on with, and a picture of a panel that has not connected is not the picture
     /// that was asked for.
     /// </summary>
-    /// <param name="panels">The panels to attach to.</param>
+    /// <param name="sessions">The panels to attach to.</param>
     /// <param name="remote">Told which session is open.</param>
     /// <param name="link">Where to connect.</param>
-    private static void Attach(Panels panels, Remote remote, string link)
+    private static void Attach(Sessions sessions, Remote remote, string link)
     {
         var wanted = Links.Parse(link);
         var source = wanted.Protocol == Protocol.Sftp
@@ -166,7 +166,7 @@ public static class HeadlessFrame
             remote.Ssh = wanted;
         }
 
-        panels.Left.Connect(source, wanted.Path.Length > 0 ? wanted.Path : source.Home);
+        sessions.Left.Connect(source, wanted.Path.Length > 0 ? wanted.Path : source.Home);
     }
 
     private static void Play(IServiceProvider provider, string script)

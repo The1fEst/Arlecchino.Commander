@@ -34,7 +34,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     private readonly Surface _surface;
     private readonly Remote _session;
-    private readonly Panels _panels;
+    private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
     private readonly IServiceProvider _services;
     private readonly Spinner _spinner = new();
@@ -48,7 +48,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     public ConnectView(
         Surface surface,
         Remote session,
-        Panels panels,
+        Sessions sessions,
         ArlecchinoState state,
         ArlecchinoOptions options,
         IServiceProvider services)
@@ -57,7 +57,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
         _surface = surface;
         _session = session;
-        _panels = panels;
+        _sessions = sessions;
         _state = state;
         _services = services;
         _keymap = options.Keymap;
@@ -124,7 +124,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     private void DrawHeader(SurfaceRegion header)
     {
-        var side = _panels.RightIsActive.Value ? "right" : "left";
+        var side = _sessions.RightIsActive.Value ? "right" : "left";
 
         header.WriteLine(0, $"Connect the {side} panel", Theme.Header);
         header.WriteLine(1, "The panel keeps browsing the server until it is disconnected", Theme.Muted);
@@ -195,7 +195,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
             _keys);
     }
 
-    private PanelState Side() => _panels.RightIsActive.Value ? _panels.Right : _panels.Left;
+    private PanelState Side() => _sessions.RightIsActive.Value ? _sessions.Right : _sessions.Left;
 
     private static string? Filled(string text) => text.Trim().Length == 0 ? "This one is needed" : null;
 

@@ -6,7 +6,7 @@ using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
 using Arlecchino.Commander.Widgets.Chrome;
 
-namespace Arlecchino.Commander.Widgets.Panel;
+namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
 /// Where a panel is looking, written as a trail rather than as a path: the separators recede, the

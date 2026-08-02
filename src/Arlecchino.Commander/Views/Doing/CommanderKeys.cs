@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commands;
 using Arlecchino.Input;
 using Arlecchino.Navigation;

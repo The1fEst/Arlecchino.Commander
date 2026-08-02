@@ -27,17 +27,17 @@ public sealed class FindView : IArlecchinoView
 
     private readonly Surface _surface;
     private readonly Finder _finder;
-    private readonly Panels _panels;
+    private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
     private readonly Spinner _spinner = new();
     private readonly PaneTree _layout;
     private readonly FocusRing _focus;
 
-    public FindView(Surface surface, Finder finder, Panels panels, ArlecchinoState state, ArlecchinoOptions options)
+    public FindView(Surface surface, Finder finder, Sessions sessions, ArlecchinoState state, ArlecchinoOptions options)
     {
         _surface = surface;
         _finder = finder;
-        _panels = panels;
+        _sessions = sessions;
         _state = state;
 
         var hits = new ListBox<Hit>(options.Keymap)
@@ -128,12 +128,12 @@ public sealed class FindView : IArlecchinoView
     /// <returns>The screen with the panels on it.</returns>
     private ViewRoute Open(Hit hit)
     {
-        var panel = _panels.RightIsActive.Value ? _panels.Right : _panels.Left;
+        var panel = _sessions.RightIsActive.Value ? _sessions.Right : _sessions.Left;
 
         panel.GoTo(hit.Folder);
         panel.Cursor = hit.Entry.Name;
 
-        _panels.Moved();
+        _sessions.Moved();
         _state.Output = hit.Entry.Path;
 
         return ViewKind.Commander;

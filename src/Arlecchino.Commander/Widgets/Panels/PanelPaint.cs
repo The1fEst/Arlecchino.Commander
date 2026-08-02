@@ -5,7 +5,7 @@ using Arlecchino.Rendering;
 using Arlecchino.Rendering.Text;
 using Arlecchino.Commander.Widgets.Chrome;
 
-namespace Arlecchino.Commander.Widgets.Panel;
+namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
 /// What a panel looks like: the rule down its edge, the trail along the top, the column heads, and

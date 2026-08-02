@@ -4,7 +4,7 @@ using System.Threading;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.State;
 

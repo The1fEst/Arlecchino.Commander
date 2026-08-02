@@ -26,7 +26,7 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Write("beta.txt", "two");
         Directory.CreateDirectory(Path.Combine(_app.Folder, "nested"));
 
-        _app.Panels.Start(_app.Folder, _app.Folder);
+        _app.Sessions.Start(_app.Folder, _app.Folder);
         _app.Settled();
     }
 
@@ -68,7 +68,7 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Press(ConsoleKey.Spacebar);
         _app.Frame();
 
-        Assert.True(_app.Panels.Left.Marks.Contains("alpha.txt"));
+        Assert.True(_app.Sessions.Left.Marks.Contains("alpha.txt"));
         Assert.Equal(Skin.Lively.Marked.Ansi, _app.StyleOf("alpha.txt"));
     }
 
@@ -97,7 +97,7 @@ public sealed class CommanderScreenTests : IDisposable
 
         var screen = _app.Frame();
 
-        Assert.EndsWith("nested", _app.Panels.Left.Folder, StringComparison.Ordinal);
+        Assert.EndsWith("nested", _app.Sessions.Left.Folder, StringComparison.Ordinal);
         Assert.Contains("nested", screen, StringComparison.Ordinal);
     }
 
@@ -106,12 +106,12 @@ public sealed class CommanderScreenTests : IDisposable
     {
         _app.Frame();
 
-        Assert.False(_app.Panels.RightIsActive.Value);
+        Assert.False(_app.Sessions.RightIsActive.Value);
 
         _app.Press(ConsoleKey.Tab);
         _app.Frame();
 
-        Assert.True(_app.Panels.RightIsActive.Value);
+        Assert.True(_app.Sessions.RightIsActive.Value);
     }
 
     /// <summary>
@@ -122,24 +122,24 @@ public sealed class CommanderScreenTests : IDisposable
     public void EachTabHasPanelsOfItsOwn()
     {
         var nested = Directory.CreateDirectory(Path.Combine(_app.Folder, "nested")).FullName;
-        var here = _app.Panels.Left.Folder;
+        var here = _app.Sessions.Left.Folder;
 
-        _app.Panels.Add();
+        _app.Sessions.Add();
         _app.Settled();
 
-        Assert.Equal(2, _app.Panels.Sessions.Count);
-        Assert.Equal(1, _app.Panels.Open.Value);
+        Assert.Equal(2, _app.Sessions.All.Count);
+        Assert.Equal(1, _app.Sessions.Open.Value);
 
-        _app.Panels.Left.GoTo(nested);
-        _app.Panels.Moved();
+        _app.Sessions.Left.GoTo(nested);
+        _app.Sessions.Moved();
         _app.Settled();
 
-        Assert.Equal(nested, _app.Panels.Left.Folder);
+        Assert.Equal(nested, _app.Sessions.Left.Folder);
 
-        _app.Panels.Show(0);
+        _app.Sessions.Show(0);
         _app.Settled();
 
-        Assert.Equal(here, _app.Panels.Left.Folder);
+        Assert.Equal(here, _app.Sessions.Left.Folder);
     }
 
     /// <summary>
@@ -149,19 +149,19 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void ConnectingStaysInTheTabItWasAskedFrom()
     {
-        _app.Panels.Right.Connect(new LocalSource(), _app.Folder);
-        _app.Panels.Moved();
+        _app.Sessions.Right.Connect(new LocalSource(), _app.Folder);
+        _app.Sessions.Moved();
         _app.Settled();
 
-        Assert.Single(_app.Panels.Sessions);
-        Assert.Equal("local ⇄ local", _app.Panels.Current.Label);
+        Assert.Single(_app.Sessions.All);
+        Assert.Equal("local ⇄ local", _app.Sessions.Current.Label);
     }
 
     /// <summary>Clicking a tab shows it, which is the one thing here a mouse does better than a key.</summary>
     [Fact]
     public void ClickingATabShowsIt()
     {
-        _app.Panels.Add();
+        _app.Sessions.Add();
         _app.Settled();
 
         var lines = _app.FrameLines();
@@ -172,15 +172,15 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Click(row, lines[row].IndexOf("local", StringComparison.Ordinal));
         _app.Frame();
 
-        Assert.Equal(0, _app.Panels.Open.Value);
+        Assert.Equal(0, _app.Sessions.Open.Value);
     }
 
     /// <summary>The last tab stays: an application with no panels is not a state worth reaching.</summary>
     [Fact]
     public void TheLastTabWillNotClose()
     {
-        Assert.False(_app.Panels.Close(_app.Panels.Current));
-        Assert.Single(_app.Panels.Sessions);
+        Assert.False(_app.Sessions.Close(_app.Sessions.Current));
+        Assert.Single(_app.Sessions.All);
     }
 
     [Fact]
@@ -238,12 +238,12 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Click(heads, size);
         _app.Frame();
 
-        Assert.Equal(Sorting.Size, _app.Panels.Left.Sorting);
+        Assert.Equal(Sorting.Size, _app.Sessions.Left.Sorting);
 
         _app.Click(heads, size);
         _app.Frame();
 
-        Assert.True(_app.Panels.Left.Descending);
+        Assert.True(_app.Sessions.Left.Descending);
     }
 
     /// <summary>
@@ -255,7 +255,7 @@ public sealed class CommanderScreenTests : IDisposable
     {
         using var wide = new ScreenApp(ViewKind.Commander, 150, 24);
 
-        wide.Panels.Start(_app.Folder, _app.Folder);
+        wide.Sessions.Start(_app.Folder, _app.Folder);
         wide.Settled();
         wide.Press(ConsoleKey.DownArrow);
         wide.Press(ConsoleKey.Spacebar);
@@ -276,12 +276,12 @@ public sealed class CommanderScreenTests : IDisposable
         var gone = Path.Combine(_app.Folder, "gone");
 
         Directory.CreateDirectory(gone);
-        _app.Panels.Left.GoTo(gone);
+        _app.Sessions.Left.GoTo(gone);
 
-        Assert.True(_app.Until(() => _app.Panels.Left.Folder == gone));
+        Assert.True(_app.Until(() => _app.Sessions.Left.Folder == gone));
 
         Directory.Delete(gone);
-        _app.Panels.Moved();
+        _app.Sessions.Moved();
         _app.Settled();
 
         var screen = _app.Frame();

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.State;
 
@@ -15,17 +15,17 @@ namespace Arlecchino.Commander.Views.Doing;
 public sealed class Places
 {
     private readonly Dialogs _dialogs;
-    private readonly Panels _panels;
+    private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
 
     /// <summary>Sets the two lists up.</summary>
     /// <param name="dialogs">How anything is asked.</param>
-    /// <param name="panels">Where the kept folders live.</param>
+    /// <param name="sessions">Where the kept folders live.</param>
     /// <param name="state">Where the last word said is kept.</param>
-    public Places(Dialogs dialogs, Panels panels, ArlecchinoState state)
+    public Places(Dialogs dialogs, Sessions sessions, ArlecchinoState state)
     {
         _dialogs = dialogs;
-        _panels = panels;
+        _sessions = sessions;
         _state = state;
     }
 
@@ -67,9 +67,9 @@ public sealed class Places
 
         var add = Loc(LocString.HotlistAdd);
         var drop = Loc(LocString.HotlistDrop);
-        var listed = new List<string>(_panels.Hotlist) { add };
+        var listed = new List<string>(_sessions.Hotlist) { add };
 
-        if (_panels.Hotlist.Count > 0)
+        if (_sessions.Hotlist.Count > 0)
         {
             listed.Add(drop);
         }
@@ -82,7 +82,7 @@ public sealed class Places
             }
             else if (chosen == drop)
             {
-                _dialogs.Pick(Loc(LocString.PickForget), new List<string>(_panels.Hotlist), Forget);
+                _dialogs.Pick(Loc(LocString.PickForget), new List<string>(_sessions.Hotlist), Forget);
             }
             else
             {
@@ -95,14 +95,14 @@ public sealed class Places
     /// <param name="folder">The folder.</param>
     public void Remember(string folder)
     {
-        if (Has(_panels.Hotlist, folder))
+        if (Has(_sessions.Hotlist, folder))
         {
             _state.Output = Loc(LocString.HotlistAlready);
 
             return;
         }
 
-        _panels.Hotlist.Add(folder);
+        _sessions.Hotlist.Add(folder);
         _state.Output = Loc(LocString.HotlistOn, folder);
     }
 
@@ -127,7 +127,7 @@ public sealed class Places
     /// <param name="folder">The folder.</param>
     private void Forget(string folder)
     {
-        _panels.Hotlist.Remove(folder);
+        _sessions.Hotlist.Remove(folder);
         _state.Output = Loc(LocString.HotlistOff, folder);
     }
 }

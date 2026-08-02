@@ -2,7 +2,7 @@ using System;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Rendering;
 
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
 
@@ -17,15 +17,15 @@ public sealed class Gutter
 
     private const int Least = 4;
 
-    private readonly Panels _tabs;
+    private readonly Sessions _sessions;
     private readonly Pair _panels;
 
     /// <summary>Draws the column between two panels.</summary>
-    /// <param name="tabs">Which side is being worked in.</param>
+    /// <param name="sessions">Which side is being worked in.</param>
     /// <param name="panels">The two panels on screen.</param>
-    public Gutter(Panels tabs, Pair panels)
+    public Gutter(Sessions sessions, Pair panels)
     {
-        _tabs = tabs;
+        _sessions = sessions;
         _panels = panels;
     }
 
@@ -47,7 +47,7 @@ public sealed class Gutter
         var style = marks > 0 ? coat.Accent : coat.Sleeping;
         var top = Math.Max(0, (gutter.Height - label.Length - 2) / 2);
 
-        gutter.Write(top, 1, _tabs.RightIsActive.Value ? "←" : "→", style);
+        gutter.Write(top, 1, _sessions.RightIsActive.Value ? "←" : "→", style);
 
         for (var index = 0; index < label.Length && top + index + 2 < gutter.Height; index++)
         {

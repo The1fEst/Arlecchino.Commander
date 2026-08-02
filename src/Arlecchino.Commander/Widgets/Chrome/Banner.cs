@@ -21,12 +21,12 @@ public sealed class Banner
 
     private const int TabRow = 0;
 
-    private readonly Panels _panels;
+    private readonly Sessions _sessions;
     private readonly List<(int Column, int Width, int Index)> _tabs = [];
 
     /// <summary>Draws the band over a set of tabs.</summary>
-    /// <param name="panels">The tabs, and which of them is open.</param>
-    public Banner(Panels panels) => _panels = panels;
+    /// <param name="sessions">The sessions there are, and which of them is open.</param>
+    public Banner(Sessions sessions) => _sessions = sessions;
 
     /// <summary>Draws it.</summary>
     /// <param name="header">The row to draw on.</param>
@@ -57,11 +57,11 @@ public sealed class Banner
         _tabs.Clear();
 
         column += kind.Length + 1;
-        for (var index = 0; index < _panels.Sessions.Count; index++)
+        for (var index = 0; index < _sessions.All.Count; index++)
         {
-            var session = _panels.Sessions[index];
+            var session = _sessions.All[index];
             var label = session.Label;
-            var live = index == _panels.Open.Value;
+            var live = index == _sessions.Open.Value;
 
             if (column + label.Length + 6 > header.Width - 4)
             {
@@ -114,7 +114,7 @@ public sealed class Banner
     /// <param name="lit">The surface of the tab.</param>
     private void Sides(SurfaceRegion header, int column, Session session, bool live, Skin.Coat lit)
     {
-        var right = live && _panels.RightIsActive.Value;
+        var right = live && _sessions.RightIsActive.Value;
         var near = Named(session.Left, live && !right, lit);
         var far = Named(session.Right, right, lit);
         var at = column;

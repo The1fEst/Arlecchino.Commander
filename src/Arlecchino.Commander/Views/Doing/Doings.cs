@@ -1,7 +1,7 @@
 using System;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.Navigation;
 using Arlecchino.State;
@@ -18,7 +18,7 @@ namespace Arlecchino.Commander.Views.Doing;
 /// </summary>
 public sealed class Doings
 {
-    private readonly Panels _tabs;
+    private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
     private readonly Finder _finder;
     private readonly Runner _runner;
@@ -27,7 +27,7 @@ public sealed class Doings
     /// <summary>Gathers everything the screen can do.</summary>
     /// <param name="dialogs">How anything is asked.</param>
     /// <param name="panels">The two panels on screen.</param>
-    /// <param name="tabs">Every tab, and which one is open.</param>
+    /// <param name="sessions">Every tab, and which one is open.</param>
     /// <param name="operations">What carries file work out.</param>
     /// <param name="runner">What runs commands.</param>
     /// <param name="finder">What walks a folder looking for something.</param>
@@ -37,7 +37,7 @@ public sealed class Doings
     public Doings(
         Dialogs dialogs,
         Pair panels,
-        Panels tabs,
+        Sessions sessions,
         Operations operations,
         Runner runner,
         Finder finder,
@@ -48,7 +48,7 @@ public sealed class Doings
         Dialogs = dialogs;
         Panels = panels;
 
-        _tabs = tabs;
+        _sessions = sessions;
         _state = state;
         _finder = finder;
         _runner = runner;
@@ -57,7 +57,7 @@ public sealed class Doings
         Files = new(dialogs, operations, state, panels);
         Rights = new(dialogs, runner, state, panels);
         Linking = new(dialogs, state, panels);
-        Places = new(dialogs, tabs, state);
+        Places = new(dialogs, sessions, state);
         Dialling = new(dialogs, remote, state);
     }
 
@@ -111,9 +111,9 @@ public sealed class Doings
         var panel = Panels.Active;
 
         panel.State.Cursor = entry.Name;
-        _tabs.Viewing.Value = entry.Path;
-        _tabs.ViewingSource = panel.Source;
-        _tabs.ViewingSize = entry.Size;
+        _sessions.Viewing.Value = entry.Path;
+        _sessions.ViewingSource = panel.Source;
+        _sessions.ViewingSize = entry.Size;
 
         return ViewKind.Viewer;
     }
@@ -264,7 +264,7 @@ public sealed class Doings
     /// <param name="panel">The panel that would be connected.</param>
     public void Connect(FilePanel panel)
     {
-        _tabs.RightIsActive.Value = ReferenceEquals(panel, Panels.Right);
+        _sessions.RightIsActive.Value = ReferenceEquals(panel, Panels.Right);
 
         Navigation.Apply(ViewKind.Connect);
     }

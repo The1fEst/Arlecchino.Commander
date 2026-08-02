@@ -8,7 +8,7 @@ using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Stores;
 
-public sealed class Panels : IArlecchinoStore, IDisposable
+public sealed class Sessions : IArlecchinoStore, IDisposable
 {
     private readonly List<Session> _sessions =
     [
@@ -16,7 +16,7 @@ public sealed class Panels : IArlecchinoStore, IDisposable
     ];
 
     /// <summary>The sessions there are, in the order their tabs are drawn.</summary>
-    public IReadOnlyList<Session> Sessions => _sessions;
+    public IReadOnlyList<Session> All => _sessions;
 
     /// <summary>
     /// Which session is on screen. An atom, so opening a tab or stepping between them marks the frame

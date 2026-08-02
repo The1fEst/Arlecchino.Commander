@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Ssh;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.State;
 

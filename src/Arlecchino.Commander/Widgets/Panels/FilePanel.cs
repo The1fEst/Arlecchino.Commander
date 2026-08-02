@@ -12,7 +12,7 @@ using Arlecchino.Rendering;
 using Arlecchino.Widgets;
 using Arlecchino.Widgets.Lists;
 
-namespace Arlecchino.Commander.Widgets.Panel;
+namespace Arlecchino.Commander.Widgets.Panels;
 
 public sealed class FilePanel : IArlecchinoInteractiveWidget
 {

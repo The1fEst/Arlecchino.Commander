@@ -43,7 +43,7 @@ builder.Services
 
 var host = builder.Build();
 
-host.Services.GetRequiredService<Panels>().Start(left, right);
+host.Services.GetRequiredService<Sessions>().Start(left, right);
 
 await host.RunAsync();
 

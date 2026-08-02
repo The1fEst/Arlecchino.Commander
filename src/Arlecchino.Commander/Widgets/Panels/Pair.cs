@@ -1,4 +1,4 @@
-namespace Arlecchino.Commander.Widgets.Panel;
+namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
 /// The two panels on screen, and which of them is being worked in.

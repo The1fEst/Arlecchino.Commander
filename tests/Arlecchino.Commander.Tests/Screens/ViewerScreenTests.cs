@@ -22,8 +22,8 @@ public sealed class ViewerScreenTests : IDisposable
     {
         var path = _app.Write(name, text);
 
-        _app.Panels.Viewing.Value = path;
-        _app.Panels.ViewingSize = new FileInfo(path).Length;
+        _app.Sessions.Viewing.Value = path;
+        _app.Sessions.ViewingSize = new FileInfo(path).Length;
     }
 
     [Fact]

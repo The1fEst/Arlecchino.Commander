@@ -23,7 +23,7 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Write(".hidden", "two");
         Directory.CreateDirectory(Path.Combine(_app.Folder, "nested"));
 
-        _app.Panels.Start(_app.Folder, _app.Folder);
+        _app.Sessions.Start(_app.Folder, _app.Folder);
         _app.Settled();
     }
 
@@ -127,7 +127,7 @@ public sealed class CommanderKeysTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(_app.Folder, "nestling"));
 
-        _app.Panels.Left.Marks.Clear();
+        _app.Sessions.Left.Marks.Clear();
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.F5);
         _app.Frame();
@@ -146,7 +146,7 @@ public sealed class CommanderKeysTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(_app.Folder, "nestling"));
 
-        _app.Panels.Left.Marks.Clear();
+        _app.Sessions.Left.Marks.Clear();
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.F5);
         _app.Frame();
@@ -257,30 +257,30 @@ public sealed class CommanderKeysTests : IDisposable
     {
         var other = Directory.CreateDirectory(Path.Combine(_app.Folder, "other")).FullName;
 
-        _app.Panels.Right.GoTo(other);
+        _app.Sessions.Right.GoTo(other);
         _app.Frame();
 
-        var left = _app.Panels.Left.Folder;
-        var right = _app.Panels.Right.Folder;
+        var left = _app.Sessions.Left.Folder;
+        var right = _app.Sessions.Right.Folder;
 
         _app.Press(ConsoleKey.U, control: true);
         _app.Frame();
 
-        Assert.Equal(right, _app.Panels.Left.Folder);
-        Assert.Equal(left, _app.Panels.Right.Folder);
+        Assert.Equal(right, _app.Sessions.Left.Folder);
+        Assert.Equal(left, _app.Sessions.Right.Folder);
     }
 
     [Fact]
     public void ReloadingKeepsThePanelWhereItWas()
     {
-        var where = _app.Panels.Left.Folder;
+        var where = _app.Sessions.Left.Folder;
 
         _app.Write("appeared.txt", "three");
         _app.Press(ConsoleKey.R, control: true);
 
         var screen = _app.Frame();
 
-        Assert.Equal(where, _app.Panels.Left.Folder);
+        Assert.Equal(where, _app.Sessions.Left.Folder);
         Assert.Contains("appeared.txt", screen, StringComparison.Ordinal);
     }
 
@@ -294,15 +294,15 @@ public sealed class CommanderKeysTests : IDisposable
     {
         var nested = Path.Combine(_app.Folder, "nested");
 
-        _app.Panels.Left.GoTo(nested);
-        _app.Panels.Moved();
+        _app.Sessions.Left.GoTo(nested);
+        _app.Sessions.Moved();
         _app.Settled();
 
         _app.Settled();
         _app.Press(ConsoleKey.Home);
         _app.Press(ConsoleKey.Enter);
 
-        Assert.True(_app.Until(() => _app.Panels.Left.Folder == _app.Folder));
+        Assert.True(_app.Until(() => _app.Sessions.Left.Folder == _app.Folder));
     }
 
     [Fact]
@@ -310,14 +310,14 @@ public sealed class CommanderKeysTests : IDisposable
     {
         var nested = Path.Combine(_app.Folder, "nested");
 
-        _app.Panels.Left.GoTo(nested);
-        _app.Panels.Moved();
+        _app.Sessions.Left.GoTo(nested);
+        _app.Sessions.Moved();
         _app.Settled();
 
         _app.Type("ls x");
         _app.Press(ConsoleKey.Backspace);
 
-        Assert.Equal(nested, _app.Panels.Left.Folder);
+        Assert.Equal(nested, _app.Sessions.Left.Folder);
         Assert.Contains("ls ", _app.Frame(), StringComparison.Ordinal);
         Assert.DoesNotContain("ls x", _app.Frame(), StringComparison.Ordinal);
     }

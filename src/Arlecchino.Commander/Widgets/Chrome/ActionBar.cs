@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Arlecchino.Rendering;
 
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
 

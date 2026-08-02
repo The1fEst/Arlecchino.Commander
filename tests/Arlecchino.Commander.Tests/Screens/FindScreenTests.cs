@@ -83,7 +83,7 @@ public sealed class FindScreenTests : IDisposable
         _app.Press(ConsoleKey.Enter);
 
         Assert.Equal(ViewKind.Commander, _app.Navigator.CurrentRoute);
-        Assert.EndsWith("nested", _app.Panels.Left.Folder, StringComparison.Ordinal);
+        Assert.EndsWith("nested", _app.Sessions.Left.Folder, StringComparison.Ordinal);
     }
 
     [Fact]

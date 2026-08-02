@@ -41,7 +41,7 @@ public sealed class ScreenApp : IDisposable
                 .StartAt(start);
         });
 
-        Panels.Start(Folder, Folder);
+        Sessions.Start(Folder, Folder);
     }
 
     /// <summary>A folder of its own, gone when the test is.</summary>
@@ -49,7 +49,7 @@ public sealed class ScreenApp : IDisposable
 
     private ScreenGrid Screen => _host.Screen;
 
-    public Panels Panels => _host.Services.GetRequiredService<Panels>();
+    public Sessions Sessions => _host.Services.GetRequiredService<Sessions>();
 
     public Runner Runner => _host.Services.GetRequiredService<Runner>();
 

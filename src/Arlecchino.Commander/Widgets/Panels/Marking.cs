@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Model;
 
-namespace Arlecchino.Commander.Widgets.Panel;
+namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
 /// What a panel has been told to act on. A mark is kept by name rather than by row, so a folder read

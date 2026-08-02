@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.Commands;
@@ -35,7 +35,7 @@ public sealed class CommanderView : IArlecchinoView
     private const int FooterRows = 2;
 
     private readonly Surface _surface;
-    private readonly Panels _tabs;
+    private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
     private readonly ArlecchinoKeymap _keymap;
     private readonly KeyText _keys;
@@ -60,7 +60,7 @@ public sealed class CommanderView : IArlecchinoView
 
     /// <summary>Builds the screen over whichever tab was open.</summary>
     /// <param name="surface">What is drawn on.</param>
-    /// <param name="tabs">Every tab, and which one is open.</param>
+    /// <param name="sessions">Every tab, and which one is open.</param>
     /// <param name="remote">Where the connection that was made is remembered.</param>
     /// <param name="operations">What carries file work out.</param>
     /// <param name="runner">What runs commands.</param>
@@ -71,7 +71,7 @@ public sealed class CommanderView : IArlecchinoView
     /// <param name="lifetime">How the application is quit.</param>
     public CommanderView(
         Surface surface,
-        Panels tabs,
+        Sessions sessions,
         Remote remote,
         Operations operations,
         Runner runner,
@@ -81,29 +81,29 @@ public sealed class CommanderView : IArlecchinoView
         IServiceProvider services,
         IHostApplicationLifetime lifetime)
     {
-        ArgumentNullException.ThrowIfNull(tabs);
+        ArgumentNullException.ThrowIfNull(sessions);
         ArgumentNullException.ThrowIfNull(options);
 
         _surface = surface;
-        _tabs = tabs;
+        _sessions = sessions;
         _state = state;
         _operations = operations;
         _keymap = options.Keymap;
         _keys = KeyText.For(options.TextInput);
 
         _seen = operations.Revision.Value;
-        _moved = tabs.Revision.Value;
-        _showing = tabs.Current;
+        _moved = sessions.Revision.Value;
+        _showing = sessions.Current;
 
         var (left, right) = Panes(_showing);
 
         var dialogs = new Dialogs(state, _keymap, _keys);
 
         _panels = new(left, right);
-        _doings = new(dialogs, _panels, tabs, operations, runner, finder, remote, state, services);
+        _doings = new(dialogs, _panels, sessions, operations, runner, finder, remote, state, services);
         _typing = new(new(runner.History, _keys, _keymap), runner, state, _keymap, _panels);
-        _banner = new(tabs);
-        _gutter = new(tabs, _panels);
+        _banner = new(sessions);
+        _gutter = new(sessions, _panels);
         _bar = new(_panels);
         _card = new(operations, runner, state);
         _commands = CommanderKeys.For(_doings, _panels, operations, runner, _typing, state, lifetime);
@@ -111,7 +111,7 @@ public sealed class CommanderView : IArlecchinoView
         _layout = Lay();
         _focus = _layout.AsFocusRing(_keymap);
 
-        _focus.Focus(tabs.RightIsActive.Value ? right : left);
+        _focus.Focus(sessions.RightIsActive.Value ? right : left);
     }
 
     /// <summary>
@@ -132,9 +132,9 @@ public sealed class CommanderView : IArlecchinoView
             _panels.Right.Reload();
         }
 
-        if (_moved != _tabs.Revision.Value)
+        if (_moved != _sessions.Revision.Value)
         {
-            _moved = _tabs.Revision.Value;
+            _moved = _sessions.Revision.Value;
 
             _panels.Left.Reload();
             _panels.Right.Reload();
@@ -173,7 +173,7 @@ public sealed class CommanderView : IArlecchinoView
 
         if (key is { Modifiers: ConsoleModifiers.Control, Key: ConsoleKey.PageDown or ConsoleKey.PageUp })
         {
-            _tabs.Step(key.Key == ConsoleKey.PageDown);
+            _sessions.Step(key.Key == ConsoleKey.PageDown);
 
             return ViewRoute.None;
         }
@@ -201,11 +201,11 @@ public sealed class CommanderView : IArlecchinoView
 
         if (index == Banner.Fresh)
         {
-            _tabs.Add();
+            _sessions.Add();
         }
         else
         {
-            _tabs.Show(index);
+            _sessions.Show(index);
         }
 
         return ViewRoute.None;
@@ -260,12 +260,12 @@ public sealed class CommanderView : IArlecchinoView
     /// </summary>
     private void Showing()
     {
-        if (ReferenceEquals(_showing, _tabs.Current))
+        if (ReferenceEquals(_showing, _sessions.Current))
         {
             return;
         }
 
-        _showing = _tabs.Current;
+        _showing = _sessions.Current;
 
         var (left, right) = Panes(_showing);
 
@@ -274,7 +274,7 @@ public sealed class CommanderView : IArlecchinoView
         _layout = Lay();
         _focus = _layout.AsFocusRing(_keymap);
 
-        _focus.Focus(_tabs.RightIsActive.Value ? right : left);
+        _focus.Focus(_sessions.RightIsActive.Value ? right : left);
     }
 
     /// <summary>Remembers which side the focus landed on, so the tab comes back as it was left.</summary>
@@ -282,7 +282,7 @@ public sealed class CommanderView : IArlecchinoView
     /// <returns>The same.</returns>
     private ViewRoute Routed(ViewRoute route)
     {
-        _tabs.RightIsActive.Value = _panels.Right.IsFocused;
+        _sessions.RightIsActive.Value = _panels.Right.IsFocused;
 
         return route;
     }

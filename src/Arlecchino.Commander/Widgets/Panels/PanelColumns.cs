@@ -1,7 +1,7 @@
 using System;
 using Arlecchino.Commander.Model;
 
-namespace Arlecchino.Commander.Widgets.Panel;
+namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
 /// How the three columns of a panel are laid out. The heads, the rows and a click on a head all have
