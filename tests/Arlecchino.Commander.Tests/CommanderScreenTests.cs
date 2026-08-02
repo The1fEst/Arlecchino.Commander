@@ -1,13 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Views;
 using Arlecchino.Rendering;
-using Arlecchino.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace Arlecchino.Commander.Tests;
@@ -19,43 +14,23 @@ namespace Arlecchino.Commander.Tests;
 /// </summary>
 public sealed class CommanderScreenTests : IDisposable
 {
-    private readonly string _folder;
-    private readonly ArlecchinoTestHost _host;
+    private readonly ScreenApp _app = new(ViewKind.Commander);
 
     public CommanderScreenTests()
     {
-        _folder = Directory.CreateTempSubdirectory("commander-screen").FullName;
+        _app.Write("alpha.txt", "one");
+        _app.Write("beta.txt", "two");
+        Directory.CreateDirectory(Path.Combine(_app.Folder, "nested"));
 
-        File.WriteAllText(Path.Combine(_folder, "alpha.txt"), "one");
-        File.WriteAllText(Path.Combine(_folder, "beta.txt"), "two");
-        Directory.CreateDirectory(Path.Combine(_folder, "nested"));
-
-        _host = new(100, 30, builder =>
-        {
-            CommanderOptions.Apply(builder.Options);
-            builder.Services.AddSingleton<IHostApplicationLifetime>(new Lifetime());
-
-            builder
-                .AddGeneratedViews()
-                .AddGeneratedStores()
-                .AddGeneratedCommands()
-                .UseMouse()
-                .StartAt(ViewKind.Commander);
-        });
-
-        _host.Services.GetRequiredService<Panels>().Start(_folder, _folder);
+        _app.Panels.Start(_app.Folder, _app.Folder);
     }
 
-    public void Dispose()
-    {
-        _host.Dispose();
-        Directory.Delete(_folder, true);
-    }
+    public void Dispose() => _app.Dispose();
 
     [Fact]
     public void BothPanelsShowWhatIsInTheFolder()
     {
-        var screen = _host.Frame();
+        var screen = _app.Frame();
 
         Assert.Contains("alpha.txt", screen, StringComparison.Ordinal);
         Assert.Contains("beta.txt", screen, StringComparison.Ordinal);
@@ -71,36 +46,34 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void AFolderIsDrawnInTheColourFoldersGet()
     {
-        _host.Frame();
+        _app.Frame();
 
-        Assert.Equal(Theme.Accent.Ansi, StyleOf("nested"));
-        Assert.Equal(Theme.Default.Ansi, StyleOf("alpha.txt"));
+        Assert.Equal(Theme.Accent.Ansi, _app.StyleOf("nested"));
+        Assert.Equal(Theme.Default.Ansi, _app.StyleOf("alpha.txt"));
     }
 
     [Fact]
     public void MarkingAFileRepaintsItInTheColourMarksGet()
     {
-        var panels = _host.Services.GetRequiredService<Panels>();
+        _app.Frame();
 
-        _host.Frame();
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.Spacebar);
+        _app.Frame();
 
-        _host.Press(ConsoleKey.DownArrow);
-        _host.Press(ConsoleKey.DownArrow);
-        _host.Press(ConsoleKey.Spacebar);
-        _host.Frame();
-
-        Assert.True(panels.Left.Marks.Contains("alpha.txt"));
-        Assert.Equal(Theme.Warning.Ansi, StyleOf("alpha.txt"));
+        Assert.True(_app.Panels.Left.Marks.Contains("alpha.txt"));
+        Assert.Equal(Theme.Warning.Ansi, _app.StyleOf("alpha.txt"));
     }
 
     [Fact]
     public void MovingTheCursorLeavesTheRestOfTheScreenAlone()
     {
-        var before = _host.FrameLines();
+        var before = _app.FrameLines();
 
-        _host.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
 
-        var after = _host.FrameLines();
+        var after = _app.FrameLines();
         var moved = before.Zip(after).Count(static rows => rows.First != rows.Second);
 
         Assert.InRange(moved, 0, 4);
@@ -110,46 +83,67 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void EnteringAFolderTakesThePanelIntoIt()
     {
-        var panels = _host.Services.GetRequiredService<Panels>();
+        _app.Frame();
 
-        _host.Frame();
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.Enter);
 
-        _host.Press(ConsoleKey.DownArrow);
-        _host.Press(ConsoleKey.Enter);
+        var screen = _app.Frame();
 
-        var screen = _host.Frame();
-
-        Assert.EndsWith("nested", panels.Left.Folder, StringComparison.Ordinal);
+        Assert.EndsWith("nested", _app.Panels.Left.Folder, StringComparison.Ordinal);
         Assert.Contains("nested", screen, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TabMovesTheWorkToTheOtherPanel()
+    {
+        _app.Frame();
+
+        Assert.False(_app.Panels.RightIsActive.Value);
+
+        _app.Press(ConsoleKey.Tab);
+        _app.Frame();
+
+        Assert.True(_app.Panels.RightIsActive.Value);
+    }
+
+    [Fact]
+    public void WhatIsTypedOnThePromptIsShownThere()
+    {
+        _app.Frame();
+        _app.Type("echo hello");
+
+        Assert.Contains("echo hello", _app.Frame(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RubbingOutTakesTheLastLetterOffThePrompt()
+    {
+        _app.Frame();
+        _app.Type("echo hello");
+        _app.Press(ConsoleKey.Backspace);
+
+        var screen = _app.Frame();
+
+        Assert.Contains("echo hell", screen, StringComparison.Ordinal);
+        Assert.DoesNotContain("echo hello", screen, StringComparison.Ordinal);
     }
 
     [Fact]
     public void TheFunctionKeyBarIsAlongTheBottom()
     {
-        var lines = _host.FrameLines();
+        var lines = _app.FrameLines();
 
         Assert.Contains("Quit", lines[^1], StringComparison.Ordinal);
         Assert.Contains("Help", lines[^1], StringComparison.Ordinal);
     }
 
-    /// <summary>The style in force where a name starts, wherever the panel put it.</summary>
-    /// <param name="name">The name to look for.</param>
-    /// <returns>The escape sequence the cell carries.</returns>
-    private string StyleOf(string name)
+    [Fact]
+    public void ANarrowTerminalIsToldRatherThanDrawnInto()
     {
-        var screen = _host.Screen;
+        using var narrow = new ScreenApp(ViewKind.Commander, 40, 10);
 
-        for (var row = 0; row < screen.Height; row++)
-        {
-            var at = screen.Line(row).IndexOf(name, StringComparison.Ordinal);
-
-            if (at >= 0)
-            {
-                return screen.StyleAt(row, at);
-            }
-        }
-
-        return "";
+        Assert.Contains("too small", narrow.Frame(), StringComparison.OrdinalIgnoreCase);
     }
 
     private static int Occurrences(string screen, string name)
@@ -164,18 +158,5 @@ public sealed class CommanderScreenTests : IDisposable
         }
 
         return found;
-    }
-
-    private sealed class Lifetime : IHostApplicationLifetime
-    {
-        private readonly CancellationTokenSource _stopping = new();
-
-        public CancellationToken ApplicationStarted => CancellationToken.None;
-
-        public CancellationToken ApplicationStopping => _stopping.Token;
-
-        public CancellationToken ApplicationStopped => CancellationToken.None;
-
-        public void StopApplication() => _stopping.Cancel();
     }
 }
