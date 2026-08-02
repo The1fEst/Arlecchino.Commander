@@ -38,6 +38,7 @@ public sealed class ScreenApp : IDisposable
                 .AddGeneratedStores()
                 .AddGeneratedCommands()
                 .UseMouse()
+                .UseCommanderScreens()
                 .StartAt(start);
         });
 

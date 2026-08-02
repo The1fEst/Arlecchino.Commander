@@ -106,17 +106,22 @@ public sealed class Dialogs
         });
     }
 
-    /// <summary>Says something that needs no answer, in the same shape as everything that does.</summary>
+    /// <summary>
+    /// Says something that needs no answer, in the same shape as everything that does. Whether it is
+    /// a warning is the caller's to say: a mark beside every message teaches people to stop reading
+    /// the mark, and the one time it means something is the time they will miss it.
+    /// </summary>
     /// <param name="title">What happened.</param>
     /// <param name="message">The detail of it.</param>
-    public void Say(string title, string message) =>
+    /// <param name="wrong">Whether it is something that went wrong.</param>
+    public void Say(string title, string message, bool wrong = true) =>
         Ask(new()
         {
             Title = title,
             Key = "",
             Verb = Loc(LocString.CloseVerb),
-            Weight = Weight.Destroys,
-            Note = _ => new(message, true),
+            Weight = wrong ? Weight.Destroys : Weight.Reversible,
+            Note = _ => new(message, wrong),
             Confirm = static _ => { },
         });
 }

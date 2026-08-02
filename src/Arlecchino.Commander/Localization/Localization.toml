@@ -171,6 +171,13 @@ HotlistAlready = "Already on the hotlist"
 HotlistOn = "{0} is on the hotlist"
 HotlistOff = "{0} is off the hotlist"
 
+NotesTitle = "Notifications"
+NotesSaid = "what the application has said lately, newest first"
+NotesEmpty = "nothing has been said yet"
+NotesOne = "1 message"
+NotesMany = "{0} messages"
+NotesHints = "Enter reads · Backspace clears · Esc back"
+
 PrefixHint = "Ctrl+X · c permissions, o owner, s symlink, l hard link, d compare, p path, t names, h hotlist, j jobs"
 
 SaidHiddenShown = "Hidden files shown"

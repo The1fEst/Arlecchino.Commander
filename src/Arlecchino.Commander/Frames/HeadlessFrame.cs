@@ -81,6 +81,7 @@ public static class HeadlessFrame
             .AddGeneratedViews()
             .AddGeneratedStores()
             .AddGeneratedCommands()
+            .UseCommanderScreens()
             .WithoutHostedService();
 
         var provider = services.BuildServiceProvider();

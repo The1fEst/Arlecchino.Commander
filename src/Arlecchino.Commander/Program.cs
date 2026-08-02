@@ -39,6 +39,7 @@ builder.Services
     .AddGeneratedStores()
     .AddGeneratedCommands()
     .UseMouse()
+    .UseCommanderScreens()
     .StartAt(ViewKind.Commander);
 
 var host = builder.Build();
