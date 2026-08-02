@@ -67,6 +67,9 @@ public sealed class Doings
     /// <summary>The two panels on screen.</summary>
     public Pair Panels { get; }
 
+    /// <summary>Every tab, and which one is open.</summary>
+    public Sessions Sessions => _sessions;
+
     /// <summary>Where the screens of the application are reached, resolved late because it knows them all.</summary>
     public Navigator Navigation => _services.GetRequiredService<Navigator>();
 
@@ -268,7 +271,4 @@ public sealed class Doings
 
         Navigation.Apply(ViewKind.Connect);
     }
-
-    /// <summary>Opens the menu kept in a file, the way Midnight Commander keeps one.</summary>
-    public void OpenUserMenu() => Recipes.Open(this, _runner, _state);
 }

@@ -47,7 +47,7 @@ public static class CommanderKeys
 
         return
         [
-            ViewCommand.For(ConsoleKey.F2, static () => "user menu", doings.OpenUserMenu),
+            ViewCommand.For(ConsoleKey.F2, static () => "tabs", () => TabList.Open(doings)),
             ViewCommand.For(new KeyBinding(ConsoleKey.F1, ConsoleModifiers.Alt), static () => "drive on the left",
                 () => doings.ChooseDrive(panels.Left)),
             ViewCommand.For(new KeyBinding(ConsoleKey.F2, ConsoleModifiers.Alt), static () => "drive on the right",

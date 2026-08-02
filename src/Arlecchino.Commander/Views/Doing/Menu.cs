@@ -177,8 +177,13 @@ public static class Menu
     }
 
     /// <summary>
-    /// What goes in the palette. A menu entry says which menu it came from, so two entries called the
-    /// same are told apart by where they live rather than by guessing.
+    /// What goes in the palette: every menu entry, every tab, and every key the screen answers to. A
+    /// menu entry says which menu it came from, so two entries called the same are told apart by where
+    /// they live rather than by guessing.
+    ///
+    /// The tabs are here and not on a menu because a menu entry is one name known at compile time and
+    /// a tab is whatever it happens to be called right now. Typing the name of a server is how you get
+    /// back to the tab that is on it.
     /// </summary>
     /// <param name="doings">Everything the screen can do.</param>
     /// <returns>The rows.</returns>
@@ -195,6 +200,8 @@ public static class Menu
                 everything.Add(new(Loc(item.Name), where, "", item.Run));
             }
         }
+
+        everything.AddRange(TabList.Rows(doings));
 
         var navigation = doings.Navigation;
 

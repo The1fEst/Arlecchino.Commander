@@ -78,7 +78,7 @@ public sealed class ActionBar
         return
         [
             ("F1", Loc(LocString.BarHelp)),
-            ("F2", Loc(LocString.Menu)),
+            ("F2", Loc(LocString.TabsTitle)),
             ("F3", Loc(LocString.View)),
             ("F4", Loc(LocString.Filter)),
             ("F5", Loc(LocString.Copy) + many),

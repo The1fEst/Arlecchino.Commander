@@ -231,6 +231,61 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.NotNull(_app.State.Modal);
     }
 
+    /// <summary><c>F2</c> lists the tabs and the two things worth doing to them.</summary>
+    [Fact]
+    public void TheTabsOpenOnTheKeyTheBarNames()
+    {
+        _app.Sessions.Add();
+        _app.Press(ConsoleKey.F2);
+
+        var screen = _app.Frame();
+
+        Assert.Contains("Tabs", screen, StringComparison.Ordinal);
+        Assert.Contains("New tab", screen, StringComparison.Ordinal);
+        Assert.Contains("Close this tab", screen, StringComparison.Ordinal);
+        Assert.Contains("1 · local ⇄ local", screen, StringComparison.Ordinal);
+        Assert.Contains("on screen", screen, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A tab is in the palette by the name it wears in the band, so the one on a server is reached by
+    /// typing the name of the server rather than by counting tabs along the top.
+    /// </summary>
+    [Fact]
+    public void ThePaletteGoesToATabByName()
+    {
+        _app.Sessions.Add();
+        _app.Settled();
+
+        Assert.Equal(1, _app.Sessions.Open.Value);
+
+        _app.Press(ConsoleKey.K, control: true);
+        _app.Frame();
+        _app.Type("1 · local");
+        _app.Press(ConsoleKey.Enter);
+        _app.Settled();
+
+        Assert.Equal(0, _app.Sessions.Open.Value);
+    }
+
+    /// <summary>
+    /// What a key does is written down once. The palette lists every command of the screen, so the tab
+    /// rows must not carry the keys as well — a row offered twice is a list that has stopped saying
+    /// anything about where a thing lives.
+    /// </summary>
+    [Fact]
+    public void ThePaletteOffersNewTabOnce()
+    {
+        _app.Press(ConsoleKey.K, control: true);
+        _app.Frame();
+        _app.Type("new tab");
+
+        var lines = _app.FrameLines();
+        var offered = lines.Count(line => line.Contains("New tab", StringComparison.Ordinal));
+
+        Assert.Equal(1, offered);
+    }
+
     [Fact]
     public void FilteringAsksForThePattern()
     {
