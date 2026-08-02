@@ -136,18 +136,42 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.Contains("appeared.txt", screen, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The way out of a folder is the <c>..</c> row, and only that. Backspace used to do it as well and
+    /// no longer does: the command line is typed on without ever taking the focus, so a Backspace meant
+    /// for a typo would leave the folder instead.
+    /// </summary>
     [Fact]
     public void GoingUpLeavesTheFolder()
     {
         var nested = Path.Combine(_app.Folder, "nested");
 
         _app.Panels.Left.GoTo(nested);
-        _app.Frame();
+        _app.Panels.Moved();
+        _app.Settled();
 
+        _app.Settled();
+        _app.Press(ConsoleKey.Home);
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => _app.Panels.Left.Folder == _app.Folder));
+    }
+
+    [Fact]
+    public void BackspaceIsLeftToTheCommandLine()
+    {
+        var nested = Path.Combine(_app.Folder, "nested");
+
+        _app.Panels.Left.GoTo(nested);
+        _app.Panels.Moved();
+        _app.Settled();
+
+        _app.Type("ls x");
         _app.Press(ConsoleKey.Backspace);
-        _app.Frame();
 
-        Assert.Equal(_app.Folder, _app.Panels.Left.Folder);
+        Assert.Equal(nested, _app.Panels.Left.Folder);
+        Assert.Contains("ls ", _app.Frame(), StringComparison.Ordinal);
+        Assert.DoesNotContain("ls x", _app.Frame(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -160,9 +184,9 @@ public sealed class CommanderKeysTests : IDisposable
         var bar = _app.FrameLines()[^1];
         var known = _app.Navigator.CurrentCommands.Select(static command => command.Label()).ToList();
 
-        foreach (var label in new[] { "Help", "Menu", "View", "Filter", "Copy", "Move", "Mkdir", "Delete", "Quit" })
+        foreach (var key in new[] { "F3", "F5", "F8" })
         {
-            Assert.Contains(label, bar, StringComparison.Ordinal);
+            Assert.Contains(key, bar, StringComparison.Ordinal);
         }
 
         Assert.Contains("view", known);

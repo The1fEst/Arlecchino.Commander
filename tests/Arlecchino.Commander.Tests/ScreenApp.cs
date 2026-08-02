@@ -18,7 +18,7 @@ namespace Arlecchino.Commander.Tests;
 /// </summary>
 public sealed class ScreenApp : IDisposable
 {
-    private const string Loading = "loading…";
+    private const string Loading = "reading";
     private const int Attempts = 200;
     private const int PollMilliseconds = 10;
 
@@ -71,6 +71,8 @@ public sealed class ScreenApp : IDisposable
         _host.Press(key, shift, alt, control);
 
     public void Type(string text) => _host.Type(text);
+
+    public void Click(int row, int column) => _host.Click(row, column);
 
     /// <summary>
     /// Draws frames until something is so, or gives up. Work that finishes off the drawing thread is

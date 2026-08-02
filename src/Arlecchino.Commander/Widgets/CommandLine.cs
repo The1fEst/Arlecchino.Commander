@@ -14,6 +14,9 @@ namespace Arlecchino.Commander.Widgets;
 /// </summary>
 public sealed class CommandLine
 {
+    private const int SideRoom = 2;
+    private const string Tail = "Ctrl+O — everything the commands printed";
+
     private readonly List<string> _history;
     private readonly KeyText _keys;
     private readonly ArlecchinoKeymap _keymap;
@@ -39,7 +42,12 @@ public sealed class CommandLine
         _place = history.Count;
     }
 
-    public bool IsEmpty => _text.Length == 0;
+    /// <summary>
+    /// Whether there is a command being typed. A line holding nothing but spaces counts as empty: it
+    /// looks empty, and a stray space left on it would otherwise quietly take every Space after it away
+    /// from the panel, which reads as marking having stopped working.
+    /// </summary>
+    public bool IsEmpty => _text.Trim().Length == 0;
 
     /// <summary>
     /// Offers a key to the line. Every key it recognises is matched against the application's own
@@ -187,13 +195,28 @@ public sealed class CommandLine
         _place = _history.Count;
     }
 
+    /// <summary>
+    /// Where the command would run, then the prompt, then what has been typed. The caret is a block in
+    /// the accent rather than the terminal's own: the line is never the focused widget, so the terminal
+    /// would put its cursor somewhere else entirely.
+    /// </summary>
+    /// <param name="region">The row to draw on.</param>
+    /// <param name="prompt">Where the command would run.</param>
     public void Draw(SurfaceRegion region, string prompt)
     {
         ArgumentNullException.ThrowIfNull(prompt);
 
-        region.Write(0, 0, prompt, Theme.Accent);
+        var coat = Skin.Quiet;
 
-        var room = region.Width - prompt.Length;
+        region.Fill(coat.Text);
+        region.Write(0, SideRoom, prompt, coat.Faded);
+
+        var mark = SideRoom + prompt.Length + 1;
+
+        region.Write(0, mark, "❯", Skin.Paint(Skin.Crimson, Skin.Unlit, TextStyle.Bold));
+
+        var at = mark + 2;
+        var room = region.Width - at - Tail.Length - SideRoom - 2;
 
         if (room <= 1)
         {
@@ -203,12 +226,17 @@ public sealed class CommandLine
         var offset = Math.Max(0, _cursor - room + 1);
         var shown = _text[offset..Math.Min(_text.Length, offset + room)];
 
-        region.Write(0, prompt.Length, shown, Theme.Default);
+        region.Write(0, at, shown, coat.Text);
         region.Write(
             0,
-            prompt.Length + (_cursor - offset),
+            at + (_cursor - offset),
             _cursor < _text.Length ? _text[_cursor].ToString() : " ",
-            Theme.Selected);
+            Skin.Paint(Skin.Ink, Skin.Crimson));
+
+        if (region.Width > at + room + Tail.Length)
+        {
+            region.Write(0, region.Width - Tail.Length - SideRoom, Tail, coat.Ghost);
+        }
     }
 
     /// <summary>

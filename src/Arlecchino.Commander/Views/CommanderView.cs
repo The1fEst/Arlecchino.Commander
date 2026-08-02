@@ -25,11 +25,15 @@ namespace Arlecchino.Commander.Views;
 
 public sealed class CommanderView : IArlecchinoView
 {
-    private const int FooterRows = 3;
-    private const int PromptRoom = 24;
+    private const int FooterRows = 2;
+    private const int HeaderRows = 1;
+    private const int TabRow = 0;
+    private const int GutterWidth = 3;
+    private const int PromptRoom = 28;
     private const int BarCells = 22;
-    private const int SpinnerCells = 2;
-    private const string Hints = "Tab panel   Enter open   Space mark   Backspace up";
+    private const int CardWidth = 34;
+    private const int SideRoom = 2;
+    private const int Fresh = -1;
     private const string StopsHint = "Esc stops";
     private const string PrefixHint =
         "Ctrl+X · c permissions, o owner, s symlink, l hard link, d compare, p path, t names, h hotlist, j jobs";
@@ -37,20 +41,6 @@ public sealed class CommanderView : IArlecchinoView
     private const int SameSecond = 2;
     private const string AddHot = "Add this folder";
     private const string DropHot = "Forget a folder";
-
-    private static readonly (string Key, string Label)[] FunctionKeys =
-    [
-        ("1", "Help"),
-        ("2", "Menu"),
-        ("3", "View"),
-        ("4", "Filter"),
-        ("5", "Copy"),
-        ("6", "Move"),
-        ("7", "Mkdir"),
-        ("8", "Delete"),
-        ("9", "PullDn"),
-        ("10", "Quit"),
-    ];
 
     private static readonly string[] PanelItems =
     [
@@ -119,8 +109,8 @@ public sealed class CommanderView : IArlecchinoView
     private readonly ArlecchinoState _state;
     private readonly IServiceProvider _services;
     private readonly IHostApplicationLifetime _lifetime;
-    private readonly FilePanel _left;
-    private readonly FilePanel _right;
+    private readonly Dictionary<Session, (FilePanel Left, FilePanel Right)> _panes = [];
+    private readonly List<(int Column, int Width, int Index)> _tabs = [];
     private readonly Operations _operations;
     private readonly Spinner _spinner = new();
 
@@ -128,13 +118,17 @@ public sealed class CommanderView : IArlecchinoView
     {
         Caption = static value => $"{value:0}%",
     };
-    private readonly FocusRing _focus;
-    private readonly PaneTree _layout;
     private readonly Runner _runner;
     private readonly Finder _finder;
     private readonly CommandLine _line;
     private readonly ArlecchinoKeymap _keymap;
+    private readonly KeyText _keys;
 
+    private FilePanel _left;
+    private FilePanel _right;
+    private FocusRing _focus;
+    private PaneTree _layout;
+    private Session _showing;
     private int _seen;
     private int _moved;
     private bool _prefix;
@@ -162,22 +156,72 @@ public sealed class CommanderView : IArlecchinoView
         _lifetime = lifetime;
         _keymap = options.Keymap;
 
-        var keys = KeyText.For(options.TextInput);
-
-        _line = new(runner.History, keys, options.Keymap);
-        _left = new(panels.Left, options.Keymap, keys) { OnOpenFile = Open, OnGroup = Group };
-        _right = new(panels.Right, options.Keymap, keys) { OnOpenFile = Open, OnGroup = Group };
+        _keys = KeyText.For(options.TextInput);
+        _line = new(runner.History, _keys, options.Keymap);
         _seen = operations.Revision.Value;
         _moved = panels.Revision.Value;
+        _showing = panels.Current;
 
-        _layout = Branch(
+        (_left, _right) = Panes(_showing);
+        _layout = Lay();
+        _focus = _layout.AsFocusRing(options.Keymap);
+
+        _focus.Focus(panels.RightIsActive.Value ? _right : _left);
+    }
+
+    /// <summary>
+    /// The two panels of a session, made once and kept. A tab that is come back to shows what it showed
+    /// before — the same cursor, the same place in a long folder — which it could not do if its panels
+    /// were built afresh every time it was switched to.
+    /// </summary>
+    /// <param name="session">Whose panels.</param>
+    /// <returns>The pair.</returns>
+    private (FilePanel Left, FilePanel Right) Panes(Session session)
+    {
+        if (_panes.TryGetValue(session, out var made))
+        {
+            return made;
+        }
+
+        FilePanel Over(PanelState state) => new(state, _keymap, _keys) { OnOpenFile = Open, OnGroup = Group };
+
+        made = (Over(session.Left), Over(session.Right));
+        _panes[session] = made;
+
+        return made;
+    }
+
+    private PaneTree Lay() => Branch(
+        Rows,
+        PaneSize.Cells(HeaderRows),
+        Leaf(DrawHeader),
+        Branch(
             Rows,
             PaneSize.CellsFromEnd(FooterRows),
-            Branch(Columns, Leaf(_left, () => _left.Title), Leaf(_right, () => _right.Title)),
-            Branch(Rows, 1, Leaf(DrawStatus), Branch(Rows, 1, Leaf(DrawCommandLine), Leaf(DrawFunctionKeys))));
+            Branch(
+                Columns,
+                PaneSize.Fraction(0.5),
+                Leaf(_left),
+                Branch(Columns, PaneSize.Cells(GutterWidth), Leaf(DrawGutter), Leaf(_right))),
+            Branch(Rows, 1, Leaf(DrawCommandLine), Leaf(DrawActions))));
 
-        _focus = _layout.AsFocusRing(options.Keymap);
-        _focus.Focus(panels.RightIsActive.Value ? _right : _left);
+    /// <summary>
+    /// Swaps the panels over when the tab has changed. The layout holds the two it was built with, so a
+    /// new tab means a new layout and a focus ring to go with it.
+    /// </summary>
+    private void Showing()
+    {
+        if (ReferenceEquals(_showing, _panels.Current))
+        {
+            return;
+        }
+
+        _showing = _panels.Current;
+        (_left, _right) = Panes(_showing);
+        _layout = Lay();
+        _focus = _layout.AsFocusRing(_keymap);
+
+        _focus.Focus(_panels.RightIsActive.Value ? _right : _left);
     }
 
     /// <summary>
@@ -187,6 +231,8 @@ public sealed class CommanderView : IArlecchinoView
     /// </summary>
     public void Draw()
     {
+        Showing();
+
         if (_seen != _operations.Revision.Value)
         {
             _seen = _operations.Revision.Value;
@@ -205,6 +251,7 @@ public sealed class CommanderView : IArlecchinoView
         }
 
         _layout.Draw(_surface.Content);
+        DrawJob(_surface.Content);
     }
 
     /// <summary>
@@ -232,6 +279,13 @@ public sealed class CommanderView : IArlecchinoView
             return ViewRoute.None;
         }
 
+        if (key.Modifiers == ConsoleModifiers.Control && key.Key is ConsoleKey.PageDown or ConsoleKey.PageUp)
+        {
+            _panels.Step(key.Key == ConsoleKey.PageDown);
+
+            return ViewRoute.None;
+        }
+
         if (!Active().IsSearching && Typed(key))
         {
             return ViewRoute.None;
@@ -244,13 +298,49 @@ public sealed class CommanderView : IArlecchinoView
         return route;
     }
 
+    /// <summary>
+    /// Clicks. A click on a tab shows it, which is the one thing on this screen a mouse is better at
+    /// than the keyboard; everything else goes to whichever panel was clicked in.
+    /// </summary>
+    /// <param name="mouse">The event that arrived.</param>
+    /// <returns>Where to go, which is nowhere.</returns>
     public ViewRoute HandleMouse(MouseEvent mouse)
     {
+        if (mouse.Action == MouseAction.Pressed && mouse.Row == TabRow && Tab(mouse.Column) is { } index)
+        {
+            if (index == Fresh)
+            {
+                _panels.Add();
+            }
+            else
+            {
+                _panels.Show(index);
+            }
+
+            return ViewRoute.None;
+        }
+
         var route = _focus.HandleMouse(mouse);
 
         _panels.RightIsActive.Value = _right.IsFocused;
 
         return route;
+    }
+
+    /// <summary>Which tab a click landed on.</summary>
+    /// <param name="column">How far along the row it was.</param>
+    /// <returns>The session it belongs to, or nothing when it hit the gap between two.</returns>
+    private int? Tab(int column)
+    {
+        foreach (var (at, width, index) in _tabs)
+        {
+            if (column >= at && column < at + width)
+            {
+                return index;
+            }
+        }
+
+        return null;
     }
 
     public IReadOnlyList<ViewCommand> Commands() =>
@@ -1326,89 +1416,299 @@ public sealed class CommanderView : IArlecchinoView
         _state.Output = "Reloaded";
     }
 
-    private void DrawStatus(SurfaceRegion status)
+    /// <summary>
+    /// What is running, as a card in the corner rather than a band across the screen. Work must never
+    /// block the panels, and a card says so by sitting beside them: it covers a few rows of the panel
+    /// it is over and nothing else, and it is gone when the work is.
+    /// </summary>
+    /// <param name="screen">The whole screen, which the card places itself in.</param>
+    private void DrawJob(SurfaceRegion screen)
     {
-        if (_operations.IsBusy)
-        {
-            DrawProgress(status);
-            return;
-        }
-
-        if (_runner.IsRunning)
-        {
-            _spinner.Advance();
-
-            status.Write(0, 0, $"{_spinner.Current} {_runner.Last}", Theme.Accent);
-            status.WriteLine(0, StopsHint, Theme.Muted, Align.Right);
-
-            return;
-        }
-
+        var running = _operations.IsBusy || _runner.IsRunning;
         var said = _state.Output;
 
-        if (said.Length > 0)
+        if (!running && said.Length == 0)
         {
-            status.WriteLine(0, said, Theme.Warning);
             return;
         }
 
-        var panel = Active();
-        var room = Math.Max(0, status.Width - Hints.Length - 3);
+        var width = Math.Min(CardWidth, screen.Width - 4);
+        var height = running && _operations.IsMeasured ? 4 : 3;
 
-        var where = panel.Free.Length == 0 ? panel.Folder : $"{panel.Folder}  ·  {panel.Free}";
+        if (width < 20 || screen.Height < height + FooterRows + 2)
+        {
+            return;
+        }
 
-        status.Write(0, 0, TextWidth.Truncate(where, room), Theme.Muted);
-        status.WriteLine(0, Hints, Theme.Muted, Align.Right);
-    }
+        var card = screen
+            .Rows(screen.Height - FooterRows - height, height)
+            .Inset(new Margin(screen.Width - width - 2, 0, 2, 0));
 
-    /// <summary>
-    /// The row while something is running: a spinner for the counting pass, which has no denominator
-    /// yet, then a bar with the percentage beside it and whatever is being worked on now.
-    /// </summary>
-    private void DrawProgress(SurfaceRegion status)
-    {
+        var coat = Skin.Overlay;
+
+        card.Fill(coat.Text);
+        card.Rows(0, card.Height).Inset(new Margin(0, 0, card.Width - 1, 0))
+            .Fill(Skin.Paint(Skin.Crimson, running ? Skin.Crimson : Skin.AmberRule));
+
+        var inside = card.Inset(new Margin(2, 0, 1, 0));
+
+        if (!running)
+        {
+            inside.Write(0, 0, TextWidth.Truncate(said, inside.Width), coat.Warning);
+            inside.Write(1, 0, "⏎ to read the rest", coat.Label);
+
+            return;
+        }
+
         _spinner.Advance();
-        status.Write(0, 0, _spinner.Current, Theme.Accent);
 
-        var text = _operations.Progress();
-        var column = SpinnerCells;
+        var title = _operations.IsBusy ? _operations.Progress() : _runner.Last;
+
+        inside.Write(0, 0, TextWidth.Truncate(title, inside.Width), coat.Strong);
 
         if (_operations.IsMeasured)
         {
             _bar.Value = (decimal)(_operations.Share * 100);
-            _bar.Draw(status.Rows(0, 1).Inset(new Margin(column, 0, Math.Max(0, status.Width - column - BarCells), 0)));
-
-            column += BarCells + 1;
+            _bar.Draw(inside.Rows(1, 1).Inset(new Margin(0, 0, Math.Max(0, inside.Width - BarCells), 0)));
         }
 
-        var room = Math.Max(0, status.Width - column - StopsHint.Length - 2);
-
-        status.Write(0, column, TextWidth.Truncate(text, room), Theme.Accent);
-        status.WriteLine(0, StopsHint, Theme.Muted, Align.Right);
+        inside.Write(inside.Height - 1, 0, _spinner.Current, coat.Accent);
+        inside.WriteLine(inside.Height - 1, StopsHint, coat.Label, Align.Right);
     }
 
-    private void DrawCommandLine(SurfaceRegion line) =>
-        _line.Draw(line, $"{TextWidth.Truncate(Active().Folder, PromptRoom)}> ");
-
-    private static void DrawFunctionKeys(SurfaceRegion keys)
+    /// <summary>
+    /// The line a command is typed on, prompted with where it would run. The path is shortened the way
+    /// the panel above shortens it — the home folder as a tilde, and a head too long for the room cut
+    /// off — so the two say the same thing about the same folder.
+    /// </summary>
+    /// <param name="line">The row to draw on.</param>
+    private void DrawCommandLine(SurfaceRegion line)
     {
-        var cell = keys.Width / FunctionKeys.Length;
+        var panel = Active();
+        var where = Paths.Shortened(panel.Source, panel.Folder, PromptRoom);
 
-        if (cell < 4)
+        _line.Draw(line, panel.Source.IsRemote ? $"{panel.Source.Label}:{where}" : where);
+    }
+
+    /// <summary>
+    /// The band along the top: what this is, which connections are open, and the two keys that lead
+    /// everywhere. It is drawn on the lit surface, so the step down to the panels marks the edge
+    /// between them without a rule having to be spent on it.
+    /// </summary>
+    /// <param name="header">The row to draw on.</param>
+    private void DrawHeader(SurfaceRegion header)
+    {
+        var coat = Skin.Lively;
+
+        header.Fill(coat.Text);
+        header = header.Inset(new Margin(2, 0, 2, 0));
+
+        if (header.Height < HeaderRows)
         {
             return;
         }
 
-        for (var index = 0; index < FunctionKeys.Length; index++)
-        {
-            var (key, label) = FunctionKeys[index];
-            var column = index * cell;
+        var column = 0;
+        header.Write(TabRow, column, "◆", coat.Accent);
 
-            keys.Write(0, column, key, Theme.Muted);
-            keys.Write(0, column + key.Length, Fit(label, cell - key.Length), Theme.Selected);
+        column += 2;
+        header.Write(TabRow, column, "ARLECCHINO", coat.Strong);
+
+        column += 11;
+        header.Write(TabRow, column, "COMMANDER", coat.Faded);
+
+        _tabs.Clear();
+
+        column += 10;
+        for (var index = 0; index < _panels.Sessions.Count; index++)
+        {
+            var session = _panels.Sessions[index];
+            var label = session.Label;
+            var live = index == _panels.Open.Value;
+
+            if (column + label.Length + 6 > header.Width - 4)
+            {
+                break;
+            }
+
+            var under = live ? Skin.Chip : Skin.Lit;
+            var lit = new Skin.Coat(under);
+
+            header.Write(TabRow, column, new(' ', label.Length + 5), Skin.Paint(Skin.Bone, under));
+            Sides(header, column + 1, session, live, lit);
+
+            _tabs.Add((column, label.Length + 5, index));
+
+            column += label.Length + 6;
+        }
+
+        header.WriteLine(TabRow, "Ctrl+K do anything", coat.Faded, Align.Right);
+        header.Write(TabRow, column + 1, "+", coat.Trace);
+
+        _tabs.Add((column, 3, Fresh));
+    }
+
+    /// <summary>
+    /// The two sides of a tab, with the lit dot against whichever of them is being worked in. A tab
+    /// holds two panels, so the dot is the only thing on it that can answer which of the two has the
+    /// focus — a dot that never moves answers nothing. A side on a server is named after it, in the
+    /// colour servers get, so a glance at the tab says what it is connected to.
+    /// </summary>
+    /// <param name="header">The band to draw on.</param>
+    /// <param name="column">Where the tab's text starts.</param>
+    /// <param name="session">The tab.</param>
+    /// <param name="live">Whether it is the tab on screen.</param>
+    /// <param name="lit">The surface of the tab.</param>
+    private void Sides(SurfaceRegion header, int column, Session session, bool live, Skin.Coat lit)
+    {
+        var right = live && _panels.RightIsActive.Value;
+        var near = Named(session.Left, live && !right, lit);
+        var far = Named(session.Right, right, lit);
+        var at = column;
+
+        if (!right)
+        {
+            header.Write(TabRow, at, "●", live ? lit.Accent : lit.Trace);
+            at += 2;
+        }
+
+        header.Write(TabRow, at, session.Near, near);
+        at += session.Near.Length + 1;
+
+        header.Write(TabRow, at, "⇄", lit.Trace);
+        at += 2;
+
+        if (right)
+        {
+            header.Write(TabRow, at, "●", lit.Accent);
+            at += 2;
+        }
+
+        header.Write(TabRow, at, session.Far, far);
+    }
+
+    /// <summary>What colour one side of a tab is written in.</summary>
+    /// <param name="state">The panel that side holds.</param>
+    /// <param name="working">Whether it is the side being worked in.</param>
+    /// <param name="lit">The surface of the tab.</param>
+    /// <returns>The style.</returns>
+    private static TermColor Named(PanelState state, bool working, Skin.Coat lit) => state.Source.IsRemote
+        ? lit.Remote
+        : working
+            ? lit.Text
+            : lit.Meta;
+
+    /// <summary>
+    /// The column between the panels. It is not decoration: it says which way the work goes and what is
+    /// waiting to be worked on, written down the column a letter to a row.
+    /// </summary>
+    /// <param name="gutter">The column to draw on.</param>
+    private void DrawGutter(SurfaceRegion gutter)
+    {
+        var coat = Skin.Terminal;
+
+        gutter.Fill(coat.Text);
+
+        if (gutter.Height < 4 || gutter.Width < 3)
+        {
+            return;
+        }
+
+        var marks = Active().State.Marks.Count;
+        var label = marks > 0 ? $"{marks} MARKED" : "TAB";
+        var style = marks > 0 ? coat.Accent : coat.Sleeping;
+        var top = Math.Max(0, (gutter.Height - label.Length - 2) / 2);
+
+        gutter.Write(top, 1, _panels.RightIsActive.Value ? "←" : "→", style);
+
+        for (var index = 0; index < label.Length && top + index + 2 < gutter.Height; index++)
+        {
+            gutter.Write(top + index + 2, 1, label[index].ToString(), style);
         }
     }
 
-    private static string Fit(string label, int width) =>
-        TextWidth.PadRight(TextWidth.Truncate(label, width), width);
+    /// <summary>
+    /// The bar along the bottom, which says in words what the keys of this moment do. It is not a fixed
+    /// ten-slot row: what is on it follows from what is marked and where the panel is looking, and
+    /// everything it leaves out is behind <c>Ctrl+K</c>.
+    /// </summary>
+    /// <param name="bar">The row to draw on.</param>
+    private void DrawActions(SurfaceRegion bar)
+    {
+        var coat = Skin.Lively;
+
+        bar.Fill(coat.Text);
+
+        var actions = Actions();
+        var column = SideRoom;
+
+        if (Room(actions) > bar.Width - (SideRoom * 2))
+        {
+            actions = Actions(plain: true);
+        }
+
+        foreach (var (key, label) in actions)
+        {
+            var wanted = key.Length + label.Length + 4;
+
+            if (column + wanted > bar.Width - SideRoom)
+            {
+                break;
+            }
+
+            bar.Write(0, column, $" {key} ", Skin.Paint(Skin.Sea, Skin.Chip));
+            bar.Write(0, column + key.Length + 3, label, coat.Second);
+
+            column += wanted;
+        }
+    }
+
+    /// <summary>
+    /// The ten function keys, in the order everyone who has used a file manager knows them by. What
+    /// changes is not which keys are on the bar but what they are said to do: with three files marked,
+    /// <c>F5</c> is no longer "copy" but "copy 3 items", and the bar has answered the question before
+    /// it was asked.
+    /// </summary>
+    /// <param name="plain">
+    /// Leaves off what is being acted on, for a terminal too narrow to say it. Ten keys that fit is
+    /// worth more than eight that are spelled out and two that fell off the end.
+    /// </param>
+    /// <returns>The key and what pressing it would do now.</returns>
+    private List<(string Key, string Label)> Actions(bool plain = false)
+    {
+        var panel = Active();
+        var held = panel.Targets().Count;
+        var many = plain || panel.State.Marks.Count == 0
+            ? ""
+            : held == 1 ? " 1 item" : $" {held} items";
+
+        return
+        [
+            ("F1", "Help"),
+            ("F2", "Menu"),
+            ("F3", "View"),
+            ("F4", "Filter"),
+            ("F5", $"Copy{many}"),
+            ("F6", $"Move{many}"),
+            ("F7", plain ? "Mkdir" : "New folder"),
+            ("F8", $"Delete{many}"),
+            ("F9", "Commands"),
+            ("F10", "Quit"),
+        ];
+    }
+
+    /// <summary>How much of the bar a set of actions would take.</summary>
+    /// <param name="actions">What would go on it.</param>
+    /// <returns>The width they need.</returns>
+    private static int Room(List<(string Key, string Label)> actions)
+    {
+        var wanted = 0;
+
+        foreach (var (key, label) in actions)
+        {
+            wanted += key.Length + label.Length + 4;
+        }
+
+        return wanted;
+    }
 }
