@@ -119,7 +119,9 @@ void Shots()
 // right here and wrong in the picture says the fault is in the painting rather than in the program.
 //
 // Every frame is captured at the size of this terminal rather than the fixed one the pictures use,
-// because a frame composed for 200 columns and shown in 120 is not the screen anybody would see.
+// because a frame composed for 200 columns and shown in 120 is not the screen anybody would see. One
+// row is left over for the newline the frame ends with, and nothing is written on it: a line of ours
+// under the application's own bar is one more thing to mistake for part of the screen.
 void Show()
 {
     if (Console.IsInputRedirected || Console.IsOutputRedirected)
@@ -140,10 +142,8 @@ void Show()
 
     try
     {
-        for (var index = 0; index < scenes.Length; index++)
+        foreach (var scene in scenes)
         {
-            var scene = scenes[index];
-
             if (scene.Scratch)
             {
                 Fixture.Reset(scratchRight);
@@ -163,8 +163,6 @@ void Show()
 
             Console.Write("\e[2J\e[H");
             Console.Write(ansi.Length == 0 ? $"{scene.Name}: nothing came back" : ansi);
-            Console.Write($"\e[{rows + 1};1H\e[0m{scene.Name} · {scene.Caption} · " +
-                          $"{index + 1} of {scenes.Length} · Enter next · q stops");
 
             if (Stop())
             {
