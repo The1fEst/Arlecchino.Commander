@@ -33,8 +33,6 @@ public sealed class SshView : IArlecchinoView
     private readonly List<string> _lines = [];
     private readonly PaneTree _layout;
     private readonly FocusRing _focus;
-    private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
 
     private string _command = "";
     private bool _running;
@@ -46,8 +44,6 @@ public sealed class SshView : IArlecchinoView
         _surface = surface;
         _session = session;
         _state = state;
-        _keymap = options.Keymap;
-        _keys = KeyText.For(options.TextInput);
 
         var output = new ScrollPane(options.Keymap)
         {
@@ -132,10 +128,7 @@ public sealed class SshView : IArlecchinoView
                 Value = _command,
                 FieldHint = "it runs where the panel is looking",
                 Confirm = asking => Run(ssh, asking.Value.Trim()),
-            },
-            _state,
-            _keymap,
-            _keys);
+            });
     }
 
     private void Run(Connection ssh, string command)

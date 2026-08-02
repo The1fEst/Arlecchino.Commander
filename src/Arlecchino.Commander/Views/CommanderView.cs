@@ -97,7 +97,7 @@ public sealed class CommanderView : IArlecchinoView
 
         var (left, right) = Panes(_showing);
 
-        var dialogs = new Dialogs(state, _keymap, _keys);
+        var dialogs = new Dialogs(state);
 
         _panels = new(left, right);
         _doings = new(dialogs, _panels, sessions, operations, runner, finder, remote, state, services);

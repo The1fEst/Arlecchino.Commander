@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Arlecchino.Hosting;
-using Arlecchino.Input;
 using Arlecchino.State;
 
 namespace Arlecchino.Commander.Widgets.Dialogs;
@@ -17,19 +15,10 @@ namespace Arlecchino.Commander.Widgets.Dialogs;
 public sealed class Dialogs
 {
     private readonly ArlecchinoState _state;
-    private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
 
     /// <summary>Puts the dialogs where the framework keeps whatever is on top.</summary>
     /// <param name="state">The slot they go in.</param>
-    /// <param name="keymap">Keys to obey.</param>
-    /// <param name="keys">Turns a key press into the character it types.</param>
-    public Dialogs(ArlecchinoState state, ArlecchinoKeymap keymap, KeyText keys)
-    {
-        _state = state;
-        _keymap = keymap;
-        _keys = keys;
-    }
+    public Dialogs(ArlecchinoState state) => _state = state;
 
     /// <summary>Opens a list to pick one thing out of.</summary>
     /// <param name="title">What the list is called.</param>
@@ -55,10 +44,7 @@ public sealed class Dialogs
                 Items = items,
                 Chose = chose,
                 Footer = footer ?? Loc(LocString.ChoosingHints),
-            },
-            _state,
-            _keymap,
-            _keys);
+            });
 
     /// <summary>
     /// Opens the one dialog every operation is asked through. It goes in the slot the framework keeps
@@ -67,7 +53,7 @@ public sealed class Dialogs
     /// </summary>
     /// <param name="operation">What to ask.</param>
     public void Ask(Operation operation) =>
-        _state.Modal = new OperationModal(operation, _state, _keymap, _keys, Completion.Finish);
+        _state.Modal = new OperationModal(operation, Completion.Finish);
 
     /// <summary>
     /// Asks for one thing in words, through the same dialog everything else is asked through. The small

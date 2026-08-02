@@ -1,10 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Arlecchino.Hosting;
-using Arlecchino.Input;
 using Arlecchino.Modals;
-using Arlecchino.Rendering;
-using Arlecchino.State;
 
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
@@ -13,53 +9,42 @@ namespace Arlecchino.Commander.Widgets.Dialogs;
 /// rather than jumping to a letter: a list of two hundred hosts is not one anybody wants to arrow
 /// through, and narrowing is the same gesture wherever a list appears.
 /// </summary>
-public sealed class ChoiceListModal : CustomModal
+public sealed class ChoiceListModal : Modal
 {
     private const int PageRows = 10;
 
-    private readonly ArlecchinoState _state;
-    private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
-
     /// <summary>Opens the list.</summary>
     /// <param name="picking">What is being picked from.</param>
-    /// <param name="state">Where the dialog lives, so that it can close itself.</param>
-    /// <param name="keymap">Keys to obey.</param>
-    /// <param name="keys">Turns a key press into the character it types.</param>
     [SetsRequiredMembers]
-    public ChoiceListModal(Choosing picking, ArlecchinoState state, ArlecchinoKeymap keymap, KeyText keys)
+    public ChoiceListModal(Choosing picking)
     {
         ArgumentNullException.ThrowIfNull(picking);
 
         Picking = picking;
         Title = picking.Title;
-
-        _state = state;
-        _keymap = keymap;
-        _keys = keys;
     }
 
     /// <summary>What is being picked from.</summary>
     public Choosing Picking { get; }
 
     /// <inheritdoc/>
-    public override void Draw(SurfaceRegion screen) => ChoiceBox.Draw(screen, Picking);
+    public override void Draw(ModalFrame frame) => ChoiceBox.Draw(frame.Screen, Picking);
 
     /// <inheritdoc/>
-    public override void Handle(ConsoleKeyInfo key)
+    public override void Handle(ModalFrame frame, ConsoleKeyInfo key)
     {
-        if (_keymap.Cancel.Matches(key))
+        if (frame.Keymap.Cancel.Matches(key))
         {
-            _state.CloseModal();
+            frame.Close();
 
             return;
         }
 
-        if (_keymap.Confirm.Matches(key))
+        if (frame.Keymap.Confirm.Matches(key))
         {
             var chosen = Picking.Current;
 
-            _state.CloseModal();
+            frame.Close();
 
             if (chosen is { Run: { } run })
             {
@@ -80,28 +65,28 @@ public sealed class ChoiceListModal : CustomModal
             return;
         }
 
-        if (_keymap.MoveUp.Matches(key) || _keymap.MoveDown.Matches(key))
+        if (frame.Keymap.MoveUp.Matches(key) || frame.Keymap.MoveDown.Matches(key))
         {
-            Picking.Move(_keymap.MoveDown.Matches(key) ? 1 : -1);
+            Picking.Move(frame.Keymap.MoveDown.Matches(key) ? 1 : -1);
 
             return;
         }
 
-        if (_keymap.JumpUp.Matches(key) || _keymap.JumpDown.Matches(key))
+        if (frame.Keymap.JumpUp.Matches(key) || frame.Keymap.JumpDown.Matches(key))
         {
-            Picking.Move(_keymap.JumpDown.Matches(key) ? PageRows : -PageRows);
+            Picking.Move(frame.Keymap.JumpDown.Matches(key) ? PageRows : -PageRows);
 
             return;
         }
 
-        if (_keymap.Erase.Matches(key))
+        if (frame.Keymap.Erase.Matches(key))
         {
             Picking.Back();
 
             return;
         }
 
-        if (_keys.Resolve(key) is { } typed && !char.IsControl(typed))
+        if (frame.Keys.Resolve(key) is { } typed && !char.IsControl(typed))
         {
             Picking.Put(typed);
         }

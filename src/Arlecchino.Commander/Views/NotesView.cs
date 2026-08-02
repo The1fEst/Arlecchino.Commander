@@ -52,7 +52,7 @@ public sealed class NotesView : IArlecchinoView
         _state = state;
         _navigator = navigator;
         _keymap = options.Keymap;
-        _dialogs = new(state, options.Keymap, KeyText.For(options.TextInput));
+        _dialogs = new(state);
 
         _list = new(options.Keymap)
         {
