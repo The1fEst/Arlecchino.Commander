@@ -138,6 +138,27 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Contains("Help", lines[^1], StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A folder that cannot be read is an exception on the way up from the disk. What has to reach the
+    /// screen is a sentence, not a stack trace and not an empty panel that looks like an empty folder.
+    /// </summary>
+    [Fact]
+    public void AFolderThatCannotBeReadIsSaidOnThePanel()
+    {
+        var gone = Path.Combine(_app.Folder, "gone");
+
+        Directory.CreateDirectory(gone);
+        _app.Panels.Left.GoTo(gone);
+        Directory.Delete(gone);
+
+        _app.Panels.Moved();
+
+        var screen = _app.Frame();
+
+        Assert.Contains("gone", screen, StringComparison.Ordinal);
+        Assert.DoesNotContain("Unhandled", screen, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void ANarrowTerminalIsToldRatherThanDrawnInto()
     {

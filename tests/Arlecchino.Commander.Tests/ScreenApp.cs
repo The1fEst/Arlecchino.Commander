@@ -53,6 +53,8 @@ public sealed class ScreenApp : IDisposable
 
     public Remote Remote => _host.Services.GetRequiredService<Remote>();
 
+    public Operations Operations => _host.Services.GetRequiredService<Operations>();
+
     public Navigator Navigator => _host.Navigator;
 
     public ArlecchinoState State => _host.State;
