@@ -214,11 +214,6 @@ public sealed class PanelPaint
         var said = panel.Current is { } current ? Describe(current) : Loc(LocString.PanelNothingHere);
 
         row.Write(0, 0, TextWidth.Truncate(said, row.Width), coat.Meta);
-
-        if (panel.IsFocused && panel.Current is not null)
-        {
-            row.WriteLine(0, Loc(LocString.PanelTypeToJump), coat.Ghost, Align.Right);
-        }
     }
 
     /// <summary>The foot while something is marked.</summary>

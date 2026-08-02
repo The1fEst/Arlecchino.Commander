@@ -110,9 +110,9 @@ public static class CommanderKeys
             new()
             {
                 Binding = new(ConsoleKey.Escape),
-                Label = () => state.Modal is null ? "stop what is running" : "call it off",
-                IsEnabled = () => state.Modal is not null || operations.IsBusy || runner.IsRunning,
-                Run = () => Stop(state, operations, runner),
+                Label = static () => "stop what is running",
+                IsEnabled = () => operations.IsBusy || runner.IsRunning,
+                Run = () => Stop(operations, runner),
             },
         ];
     }
@@ -185,20 +185,17 @@ public static class CommanderKeys
     }
 
     /// <summary>
-    /// Calls off whatever is on: the dialog first, then a command, then the file work. One key for
-    /// all three, because "get me out of this" is one thought however many things are going on.
+    /// Calls off whatever is running: a command first, then the file work. A dialog is not here — the
+    /// framework hands every key to the dialog on top before this screen sees any of them — and with
+    /// nothing running at all the key is not taken, so Escape reaches the panels and ends the search
+    /// that runs while you type.
     /// </summary>
-    /// <param name="state">Where the dialog on top lives.</param>
     /// <param name="operations">The file work.</param>
     /// <param name="runner">The commands.</param>
     /// <returns>Nowhere: calling something off never leaves the screen.</returns>
-    private static ViewRoute Stop(ArlecchinoState state, Operations operations, Runner runner)
+    private static ViewRoute Stop(Operations operations, Runner runner)
     {
-        if (state.Modal is not null)
-        {
-            state.CloseModal();
-        }
-        else if (runner.IsRunning)
+        if (runner.IsRunning)
         {
             runner.Stop();
         }

@@ -341,4 +341,22 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.Contains("copy", known);
         Assert.Contains("delete", known);
     }
+
+    /// <summary>
+    /// Escape is bound to stopping the work, and most of the time there is no work. The command says
+    /// so and stands aside, which is what lets the same key end the search that runs while you type —
+    /// one key for "get me out of this", whichever thing there is to get out of.
+    /// </summary>
+    [Fact]
+    public void EscapeEndsTheSearchWhenThereIsNothingToStop()
+    {
+        _app.Press(ConsoleKey.S, control: true);
+        _app.Type("al");
+
+        Assert.Contains("jump to", _app.Frame(), StringComparison.Ordinal);
+
+        _app.Press(ConsoleKey.Escape);
+
+        Assert.DoesNotContain("jump to", _app.Frame(), StringComparison.Ordinal);
+    }
 }

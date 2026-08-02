@@ -44,7 +44,7 @@ public sealed class Gutter
 
         var marks = _panels.Active.State.Marks.Count;
         var label = marks > 0 ? Loc(LocString.GutterMarked, marks) : Loc(LocString.GutterIdle);
-        var style = marks > 0 ? coat.Accent : coat.Sleeping;
+        var style = marks > 0 ? coat.Accent : coat.Text;
         var top = Math.Max(0, (gutter.Height - label.Length - 2) / 2);
 
         gutter.Write(top, 1, _sessions.RightIsActive.Value ? "←" : "→", style);
