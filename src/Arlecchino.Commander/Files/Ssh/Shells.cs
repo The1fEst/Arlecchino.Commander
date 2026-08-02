@@ -1,0 +1,82 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Arlecchino.Commander.Files.Ssh;
+
+/// <summary>
+/// Runs what was typed on the command line through the shell of the machine this is running on, and
+/// hands back what it said. Nothing is interactive here: a command that asks a question gets no
+/// answer, so it is sent with its input closed and whatever it printed is collected.
+///
+/// Which shell that is, and how a command line reaches it unchanged, belongs to <see cref="Shell"/> —
+/// the same dialects that answer over SSH.
+/// </summary>
+public static class Shells
+{
+    /// <summary>The shell of the machine this is running on.</summary>
+    public static Shell Local { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+        ? WindowsCommandShell.Instance
+        : PosixShell.Instance;
+
+    public static Process? Start(string command, string folder)
+    {
+        var started = new ProcessStartInfo
+        {
+            WorkingDirectory = Directory.Exists(folder) ? folder : Environment.CurrentDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            RedirectStandardInput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        Local.Hand(started, command);
+
+        try
+        {
+            return Process.Start(started);
+        }
+        catch (Exception error) when (error is Win32Exception or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Reads a started process to its end without holding a thread while it thinks. A command that
+    /// prints nothing for a minute is a minute of waiting, and waiting is the one thing worth not
+    /// occupying anybody with.
+    /// </summary>
+    /// <param name="running">The process.</param>
+    /// <param name="token">Gives up the wait; the process is left to finish on its own.</param>
+    /// <returns>Everything it printed, with how it ended as the last line.</returns>
+    public static async Task<List<string>> CollectAsync(Process running, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(running);
+
+        var lines = new List<string>();
+
+        running.StandardInput.Close();
+
+        var printed = running.StandardOutput.ReadToEndAsync(token);
+        var complained = running.StandardError.ReadToEndAsync(token);
+
+        lines.AddRange(Split(await printed.ConfigureAwait(false)));
+        lines.AddRange(Split(await complained.ConfigureAwait(false)));
+
+        await running.WaitForExitAsync(token).ConfigureAwait(false);
+        lines.Add($"[exit {running.ExitCode}]");
+
+        return lines;
+    }
+
+    public static string[] Split(string text) => text.Length == 0
+        ? []
+        : text.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
+}

@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
-using Arlecchino.Commander.Files;
+using Arlecchino.Atoms.Local;
+using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.State;
 

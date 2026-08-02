@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
-using Arlecchino.Commander.Files;
+using Arlecchino.Atoms.Local;
+using Arlecchino.Commander.Files.Sources;
+using Arlecchino.Commander.Files.Ssh;
 using Arlecchino.State;
 
 namespace Arlecchino.Commander.Stores;

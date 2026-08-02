@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Arlecchino.Atoms;
-using Arlecchino.Commander.Files;
+using Arlecchino.Atoms.Local;
+using Arlecchino.Commander.Files.Sources;
 
 namespace Arlecchino.Commander.Model;
 

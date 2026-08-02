@@ -1,0 +1,206 @@
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
+using Arlecchino.Commander.Files.Work;
+using Xunit;
+
+namespace Arlecchino.Commander.Tests.Files;
+
+public sealed class PngTests
+{
+    [Fact]
+    public void ATruecolourPictureIsReadPixelForPixel()
+    {
+        var raster = Png.Read(Written(2, 2, colour: 2, [
+            [0, 255, 0, 0, 0, 255, 0],
+            [0, 0, 0, 255, 255, 255, 255],
+        ]));
+
+        Assert.NotNull(raster);
+        Assert.Equal(2, raster.Width);
+        Assert.Equal(2, raster.Height);
+        Assert.Equal(new(255, 0, 0), raster.Pixels[0]);
+        Assert.Equal(new(0, 255, 0), raster.Pixels[1]);
+        Assert.Equal(new(0, 0, 255), raster.Pixels[2]);
+        Assert.Equal(new(255, 255, 255), raster.Pixels[3]);
+    }
+
+    /// <summary>Alpha is dropped: a terminal has nothing to show it against.</summary>
+    [Fact]
+    public void APictureWithAlphaKeepsItsColoursAndLosesTheAlpha()
+    {
+        var raster = Png.Read(Written(1, 1, colour: 6, [[0, 10, 20, 30, 128]]));
+
+        Assert.NotNull(raster);
+        Assert.Equal(10, raster.Pixels[0].Red);
+        Assert.Equal(20, raster.Pixels[0].Green);
+        Assert.Equal(30, raster.Pixels[0].Blue);
+    }
+
+    [Fact]
+    public void AGreyPictureIsTheSameValueInAllThree()
+    {
+        var raster = Png.Read(Written(1, 1, colour: 0, [[0, 90]]));
+
+        Assert.NotNull(raster);
+        Assert.Equal(90, raster.Pixels[0].Red);
+        Assert.Equal(90, raster.Pixels[0].Green);
+        Assert.Equal(90, raster.Pixels[0].Blue);
+    }
+
+    [Fact]
+    public void APaletteIsLookedUpRatherThanRead()
+    {
+        var raster = Png.Read(Written(
+            2,
+            1,
+            colour: 3,
+            [[0, 1, 0]],
+            palette: [1, 2, 3, 4, 5, 6]));
+
+        Assert.NotNull(raster);
+        Assert.Equal(4, raster.Pixels[0].Red);
+        Assert.Equal(1, raster.Pixels[1].Red);
+    }
+
+    /// <summary>
+    /// The filters are what a PNG is: each row says how it was written down against the one above.
+    /// </summary>
+    [Fact]
+    public void EachRowFilterIsUndone()
+    {
+        var raster = Png.Read(Written(2, 3, colour: 2, [
+            [0, 10, 10, 10, 20, 20, 20],
+            [1, 10, 10, 10, 5, 5, 5],
+            [2, 0, 0, 0, 0, 0, 0],
+        ]));
+
+        Assert.NotNull(raster);
+        Assert.Equal(10, raster.Pixels[0].Red);
+        Assert.Equal(20, raster.Pixels[1].Red);
+        Assert.Equal(10, raster.Pixels[2].Red);
+        Assert.Equal(15, raster.Pixels[3].Red);
+        Assert.Equal(10, raster.Pixels[4].Red);
+        Assert.Equal(15, raster.Pixels[5].Red);
+    }
+
+    /// <summary>
+    /// A file manager opens whatever it is pointed at, so nothing here may throw — what cannot be
+    /// read comes back as nothing and is shown as bytes instead.
+    /// </summary>
+    [Theory]
+    [InlineData(new byte[0])]
+    [InlineData(new byte[] { 1, 2, 3 })]
+    [InlineData(new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A })]
+    public void WhatIsNotAPngComesBackAsNothing(byte[] bytes)
+    {
+        Assert.Null(Png.Read(bytes));
+    }
+
+    [Fact]
+    public void ATruncatedPngComesBackAsNothing()
+    {
+        var whole = Written(2, 2, colour: 2, [
+            [0, 1, 2, 3, 4, 5, 6],
+            [0, 7, 8, 9, 10, 11, 12],
+        ]);
+
+        Assert.Null(Png.Read(whole[..(whole.Length / 2)]));
+    }
+
+    [Fact]
+    public void SixteenBitsAndInterlacingAreRefusedRatherThanGuessedAt()
+    {
+        Assert.Null(Png.Read(Written(1, 1, colour: 2, [[0, 1, 2, 3]], depth: 16)));
+        Assert.Null(Png.Read(Written(1, 1, colour: 2, [[0, 1, 2, 3]], interlaced: 1)));
+    }
+
+    [Fact]
+    public void TheSignatureIsRecognisedOnItsOwn()
+    {
+        Assert.True(Png.Starts([0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0]));
+        Assert.False(Png.Starts([0x89, (byte)'P', (byte)'N', (byte)'G']));
+        Assert.False(Png.Starts("not a picture at all"u8));
+    }
+
+    /// <summary>
+    /// Writes a PNG by hand, which is the only way to hold a decoder to what it says it reads: the
+    /// rows go in as the filter byte and then the bytes of the row.
+    /// </summary>
+    /// <param name="width">How wide.</param>
+    /// <param name="height">How tall.</param>
+    /// <param name="colour">The PNG colour type.</param>
+    /// <param name="rows">Each row, filter byte first.</param>
+    /// <param name="palette">The palette, when the colour type wants one.</param>
+    /// <param name="depth">Bits a channel.</param>
+    /// <param name="interlaced">Whether it claims to be interlaced.</param>
+    /// <returns>The file.</returns>
+    private static byte[] Written(
+        int width,
+        int height,
+        int colour,
+        byte[][] rows,
+        byte[]? palette = null,
+        byte depth = 8,
+        byte interlaced = 0)
+    {
+        var file = new MemoryStream();
+
+        file.Write([0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+
+        var header = new byte[13];
+
+        BigEndian(header, 0, width);
+        BigEndian(header, 4, height);
+        header[8] = depth;
+        header[9] = (byte)colour;
+        header[12] = interlaced;
+
+        Chunk(file, "IHDR", header);
+
+        if (palette is not null)
+        {
+            Chunk(file, "PLTE", palette);
+        }
+
+        var raw = new MemoryStream();
+
+        foreach (var row in rows)
+        {
+            raw.Write(row);
+        }
+
+        var deflated = new MemoryStream();
+
+        using (var zip = new ZLibStream(deflated, CompressionMode.Compress, leaveOpen: true))
+        {
+            zip.Write(raw.ToArray());
+        }
+
+        Chunk(file, "IDAT", deflated.ToArray());
+        Chunk(file, "IEND", []);
+
+        return file.ToArray();
+    }
+
+    private static void Chunk(Stream file, string kind, byte[] body)
+    {
+        var length = new byte[4];
+
+        BigEndian(length, 0, body.Length);
+
+        file.Write(length);
+        file.Write(Encoding.ASCII.GetBytes(kind));
+        file.Write(body);
+        file.Write([0, 0, 0, 0]);
+    }
+
+    private static void BigEndian(IList<byte> into, int at, int value)
+    {
+        into[at] = (byte)(value >> 24);
+        into[at + 1] = (byte)(value >> 16);
+        into[at + 2] = (byte)(value >> 8);
+        into[at + 3] = (byte)value;
+    }
+}

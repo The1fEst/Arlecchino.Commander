@@ -1,6 +1,6 @@
 using System;
-using Arlecchino.Commander.Files;
-using Arlecchino.Rendering;
+using Arlecchino.Commander.Files.Sources;
+using Arlecchino.Rendering.Text;
 
 namespace Arlecchino.Commander.Model;
 

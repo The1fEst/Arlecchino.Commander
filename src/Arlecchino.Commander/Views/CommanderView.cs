@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets;
+using Arlecchino.Commander.Widgets.Panel;
+using Arlecchino.Commander.Widgets.Chrome;
+using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
@@ -14,6 +16,8 @@ using Arlecchino.State;
 using Microsoft.Extensions.Hosting;
 using static Arlecchino.Layout.PaneSplit;
 using static Arlecchino.Layout.PaneTree;
+
+using Arlecchino.Commander.Views.Doing;
 
 namespace Arlecchino.Commander.Views;
 

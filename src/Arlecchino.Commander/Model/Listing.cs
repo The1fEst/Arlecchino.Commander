@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Arlecchino.Commander.Files;
+using Arlecchino.Commander.Files.Sources;
 
 namespace Arlecchino.Commander.Model;
 
