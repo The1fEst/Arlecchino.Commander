@@ -21,6 +21,12 @@ public static class ChoiceBox
     /// </summary>
     private const int Chrome = 8;
 
+    /// <summary>
+    /// How much of a row the name may take before what qualifies it starts. Fixed rather than measured,
+    /// so the hints of a hundred rows line up instead of stepping about with the longest name on screen.
+    /// </summary>
+    private const int Naming = 24;
+
     /// <summary>Draws the list over whatever is behind it.</summary>
     /// <param name="screen">The whole screen.</param>
     /// <param name="choosing">What is being picked from.</param>
@@ -100,16 +106,27 @@ public static class ChoiceBox
             var pick = choosing.Matching[first + index];
             var here = first + index == choosing.Chosen;
             var row = inside.Rows(4 + index, 1);
+            var name = Math.Min(Naming, row.Width - pick.Hint.Length - pick.Key.Length - 4);
 
             if (here)
             {
                 row.Fill(Skin.ChosenRow);
             }
 
-            row.Write(0, 0, TextWidth.Truncate(pick.Label, row.Width - pick.Hint.Length - 2),
+            row.Write(0, 0, TextWidth.Truncate(pick.Label, Math.Max(1, name)),
                 here ? Skin.ChosenName : coat.Text);
 
-            if (pick.Hint.Length > 0)
+            if (pick.Hint.Length > 0 && name > 0)
+            {
+                row.Write(0, name + 2, TextWidth.Truncate(pick.Hint, row.Width - name - pick.Key.Length - 4),
+                    here ? Skin.ChosenMeta : coat.Label);
+            }
+
+            if (pick.Key.Length > 0)
+            {
+                row.WriteLine(0, pick.Key, here ? Skin.ChosenMeta : coat.Faded, Align.Right);
+            }
+            else if (pick.Hint.Length > 0 && name <= 0)
             {
                 row.WriteLine(0, pick.Hint, here ? Skin.ChosenMeta : coat.Label, Align.Right);
             }

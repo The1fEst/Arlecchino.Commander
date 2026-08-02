@@ -285,6 +285,94 @@ public sealed class CommanderView : IArlecchinoView
         _state.Modal = new OperationModal(operation, _state, _keymap, _keys, Completing);
 
     /// <summary>
+    /// Everything the application can do, by name. The bar along the bottom shows the ten keys that
+    /// make sense right now; this is the other ninety — every menu entry and every key the screen
+    /// knows, narrowed by typing, so nothing has to be found by remembering where it was filed.
+    /// </summary>
+    private void OpenPalette() =>
+        _state.Modal = new ChoiceListModal(
+            new()
+            {
+                Title = "Do anything",
+                Items = Everything(),
+                Chose = static _ => { },
+                Footer = "↑↓ pick · Enter run · Tab complete · Esc close",
+            },
+            _state,
+            _keymap,
+            _keys);
+
+    /// <summary>
+    /// What goes in the palette: the menu, entry by entry, and the keys this screen answers to. A menu
+    /// entry says which menu it came from, so two entries called the same are told apart by where they
+    /// live rather than by guessing.
+    /// </summary>
+    /// <returns>The rows.</returns>
+    private List<Pick> Everything()
+    {
+        var everything = new List<Pick>();
+
+        for (var index = 0; index < Sections.Length; index++)
+        {
+            var section = Sections[index];
+            var where = index;
+
+            foreach (var item in section.Items)
+            {
+                var what = item;
+
+                everything.Add(new(item, section.Title.ToLowerInvariant(), "", () => Run(where, what)));
+            }
+        }
+
+        foreach (var command in Navigation.CurrentCommands)
+        {
+            if (!command.IsEnabled())
+            {
+                continue;
+            }
+
+            var run = command;
+
+            everything.Add(new(
+                Capitalised(command.Label()),
+                "key",
+                Written(command.Binding),
+                () => Navigation.Apply(run.Run())));
+        }
+
+        return everything;
+    }
+
+    /// <summary>A key binding as it is written on a bar or in a palette.</summary>
+    /// <param name="binding">The binding.</param>
+    /// <returns>The words for it.</returns>
+    private static string Written(KeyBinding binding)
+    {
+        var said = new StringBuilder();
+
+        if (binding.Modifiers.HasFlag(ConsoleModifiers.Control))
+        {
+            said.Append("Ctrl+");
+        }
+
+        if (binding.Modifiers.HasFlag(ConsoleModifiers.Alt))
+        {
+            said.Append("Alt+");
+        }
+
+        if (binding.Modifiers.HasFlag(ConsoleModifiers.Shift))
+        {
+            said.Append("Shift+");
+        }
+
+        return said.Append(binding.Key.ToString()).ToString();
+    }
+
+    private static string Capitalised(string label) =>
+        label.Length == 0 ? label : char.ToUpperInvariant(label[0]) + label[1..];
+
+    /// <summary>
     /// Asks for one thing in words, through the same dialog everything else is asked through. The small
     /// questions — a pattern, an owner, a filter — get the shape the large ones get, because a second
     /// shape for small questions is a second thing to learn.
@@ -552,7 +640,9 @@ public sealed class CommanderView : IArlecchinoView
             () => Passive().GoTo(Active().Folder)),
         ViewCommand.For(new KeyBinding(ConsoleKey.O, ConsoleModifiers.Alt), static () => "other panel into folder",
             Beside),
-        ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Control), static () => "open a saved host",
+        ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Control), static () => "do anything",
+            OpenPalette),
+        ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Alt), static () => "open a saved host",
             () => OpenSaved(Active())),
         ViewCommand.For(ConsoleKey.F10, static () => "quit", _lifetime.StopApplication),
         new()

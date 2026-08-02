@@ -6,7 +6,13 @@ namespace Arlecchino.Commander.Widgets;
 /// <summary>One row of a list to choose from.</summary>
 /// <param name="Label">What it is called.</param>
 /// <param name="Hint">What it is, said quietly beside the name.</param>
-public sealed record Pick(string Label, string Hint = "");
+/// <param name="Key">The key that does the same thing, written at the right.</param>
+/// <param name="Run">
+/// What picking it does, for a list whose rows are actions rather than answers. Without this the list
+/// hands the label back to whoever opened it — which is the right thing for a list of folders, and the
+/// wrong thing for a list of commands where two of them may be called the same.
+/// </param>
+public sealed record Pick(string Label, string Hint = "", string Key = "", Action? Run = null);
 
 /// <summary>
 /// A list to pick one thing out of: a menu, the drives, the hosts, the folders been in.
@@ -82,6 +88,43 @@ public sealed class Choosing
         {
             Typed = _typed[..^1];
         }
+    }
+
+    /// <summary>
+    /// Fills the query out to as much as every remaining row agrees on. It is the shell gesture, and it
+    /// is what turns a list of a hundred into a list of three without anybody having to read it.
+    /// </summary>
+    public void Complete()
+    {
+        if (Matching.Count == 0)
+        {
+            return;
+        }
+
+        var shared = Matching[0].Label;
+
+        foreach (var pick in Matching)
+        {
+            shared = Common(shared, pick.Label);
+        }
+
+        if (shared.Length > _typed.Length)
+        {
+            Typed = shared;
+        }
+    }
+
+    private static string Common(string first, string second)
+    {
+        var shared = 0;
+
+        while (shared < first.Length && shared < second.Length &&
+            char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
+        {
+            shared++;
+        }
+
+        return first[..shared];
     }
 
     private void Narrow()

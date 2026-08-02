@@ -61,10 +61,21 @@ public sealed class ChoiceListModal : CustomModal
 
             _state.CloseModal();
 
-            if (chosen is not null)
+            if (chosen is { Run: { } run })
+            {
+                run();
+            }
+            else if (chosen is not null)
             {
                 Picking.Chose(chosen.Label);
             }
+
+            return;
+        }
+
+        if (key.Key == ConsoleKey.Tab)
+        {
+            Picking.Complete();
 
             return;
         }

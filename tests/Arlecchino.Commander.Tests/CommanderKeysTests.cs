@@ -176,6 +176,51 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.Contains("[ ] jump the cursor onto it", _app.Frame(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The palette is the way to everything the bar along the bottom has no room for. It holds the
+    /// menu entry by entry as well as the keys, so nothing has to be found by remembering where it was
+    /// filed.
+    /// </summary>
+    [Fact]
+    public void ThePaletteHoldsEverythingTheBarDoesNot()
+    {
+        _app.Press(ConsoleKey.K, control: true);
+
+        var screen = _app.Frame();
+
+        Assert.Contains("Do anything", screen, StringComparison.Ordinal);
+        Assert.Contains("Find file", screen, StringComparison.Ordinal);
+        Assert.Contains("Enter run", screen, StringComparison.Ordinal);
+        Assert.Contains("Tab complete", screen, StringComparison.Ordinal);
+    }
+
+    /// <summary>Typing narrows it, and the count says by how much.</summary>
+    [Fact]
+    public void TypingNarrowsThePalette()
+    {
+        _app.Press(ConsoleKey.K, control: true);
+        _app.Frame();
+        _app.Type("hotlist");
+
+        var screen = _app.Frame();
+
+        Assert.Contains("Hotlist", screen, StringComparison.Ordinal);
+        Assert.Contains(" of ", screen, StringComparison.Ordinal);
+        Assert.DoesNotContain("Find file", screen, StringComparison.Ordinal);
+    }
+
+    /// <summary>Picking a row runs it, which is the whole point of a list of actions.</summary>
+    [Fact]
+    public void PickingFromThePaletteRunsIt()
+    {
+        _app.Press(ConsoleKey.K, control: true);
+        _app.Frame();
+        _app.Type("hidden files here");
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => _app.Frame().Contains(".hidden", StringComparison.Ordinal)));
+    }
+
     [Fact]
     public void TheMenuOpensOnTheKeyItIsLabelledWith()
     {
