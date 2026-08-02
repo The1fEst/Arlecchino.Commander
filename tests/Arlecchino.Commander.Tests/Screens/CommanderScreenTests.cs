@@ -5,6 +5,7 @@ using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Views;
 using Arlecchino.Commander.Widgets.Chrome;
+using Arlecchino.Diagnostics;
 using Xunit;
 
 using Arlecchino.Commander.Tests.Support;
@@ -296,6 +297,49 @@ public sealed class CommanderScreenTests : IDisposable
         using var narrow = new ScreenApp(ViewKind.Commander, 40, 10);
 
         Assert.Contains("too small", narrow.Frame(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The card in the corner is the whole of the reporting: what a job came to is its colour, and
+    /// what it says is the words the output row used to hold on its own.
+    /// </summary>
+    [Fact]
+    public void WorkThatWentWellGetsACardInTheColourThingsThatWorkedGet()
+    {
+        _app.State.Output = "Reloaded";
+
+        Assert.Contains("Reloaded", _app.Frame(), StringComparison.Ordinal);
+        Assert.Equal(Skin.Overlay.Done.Ansi, _app.StyleOf("Reloaded"));
+    }
+
+    [Fact]
+    public void WorkThatFailedSaysWhyAndOffersToShowTheRest()
+    {
+        _app.State.Notifications.Raise(new(DateTimeOffset.Now, NotificationLevel.Failure, "3 files would not copy")
+        {
+            Detail = static () => "one.txt: in use",
+        });
+
+        var frame = _app.Frame();
+
+        Assert.Contains("3 files would not copy", frame, StringComparison.Ordinal);
+        Assert.Contains("one.txt: in use", frame, StringComparison.Ordinal);
+        Assert.Contains("Enter to read the rest", frame, StringComparison.Ordinal);
+        Assert.Equal(Skin.Overlay.Warning.Ansi, _app.StyleOf("3 files would not copy"));
+    }
+
+    [Fact]
+    public void TwoThingsSaidLatelyStackIntoTwoCards()
+    {
+        _app.State.Output = "Reloaded";
+        _app.State.Output = "Hidden files shown";
+
+        var lines = _app.FrameLines();
+        var newest = Array.FindIndex(lines, line => line.Contains("Hidden files shown", StringComparison.Ordinal));
+        var older = Array.FindIndex(lines, line => line.Contains("Reloaded", StringComparison.Ordinal));
+
+        Assert.True(older >= 0, "the older card is still on screen");
+        Assert.True(newest > older, "the newest card is the one nearest the command line");
     }
 
     private static int Occurrences(string screen, string name)

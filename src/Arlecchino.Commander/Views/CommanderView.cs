@@ -105,7 +105,7 @@ public sealed class CommanderView : IArlecchinoView
         _banner = new(sessions);
         _gutter = new(sessions, _panels);
         _bar = new(_panels);
-        _card = new(operations, runner, state);
+        _card = new(runner, state);
         _commands = CommanderKeys.For(_doings, _panels, operations, runner, _typing, state, lifetime);
 
         _layout = Lay();

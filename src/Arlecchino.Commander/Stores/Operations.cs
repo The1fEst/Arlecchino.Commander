@@ -197,7 +197,7 @@ public sealed class Operations : IArlecchinoStore
 
             _state.Notifications.Settle(
                 reporting,
-                errors.Count > 0 ? $"{said} — Enter reads them" : said,
+                said,
                 errors.Count > 0 ? NotificationLevel.Failure : NotificationLevel.Information);
 
             _reporting = null;

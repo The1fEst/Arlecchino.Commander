@@ -191,7 +191,7 @@ public sealed class Outcome
 
         if (Bytes > 0)
         {
-            parts.Add($"{Sizes.Grouped(Bytes)} bytes");
+            parts.Add(Sizes.Brief(Bytes));
         }
 
         return string.Join(", ", parts);
