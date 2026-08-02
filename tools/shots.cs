@@ -29,7 +29,41 @@ if (args is ["tape", ..])
     return;
 }
 
+if (args is ["show", ..])
+{
+    Show();
+    return;
+}
+
 Shots();
+
+// The panels show the two repositories, because a screenshot of a real tree says more than a
+// made-up one. The scenes that actually copy work on a scratch fixture instead, so a picture never
+// writes into a repository.
+(string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] Scenes(
+    string size) =>
+    [
+        ("panels", size, "", "", false, "", "two panels over a local disk"),
+        ("marks", size, "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
+        ("sorted", size, "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
+        ("menu", size, "F9", "", false, "", "the menu, opened by F9"),
+        ("file-menu", size, "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
+        ("copy", size, "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
+        ("delete", size, "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
+        ("viewer", size, "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
+        ("filter", size, "F4,s,r", "", false, "", "the panel filtered by name"),
+        ("palette", size, "Ctrl+K", "", false, "", "everything the application can do, by name"),
+        ("hosts", size, "Alt+K", "", false, "", "hosts read from ~/.ssh/config"),
+        ("find", size, "Alt+F7,Enter,Enter", "600", false, "", "a walk of the folder, filling in as it goes"),
+        ("output", size, "Ctrl+O", "", false, "", "everything the commands printed"),
+        ("connect", size, "Ctrl+K,c,o,n,n,e,c,t,Enter", "", false, "", "a connection asked for in full"),
+        ("help", size, "F1", "", false, "", "the keys screen, which comes with the framework"),
+        ("server", size, "", "", false, host, "a panel browsing a server over SFTP"),
+        ("ssh", size, "Ctrl+K,s,s,h,Enter,l,s,Enter", "3000", false, host, "a command run on that server"),
+        ("progress", size, "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
+        ("notification", size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
+        ("done", size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
+    ];
 
 void Shots()
 {
@@ -37,36 +71,9 @@ void Shots()
 
     Fixture.Lay(fixture, scratchLeft, scratchRight);
 
-    // The panels show the two repositories, because a screenshot of a real tree says more than a
-    // made-up one. The scenes that actually copy work on a scratch fixture instead, so a picture never
-    // writes into a repository.
-    (string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] scenes =
-    [
-        ("panels", Size, "", "", false, "", "two panels over a local disk"),
-        ("marks", Size, "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
-        ("sorted", Size, "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
-        ("menu", Size, "F9", "", false, "", "the menu, opened by F9"),
-        ("file-menu", Size, "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
-        ("copy", Size, "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
-        ("delete", Size, "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
-        ("viewer", Size, "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
-        ("filter", Size, "F4,s,r", "", false, "", "the panel filtered by name"),
-        ("palette", Size, "Ctrl+K", "", false, "", "everything the application can do, by name"),
-        ("hosts", Size, "Alt+K", "", false, "", "hosts read from ~/.ssh/config"),
-        ("find", Size, "Alt+F7,Enter,Enter", "600", false, "", "a walk of the folder, filling in as it goes"),
-        ("output", Size, "Ctrl+O", "", false, "", "everything the commands printed"),
-        ("connect", Size, "Ctrl+K,c,o,n,n,e,c,t,Enter", "", false, "", "a connection asked for in full"),
-        ("help", Size, "F1", "", false, "", "the keys screen, which comes with the framework"),
-        ("server", Size, "", "", false, host, "a panel browsing a server over SFTP"),
-        ("ssh", Size, "Ctrl+K,s,s,h,Enter,l,s,Enter", "3000", false, host, "a command run on that server"),
-        ("progress", Size, "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
-        ("notification", Size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
-        ("done", Size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
-    ];
-
     using var paper = new Paper(32f);
 
-    foreach (var scene in scenes)
+    foreach (var scene in Scenes(Size))
     {
         if (scene.Scratch)
         {
@@ -101,6 +108,83 @@ void Shots()
 
         Console.WriteLine($"{scene.Name}: {grid[0].Count}x{grid.Count} → {path}");
     }
+}
+
+// Walks the same scenes with nothing between them and the terminal: each frame is written out as the
+// application drew it, Enter goes to the next one, q stops.
+//
+// The pictures go through a renderer of our own — the ANSI is parsed into cells and painted with
+// Skia — and a renderer of our own is a second place for the drawing to be wrong. Here the terminal
+// draws it, with the real font, the real glyph widths and the real colours, so a frame that looks
+// right here and wrong in the picture says the fault is in the painting rather than in the program.
+//
+// Every frame is captured at the size of this terminal rather than the fixed one the pictures use,
+// because a frame composed for 200 columns and shown in 120 is not the screen anybody would see.
+void Show()
+{
+    if (Console.IsInputRedirected || Console.IsOutputRedirected)
+    {
+        Console.Error.WriteLine("show needs a terminal of its own: run it without a pipe.");
+
+        return;
+    }
+
+    var columns = Math.Max(40, Console.WindowWidth);
+    var rows = Math.Max(10, Console.WindowHeight - 1);
+    var size = $"{columns}x{rows}";
+    var scenes = Scenes(size);
+
+    Fixture.Lay(fixture, scratchLeft, scratchRight);
+
+    Console.Write("\e[?1049h");
+
+    try
+    {
+        for (var index = 0; index < scenes.Length; index++)
+        {
+            var scene = scenes[index];
+
+            if (scene.Scratch)
+            {
+                Fixture.Reset(scratchRight);
+            }
+
+            Console.Write("\e[2J\e[H");
+            Console.Write($"{scene.Name}: drawing…");
+
+            var ansi = Capture(
+                "--frame",
+                size,
+                scene.Keys,
+                scene.Wait,
+                scene.Scratch ? scratchLeft : framework,
+                scene.Scratch ? scratchRight : repository,
+                scene.Connect);
+
+            Console.Write("\e[2J\e[H");
+            Console.Write(ansi.Length == 0 ? $"{scene.Name}: nothing came back" : ansi);
+            Console.Write($"\e[{rows + 1};1H\e[0m{scene.Name} · {scene.Caption} · " +
+                          $"{index + 1} of {scenes.Length} · Enter next · q stops");
+
+            if (Stop())
+            {
+                return;
+            }
+        }
+    }
+    finally
+    {
+        Console.Write("\e[?1049l");
+    }
+}
+
+// Waits for the one key that means anything here. Anything else moves on, because a reviewer pressing
+// space or an arrow means "next" and being told otherwise is a puzzle nobody asked for.
+static bool Stop()
+{
+    var key = Console.ReadKey(intercept: true);
+
+    return key.Key is ConsoleKey.Q or ConsoleKey.Escape;
 }
 
 // Records the animation the framework's readme opens with. One run of the application plays the whole
