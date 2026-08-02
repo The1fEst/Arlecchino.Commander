@@ -54,8 +54,13 @@ of time — one file, nothing to install, no .NET on the machine required. They 
 
 - **Two panels.** `Tab` switches, `Enter` opens, `Backspace` goes up, `Space` marks, and the columns
   sort by name, size or date. The panel that has the focus is the one the operations work from.
-- **The function keys.** `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename, `F7` make
-  folder, `F8` delete, `F9` menu, `F10` quit — and `F1` opens the framework's own key screen.
+- **The function keys.** `F2` tabs, `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename,
+  `F7` make folder, `F8` delete, `F9` menu, `F10` quit — and `F1` opens the framework's own key screen.
+- **Tabs.** Each one holds two panels of its own, so a second pair of folders — or a server on one
+  side — is a tab away rather than a place you have to navigate back to. `Alt+T` opens one, `Alt+W`
+  closes it, `Alt+PgDn` and `Alt+PgUp` step between them, and the band along the top shows what each
+  one is connected to and takes a click on it or on the `+` at the end. `F2` lists them all, and the
+  palette finds one by name — typing the name of a server goes to the tab that is on it.
 - **Getting around the way Midnight Commander does.** `Ctrl+S` searches as you type, `+` and `-` mark
   and unmark by shell pattern, `*` inverts the marks, `Alt+G` `Alt+R` `Alt+J` jump to the top, the
   middle and the bottom, `Ctrl+PgUp` and `Ctrl+PgDn` leave and enter a folder, `Alt+H` lists the
@@ -64,10 +69,9 @@ of time — one file, nothing to install, no .NET on the machine required. They 
 - **Find file.** `Alt+F7` walks down from the panel — over SFTP as readily as over a disk — matching
   names against a shell pattern and, when asked for one, the text inside the files. Results fill in
   while the walk runs, `F3` stops it, and `Enter` sends the panel to the file it found.
-- **A user menu on `F2`.** Kept in `~/.config/arlecchino-commander/menu` in the shape Midnight
-  Commander keeps one: a title in the first column, the commands under it indented, and `%f` `%t`
-  `%d` `%F` `%D` standing in for the file, the marked files, this folder and the other panel's. The
-  first `F2` writes a menu to start from.
+- **Everything in one list.** `Ctrl+K` opens a palette holding every menu entry, every tab and every
+  key the screen answers to, narrowing as you type — so nothing has to be found by remembering which
+  menu it was filed under.
 - **The operations behind `Ctrl+X`.** `Ctrl+X C` sets permissions — through SFTP's own request, FTP's
   `SITE CHMOD`, or the file mode on a Unix disk — `Ctrl+X O` hands a `chown` to the shell where the
   panel is looking, `Ctrl+X S` and `Ctrl+X L` make a symbolic or a hard link into the other panel,
@@ -79,7 +83,7 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   `Ctrl+O` reads back everything the commands printed.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
-- **Hosts from `~/.ssh/config`.** `Ctrl+K` lists the `Host` entries and opens one, reusing its
+- **Hosts from `~/.ssh/config`.** `Alt+K` lists the `Host` entries and opens one, reusing its
   `HostName`, `User`, `Port` and `IdentityFile`, or the default keys in `~/.ssh` when it names none.
 - **Commands over SSH.** The `Command` menu runs one on the connected host and shows what it said.
 - **Work that does not freeze the screen.** Copy, move and delete run in the background with a bar,
