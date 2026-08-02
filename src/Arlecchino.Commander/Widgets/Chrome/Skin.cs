@@ -89,6 +89,30 @@ public static class Skin
     /// <summary>A key chip or an inline field on an overlay.</summary>
     public static Coat Inlaid { get; } = new(Chip);
 
+    /// <summary>
+    /// This design said in the framework's own terms, so that everything the framework draws for
+    /// itself — a form, a status bar, the keys screen, the file picker — comes out in it too.
+    ///
+    /// The panels and the dialogs of this application are painted from the coats above and answer to
+    /// nothing here. Everything else is the framework's to draw, and a second screen that looks like a
+    /// different program is the one thing a palette exists to prevent.
+    /// </summary>
+    public static ThemePalette Palette { get; } = new()
+    {
+        Default = Paint(Bone, Ink),
+        Header = Paint(Crimson, Ink, TextStyle.Bold),
+        TableHeader = Paint(LabelInk, Ink),
+        Accent = Paint(Crimson, Ink),
+        Info = Paint(SecondaryInk, Ink),
+        Muted = Paint(MutedInk, Ink),
+        Input = Paint(Bone, Chip),
+        Selected = Paint(Bone, Chip),
+        Active = Paint(Crimson, Ink),
+        ActiveSelected = Paint(OnCrimson, Crimson, TextStyle.Bold),
+        Warning = Paint(Amber, Ink),
+        Error = Paint(Coral, Ink),
+    };
+
     /// <summary>The name of the row the cursor is on: ink on bone, which no other row can be.</summary>
     public static TermColor CursorName => Paint(Ink, Bone, TextStyle.Bold);
 

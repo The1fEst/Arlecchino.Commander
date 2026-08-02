@@ -5,6 +5,7 @@ using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Ssh;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
@@ -14,7 +15,6 @@ using Arlecchino.Input;
 using Arlecchino.Layout;
 using Arlecchino.Navigation;
 using Arlecchino.Rendering;
-using Arlecchino.Rendering.Colors;
 using Arlecchino.State;
 using Arlecchino.Widgets.Readouts;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,8 +25,6 @@ namespace Arlecchino.Commander.Views;
 
 public sealed class ConnectView : IArlecchinoView, IDisposable
 {
-    private const int HeaderRows = 3;
-    private const int FormRows = 9;
     private const int LowestPort = 1;
     private const int HighestPort = 65535;
 
@@ -87,17 +85,11 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
             ],
         };
 
-        var status = new StatusBar
-        {
-            Left = [Said],
-            Right = [static () => "Esc back"],
-        };
-
         _layout = Branch(
             Rows,
-            HeaderRows,
+            Sheet.Head,
             Leaf(DrawHeader),
-            Branch(Rows, FormRows, Leaf(form), Leaf(status)));
+            Branch(Rows, PaneSize.CellsFromEnd(Sheet.Foot), Leaf(form), Leaf(DrawFooter)));
 
         _focus = _layout.AsFocusRing(options.Keymap);
         _watchingSaved = session.Saved.Subscribe(() => Fill(saved, session));
@@ -126,8 +118,10 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     {
         var side = _sessions.RightIsActive.Value ? "right" : "left";
 
-        header.WriteLine(0, $"Connect the {side} panel", Theme.Header);
-        header.WriteLine(1, "The panel keeps browsing the server until it is disconnected", Theme.Muted);
+        Sheet.Title(
+            header,
+            $"Connect the {side} panel",
+            "the panel keeps browsing the server until it is disconnected");
 
         if (!_session.Connecting.Value)
         {
@@ -137,6 +131,8 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _spinner.Advance();
         _spinner.Draw(header.SplitLeft(header.Width - 1).Right);
     }
+
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Esc back");
 
     private string Said()
     {

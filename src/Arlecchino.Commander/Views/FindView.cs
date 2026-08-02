@@ -8,9 +8,9 @@ using Arlecchino.Input;
 using Arlecchino.Layout;
 using Arlecchino.Navigation;
 using Arlecchino.Rendering;
-using Arlecchino.Rendering.Colors;
 using Arlecchino.State;
 using Arlecchino.Widgets.Lists;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Widgets.Readouts;
 using static Arlecchino.Layout.PaneSplit;
 using static Arlecchino.Layout.PaneTree;
@@ -23,8 +23,6 @@ namespace Arlecchino.Commander.Views;
 /// </summary>
 public sealed class FindView : IArlecchinoView
 {
-    private const int HeaderRows = 2;
-
     private readonly Surface _surface;
     private readonly Finder _finder;
     private readonly Sessions _sessions;
@@ -43,22 +41,16 @@ public sealed class FindView : IArlecchinoView
         var hits = new ListBox<Hit>(options.Keymap)
         {
             Render = Under,
-            ItemStyle = static _ => Theme.Default,
+            ItemStyle = static _ => Skin.Terminal.Text,
             OnActivate = Open,
             Items = finder.Found.Value,
         };
 
-        var status = new StatusBar
-        {
-            Left = [Said],
-            Right = [static () => "Enter goes there", static () => "Esc back"],
-        };
-
         _layout = Branch(
             Rows,
-            HeaderRows,
+            Sheet.Head,
             Leaf(DrawHeader),
-            Branch(Rows, PaneSize.CellsFromEnd(1), Leaf(hits, static () => "Found"), Leaf(status)));
+            Branch(Rows, PaneSize.CellsFromEnd(Sheet.Foot), Leaf(hits), Leaf(DrawFooter)));
 
         _focus = _layout.AsFocusRing(options.Keymap);
     }
@@ -88,8 +80,7 @@ public sealed class FindView : IArlecchinoView
 
     private void DrawHeader(SurfaceRegion header)
     {
-        header.WriteLine(0, _finder.What, Theme.Header);
-        header.WriteLine(1, $"{_finder.Found.Count} found in {_finder.Looked} folders", Theme.Muted);
+        Sheet.Title(header, _finder.What, $"{_finder.Found.Count} found in {_finder.Looked} folders");
 
         if (!_finder.IsRunning)
         {
@@ -99,6 +90,8 @@ public sealed class FindView : IArlecchinoView
         _spinner.Advance();
         _spinner.Draw(header.SplitLeft(header.Width - 1).Right);
     }
+
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Enter goes there · Esc back");
 
     /// <summary>
     /// A result as it is listed: the path below the folder the search started from, because every

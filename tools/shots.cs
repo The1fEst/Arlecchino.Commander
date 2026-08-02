@@ -5,26 +5,23 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using SkiaSharp;
 
+// Columns by rows, not pixels. A hundred rows is a screenshot nobody can read at a glance.
+const string Size = "200x34";
 var repository = Directory.GetCurrentDirectory();
 var output = Path.Combine(repository, "assets", "screenshots");
 
-var commander = repository;
 var framework = Path.Combine(Directory.GetParent(repository)!.FullName, "Arlecchino");
 
 var fixture = Path.Combine(Path.GetTempPath(), "arlecchino-shots");
 var scratchLeft = Path.Combine(fixture, "project");
 var scratchRight = Path.Combine(fixture, "backup");
-var pretend = Path.Combine(fixture, "home");
 
 // The host the server scenes use. A `~/.ssh/config` entry, so the shots say nothing about anyone's
 // credentials; scenes that name it are skipped when the host does not answer.
-var host = Environment.GetEnvironmentVariable("ARLECCHINO_SHOT_HOST") ?? "ubuntu";
-
-// A scene that shows the list of saved hosts runs against a made-up ~/.ssh/config, so no picture
-// carries anyone's servers.
-const string Pretending = "made-up";
+const string host = "ubuntu";
 
 if (args is ["tape", ..])
 {
@@ -39,30 +36,32 @@ void Shots()
     Directory.CreateDirectory(output);
 
     Fixture.Lay(fixture, scratchLeft, scratchRight);
-    Fixture.Pretend(pretend);
 
     // The panels show the two repositories, because a screenshot of a real tree says more than a
     // made-up one. The scenes that actually copy work on a scratch fixture instead, so a picture never
     // writes into a repository.
     (string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] scenes =
     [
-        ("panels", "132x26", "", "", false, "", "two panels over a local disk"),
-        ("marks", "132x26", "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
-        ("sorted", "132x26", "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
-        ("menu", "132x26", "F9", "", false, "", "the menu, opened by F9"),
-        ("file-menu", "132x26", "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
-        ("copy", "132x26", "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
-        ("delete", "132x26", "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
-        ("viewer", "132x26", "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
-        ("filter", "132x26", "F4,s,r", "", false, "", "the panel filtered by name"),
-        ("hosts", "132x26", "Ctrl+K", "", false, "made-up", "hosts read from ~/.ssh/config"),
-        ("help", "132x26", "F1", "", false, "", "the keys screen, which comes with the framework"),
-        ("server", "132x26", "", "", false, host, "a panel browsing a server over SFTP"),
-        ("ssh", "132x26", "F9,Down,Down,Enter,Down,Down,Down,Enter,Enter,l,s,Enter", "3000", false, host,
-            "a command run on that server"),
-        ("progress", "132x26", "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
-        ("notification", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
-        ("done", "132x26", "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
+        ("panels", Size, "", "", false, "", "two panels over a local disk"),
+        ("marks", Size, "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
+        ("sorted", Size, "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
+        ("menu", Size, "F9", "", false, "", "the menu, opened by F9"),
+        ("file-menu", Size, "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
+        ("copy", Size, "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
+        ("delete", Size, "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
+        ("viewer", Size, "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
+        ("filter", Size, "F4,s,r", "", false, "", "the panel filtered by name"),
+        ("palette", Size, "Ctrl+K", "", false, "", "everything the application can do, by name"),
+        ("hosts", Size, "Alt+K", "", false, "", "hosts read from ~/.ssh/config"),
+        ("find", Size, "Alt+F7,Enter,Enter", "600", false, "", "a walk of the folder, filling in as it goes"),
+        ("output", Size, "Ctrl+O", "", false, "", "everything the commands printed"),
+        ("connect", Size, "Ctrl+K,c,o,n,n,e,c,t,Enter", "", false, "", "a connection asked for in full"),
+        ("help", Size, "F1", "", false, "", "the keys screen, which comes with the framework"),
+        ("server", Size, "", "", false, host, "a panel browsing a server over SFTP"),
+        ("ssh", Size, "Ctrl+K,s,s,h,Enter,l,s,Enter", "3000", false, host, "a command run on that server"),
+        ("progress", Size, "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
+        ("notification", Size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
+        ("done", Size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
     ];
 
     using var paper = new Paper(32f);
@@ -80,10 +79,10 @@ void Shots()
             scene.Keys,
             scene.Wait,
             scene.Scratch ? scratchLeft : framework,
-            scene.Scratch ? scratchRight : commander,
+            scene.Scratch ? scratchRight : repository,
             scene.Connect);
+        
         var grid = Terminal.Parse(ansi);
-
         if (grid.Count == 0)
         {
             Console.WriteLine($"{scene.Name}: nothing came back");
@@ -109,7 +108,6 @@ void Shots()
 // finishes are caught while they happen rather than staged one process at a time.
 void Tape()
 {
-    const string Size = "104x26";
     const string Caption = "arlecchino.commander";
 
     // How long each frame is held is how long a hand would have waited there: a moment to see where
@@ -169,7 +167,7 @@ void Tape()
         return;
     }
 
-    var target = Path.Combine(Directory.Exists(framework) ? framework : commander, "assets", "demo.gif");
+    var target = Path.Combine(Directory.Exists(framework) ? framework : repository, "assets", "demo.gif");
     var shape = $"{frames[0].Image.Width}x{frames[0].Image.Height}";
 
     Directory.CreateDirectory(Path.GetDirectoryName(target)!);
@@ -238,10 +236,12 @@ static List<List<Cell>> Fit(List<List<Cell>> grid, int columns, int rows)
 
 string Capture(string mode, string size, string keys, string wait, string leftPanel, string rightPanel, string connect)
 {
-    var arguments = $"run --project src/Arlecchino.Commander --no-build -- " +
+    // Release, named rather than left to the default. Without it the pictures come from whatever was
+    // last built in Debug, which is how a screenshot ends up showing a screen that no longer exists.
+    var arguments = $"run --project src/Arlecchino.Commander -c Release --no-build -- " +
                     $"{mode} {size} --left \"{leftPanel}\" --right \"{rightPanel}\"";
 
-    if (connect.Length > 0 && connect != Pretending)
+    if (connect.Length > 0)
     {
         arguments += $" --connect {connect}";
     }
@@ -261,23 +261,33 @@ string Capture(string mode, string size, string keys, string wait, string leftPa
         RedirectStandardOutput = true,
         WorkingDirectory = repository,
         UseShellExecute = false,
+        Environment =
+        {
+            ["COLORTERM"] = "truecolor",
+            ["TERM"] = "xterm-256color",
+            ["ARLECCHINO_COLOR"] = "truecolor"
+        }
     };
-
-    start.Environment["COLORTERM"] = "truecolor";
-    start.Environment["TERM"] = "xterm-256color";
-    start.Environment["ARLECCHINO_COLOR"] = "truecolor";
-
-    if (connect == Pretending)
-    {
-        start.Environment["USERPROFILE"] = pretend;
-        start.Environment["HOME"] = pretend;
-    }
 
     using var process = Process.Start(start)!;
     var text = process.StandardOutput.ReadToEnd();
     process.WaitForExit();
 
-    return text;
+    return Masked(text);
+}
+
+// No picture carries a real address. Every scene that reaches a server draws the host it connected
+// to, and that is somebody's machine — so any address in a captured frame is replaced before it is
+// drawn, with one from the range set aside for documentation, padded to the width it stood in so no
+// row shifts under it.
+static string Masked(string text)
+{
+    const string replace = "***.***.***.***";
+
+    return Regex.Replace(
+        text,
+        @"\b\d{1,3}(?:\.\d{1,3}){3}\b",
+        found => replace.PadRight(found.Length)[..Math.Max(found.Length, replace.Length)]);
 }
 
 readonly record struct Cell(string Symbol, SKColor Foreground, SKColor Background, bool Bold);
@@ -339,12 +349,15 @@ sealed class Paper : IDisposable
 
         canvas.Clear(SKColors.Transparent);
 
-        using var window = new SKPaint { Color = Terminal.Background, IsAntialias = true };
-        canvas.DrawRoundRect(new SKRect(0, 0, width, height), _radius, _radius, window);
+        using var window = new SKPaint();
+        window.Color = Terminal.Background;
+        window.IsAntialias = true;
+        canvas.DrawRoundRect(new(0, 0, width, height), _radius, _radius, window);
 
         DrawTitleBar(canvas, width, caption);
 
-        using var ink = new SKPaint { IsAntialias = true };
+        using var ink = new SKPaint();
+        ink.IsAntialias = true;
 
         for (var row = 0; row < grid.Count; row++)
         {
@@ -359,7 +372,7 @@ sealed class Paper : IDisposable
                 if (cell.Background != Terminal.Background)
                 {
                     ink.Color = cell.Background;
-                    canvas.DrawRect(new SKRect(left, top, left + _cellWidth + 0.6f, top + _cellHeight), ink);
+                    canvas.DrawRect(new(left, top, left + _cellWidth + 0.6f, top + _cellHeight), ink);
                 }
 
                 if (cell.Symbol is " " or "")
@@ -374,8 +387,12 @@ sealed class Paper : IDisposable
                     continue;
                 }
 
-                canvas.DrawText(cell.Symbol, left, top - _metrics.Ascent + (_size / 16f), SKTextAlign.Left,
-                    Pick(cell.Symbol, cell.Bold), ink);
+                canvas.DrawText(cell.Symbol,
+                    left,
+                    top - _metrics.Ascent + (_size / 16f),
+                    SKTextAlign.Left,
+                    Pick(cell.Symbol, cell.Bold),
+                    ink);
             }
         }
 
@@ -412,7 +429,7 @@ sealed class Paper : IDisposable
         }
 
         var face = SKFontManager.Default.MatchCharacter(point);
-        var fallback = face is null ? chosen : new SKFont(face, _size);
+        var fallback = face is null ? chosen : new(face, _size);
 
         _fallbacks[point] = fallback;
         return fallback;
@@ -422,7 +439,8 @@ sealed class Paper : IDisposable
     {
         SKColor[] lamps = [new(0xC9, 0x38, 0x2B), new(0xD0, 0x8A, 0x2C), new(0x8A, 0x81, 0x89)];
 
-        using var lamp = new SKPaint { IsAntialias = true };
+        using var lamp = new SKPaint();
+        lamp.IsAntialias = true;
 
         for (var i = 0; i < lamps.Length; i++)
         {
@@ -430,20 +448,68 @@ sealed class Paper : IDisposable
             canvas.DrawCircle(_padding + (_size / 2f) + (i * _size * 1.5f), _titleBar / 2f, _size * 0.44f, lamp);
         }
 
-        using var text = new SKPaint { Color = new(0xC5, 0xBC, 0xB0), IsAntialias = true };
+        using var text = new SKPaint();
+        text.Color = new(0xC5, 0xBC, 0xB0);
+        text.IsAntialias = true;
         using var small = new SKFont(_boldface, _size * 1.05f);
 
-        canvas.DrawText(caption.ToUpperInvariant(), width / 2f, (_titleBar / 2f) + (small.Size / 3f), SKTextAlign.Center,
-            small, text);
+        canvas.DrawText(caption.ToUpperInvariant(),
+            width / 2f,
+            (_titleBar / 2f) + (small.Size / 3f),
+            SKTextAlign.Center,
+            small,
+            text);
     }
 
+    // Where a font lives differs per platform, and picking the wrong one is not an error anybody sees
+    // as one: Skia hands back a proportional face and the picture comes out with its columns adrift.
+    // So every folder the three platforms keep fonts in is searched by name, and only then a family.
     private static SKTypeface Face(string file) =>
-        SKTypeface.FromFile(FontPath(file))
-        ?? SKTypeface.FromFile(FontPath("CascadiaMono.ttf"))
-        ?? SKTypeface.FromFamilyName("Consolas");
+        Found(file) ??
+        Found("CascadiaMono.ttf") ??
+        SKTypeface.FromFamilyName("JetBrainsMono Nerd Font Mono") ??
+        SKTypeface.FromFamilyName("Menlo") ??
+        SKTypeface.FromFamilyName("Consolas") ??
+        throw new InvalidOperationException($"no monospaced font found for {file}");
 
-    private static string FontPath(string file) =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts", file);
+    private static SKTypeface? Found(string file)
+    {
+        foreach (var folder in Fonts())
+        {
+            if (!Directory.Exists(folder))
+            {
+                continue;
+            }
+
+            foreach (var path in Directory.EnumerateFiles(folder, file, SearchOption.AllDirectories))
+            {
+                if (SKTypeface.FromFile(path) is { } face)
+                {
+                    return face;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> Fonts()
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+        if (windows.Length > 0)
+        {
+            yield return Path.Combine(windows, "Fonts");
+        }
+
+        yield return Path.Combine(home, "Library", "Fonts");
+        yield return "/Library/Fonts";
+        yield return "/System/Library/Fonts";
+        yield return Path.Combine(home, ".local", "share", "fonts");
+        yield return Path.Combine(home, ".fonts");
+        yield return "/usr/share/fonts";
+    }
 }
 
 /// <summary>
@@ -490,7 +556,7 @@ static class Playground
 
         foreach (var (name, size) in files)
         {
-            File.WriteAllText(Path.Combine(Left, name), new string('x', size));
+            File.WriteAllText(Path.Combine(Left, name), new('x', size));
         }
 
         File.WriteAllText(Path.Combine(Right, "one.txt"), "kept");
@@ -502,7 +568,7 @@ static class Playground
 
         for (var index = 0; index < count; index++)
         {
-            File.WriteAllText(Path.Combine(made.FullName, $"part{index:000}.cs"), new string('x', PageSize));
+            File.WriteAllText(Path.Combine(made.FullName, $"part{index:000}.cs"), new('x', PageSize));
         }
     }
 }
@@ -556,35 +622,6 @@ static class Fixture
         }
 
         File.WriteAllText(Path.Combine(right, "one.txt"), "kept");
-    }
-
-    /// <summary>
-    /// A home folder with a <c>~/.ssh/config</c> of invented servers, for the scene that lists them.
-    /// </summary>
-    /// <param name="home">Where to lay it.</param>
-    public static void Pretend(string home)
-    {
-        var ssh = Directory.CreateDirectory(Path.Combine(home, ".ssh"));
-
-        File.WriteAllText(Path.Combine(ssh.FullName, "config"), string.Join(
-            Environment.NewLine,
-            "Host staging",
-            "    HostName staging.example.com",
-            "    User deploy",
-            "",
-            "Host media",
-            "    HostName media.example.com",
-            "    User root",
-            "    Port 2222",
-            "",
-            "Host backups",
-            "    HostName backups.example.net",
-            "    User archive",
-            "",
-            "Host pi",
-            "    HostName raspberrypi.local",
-            "    User pi",
-            ""));
     }
 
     public static void Reset(string right)
@@ -868,14 +905,15 @@ static class Terminal
             return new(red, green, blue);
         }
 
-        if (i + 2 < codes.Length && codes[i + 1] == "5")
+        if (i + 2 >= codes.Length || codes[i + 1] != "5")
         {
-            var entry = int.Parse(codes[i + 2]);
-            i += 2;
-            return entry < Ansi.Length ? Ansi[entry] : Foreground;
+            return Foreground;
         }
 
-        return Foreground;
+        var entry = int.Parse(codes[i + 2]);
+        i += 2;
+
+        return entry < Ansi.Length ? Ansi[entry] : Foreground;
     }
 }
 
@@ -1138,12 +1176,14 @@ static class Gif
 
         public byte[] Drain()
         {
-            if (_count > 0)
+            if (_count <= 0)
             {
-                _bytes.Add((byte)(_bits & 0xFF));
-                _bits = 0;
-                _count = 0;
+                return [.. _bytes];
             }
+
+            _bytes.Add((byte)(_bits & 0xFF));
+            _bits = 0;
+            _count = 0;
 
             return [.. _bytes];
         }
@@ -1195,12 +1235,14 @@ static class Gif
 
                     var (found, range) = Widest(boxes[index]);
 
-                    if (range > spread)
+                    if (range <= spread)
                     {
-                        spread = range;
-                        widest = index;
-                        channel = found;
+                        continue;
                     }
+
+                    spread = range;
+                    widest = index;
+                    channel = found;
                 }
 
                 if (widest < 0)
@@ -1356,7 +1398,8 @@ static class Gif
 
             return total == 0
                 ? SKColors.Black
-                : new((byte)Math.Min(255, red / total), (byte)Math.Min(255, green / total),
+                : new((byte)Math.Min(255, red / total),
+                    (byte)Math.Min(255, green / total),
                     (byte)Math.Min(255, blue / total));
         }
     }

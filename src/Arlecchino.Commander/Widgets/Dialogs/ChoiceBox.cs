@@ -26,6 +26,10 @@ public static class ChoiceBox
     /// <summary>
     /// How much of a row the name may take before what qualifies it starts. Fixed rather than measured,
     /// so the hints of a hundred rows line up instead of stepping about with the longest name on screen.
+    ///
+    /// It only applies to a row that has something to line up with. A list whose rows are names and
+    /// nothing else — the saved hosts, the folders been in — gives the whole row to the name, since a
+    /// column reserved for hints that are not there is a path cut off for no reason.
     /// </summary>
     private const int Naming = 24;
 
@@ -108,7 +112,10 @@ public static class ChoiceBox
             var pick = choosing.Matching[first + index];
             var here = first + index == choosing.Chosen;
             var row = inside.Rows(4 + index, 1);
-            var name = Math.Min(Naming, row.Width - pick.Hint.Length - pick.Key.Length - 4);
+            var qualified = pick.Hint.Length + pick.Key.Length > 0;
+            var name = qualified
+                ? Math.Min(Naming, row.Width - pick.Hint.Length - pick.Key.Length - 4)
+                : row.Width;
 
             if (here)
             {

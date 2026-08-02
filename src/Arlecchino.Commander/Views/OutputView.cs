@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Stores;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
@@ -10,7 +11,6 @@ using Arlecchino.Navigation;
 using Arlecchino.Rendering;
 using Arlecchino.Rendering.Colors;
 using Arlecchino.Widgets.Lists;
-using Arlecchino.Widgets.Readouts;
 using static Arlecchino.Layout.PaneSplit;
 using static Arlecchino.Layout.PaneTree;
 
@@ -44,13 +44,12 @@ public sealed class OutputView : IArlecchinoView
             },
         };
 
-        var status = new StatusBar
-        {
-            Left = [Said],
-            Right = [static () => "Ctrl+K clears", static () => "Esc back"],
-        };
+        _layout = Branch(
+            Rows,
+            Sheet.Head,
+            Leaf(DrawHeader),
+            Branch(Rows, PaneSize.CellsFromEnd(Sheet.Foot), Leaf(roll), Leaf(DrawFooter)));
 
-        _layout = Branch(Rows, PaneSize.CellsFromEnd(1), Leaf(roll, static () => "Output"), Leaf(status));
         _focus = _layout.AsFocusRing(options.Keymap);
     }
 
@@ -66,6 +65,11 @@ public sealed class OutputView : IArlecchinoView
         ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Control), static () => "clear", _runner.Clear),
     ];
 
+    private void DrawHeader(SurfaceRegion header) =>
+        Sheet.Title(header, "Output", "everything the commands typed on the command line have printed");
+
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Ctrl+K clears · Esc back");
+
     private string Said()
     {
         if (_runner.IsRunning)
@@ -76,18 +80,26 @@ public sealed class OutputView : IArlecchinoView
         return _runner.Lines.Count == 0 ? "nothing run yet" : $"{_runner.Lines.Count} lines";
     }
 
+    /// <summary>
+    /// What a line of output is written in: the command itself in the accent, what a shell said in
+    /// plain text, and the two lines the runner writes itself quieter than either.
+    /// </summary>
+    /// <param name="line">The line.</param>
+    /// <returns>The style.</returns>
     private static TermColor Style(string line)
     {
+        var coat = Skin.Terminal;
+
         if (line.StartsWith("$ ", StringComparison.Ordinal))
         {
-            return Theme.Accent;
+            return coat.Accent;
         }
 
         if (line.StartsWith("[failed]", StringComparison.Ordinal))
         {
-            return Theme.Error;
+            return coat.Warning;
         }
 
-        return line.StartsWith("[exit ", StringComparison.Ordinal) ? Theme.Muted : Theme.Default;
+        return line.StartsWith("[exit ", StringComparison.Ordinal) ? coat.Meta : coat.Text;
     }
 }

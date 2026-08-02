@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Ssh;
 using Arlecchino.Commander.Stores;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
@@ -25,8 +26,6 @@ namespace Arlecchino.Commander.Views;
 
 public sealed class SshView : IArlecchinoView
 {
-    private const int HeaderRows = 2;
-
     private readonly Surface _surface;
     private readonly Remote _session;
     private readonly ArlecchinoState _state;
@@ -62,21 +61,11 @@ public sealed class SshView : IArlecchinoView
             },
         };
 
-        var status = new StatusBar
-        {
-            Left = [Said],
-            Right = [static () => "Enter run", static () => "Esc back"],
-        };
-
         _layout = Branch(
             Rows,
-            HeaderRows,
+            Sheet.Head,
             Leaf(DrawHeader),
-            Branch(
-                Rows,
-                PaneSize.CellsFromEnd(1),
-                Leaf(output, static () => "Output"),
-                Leaf(status)));
+            Branch(Rows, PaneSize.CellsFromEnd(Sheet.Foot), Leaf(output), Leaf(DrawFooter)));
 
         _focus = _layout.AsFocusRing(options.Keymap);
     }
@@ -96,13 +85,12 @@ public sealed class SshView : IArlecchinoView
 
     private void DrawHeader(SurfaceRegion header)
     {
-        header.WriteLine(0, _session.Ssh is { } ssh ? $"SSH · {ssh.Label}" : "SSH · nothing connected", Theme.Header);
-        header.WriteLine(
-            1,
+        Sheet.Title(
+            header,
+            _session.Ssh is { } ssh ? $"SSH · {ssh.Label}" : "SSH · nothing connected",
             _session.Ssh is null
                 ? "Connect a panel over sftp first; those credentials are reused here"
-                : $"Last command: {(_command.Length == 0 ? "none yet" : _command)}",
-            Theme.Muted);
+                : $"Last command: {(_command.Length == 0 ? "none yet" : _command)}");
 
         if (!_running)
         {
@@ -112,6 +100,8 @@ public sealed class SshView : IArlecchinoView
         _spinner.Advance();
         _spinner.Draw(header.SplitLeft(header.Width - 1).Right);
     }
+
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Enter runs · Ctrl+K clears · Esc back");
 
     private string Said() => _running
         ? $"{_spinner.Current} running"
@@ -207,14 +197,14 @@ public sealed class SshView : IArlecchinoView
     {
         if (line.StartsWith("$ ", StringComparison.Ordinal))
         {
-            return Theme.Accent;
+            return Skin.Terminal.Accent;
         }
 
         if (line.StartsWith("[failed]", StringComparison.Ordinal))
         {
-            return Theme.Error;
+            return Skin.Terminal.Warning;
         }
 
-        return line.StartsWith("[exit ", StringComparison.Ordinal) ? Theme.Muted : Theme.Default;
+        return line.StartsWith("[exit ", StringComparison.Ordinal) ? Skin.Terminal.Meta : Skin.Terminal.Text;
     }
 }
