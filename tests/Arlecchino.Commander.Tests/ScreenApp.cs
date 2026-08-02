@@ -66,6 +66,32 @@ public sealed class ScreenApp : IDisposable
 
     public void Type(string text) => _host.Type(text);
 
+    /// <summary>
+    /// Draws frames until something is so, or gives up. Work that finishes off the drawing thread is
+    /// posted back to it and runs as a frame is built, so waiting here means drawing rather than
+    /// sleeping.
+    /// </summary>
+    /// <param name="done">What is being waited for.</param>
+    /// <returns><c>true</c> when it became so.</returns>
+    public bool Until(Func<bool> done)
+    {
+        ArgumentNullException.ThrowIfNull(done);
+
+        for (var attempt = 0; attempt < 200; attempt++)
+        {
+            Frame();
+
+            if (done())
+            {
+                return true;
+            }
+
+            Thread.Sleep(10);
+        }
+
+        return false;
+    }
+
     /// <summary>A file with something in it, for the tests that need one.</summary>
     /// <param name="name">What to call it.</param>
     /// <param name="text">What to put in it.</param>
