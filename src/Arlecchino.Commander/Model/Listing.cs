@@ -1,11 +1,62 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Arlecchino.Commander.Files;
 
 namespace Arlecchino.Commander.Model;
 
 public static class Listing
 {
+    /// <summary>
+    /// Reads a folder off whatever it is on, and says what went wrong instead of throwing. A panel
+    /// that cannot read a folder shows the reason where the names would have been; there is nothing
+    /// for it to do with an exception, and a folder it may not read is not a fault in the program.
+    /// </summary>
+    /// <param name="source">Who to ask.</param>
+    /// <param name="folder">Which folder.</param>
+    /// <param name="hidden">Whether the hidden files are wanted.</param>
+    /// <returns>What is in it, or nothing and the reason.</returns>
+    public static async Task<(IReadOnlyList<FileEntry> Entries, string Error)> ReadAsync(
+        IFileSource source,
+        string folder,
+        bool hidden)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        try
+        {
+            return (await source.ListAsync(folder, hidden, CancellationToken.None).ConfigureAwait(false), "");
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or
+                                          InvalidOperationException)
+        {
+            return ([], error.Message);
+        }
+    }
+
+    /// <summary>
+    /// How much room is left, asked after the listing rather than beside it. Two questions at once
+    /// would take two sessions of a pool that has a few, and the names are what the frame is waiting on.
+    /// </summary>
+    /// <param name="source">Who to ask.</param>
+    /// <param name="folder">Where the panel is looking.</param>
+    /// <returns>What it said, or nothing when it would not say.</returns>
+    public static async Task<string> FreeAsync(IFileSource source, string folder)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        try
+        {
+            return await source.FreeAsync(folder, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return "";
+        }
+    }
+
     public static IReadOnlyList<FileEntry> Read(string path, bool showHidden)
     {
         var entries = new List<FileEntry>();

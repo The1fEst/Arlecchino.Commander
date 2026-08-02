@@ -215,6 +215,4 @@ public sealed class SshView : IArlecchinoView
 
         return line.StartsWith("[exit ", StringComparison.Ordinal) ? Theme.Muted : Theme.Default;
     }
-
-    private static string? Filled(string text) => text.Trim().Length == 0 ? "A command is needed" : null;
 }

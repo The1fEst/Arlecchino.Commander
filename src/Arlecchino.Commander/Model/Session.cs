@@ -28,14 +28,11 @@ public sealed class Session
     /// <summary>Which side is being worked in, kept per session so a tab comes back as it was left.</summary>
     public bool RightIsActive { get; set; }
 
-    /// <summary>Whether either panel is on a server.</summary>
-    public bool IsRemote => Left.Source.IsRemote || Right.Source.IsRemote;
-
     /// <summary>What the left side is showing: the server it is on, or the disk.</summary>
-    public string Near => Left.Source.IsRemote ? Left.Source.Label : "local";
+    public string Near => Left.Source.IsRemote ? Left.Source.Label : Loc(LocString.HeaderLocal);
 
     /// <summary>The same for the right.</summary>
-    public string Far => Right.Source.IsRemote ? Right.Source.Label : "local";
+    public string Far => Right.Source.IsRemote ? Right.Source.Label : Loc(LocString.HeaderLocal);
 
     /// <summary>What the tab is called: both of its sides, since it holds both of them.</summary>
     public string Label => $"{Near} ⇄ {Far}";

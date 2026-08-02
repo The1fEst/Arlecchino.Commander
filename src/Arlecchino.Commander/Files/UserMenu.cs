@@ -91,6 +91,35 @@ public static class UserMenu
             .ToString();
     }
 
+    /// <summary>
+    /// The whole of an entry as one command. The lines are joined rather than run one at a time so
+    /// that a failure stops the rest — an entry that unpacks an archive and then deletes it must not
+    /// get as far as the deleting when the unpacking did not work.
+    /// </summary>
+    /// <param name="entry">The entry that was chosen.</param>
+    /// <param name="file">The file under the cursor.</param>
+    /// <param name="marked">Everything marked, already quoted and spaced.</param>
+    /// <param name="folder">The folder this panel is showing.</param>
+    /// <param name="other">The folder the other panel is showing.</param>
+    /// <param name="otherFile">The file under the other panel's cursor.</param>
+    /// <returns>The command to run.</returns>
+    public static string Whole(MenuEntry entry, string file, string marked, string folder, string other,
+        string otherFile)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        var whole = new StringBuilder();
+
+        foreach (var command in entry.Commands)
+        {
+            whole
+                .Append(whole.Length == 0 ? "" : " && ")
+                .Append(Fill(command, file, marked, folder, other, otherFile));
+        }
+
+        return whole.ToString();
+    }
+
     public static string Quoted(string piece) =>
         piece.Contains(' ', StringComparison.Ordinal) ? $"\"{piece}\"" : piece;
 
