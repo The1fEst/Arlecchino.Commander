@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Arlecchino.Commander.Files;
 using Xunit;
 
@@ -23,9 +24,9 @@ public sealed class FtpConversationTests : IDisposable
     public void Dispose() => _server.Dispose();
 
     [Fact]
-    public void SigningInWalksThroughTheCommandsInOrder()
+    public async Task SigningInWalksThroughTheCommandsInOrder()
     {
-        using (Connect())
+        using (await Connect())
         {
         }
 
@@ -39,22 +40,22 @@ public sealed class FtpConversationTests : IDisposable
     /// it. Reading one line and stopping would leave the rest to be taken for the answer to <c>USER</c>.
     /// </summary>
     [Fact]
-    public void AGreetingOfSeveralLinesIsReadToItsEnd()
+    public async Task AGreetingOfSeveralLinesIsReadToItsEnd()
     {
         _server.Greeting = ["220-welcome", "220-still the banner", "220 ready"];
 
-        using var ftp = Connect();
+        using var ftp = await Connect();
 
         Assert.Equal("USER demo", _server.Heard[0]);
     }
 
     [Fact]
-    public void AListingComesBackOverTheSecondConnection()
+    public async Task AListingComesBackOverTheSecondConnection()
     {
         _server.Listing = "type=dir; docs\r\ntype=file;size=5; hello.txt\r\n";
 
-        using var ftp = Connect();
-        var entries = ftp.List("/pub");
+        using var ftp = await Connect();
+        var entries = await ftp.ListAsync("/pub", CancellationToken.None);
 
         Assert.Equal(2, entries.Count);
         Assert.True(entries[0].IsFolder);
@@ -67,30 +68,30 @@ public sealed class FtpConversationTests : IDisposable
     /// tried, and only once: asking again on every listing would double every round trip.
     /// </summary>
     [Fact]
-    public void AServerWithoutTheMachineListingIsAskedTheOldWayInstead()
+    public async Task AServerWithoutTheMachineListingIsAskedTheOldWayInstead()
     {
         _server.KnowsMachineListing = false;
         _server.Listing = "drwxr-xr-x 2 ftp ftp 4096 Jan 01 12:00 docs\r\n";
 
-        using var ftp = Connect();
+        using var ftp = await Connect();
 
-        Assert.Equal("docs", Assert.Single(ftp.List("/pub")).Name);
+        Assert.Equal("docs", Assert.Single(await ftp.ListAsync("/pub", CancellationToken.None)).Name);
 
         _server.Heard.Clear();
 
-        Assert.Single(ftp.List("/pub"));
+        Assert.Single(await ftp.ListAsync("/pub", CancellationToken.None));
         Assert.DoesNotContain("MLSD /pub", _server.Heard);
     }
 
     [Fact]
-    public void AFileIsReadOverTheSecondConnection()
+    public async Task AFileIsReadOverTheSecondConnection()
     {
         _server.File = "hello";
 
-        using var ftp = Connect();
-        using var reading = ftp.OpenRead("/hello.txt");
+        using var ftp = await Connect();
+        await using var reading = await ftp.OpenReadAsync("/hello.txt", CancellationToken.None);
 
-        Assert.Equal("hello", new StreamReader(reading).ReadToEnd());
+        Assert.Equal("hello", await new StreamReader(reading).ReadToEndAsync());
     }
 
     /// <summary>
@@ -99,32 +100,30 @@ public sealed class FtpConversationTests : IDisposable
     /// would belong to the question before it.
     /// </summary>
     [Fact]
-    public void TheReplyEndingATransferIsReadBeforeAnythingElseIsAsked()
+    public async Task TheReplyEndingATransferIsReadBeforeAnythingElseIsAsked()
     {
         _server.File = "hello";
 
-        using var ftp = Connect();
+        using var ftp = await Connect();
 
-        using (var reading = ftp.OpenRead("/hello.txt"))
+        await using (var reading = await ftp.OpenReadAsync("/hello.txt", CancellationToken.None))
         {
-            _ = new StreamReader(reading).ReadToEnd();
+            _ = await new StreamReader(reading).ReadToEndAsync();
         }
 
-        ftp.CreateFolder("/made");
+        await ftp.CreateFolderAsync("/made", CancellationToken.None);
 
         Assert.Contains("MKD /made", _server.Heard);
     }
 
     [Fact]
-    public void WhatIsWrittenGoesOverTheSecondConnection()
+    public async Task WhatIsWrittenGoesOverTheSecondConnection()
     {
-        using var ftp = Connect();
+        using var ftp = await Connect();
 
-        using (var writing = ftp.OpenWrite("/put.txt"))
+        await using (var writing = await ftp.OpenWriteAsync("/put.txt", CancellationToken.None))
         {
-            var bytes = Encoding.UTF8.GetBytes("written");
-
-            writing.Write(bytes, 0, bytes.Length);
+            await writing.WriteAsync("written"u8.ToArray(), CancellationToken.None);
         }
 
         Assert.Contains("STOR /put.txt", _server.Heard);
@@ -132,39 +131,41 @@ public sealed class FtpConversationTests : IDisposable
     }
 
     [Fact]
-    public void ARenameGoesOverInTwoHalves()
+    public async Task ARenameGoesOverInTwoHalves()
     {
-        using var ftp = Connect();
+        using var ftp = await Connect();
 
-        ftp.Rename("/from", "/to");
+        await ftp.RenameAsync("/from", "/to", CancellationToken.None);
 
         Assert.Contains("RNFR /from", _server.Heard);
         Assert.Contains("RNTO /to", _server.Heard);
     }
 
     [Fact]
-    public void ARefusalIsRaisedRatherThanPassedOver()
+    public async Task ARefusalIsRaisedRatherThanPassedOver()
     {
         _server.Refuse = "MKD";
 
-        using var ftp = Connect();
+        using var ftp = await Connect();
 
-        var thrown = Assert.Throws<IOException>(() => ftp.CreateFolder("/made"));
+        var thrown = await Assert.ThrowsAsync<IOException>(
+            () => ftp.CreateFolderAsync("/made", CancellationToken.None));
 
         Assert.Contains("MKD", thrown.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AFolderThatIsNotThereIsAnAnswerRatherThanAFault()
+    public async Task AFolderThatIsNotThereIsAnAnswerRatherThanAFault()
     {
         _server.Refuse = "CWD";
 
-        using var ftp = Connect();
+        using var ftp = await Connect();
 
-        Assert.False(ftp.FolderExists("/nope"));
+        Assert.False(await ftp.FolderExistsAsync("/nope", CancellationToken.None));
     }
 
-    private FtpConnection Connect() => FtpConnection.Open("127.0.0.1", _server.Port, "demo", "secret");
+    private Task<FtpConnection> Connect() =>
+        FtpConnection.OpenAsync("127.0.0.1", _server.Port, "demo", "secret", CancellationToken.None);
 }
 
 /// <summary>A server that answers by the book, and only as much of it as these tests ask about.</summary>

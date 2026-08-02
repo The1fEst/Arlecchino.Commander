@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Arlecchino.Commander.Files;
 using Xunit;
 
@@ -83,17 +84,17 @@ public sealed class ShellTests
     }
 
     [Fact]
-    public void EachShellIsToldApartByWhatItAnswers()
+    public async Task EachShellIsToldApartByWhatItAnswers()
     {
-        Assert.IsType<PosixShell>(Shell.Ask(Answers(("uname -s", ("Linux", 0)))));
-        Assert.IsType<PowerShellShell>(Shell.Ask(Answers(
+        Assert.IsType<PosixShell>(await Shell.AskAsync(Answers(("uname -s", ("Linux", 0)))));
+        Assert.IsType<PowerShellShell>(await Shell.AskAsync(Answers(
             ("uname -s", ("not recognized", 1)),
             ("$PSVersionTable.PSEdition", ("Core", 0)))));
-        Assert.IsType<WindowsCommandShell>(Shell.Ask(Answers(
+        Assert.IsType<WindowsCommandShell>(await Shell.AskAsync(Answers(
             ("uname -s", ("not recognized", 1)),
             ("$PSVersionTable.PSEdition", ("", 1)),
             ("echo %COMSPEC%", (@"C:\Windows\system32\cmd.exe", 0)))));
-        Assert.IsType<ForeignShell>(Shell.Ask(Answers(("uname -s", ("", 1)))));
+        Assert.IsType<ForeignShell>(await Shell.AskAsync(Answers(("uname -s", ("", 1)))));
     }
 
     /// <summary>
@@ -101,9 +102,10 @@ public sealed class ShellTests
     /// servers it says so with a nought exit status — so the words are what decides.
     /// </summary>
     [Fact]
-    public void AComplaintAboutUnameIsNotTakenForAnAnswer()
+    public async Task AComplaintAboutUnameIsNotTakenForAnAnswer()
     {
-        Assert.IsType<ForeignShell>(Shell.Ask(Answers(("uname -s", ("'uname' is not recognized", 0)))));
+        Assert.IsType<ForeignShell>(
+            await Shell.AskAsync(Answers(("uname -s", ("'uname' is not recognized", 0)))));
     }
 
     /// <summary>
@@ -129,7 +131,7 @@ public sealed class ShellTests
         Assert.Empty(posix.Arguments);
     }
 
-    private static Func<string, (string Output, int Status)> Answers(
+    private static Func<string, Task<(string Output, int Status)>> Answers(
         params (string Command, (string Output, int Status) Answer)[] scripted) =>
         question =>
         {
@@ -137,10 +139,10 @@ public sealed class ShellTests
             {
                 if (question == command)
                 {
-                    return answer;
+                    return Task.FromResult(answer);
                 }
             }
 
-            return ("", 1);
+            return Task.FromResult(("", 1));
         };
 }

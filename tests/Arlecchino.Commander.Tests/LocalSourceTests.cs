@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Arlecchino.Commander.Files;
 using Arlecchino.Commander.Model;
 using Xunit;
@@ -14,19 +17,17 @@ namespace Arlecchino.Commander.Tests;
 /// </summary>
 public sealed class LocalSourceTests : IDisposable
 {
-    private readonly string _root;
+    private readonly string _root = Directory.CreateTempSubdirectory("commander-source").FullName;
     private readonly LocalSource _source = new();
-
-    public LocalSourceTests()
-    {
-        _root = Directory.CreateTempSubdirectory("commander-source").FullName;
-    }
 
     public void Dispose() => Directory.Delete(_root, true);
 
-    private FileEntry Entry(string path) => _source
-        .List(Path.GetDirectoryName(path)!, true)
+    private async Task<FileEntry> Entry(string path) =>
+        (await _source.ListAsync(Path.GetDirectoryName(path)!, true, CancellationToken.None))
         .First(entry => entry.Name == Path.GetFileName(path));
+
+    private Task<IReadOnlyList<FileEntry>> Listed(string folder, bool showHidden) =>
+        _source.ListAsync(folder, showHidden, CancellationToken.None);
 
     [Fact]
     public void ItSaysWhatItIs()
@@ -37,42 +38,42 @@ public sealed class LocalSourceTests : IDisposable
     }
 
     [Fact]
-    public void ListingHandsBackWhatIsInTheFolder()
+    public async Task ListingHandsBackWhatIsInTheFolder()
     {
-        File.WriteAllText(Path.Combine(_root, "alpha.txt"), "one");
+        await File.WriteAllTextAsync(Path.Combine(_root, "alpha.txt"), "one");
         Directory.CreateDirectory(Path.Combine(_root, "nested"));
 
-        var names = _source.List(_root, false).Select(static entry => entry.Name).ToList();
+        var names = (await Listed(_root, false)).Select(static entry => entry.Name).ToList();
 
         Assert.Contains("alpha.txt", names);
         Assert.Contains("nested", names);
     }
 
     [Fact]
-    public void AFolderIsMarkedAsOne()
+    public async Task AFolderIsMarkedAsOne()
     {
         Directory.CreateDirectory(Path.Combine(_root, "nested"));
-        File.WriteAllText(Path.Combine(_root, "alpha.txt"), "one");
+        await File.WriteAllTextAsync(Path.Combine(_root, "alpha.txt"), "one");
 
-        Assert.True(Entry(Path.Combine(_root, "nested")).IsFolder);
-        Assert.False(Entry(Path.Combine(_root, "alpha.txt")).IsFolder);
+        Assert.True((await Entry(Path.Combine(_root, "nested"))).IsFolder);
+        Assert.False((await Entry(Path.Combine(_root, "alpha.txt"))).IsFolder);
     }
 
     [Fact]
-    public void TheSizeIsTheSizeOnDisk()
+    public async Task TheSizeIsTheSizeOnDisk()
     {
-        File.WriteAllText(Path.Combine(_root, "alpha.txt"), "12345");
+        await File.WriteAllTextAsync(Path.Combine(_root, "alpha.txt"), "12345");
 
-        Assert.Equal(5, Entry(Path.Combine(_root, "alpha.txt")).Size);
+        Assert.Equal(5, (await Entry(Path.Combine(_root, "alpha.txt"))).Size);
     }
 
     [Fact]
-    public void SomethingHiddenIsShownOnlyWhenItIsAskedFor()
+    public async Task SomethingHiddenIsShownOnlyWhenItIsAskedFor()
     {
-        File.WriteAllText(Path.Combine(_root, ".hidden"), "one");
+        await File.WriteAllTextAsync(Path.Combine(_root, ".hidden"), "one");
 
-        Assert.DoesNotContain(_source.List(_root, false), static entry => entry.Name == ".hidden");
-        Assert.Contains(_source.List(_root, true), static entry => entry.Name == ".hidden");
+        Assert.DoesNotContain(await Listed(_root, false), static entry => entry.Name == ".hidden");
+        Assert.Contains(await Listed(_root, true), static entry => entry.Name == ".hidden");
     }
 
     /// <summary>
@@ -80,9 +81,9 @@ public sealed class LocalSourceTests : IDisposable
     /// into something a person can read is the panel's job rather than the disk's.
     /// </summary>
     [Fact]
-    public void AFolderThatIsNotThereIsAnException()
+    public async Task AFolderThatIsNotThereIsAnException()
     {
-        Assert.Throws<DirectoryNotFoundException>(() => _source.List(Path.Combine(_root, "never-made"), true));
+        await Assert.ThrowsAsync<DirectoryNotFoundException>(() => Listed(Path.Combine(_root, "never-made"), true));
     }
 
     [Fact]
@@ -96,10 +97,10 @@ public sealed class LocalSourceTests : IDisposable
     }
 
     [Fact]
-    public void ItKnowsWhetherAFolderIsThere()
+    public async Task ItKnowsWhetherAFolderIsThere()
     {
-        Assert.True(_source.FolderExists(_root));
-        Assert.False(_source.FolderExists(Path.Combine(_root, "never-made")));
+        Assert.True(await _source.FolderExistsAsync(_root, CancellationToken.None));
+        Assert.False(await _source.FolderExistsAsync(Path.Combine(_root, "never-made"), CancellationToken.None));
     }
 
     [Fact]
@@ -111,7 +112,7 @@ public sealed class LocalSourceTests : IDisposable
     }
 
     [Fact]
-    public void ThePermissionsAreTheOnesTheFileHas()
+    public async Task ThePermissionsAreTheOnesTheFileHas()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -119,14 +120,14 @@ public sealed class LocalSourceTests : IDisposable
         }
 
         var path = Path.Combine(_root, "alpha.txt");
-        File.WriteAllText(path, "one");
+        await File.WriteAllTextAsync(path, "one");
         File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
-        Assert.Equal("600", _source.Mode(Entry(path)));
+        Assert.Equal("600", await _source.ModeAsync(await Entry(path), CancellationToken.None));
     }
 
     [Fact]
-    public void ChangingThePermissionsChangesThem()
+    public async Task ChangingThePermissionsChangesThem()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -134,23 +135,23 @@ public sealed class LocalSourceTests : IDisposable
         }
 
         var path = Path.Combine(_root, "alpha.txt");
-        File.WriteAllText(path, "one");
+        await File.WriteAllTextAsync(path, "one");
 
-        Assert.True(_source.TryChangeMode(Entry(path), "640"));
-        Assert.Equal("640", _source.Mode(Entry(path)));
+        Assert.True(await _source.TryChangeModeAsync(await Entry(path), "640", CancellationToken.None));
+        Assert.Equal("640", await _source.ModeAsync(await Entry(path), CancellationToken.None));
     }
 
     [Fact]
-    public void AMeaninglessModeIsRefusedRatherThanApplied()
+    public async Task AMeaninglessModeIsRefusedRatherThanApplied()
     {
         var path = Path.Combine(_root, "alpha.txt");
-        File.WriteAllText(path, "one");
+        await File.WriteAllTextAsync(path, "one");
 
-        Assert.False(_source.TryChangeMode(Entry(path), "not a mode"));
+        Assert.False(await _source.TryChangeModeAsync(await Entry(path), "not a mode", CancellationToken.None));
     }
 
     [Fact]
-    public void ALinkPointsAtWhatItWasGiven()
+    public async Task ALinkPointsAtWhatItWasGiven()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -160,10 +161,10 @@ public sealed class LocalSourceTests : IDisposable
         var target = Path.Combine(_root, "alpha.txt");
         var link = Path.Combine(_root, "pointer");
 
-        File.WriteAllText(target, "one");
+        await File.WriteAllTextAsync(target, "one");
 
-        Assert.True(_source.TryLink(link, target, false));
-        Assert.Equal("one", File.ReadAllText(link));
+        Assert.True(await _source.TryLinkAsync(link, target, false, CancellationToken.None));
+        Assert.Equal("one", await File.ReadAllTextAsync(link));
         Assert.Equal(target, new FileInfo(link).LinkTarget);
     }
 }

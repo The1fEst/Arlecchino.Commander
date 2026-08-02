@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Arlecchino.Commander.Files;
 
@@ -11,7 +12,7 @@ namespace Arlecchino.Commander.Files;
 ///
 /// Which side of a connection it is on makes no difference. The machine this runs on has a shell and
 /// so does the far end of an SSH session; they are told apart differently — <see cref="Shells.Local"/>
-/// against <see cref="Ask"/> — and after that they are the same thing.
+/// against <see cref="AskAsync"/> — and after that they are the same thing.
 /// </summary>
 public abstract class Shell
 {
@@ -60,18 +61,18 @@ public abstract class Shell
     /// </summary>
     /// <param name="run">Runs a command and answers with its output and exit status.</param>
     /// <returns>The shell that answered, or <see cref="ForeignShell"/> when none of them did.</returns>
-    public static Shell Ask(Func<string, (string Output, int Status)> run)
+    public static async Task<Shell> AskAsync(Func<string, Task<(string Output, int Status)>> run)
     {
         ArgumentNullException.ThrowIfNull(run);
 
-        var unix = run("uname -s");
+        var unix = await run("uname -s").ConfigureAwait(false);
 
         if (unix.Status == 0 && unix.Output.Trim().Length > 0 && !Confused(unix.Output))
         {
             return PosixShell.Instance;
         }
 
-        var powershell = run("$PSVersionTable.PSEdition");
+        var powershell = await run("$PSVersionTable.PSEdition").ConfigureAwait(false);
 
         if (powershell.Output.Contains("Core", StringComparison.Ordinal) ||
             powershell.Output.Contains("Desktop", StringComparison.Ordinal))
@@ -79,7 +80,7 @@ public abstract class Shell
             return PowerShellShell.Instance;
         }
 
-        var comspec = run("echo %COMSPEC%");
+        var comspec = await run("echo %COMSPEC%").ConfigureAwait(false);
 
         return comspec.Output.Contains("cmd.exe", StringComparison.OrdinalIgnoreCase)
             ? WindowsCommandShell.Instance

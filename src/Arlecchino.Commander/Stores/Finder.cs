@@ -81,23 +81,23 @@ public sealed class Finder : IArlecchinoStore
 
         Found.Clear();
 
-        Task.Run(
-            () =>
+        _ = Searching();
+
+        async Task Searching()
+        {
+            await WalkAsync(source, folder, pattern, content, cancelling.Token).ConfigureAwait(false);
+
+            FrameThread.Post(() =>
             {
-                Walk(source, folder, pattern, content, cancelling.Token);
+                IsRunning = false;
+                _cancelling = null;
 
-                FrameThread.Post(() =>
-                {
-                    IsRunning = false;
-                    _cancelling = null;
+                cancelling.Dispose();
+                done();
 
-                    cancelling.Dispose();
-                    done();
-
-                    _state.Invalidate();
-                });
-            },
-            CancellationToken.None);
+                _state.Invalidate();
+            });
+        }
     }
 
     public void Stop() => _cancelling?.Cancel();
@@ -111,7 +111,12 @@ public sealed class Finder : IArlecchinoStore
     /// <param name="pattern">The shell pattern.</param>
     /// <param name="content">Text the file must hold, or empty.</param>
     /// <param name="token">Stops the walk.</param>
-    private void Walk(IFileSource source, string folder, string pattern, string content, CancellationToken token)
+    private async Task WalkAsync(
+        IFileSource source,
+        string folder,
+        string pattern,
+        string content,
+        CancellationToken token)
     {
         var pending = new Stack<string>();
         var batch = new List<Hit>();
@@ -127,7 +132,7 @@ public sealed class Finder : IArlecchinoStore
 
             FrameThread.Post(() => Looked = seen);
 
-            foreach (var entry in Listed(source, here))
+            foreach (var entry in await ListedAsync(source, here, token).ConfigureAwait(false))
             {
                 if (entry.IsParent)
                 {
@@ -140,7 +145,8 @@ public sealed class Finder : IArlecchinoStore
                     continue;
                 }
 
-                if (!Glob.Matches(entry.Name, pattern) || (content.Length > 0 && !Holds(source, entry, content)))
+                if (!Glob.Matches(entry.Name, pattern) ||
+                    (content.Length > 0 && !await HoldsAsync(source, entry, content, token).ConfigureAwait(false)))
                 {
                     continue;
                 }
@@ -169,11 +175,14 @@ public sealed class Finder : IArlecchinoStore
         FrameThread.Post(() => Found.Add(carried));
     }
 
-    private static IReadOnlyList<FileEntry> Listed(IFileSource source, string folder)
+    private static async Task<IReadOnlyList<FileEntry>> ListedAsync(
+        IFileSource source,
+        string folder,
+        CancellationToken token)
     {
         try
         {
-            return source.List(folder, showHidden: true);
+            return await source.ListAsync(folder, showHidden: true, token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException
                                           or InvalidOperationException)
@@ -189,8 +198,13 @@ public sealed class Finder : IArlecchinoStore
     /// <param name="source">Where the file is.</param>
     /// <param name="entry">The file.</param>
     /// <param name="content">The text to look for.</param>
+    /// <param name="token">Stops the read.</param>
     /// <returns><c>true</c> when the text is in there.</returns>
-    private static bool Holds(IFileSource source, FileEntry entry, string content)
+    private static async Task<bool> HoldsAsync(
+        IFileSource source,
+        FileEntry entry,
+        string content,
+        CancellationToken token)
     {
         if (entry.Size > Largest)
         {
@@ -199,13 +213,13 @@ public sealed class Finder : IArlecchinoStore
 
         try
         {
-            using var stream = source.OpenRead(entry.Path);
+            await using var stream = await source.OpenReadAsync(entry.Path, token).ConfigureAwait(false);
             using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
 
             var buffer = new char[Chunk];
             var carried = "";
 
-            while (reader.Read(buffer, 0, buffer.Length) is var read && read > 0)
+            while (await reader.ReadAsync(buffer.AsMemory(), token).ConfigureAwait(false) is var read && read > 0)
             {
                 var text = carried + new string(buffer, 0, read);
 

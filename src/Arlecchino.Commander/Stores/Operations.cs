@@ -49,29 +49,29 @@ public sealed class Operations : IArlecchinoStore
 
     public void Copy(IFileSource from, IReadOnlyList<FileEntry> sources, IFileSource to, string target) =>
         Start(
-            (outcome, token) => FileTasks.Copy(from, sources, to, target, outcome, token),
+            (outcome, token) => FileTasks.CopyAsync(from, sources, to, target, outcome, token),
             "Copied",
             "Copying",
             Sizing(from, sources));
 
     public void Move(IFileSource from, IReadOnlyList<FileEntry> sources, IFileSource to, string target) =>
         Start(
-            (outcome, token) => Moving(from, sources, to, target, outcome, token),
+            (outcome, token) => MovingAsync(from, sources, to, target, outcome, token),
             "Moved",
             "Moving",
             Sizing(from, sources));
 
     public void Rename(IFileSource source, FileEntry entry, string target) =>
-        Start((outcome, _) => FileTasks.Rename(source, entry, target, outcome), "Renamed", "Renaming");
+        Start((outcome, _) => FileTasks.RenameAsync(source, entry, target, outcome), "Renamed", "Renaming");
 
     public void Delete(IFileSource source, IReadOnlyList<FileEntry> entries) =>
         Start(
-            (outcome, token) => FileTasks.Delete(source, entries, outcome, token),
+            (outcome, token) => FileTasks.DeleteAsync(source, entries, outcome, token),
             "Deleted",
             "Deleting",
             Sizing(source, entries));
 
-    private static void Moving(
+    private static async Task MovingAsync(
         IFileSource from,
         IReadOnlyList<FileEntry> sources,
         IFileSource to,
@@ -79,19 +79,22 @@ public sealed class Operations : IArlecchinoStore
         Outcome outcome,
         CancellationToken token)
     {
-        if (sources.Count == 1 && !to.FolderExists(target))
+        if (sources.Count == 1 && !await to.FolderExistsAsync(target, token).ConfigureAwait(false))
         {
             if (ReferenceEquals(from, to))
             {
-                FileTasks.Rename(from, sources[0], target, outcome);
+                await FileTasks.RenameAsync(from, sources[0], target, outcome).ConfigureAwait(false);
+
                 return;
             }
 
-            FileTasks.Move(from, sources, to, to.Parent(target) ?? target, outcome, token);
+            await FileTasks.MoveAsync(from, sources, to, to.Parent(target) ?? target, outcome, token)
+                .ConfigureAwait(false);
+
             return;
         }
 
-        FileTasks.Move(from, sources, to, target, outcome, token);
+        await FileTasks.MoveAsync(from, sources, to, target, outcome, token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -102,19 +105,22 @@ public sealed class Operations : IArlecchinoStore
     /// <param name="source">Where the entries live.</param>
     /// <param name="entries">What is about to be worked on.</param>
     /// <returns>How to count, or <c>null</c> to skip counting.</returns>
-    private static Func<CancellationToken, Tally>? Sizing(IFileSource source, IReadOnlyList<FileEntry> entries) =>
-        source.WalksCheaply ? token => FileTasks.Measure(source, entries, token) : null;
+    private static Func<CancellationToken, Task<Tally>>? Sizing(
+        IFileSource source,
+        IReadOnlyList<FileEntry> entries) =>
+        source.WalksCheaply ? token => FileTasks.MeasureAsync(source, entries, token) : null;
 
     /// <summary>
-    /// Runs the work off the drawing thread — even on a local disk, where a folder deep enough would
-    /// otherwise freeze the frame — and reports it as a notification that counts up while it goes and
-    /// turns into what came of it at the end.
+    /// Runs the work away from the drawing thread — even on a local disk, where a folder deep enough
+    /// would otherwise freeze the frame — and reports it as a notification that counts up while it goes
+    /// and turns into what came of it at the end. Nothing is occupied while the disk or the server is
+    /// thinking; what comes back is posted to the frame, the only thread allowed to change the screen.
     /// </summary>
     private void Start(
-        Action<Outcome, CancellationToken> work,
+        Func<Outcome, CancellationToken, Task> work,
         string verb,
         string busy,
-        Func<CancellationToken, Tally>? measure = null)
+        Func<CancellationToken, Task<Tally>>? measure = null)
     {
         if (IsBusy)
         {
@@ -138,23 +144,28 @@ public sealed class Operations : IArlecchinoStore
 
         Redraw(cancelling.Token);
 
-        Task.Run(
-            () =>
+        _ = Working();
+
+        async Task Working()
+        {
+            try
             {
-                try
-                {
-                    outcome.Planning(measure?.Invoke(cancelling.Token) ?? default);
+                outcome.Planning(measure is null
+                    ? default
+                    : await measure(cancelling.Token).ConfigureAwait(false));
 
-                    work(outcome, cancelling.Token);
-                }
-                finally
-                {
-                    var stopped = cancelling.Token.IsCancellationRequested;
+                await work(outcome, cancelling.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                var stopped = cancelling.Token.IsCancellationRequested;
 
-                    FrameThread.Post(() => Finish(outcome, verb, stopped));
-                }
-            },
-            CancellationToken.None);
+                FrameThread.Post(() => Finish(outcome, verb, stopped));
+            }
+        }
     }
 
     private void Redraw(CancellationToken token) => Task.Run(

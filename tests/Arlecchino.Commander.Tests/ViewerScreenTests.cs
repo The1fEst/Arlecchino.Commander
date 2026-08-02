@@ -6,8 +6,9 @@ using Xunit;
 namespace Arlecchino.Commander.Tests;
 
 /// <summary>
-/// A file as the viewer shows it. What it is told to show is read as the view is built, so the state
-/// goes in before the first frame is asked for.
+/// A file as the viewer shows it. Which file it is goes in before the first frame is asked for, but
+/// the bytes arrive after it: the view is built with an empty body and fills in when the read is
+/// answered, so what is on screen is waited for rather than assumed.
 /// </summary>
 public sealed class ViewerScreenTests : IDisposable
 {
@@ -28,10 +29,8 @@ public sealed class ViewerScreenTests : IDisposable
     {
         Viewing("notes.txt", "first line\nsecond line\nthird line");
 
-        var screen = _app.Frame();
-
-        Assert.Contains("first line", screen, StringComparison.Ordinal);
-        Assert.Contains("third line", screen, StringComparison.Ordinal);
+        Assert.True(_app.Shows("first line"));
+        Assert.Contains("third line", _app.Frame(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -46,6 +45,8 @@ public sealed class ViewerScreenTests : IDisposable
     public void ALineWiderThanTheScreenDoesNotSpillOverIt()
     {
         Viewing("wide.txt", new('x', 400));
+
+        Assert.True(_app.Shows("xxx"));
 
         var lines = _app.FrameLines();
 

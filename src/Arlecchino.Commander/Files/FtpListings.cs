@@ -101,7 +101,7 @@ public static class FtpListings
         {
             var read = Unix(line) ?? Dos(line);
 
-            if (read is { } entry && entry.Name is not ("." or ".." or ""))
+            if (read is { Name: not ("." or ".." or "") } entry)
             {
                 entries.Add(entry);
             }

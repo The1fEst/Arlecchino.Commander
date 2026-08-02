@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Arlecchino.Commander.Files;
 
@@ -46,10 +48,15 @@ public static class Shells
         }
     }
 
-    /// <summary>Reads a started process to its end.</summary>
+    /// <summary>
+    /// Reads a started process to its end without holding a thread while it thinks. A command that
+    /// prints nothing for a minute is a minute of waiting, and waiting is the one thing worth not
+    /// occupying anybody with.
+    /// </summary>
     /// <param name="running">The process.</param>
+    /// <param name="token">Gives up the wait; the process is left to finish on its own.</param>
     /// <returns>Everything it printed, with how it ended as the last line.</returns>
-    public static List<string> Collect(Process running)
+    public static async Task<List<string>> CollectAsync(Process running, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(running);
 
@@ -57,10 +64,13 @@ public static class Shells
 
         running.StandardInput.Close();
 
-        lines.AddRange(Split(running.StandardOutput.ReadToEnd()));
-        lines.AddRange(Split(running.StandardError.ReadToEnd()));
+        var printed = running.StandardOutput.ReadToEndAsync(token);
+        var complained = running.StandardError.ReadToEndAsync(token);
 
-        running.WaitForExit();
+        lines.AddRange(Split(await printed.ConfigureAwait(false)));
+        lines.AddRange(Split(await complained.ConfigureAwait(false)));
+
+        await running.WaitForExitAsync(token).ConfigureAwait(false);
         lines.Add($"[exit {running.ExitCode}]");
 
         return lines;

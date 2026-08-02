@@ -23,6 +23,7 @@ public sealed class CommanderScreenTests : IDisposable
         Directory.CreateDirectory(Path.Combine(_app.Folder, "nested"));
 
         _app.Panels.Start(_app.Folder, _app.Folder);
+        _app.Settled();
     }
 
     public void Dispose() => _app.Dispose();
@@ -87,6 +88,7 @@ public sealed class CommanderScreenTests : IDisposable
 
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.Enter);
+        _app.Settled();
 
         var screen = _app.Frame();
 

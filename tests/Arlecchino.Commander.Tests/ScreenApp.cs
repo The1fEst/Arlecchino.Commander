@@ -18,6 +18,10 @@ namespace Arlecchino.Commander.Tests;
 /// </summary>
 public sealed class ScreenApp : IDisposable
 {
+    private const string Loading = "loading…";
+    private const int Attempts = 200;
+    private const int PollMilliseconds = 10;
+
     private readonly ArlecchinoTestHost _host;
 
     public ScreenApp(ViewRoute start, int width = 100, int height = 30)
@@ -43,7 +47,7 @@ public sealed class ScreenApp : IDisposable
     /// <summary>A folder of its own, gone when the test is.</summary>
     public string Folder { get; }
 
-    public ScreenGrid Screen => _host.Screen;
+    private ScreenGrid Screen => _host.Screen;
 
     public Panels Panels => _host.Services.GetRequiredService<Panels>();
 
@@ -79,7 +83,7 @@ public sealed class ScreenApp : IDisposable
     {
         ArgumentNullException.ThrowIfNull(done);
 
-        for (var attempt = 0; attempt < 200; attempt++)
+        for (var attempt = 0; attempt < Attempts; attempt++)
         {
             Frame();
 
@@ -88,11 +92,37 @@ public sealed class ScreenApp : IDisposable
                 return true;
             }
 
-            Thread.Sleep(10);
+            Thread.Sleep(PollMilliseconds);
         }
 
         return false;
     }
+
+    /// <summary>
+    /// Draws frames until no panel is still reading. A folder is read off the drawing thread, so the
+    /// first frame of a fresh application says <c>loading…</c> where the files will be — a test that
+    /// reads that frame is looking at the screen from before the disk answered.
+    /// </summary>
+    /// <exception cref="TimeoutException">The reading never finished.</exception>
+    public void Settled()
+    {
+        for (var attempt = 0; attempt < Attempts; attempt++)
+        {
+            if (!Frame().Contains(Loading, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Thread.Sleep(PollMilliseconds);
+        }
+
+        throw new TimeoutException("The panels never finished reading.");
+    }
+
+    /// <summary>Draws frames until some text is on screen, for what arrives after a read.</summary>
+    /// <param name="text">What to wait for.</param>
+    /// <returns><c>true</c> when it appeared.</returns>
+    public bool Shows(string text) => Until(() => Frame().Contains(text, StringComparison.Ordinal));
 
     /// <summary>A file with something in it, for the tests that need one.</summary>
     /// <param name="name">What to call it.</param>

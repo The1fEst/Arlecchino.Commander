@@ -101,6 +101,13 @@ public sealed class Outcome
         Interlocked.Add(ref _bytes, bytes);
     }
 
+    /// <summary>
+    /// Bytes that have gone over, while they are still going over. A file counts as done only once it
+    /// is done, but a bar that waits for that says nothing at all while something large is copying.
+    /// </summary>
+    /// <param name="bytes">How much moved just now.</param>
+    public void Moved(long bytes) => Interlocked.Add(ref _bytes, bytes);
+
     public void CountedFolder() => Interlocked.Increment(ref _folders);
 
     /// <summary>

@@ -14,6 +14,7 @@ namespace Arlecchino.Commander.Frames;
 public static class HeadlessFrame
 {
     private const int RemoteSettleMilliseconds = 4000;
+    private const int LocalSettleMilliseconds = 400;
     private const int PollInterval = 25;
     private const int ClosingMilliseconds = 1600;
     private const char Separator = '';
@@ -97,8 +98,16 @@ public static class HeadlessFrame
         return provider;
     }
 
+    /// <summary>
+    /// How long to let the work behind a frame answer. A folder is read off the drawing thread whoever
+    /// it belongs to, so even a picture of the disk has something to wait for: drawn the instant it is
+    /// asked for, it catches two panels that both say <c>loading…</c>.
+    /// </summary>
+    /// <param name="wait">What was asked for, when anything was.</param>
+    /// <param name="connect">The link the left panel opens on, when there is one.</param>
+    /// <returns>The wait, in milliseconds.</returns>
     private static int Settling(int wait, string connect) =>
-        wait > 0 ? wait : connect.Length > 0 ? RemoteSettleMilliseconds : 0;
+        wait > 0 ? wait : connect.Length > 0 ? RemoteSettleMilliseconds : LocalSettleMilliseconds;
 
     private static void Shot(IServiceProvider provider, int hold)
     {
@@ -134,12 +143,20 @@ public static class HeadlessFrame
         FrameThread.RunPending(static _ => { });
     }
 
+    /// <summary>
+    /// Connects before a headless frame is drawn. This one waits outright: there is no screen yet and
+    /// nothing else to get on with, and a picture of a panel that has not connected is not the picture
+    /// that was asked for.
+    /// </summary>
+    /// <param name="panels">The panels to attach to.</param>
+    /// <param name="remote">Told which session is open.</param>
+    /// <param name="link">Where to connect.</param>
     private static void Attach(Panels panels, Remote remote, string link)
     {
         var wanted = Links.Parse(link);
         var source = wanted.Protocol == Protocol.Sftp
             ? SftpSource.Connect(wanted)
-            : (IFileSource)FtpSource.Connect(wanted);
+            : (IFileSource)FtpSource.ConnectAsync(wanted, CancellationToken.None).GetAwaiter().GetResult();
 
         if (wanted.Protocol == Protocol.Sftp)
         {

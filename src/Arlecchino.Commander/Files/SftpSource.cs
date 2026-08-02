@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Arlecchino.Commander.Model;
 using Renci.SshNet;
 using Renci.SshNet.Common;
@@ -15,7 +16,7 @@ public sealed class SftpSource : IFileSource
 
     private readonly SftpPool _pool;
     private readonly Connection _connection;
-    private readonly Lock _shellGate = new();
+    private readonly SemaphoreSlim _shellGate = new(1, 1);
 
     private SshClient? _session;
     private bool _shellRefused;
@@ -67,14 +68,15 @@ public sealed class SftpSource : IFileSource
 
     public string NameOf(string path) => RemotePaths.NameOf(path);
 
-    public bool FolderExists(string folder)
+    public async Task<bool> FolderExistsAsync(string folder, CancellationToken token)
     {
         using var lease = _pool.Take();
         var client = lease.Client;
 
         try
         {
-            return client.Exists(folder) && client.GetAttributes(folder).IsDirectory;
+            return await client.ExistsAsync(folder, token).ConfigureAwait(false) &&
+                (await client.GetAttributesAsync(folder, token).ConfigureAwait(false)).IsDirectory;
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException)
         {
@@ -82,9 +84,9 @@ public sealed class SftpSource : IFileSource
         }
     }
 
-    public string Free(string folder) => "";
+    public Task<string> FreeAsync(string folder, CancellationToken token) => Task.FromResult("");
 
-    public string Mode(FileEntry entry)
+    public async Task<string> ModeAsync(FileEntry entry, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
@@ -93,7 +95,9 @@ public sealed class SftpSource : IFileSource
 
         try
         {
-            return Modes.Write(RemotePaths.ModeOf(client.GetAttributes(entry.Path)));
+            var attributes = await client.GetAttributesAsync(entry.Path, token).ConfigureAwait(false);
+
+            return Modes.Write(RemotePaths.ModeOf(attributes));
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException)
         {
@@ -101,13 +105,22 @@ public sealed class SftpSource : IFileSource
         }
     }
 
-    public bool TryChangeMode(FileEntry entry, string mode)
+    /// <summary>
+    /// Sets the permissions. SFTP has a request for it and the library has no waiting form of that
+    /// request, so this is the one place a round trip is spent on the thread that asked — it is one
+    /// request, and it is never on the drawing thread.
+    /// </summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <param name="mode">The octal digits, as typed.</param>
+    /// <param name="token">Unused: there is nothing here to give up on.</param>
+    /// <returns><c>false</c> when the digits were not digits, or the server refused.</returns>
+    public Task<bool> TryChangeModeAsync(FileEntry entry, string mode, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
         if (Modes.AsDigits(mode) is not { } wanted)
         {
-            return false;
+            return Task.FromResult(false);
         }
 
         using var lease = _pool.Take();
@@ -117,11 +130,11 @@ public sealed class SftpSource : IFileSource
         {
             client.ChangePermissions(entry.Path, (short)wanted);
 
-            return true;
+            return Task.FromResult(true);
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException)
         {
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -132,13 +145,15 @@ public sealed class SftpSource : IFileSource
     /// <param name="path">Where the link goes.</param>
     /// <param name="target">What it points at.</param>
     /// <param name="hard">Whether it is a hard link.</param>
+    /// <param name="token">Gives up waiting on the shell a hard link needs.</param>
     /// <returns><c>false</c> when the server refused it.</returns>
-    public bool TryLink(string path, string target, bool hard)
+    public async Task<bool> TryLinkAsync(string path, string target, bool hard, CancellationToken token)
     {
         if (hard)
         {
-            return Linking(path, target) is { } command &&
-                Run(command, RemotePaths.Parent(path) ?? RemotePaths.Root) is { Status: 0 };
+            return await LinkingAsync(path, target, token).ConfigureAwait(false) is { } command &&
+                await RunAsync(command, RemotePaths.Parent(path) ?? RemotePaths.Root, token)
+                    .ConfigureAwait(false) is { Status: 0 };
         }
 
         using var lease = _pool.Take();
@@ -156,21 +171,20 @@ public sealed class SftpSource : IFileSource
         }
     }
 
-    public IReadOnlyList<FileEntry> List(string folder, bool showHidden)
+    public async Task<IReadOnlyList<FileEntry>> ListAsync(string folder, bool showHidden, CancellationToken token)
     {
         using var lease = _pool.Take();
         var client = lease.Client;
+        var entries = new List<FileEntry>();
 
-        return Guarded(() =>
+        if (RemotePaths.Parent(folder) is { } parent)
         {
-            var entries = new List<FileEntry>();
+            entries.Add(new("..", parent, true, true, 0, default, false, false));
+        }
 
-            if (RemotePaths.Parent(folder) is { } parent)
-            {
-                entries.Add(new("..", parent, true, true, 0, default, false, false));
-            }
-
-            foreach (var found in client.ListDirectory(folder))
+        try
+        {
+            await foreach (var found in client.ListDirectoryAsync(folder, token).ConfigureAwait(false))
             {
                 if (found.Name is "." or "..")
                 {
@@ -194,56 +208,69 @@ public sealed class SftpSource : IFileSource
                     hidden,
                     false));
             }
-
-            return (IReadOnlyList<FileEntry>)entries;
-        });
-    }
-
-    public Stream OpenRead(string path)
-    {
-        var lease = _pool.Take();
-        var client = lease.Client;
-
-        return Leased(lease, () => client.OpenRead(path));
-    }
-
-    public Stream Create(string path)
-    {
-        var lease = _pool.Take();
-        var client = lease.Client;
-
-        return Leased(lease, () => client.Create(path));
-    }
-
-    public void CreateFolder(string path)
-    {
-        using var lease = _pool.Take();
-        var client = lease.Client;
-
-        Guarded(() =>
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
         {
-            if (!client.Exists(path))
-            {
-                client.CreateDirectory(path);
-            }
-        });
+            throw RemotePaths.AsIoException(error);
+        }
+
+        return entries;
     }
 
-    public void Delete(FileEntry entry)
+    public Task<Stream> OpenReadAsync(string path, CancellationToken token)
+    {
+        var lease = _pool.Take();
+
+        return LeasedAsync(lease, () => lease.Client.OpenAsync(path, FileMode.Open, FileAccess.Read, token));
+    }
+
+    public Task<Stream> CreateAsync(string path, CancellationToken token)
+    {
+        var lease = _pool.Take();
+
+        return LeasedAsync(lease, () => lease.Client.OpenAsync(path, FileMode.Create, FileAccess.Write, token));
+    }
+
+    public async Task CreateFolderAsync(string path, CancellationToken token)
     {
         using var lease = _pool.Take();
         var client = lease.Client;
 
-        Guarded(() =>
+        try
+        {
+            if (!await client.ExistsAsync(path, token).ConfigureAwait(false))
+            {
+                await client.CreateDirectoryAsync(path, token).ConfigureAwait(false);
+            }
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
+        {
+            throw RemotePaths.AsIoException(error);
+        }
+    }
+
+    public async Task DeleteAsync(FileEntry entry, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        using var lease = _pool.Take();
+        var client = lease.Client;
+
+        try
         {
             if (entry.IsFolder)
             {
-                client.DeleteDirectory(entry.Path);
+                await client.DeleteDirectoryAsync(entry.Path, token).ConfigureAwait(false);
+
                 return;
             }
 
-            client.DeleteFile(entry.Path);
-        });
+            await client.DeleteFileAsync(entry.Path, token).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
+        {
+            throw RemotePaths.AsIoException(error);
+        }
     }
 
     /// <summary>
@@ -256,48 +283,56 @@ public sealed class SftpSource : IFileSource
     /// <see cref="WindowsCommandShell"/> offers none for exactly that reason.
     /// </summary>
     /// <param name="entry">The folder to remove.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns><c>false</c> when the server has no shell to run it, leaving the tree to be walked.</returns>
-    public bool TryDeleteTree(FileEntry entry)
+    public async Task<bool> TryDeleteTreeAsync(FileEntry entry, CancellationToken token)
     {
+        ArgumentNullException.ThrowIfNull(entry);
+
         if (!entry.IsFolder)
         {
             return false;
         }
 
-        lock (_shellGate)
+        await _shellGate.WaitAsync(token).ConfigureAwait(false);
+
+        try
         {
-            if (Session() is not { } shell || Dialect(shell).Sweep(entry.Path) is not { } command)
+            if (await SessionAsync(token).ConfigureAwait(false) is not { } shell ||
+                (await DialectAsync(shell, token).ConfigureAwait(false)).Sweep(entry.Path) is not { } command)
             {
                 return false;
             }
 
-            try
-            {
-                using var running = shell.RunCommand(command);
-
-                return running.ExitStatus == 0;
-            }
-            catch (Exception error) when (IsShellFailure(error))
-            {
-                _shellRefused = true;
-
-                return false;
-            }
+            return await SaidAsync(shell, command, token).ConfigureAwait(false) is { Status: 0 };
+        }
+        finally
+        {
+            _shellGate.Release();
         }
     }
 
     /// <summary>
     /// Asks whatever is answering how it spells a hard link. It is worked out before
-    /// <see cref="Run"/> is called rather than inside it, so the two never hold the gate at once.
+    /// <see cref="RunAsync"/> is called rather than inside it, so the two never hold the gate at once.
     /// </summary>
     /// <param name="path">Where the link goes.</param>
     /// <param name="target">What it points at.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>The command, or <c>null</c> when there is no shell or it cannot make one.</returns>
-    private string? Linking(string path, string target)
+    private async Task<string?> LinkingAsync(string path, string target, CancellationToken token)
     {
-        lock (_shellGate)
+        await _shellGate.WaitAsync(token).ConfigureAwait(false);
+
+        try
         {
-            return Session() is { } shell ? Dialect(shell).Link(path, target) : null;
+            return await SessionAsync(token).ConfigureAwait(false) is { } shell
+                ? (await DialectAsync(shell, token).ConfigureAwait(false)).Link(path, target)
+                : null;
+        }
+        finally
+        {
+            _shellGate.Release();
         }
     }
 
@@ -306,28 +341,56 @@ public sealed class SftpSource : IFileSource
     /// </summary>
     /// <param name="command">What was typed.</param>
     /// <param name="folder">Where to run it.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>What it said and how it ended, or <c>null</c> when the server offers no shell.</returns>
-    public (string Output, int Status)? Run(string command, string folder)
+    public async Task<(string Output, int Status)?> RunAsync(string command, string folder, CancellationToken token)
     {
-        lock (_shellGate)
+        await _shellGate.WaitAsync(token).ConfigureAwait(false);
+
+        try
         {
-            if (Session() is not { } shell)
+            if (await SessionAsync(token).ConfigureAwait(false) is not { } shell)
             {
                 return null;
             }
 
-            try
-            {
-                using var running = shell.RunCommand(Dialect(shell).Within(folder, command));
+            var dialect = await DialectAsync(shell, token).ConfigureAwait(false);
 
-                return (running.Result + running.Error, running.ExitStatus ?? -1);
-            }
-            catch (Exception error) when (IsShellFailure(error))
-            {
-                _shellRefused = true;
+            return await SaidAsync(shell, dialect.Within(folder, command), token).ConfigureAwait(false);
+        }
+        finally
+        {
+            _shellGate.Release();
+        }
+    }
 
-                return null;
-            }
+    /// <summary>
+    /// Sends one command over the session already open and waits for it to finish. A server that goes
+    /// quiet or refuses the session is remembered as having no shell, so the next command walks the
+    /// long way round rather than waiting on the same refusal again.
+    /// </summary>
+    /// <param name="shell">The session.</param>
+    /// <param name="command">What to send.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns>What it said and how it ended, or <c>null</c> when the session failed.</returns>
+    private async Task<(string Output, int Status)?> SaidAsync(
+        SshClient shell,
+        string command,
+        CancellationToken token)
+    {
+        try
+        {
+            using var running = shell.CreateCommand(command);
+
+            await running.ExecuteAsync(token).ConfigureAwait(false);
+
+            return (running.Result + running.Error, running.ExitStatus ?? -1);
+        }
+        catch (Exception error) when (IsShellFailure(error))
+        {
+            _shellRefused = true;
+
+            return null;
         }
     }
 
@@ -337,26 +400,20 @@ public sealed class SftpSource : IFileSource
     /// install, PowerShell on many others — and the three of them share no way of removing a folder.
     /// Asked once per connection and remembered.
     /// </summary>
-    private Shell Dialect(SshClient shell)
+    /// <param name="shell">The session to ask over.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns>What is answering.</returns>
+    private async Task<Shell> DialectAsync(SshClient shell, CancellationToken token)
     {
         if (_dialect is not null)
         {
             return _dialect;
         }
 
-        _dialect = Shell.Ask(question =>
-        {
-            try
-            {
-                using var running = shell.RunCommand(question);
-
-                return (running.Result + running.Error, running.ExitStatus ?? -1);
-            }
-            catch (Exception error) when (IsShellFailure(error))
-            {
-                return ("", -1);
-            }
-        });
+        _dialect = await Shell
+            .AskAsync(async question =>
+                await SaidAsync(shell, question, token).ConfigureAwait(false) ?? ("", -1))
+            .ConfigureAwait(false);
 
         return _dialect;
     }
@@ -365,8 +422,9 @@ public sealed class SftpSource : IFileSource
     /// The shell session, opened once and kept. Opening one costs a round trip, which is the whole
     /// saving when a hundred small folders are removed one after another.
     /// </summary>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>The session, or <c>null</c> when the server would not give one.</returns>
-    private SshClient? Session()
+    private async Task<SshClient?> SessionAsync(CancellationToken token)
     {
         if (_shellRefused)
         {
@@ -385,7 +443,7 @@ public sealed class SftpSource : IFileSource
 
             Credentials.Watch(_session, _connection);
 
-            _session.Connect();
+            await _session.ConnectAsync(token).ConfigureAwait(false);
 
             return _session;
         }
@@ -402,34 +460,64 @@ public sealed class SftpSource : IFileSource
         error is SshException or SocketException or IOException or ObjectDisposedException
             or UnauthorizedAccessException;
 
-    public void Move(string from, string target)
+    public async Task MoveAsync(string from, string target, CancellationToken token)
     {
         using var lease = _pool.Take();
         var client = lease.Client;
 
-        Guarded(() => client.RenameFile(from, target));
+        try
+        {
+            await client.RenameFileAsync(from, target, token).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
+        {
+            throw RemotePaths.AsIoException(error);
+        }
     }
 
     public void Dispose()
     {
-        lock (_shellGate)
+        _shellGate.Wait();
+
+        try
         {
             _session?.Dispose();
             _session = null;
         }
+        finally
+        {
+            _shellGate.Release();
+        }
 
+        _shellGate.Dispose();
         _pool.Dispose();
     }
 
-    private static LeasedStream Leased(SftpPool.Lease lease, Func<Stream> open)
+    /// <summary>
+    /// Opens a stream that holds its session until it is closed. The lease goes back to the pool with
+    /// the stream rather than when this returns: the bytes have not been read yet, and a session handed
+    /// back early is one another copy would take while this one is still using it.
+    /// </summary>
+    /// <param name="lease">The session the stream will use.</param>
+    /// <param name="open">Asks the server for the stream.</param>
+    /// <returns>The stream, holding the lease.</returns>
+    private static async Task<Stream> LeasedAsync<T>(SftpPool.Lease lease, Func<Task<T>> open)
+        where T : Stream
     {
         try
         {
-            return new(Guarded(open), lease);
+            return new LeasedStream(await open().ConfigureAwait(false), lease);
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
+        {
+            lease.Dispose();
+
+            throw RemotePaths.AsIoException(error);
         }
         catch
         {
             lease.Dispose();
+
             throw;
         }
     }
@@ -445,10 +533,4 @@ public sealed class SftpSource : IFileSource
             throw RemotePaths.AsIoException(error);
         }
     }
-
-    private static void Guarded(Action work) => Guarded<object?>(() =>
-    {
-        work();
-        return null;
-    });
 }

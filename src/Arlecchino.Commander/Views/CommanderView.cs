@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Arlecchino.Commander.Files;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -345,7 +347,7 @@ public sealed class CommanderView : IArlecchinoView
         _state.RequestText(
             $"Copy {Counted(sources)} to {to.Source.Label}",
             to.Folder,
-            target => Folder(to, target),
+            Filled,
             target => _operations.Copy(from.Source, sources, to.Source, target));
     }
 
@@ -387,17 +389,40 @@ public sealed class CommanderView : IArlecchinoView
     {
         var panel = Active();
 
-        _state.RequestText("Create folder", "", Filled, name =>
-        {
-            if (FileTasks.CreateFolder(panel.Source, panel.Folder, name) is not { } created)
+        _state.RequestText("Create folder", "", Filled, name => Answering(
+            () => FileTasks.CreateFolderAsync(panel.Source, panel.Folder, name, CancellationToken.None),
+            created =>
             {
-                _state.Output = $"Could not create {name}";
-                return;
-            }
+                if (created is null)
+                {
+                    _state.Output = $"Could not create {name}";
 
-            panel.State.Cursor = panel.Source.NameOf(created);
-            panel.Reload();
-        });
+                    return;
+                }
+
+                panel.State.Cursor = panel.Source.NameOf(created);
+                panel.Reload();
+            }));
+    }
+
+    /// <summary>
+    /// Asks the source something and answers when it has answered. A key press must not wait on a
+    /// server: the question goes off on its own and what comes back is handed to the drawing thread,
+    /// which is the only one allowed to change what is on screen.
+    /// </summary>
+    /// <typeparam name="T">What was asked for.</typeparam>
+    /// <param name="asking">The question.</param>
+    /// <param name="answered">What to do with the answer, on the drawing thread.</param>
+    private static void Answering<T>(Func<Task<T>> asking, Action<T> answered)
+    {
+        _ = Asked();
+
+        async Task Asked()
+        {
+            var answer = await asking().ConfigureAwait(false);
+
+            FrameThread.Post(() => answered(answer));
+        }
     }
 
     /// <summary>
@@ -414,23 +439,35 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        var current = panel.Source.Mode(targets[0]);
+        Answering(
+            () => panel.Source.ModeAsync(targets[0], CancellationToken.None),
+            current => _state.RequestText(
+                $"Permissions of {Counted(targets)}",
+                current.Length == 0 ? "644" : current,
+                Octal,
+                mode => Answering(() => Changing(panel, targets, mode), refused =>
+                {
+                    _state.Output = refused == 0
+                        ? $"{Counted(targets)} now {mode}"
+                        : $"{refused} of {targets.Count} would not take {mode}";
 
-        _state.RequestText($"Permissions of {Counted(targets)}", current.Length == 0 ? "644" : current, Octal, mode =>
+                    panel.Reload();
+                })));
+    }
+
+    private static async Task<int> Changing(FilePanel panel, IReadOnlyList<FileEntry> targets, string mode)
+    {
+        var refused = 0;
+
+        foreach (var entry in targets)
         {
-            var refused = 0;
+            refused += await panel.Source.TryChangeModeAsync(entry, mode, CancellationToken.None)
+                .ConfigureAwait(false)
+                ? 0
+                : 1;
+        }
 
-            foreach (var entry in targets)
-            {
-                refused += panel.Source.TryChangeMode(entry, mode) ? 0 : 1;
-            }
-
-            _state.Output = refused == 0
-                ? $"{Counted(targets)} now {mode}"
-                : $"{refused} of {targets.Count} would not take {mode}";
-
-            panel.Reload();
-        });
+        return refused;
     }
 
     /// <summary>
@@ -481,17 +518,24 @@ public sealed class CommanderView : IArlecchinoView
         var kind = hard ? "Hard link" : "Symbolic link";
 
         _state.RequestText($"{kind} to {current.Name} in {beside.Folder}, named", current.Name, Filled, name =>
-        {
-            if (beside.Source.TryLink(beside.Source.Combine(beside.Folder, name.Trim()), current.Path, hard))
-            {
-                _state.Output = $"{kind} {name.Trim()} made";
-                beside.Reload();
+            Answering(
+                () => beside.Source.TryLinkAsync(
+                    beside.Source.Combine(beside.Folder, name.Trim()),
+                    current.Path,
+                    hard,
+                    CancellationToken.None),
+                made =>
+                {
+                    if (made)
+                    {
+                        _state.Output = $"{kind} {name.Trim()} made";
+                        beside.Reload();
 
-                return;
-            }
+                        return;
+                    }
 
-            _state.Output = $"{beside.Source.Label} would not make that {kind.ToLowerInvariant()}";
-        });
+                    _state.Output = $"{beside.Source.Label} would not make that {kind.ToLowerInvariant()}";
+                }));
     }
 
     /// <summary>
@@ -587,10 +631,14 @@ public sealed class CommanderView : IArlecchinoView
     private static string Counted(IReadOnlyList<FileEntry> sources) =>
         sources.Count == 1 ? sources[0].Name : $"{sources.Count} items";
 
+    /// <summary>
+    /// Checks what was typed into a dialog. A validator runs on every keystroke, so it asks only what
+    /// it can answer on the spot: whether a folder is really there is a question for the source and so
+    /// a wait, and one that turns out not to be is reported by the work itself rather than here.
+    /// </summary>
+    /// <param name="text">What was typed.</param>
+    /// <returns>The complaint, or <c>null</c> when there is none.</returns>
     private static string? Filled(string text) => text.Trim().Length == 0 ? "A name is needed" : null;
-
-    private static string? Folder(FilePanel panel, string target) =>
-        !panel.Source.WalksCheaply || panel.Source.FolderExists(target) ? Filled(target) : "That folder does not exist";
 
     private FilePanel Active() => _right.IsFocused ? _right : _left;
 
@@ -1102,23 +1150,43 @@ public sealed class CommanderView : IArlecchinoView
         }
 
         var wanted = command.Length > 3 ? command[3..].Trim().Trim('"') : "";
+
+        Answering(() => Where(panel, wanted), where =>
+        {
+            if (where is null)
+            {
+                _state.Output = $"No folder {wanted}";
+
+                return;
+            }
+
+            panel.GoTo(where);
+        });
+
+        return true;
+    }
+
+    /// <summary>
+    /// Works out what a typed <c>cd</c> meant, asking the source whether the name is a folder of its
+    /// own or one below the panel. Both questions are round trips on a server.
+    /// </summary>
+    /// <param name="panel">The panel being moved.</param>
+    /// <param name="wanted">What was typed after the command.</param>
+    /// <returns>Where to go, or <c>null</c> when there is no such folder.</returns>
+    private static async Task<string?> Where(FilePanel panel, string wanted)
+    {
         var where = wanted switch
         {
             "" or "~" => panel.Source.Home,
             ".." => panel.Source.Parent(panel.Folder) ?? panel.Folder,
-            _ => panel.Source.FolderExists(wanted) ? wanted : panel.Source.Combine(panel.Folder, wanted),
+            _ => await panel.Source.FolderExistsAsync(wanted, CancellationToken.None).ConfigureAwait(false)
+                ? wanted
+                : panel.Source.Combine(panel.Folder, wanted),
         };
 
-        if (panel.Source.FolderExists(where))
-        {
-            panel.GoTo(where);
-        }
-        else
-        {
-            _state.Output = $"No folder {wanted}";
-        }
-
-        return true;
+        return await panel.Source.FolderExistsAsync(where, CancellationToken.None).ConfigureAwait(false)
+            ? where
+            : null;
     }
 
     private void Insert()
@@ -1287,8 +1355,7 @@ public sealed class CommanderView : IArlecchinoView
         var panel = Active();
         var room = Math.Max(0, status.Width - Hints.Length - 3);
 
-        var free = panel.Source.Free(panel.Folder);
-        var where = free.Length == 0 ? panel.Folder : $"{panel.Folder}  ·  {free}";
+        var where = panel.Free.Length == 0 ? panel.Folder : $"{panel.Folder}  ·  {panel.Free}";
 
         status.Write(0, 0, TextWidth.Truncate(where, room), Theme.Muted);
         status.WriteLine(0, Hints, Theme.Muted, Align.Right);

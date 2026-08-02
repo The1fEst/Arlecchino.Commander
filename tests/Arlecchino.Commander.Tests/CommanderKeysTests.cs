@@ -22,7 +22,7 @@ public sealed class CommanderKeysTests : IDisposable
         Directory.CreateDirectory(Path.Combine(_app.Folder, "nested"));
 
         _app.Panels.Start(_app.Folder, _app.Folder);
-        _app.Frame();
+        _app.Settled();
     }
 
     public void Dispose() => _app.Dispose();

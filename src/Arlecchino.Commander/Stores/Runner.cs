@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
 using Arlecchino.Commander.Files;
@@ -58,9 +59,11 @@ public sealed class Runner : IArlecchinoStore
         Remember(command);
         Lines.Add($"$ {command}");
 
-        Task.Run(() =>
+        _ = Running();
+
+        async Task Running()
         {
-            var said = Say(source, command, folder);
+            var said = await SayAsync(source, command, folder).ConfigureAwait(false);
 
             FrameThread.Post(() =>
             {
@@ -74,7 +77,7 @@ public sealed class Runner : IArlecchinoStore
 
                 finished();
             });
-        });
+        }
     }
 
     /// <summary>Kills what is running, along with anything it started.</summary>
@@ -109,7 +112,7 @@ public sealed class Runner : IArlecchinoStore
     /// <param name="command">What was typed.</param>
     /// <param name="folder">The folder to run it in.</param>
     /// <returns>What it said.</returns>
-    private List<string> Say(IFileSource source, string command, string folder)
+    private async Task<List<string>> SayAsync(IFileSource source, string command, string folder)
     {
         if (source.Start(command, folder) is not { } run)
         {
@@ -120,7 +123,7 @@ public sealed class Runner : IArlecchinoStore
 
         using (run)
         {
-            return run.Collect();
+            return await run.CollectAsync(CancellationToken.None).ConfigureAwait(false);
         }
     }
 

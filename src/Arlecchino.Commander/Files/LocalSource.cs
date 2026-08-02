@@ -1,83 +1,97 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Files;
 
+/// <summary>
+/// The disk this machine has. Reading and writing bytes is asked for rather than done, so a copy of
+/// something large leaves the thread that started it free and can be called off between one block and
+/// the next. The rest — asking a folder what is in it, renaming, changing permissions — has no waiting
+/// form the runtime offers and no waiting to speak of either: it is one call into the kernel.
+/// </summary>
 public sealed class LocalSource : IFileSource
 {
+    private const int Block = 128 * 1024;
+
     public string Label => "local";
 
     public bool IsRemote => false;
 
     public int Concurrency => 1;
 
-    public bool TryDeleteTree(FileEntry entry) => false;
-
     public string Home => Listing.Home();
+
+    public bool WalksCheaply => true;
+
+    public Task<bool> TryDeleteTreeAsync(FileEntry entry, CancellationToken token) => Task.FromResult(false);
 
     /// <summary>
     /// The permissions of a file on this disk. Windows keeps none of the kind a chmod sets, and says
     /// so by refusing the call rather than by inventing an answer.
     /// </summary>
     /// <param name="entry">The file or folder.</param>
+    /// <param name="token">Unused: the answer is already in hand.</param>
     /// <returns>The octal digits, or an empty string on Windows.</returns>
-    public string Mode(FileEntry entry)
+    public Task<string> ModeAsync(FileEntry entry, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
         if (OperatingSystem.IsWindows())
         {
-            return "";
+            return Task.FromResult("");
         }
 
         try
         {
-            return Modes.Write(Modes.FromUnix(Info(entry).UnixFileMode));
+            return Task.FromResult(Modes.Write(Modes.FromUnix(Info(entry).UnixFileMode)));
         }
         catch (Exception error) when (IsRefused(error))
         {
-            return "";
+            return Task.FromResult("");
         }
     }
 
-    public bool TryChangeMode(FileEntry entry, string mode)
+    public Task<bool> TryChangeModeAsync(FileEntry entry, string mode, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
         if (OperatingSystem.IsWindows() || Modes.Read(mode) is not { } wanted)
         {
-            return false;
+            return Task.FromResult(false);
         }
 
         try
         {
             Info(entry).UnixFileMode = Modes.AsUnix(wanted);
 
-            return true;
+            return Task.FromResult(true);
         }
         catch (Exception error) when (IsRefused(error))
         {
-            return false;
+            return Task.FromResult(false);
         }
     }
 
     /// <summary>
-    /// Makes a link. A symbolic one the framework of the runtime can make itself; a hard one it
-    /// cannot, so that goes through the shell, which both platforms have a spelling for.
+    /// Makes a link. A symbolic one the runtime can make itself; a hard one it cannot, so that goes
+    /// through the shell, which both platforms have a spelling for and which is waited on properly.
     /// </summary>
     /// <param name="path">Where the link goes.</param>
     /// <param name="target">What it points at.</param>
     /// <param name="hard">Whether it is a hard link.</param>
+    /// <param name="token">Gives up waiting for the shell.</param>
     /// <returns><c>false</c> when the disk refused it.</returns>
-    public bool TryLink(string path, string target, bool hard)
+    public async Task<bool> TryLinkAsync(string path, string target, bool hard, CancellationToken token)
     {
         try
         {
             if (hard)
             {
-                return Linked(path, target);
+                return await LinkedAsync(path, target, token).ConfigureAwait(false);
             }
 
             if (Directory.Exists(target))
@@ -99,8 +113,6 @@ public sealed class LocalSource : IFileSource
 
     public IShellRun Start(string command, string folder) => new LocalRun(command, folder);
 
-    public bool WalksCheaply => true;
-
     /// <summary>
     /// Whether the two paths sit on one drive, which is what decides between a rename and a copy.
     /// </summary>
@@ -118,38 +130,77 @@ public sealed class LocalSource : IFileSource
 
     public string NameOf(string path) => Path.GetFileName(path);
 
-    public bool FolderExists(string folder) => Directory.Exists(folder);
+    public Task<bool> FolderExistsAsync(string folder, CancellationToken token) =>
+        Task.FromResult(Directory.Exists(folder));
 
-    public string Free(string folder) => Listing.Free(folder);
+    public Task<string> FreeAsync(string folder, CancellationToken token) => Task.FromResult(Listing.Free(folder));
 
-    public IReadOnlyList<FileEntry> List(string folder, bool showHidden) => Listing.Read(folder, showHidden);
+    public Task<IReadOnlyList<FileEntry>> ListAsync(string folder, bool showHidden, CancellationToken token) =>
+        Task.FromResult(Listing.Read(folder, showHidden));
 
-    public Stream OpenRead(string path) => File.OpenRead(path);
+    /// <summary>
+    /// Opens a file for reading, asking the operating system for the handle a waiting read needs. Given
+    /// an ordinary handle every <c>ReadAsync</c> on it finishes on the spot, having blocked a thread to
+    /// do it, and the whole arrangement is a costlier way of doing it synchronously.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <param name="token">Unused: opening does not wait.</param>
+    /// <returns>The bytes.</returns>
+    public Task<Stream> OpenReadAsync(string path, CancellationToken token) =>
+        Task.FromResult<Stream>(new FileStream(path, new FileStreamOptions
+        {
+            Mode = FileMode.Open,
+            Access = FileAccess.Read,
+            Share = FileShare.Read,
+            BufferSize = Block,
+            Options = FileOptions.Asynchronous | FileOptions.SequentialScan,
+        }));
 
-    public Stream Create(string path) => File.Create(path);
+    public Task<Stream> CreateAsync(string path, CancellationToken token) =>
+        Task.FromResult<Stream>(new FileStream(path, new FileStreamOptions
+        {
+            Mode = FileMode.Create,
+            Access = FileAccess.Write,
+            Share = FileShare.None,
+            BufferSize = Block,
+            Options = FileOptions.Asynchronous,
+        }));
 
-    public void CreateFolder(string path) => Directory.CreateDirectory(path);
-
-    public void Delete(FileEntry entry)
+    public Task CreateFolderAsync(string path, CancellationToken token)
     {
+        Directory.CreateDirectory(path);
+
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(FileEntry entry, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
         if (entry.IsFolder)
         {
             Directory.Delete(entry.Path, true);
-            return;
+
+            return Task.CompletedTask;
         }
 
         File.Delete(entry.Path);
+
+        return Task.CompletedTask;
     }
 
-    public void Move(string from, string target)
+    public Task MoveAsync(string from, string target, CancellationToken token)
     {
         if (Directory.Exists(from))
         {
             Directory.Move(from, target);
-            return;
+
+            return Task.CompletedTask;
         }
 
         File.Move(from, target, true);
+
+        return Task.CompletedTask;
     }
 
     public void Dispose()
@@ -160,7 +211,7 @@ public sealed class LocalSource : IFileSource
         ? new DirectoryInfo(entry.Path)
         : new FileInfo(entry.Path);
 
-    private static bool Linked(string path, string target)
+    private static async Task<bool> LinkedAsync(string path, string target, CancellationToken token)
     {
         if (Shells.Local.Link(path, target) is not { } command ||
             Shells.Start(command, Path.GetDirectoryName(path) ?? ".") is not { } started)
@@ -170,7 +221,7 @@ public sealed class LocalSource : IFileSource
 
         using (started)
         {
-            Shells.Collect(started);
+            await Shells.CollectAsync(started, token).ConfigureAwait(false);
 
             return started.ExitCode == 0;
         }

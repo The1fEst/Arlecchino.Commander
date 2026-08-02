@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Arlecchino.Commander.Files;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -29,34 +31,66 @@ public sealed class ViewerView : IArlecchinoView
     private const int TextProbe = 8192;
 
     private readonly Surface _surface;
-    private readonly PaneTree _layout;
-    private readonly FocusRing _focus;
     private readonly IHostApplicationLifetime _lifetime;
 
+    private PaneTree _layout;
+    private FocusRing _focus;
+
+    private string _kind = "reading";
+    private long _read;
+
+    /// <summary>
+    /// Opens the viewer. The file is not read here: reading it is a wait, and a view that waits in its
+    /// constructor is a frame that does not appear. What is built is the chrome with an empty body,
+    /// which fills in when the bytes arrive — the same shape a panel over a server has always had.
+    /// </summary>
+    /// <param name="surface">Where it draws.</param>
+    /// <param name="panels">Says which file is being viewed and where it lives.</param>
+    /// <param name="options">Supplies the keymap.</param>
+    /// <param name="lifetime">Stops the application on F10.</param>
     public ViewerView(Surface surface, Panels panels, ArlecchinoOptions options, IHostApplicationLifetime lifetime)
     {
+        ArgumentNullException.ThrowIfNull(panels);
+        ArgumentNullException.ThrowIfNull(options);
+
         _surface = surface;
         _lifetime = lifetime;
 
         var path = panels.Viewing.Value;
         var size = panels.ViewingSize;
-        var (body, kind, read) = Load(panels.ViewingSource, path, size, options);
+        var source = panels.ViewingSource;
+
+        var empty = new TextView(options.Keymap) { Text = "" };
 
         var status = new StatusBar
         {
-            Left = [() => $"{Sizes.Grouped(read)} bytes · {kind}"],
-            Right = body is TextView
-                ? [static () => "Esc back", static () => "↑↓ PgUp PgDn scroll"]
-                : [static () => "Esc back"],
+            Left = [() => $"{Sizes.Grouped(_read)} bytes · {_kind}"],
+            Right = [static () => "Esc back", static () => "↑↓ PgUp PgDn scroll"],
         };
 
-        _layout = Branch(
+        _layout = Chrome(empty);
+        _focus = _layout.AsFocusRing(options.Keymap);
+
+        _ = Opening();
+
+        async Task Opening()
+        {
+            var (body, kind, read) = await LoadAsync(source, path, size, options).ConfigureAwait(false);
+
+            FrameThread.Post(() =>
+            {
+                _kind = kind;
+                _read = read;
+                _layout = Chrome(body);
+                _focus = _layout.AsFocusRing(options.Keymap);
+            });
+        }
+
+        PaneTree Chrome(IArlecchinoWidget body) => Branch(
             Rows,
             PaneSize.CellsFromEnd(1),
             Leaf(body, () => Path.GetFileName(path)),
             Leaf(status));
-
-        _focus = _layout.AsFocusRing(options.Keymap);
     }
 
     public void Draw() => _layout.Draw(_surface.Content);
@@ -83,7 +117,7 @@ public sealed class ViewerView : IArlecchinoView
     /// <param name="size">How large it is said to be.</param>
     /// <param name="options">Supplies the keymap the text viewer scrolls by.</param>
     /// <returns>What to draw, what to call it, and how much of it was read.</returns>
-    private static (IArlecchinoWidget Body, string Kind, long Read) Load(
+    private static async Task<(IArlecchinoWidget Body, string Kind, long Read)> LoadAsync(
         IFileSource source,
         string path,
         long size,
@@ -91,11 +125,13 @@ public sealed class ViewerView : IArlecchinoView
     {
         try
         {
-            var head = Head(source, path, ReadLimit);
+            var head = await HeadAsync(source, path, ReadLimit).ConfigureAwait(false);
 
             if (Png.Starts(head))
             {
-                var whole = head.Length >= size ? head : Head(source, path, ImageLimit);
+                var whole = head.Length >= size
+                    ? head
+                    : await HeadAsync(source, path, ImageLimit).ConfigureAwait(false);
 
                 if (Png.Read(whole) is { } raster)
                 {
@@ -126,22 +162,33 @@ public sealed class ViewerView : IArlecchinoView
     private static string Truncated(string kind, int read, long size) =>
         read < size ? $"{kind}, first {Sizes.Brief(read)}" : kind;
 
-    private static byte[] Head(IFileSource source, string path, long limit)
+    /// <summary>
+    /// The front of a file, as much of it as the viewer will show. The whole of a large file is never
+    /// read, so this waits on a few blocks rather than on the file — but it does wait, which is why the
+    /// view is built from what this hands back rather than around a stream it reads while drawing.
+    /// </summary>
+    /// <param name="source">Where the file is.</param>
+    /// <param name="path">The file.</param>
+    /// <param name="limit">How much of it to read.</param>
+    /// <returns>The bytes.</returns>
+    private static async Task<byte[]> HeadAsync(IFileSource source, string path, long limit)
     {
-        using var stream = source.OpenRead(path);
+        await using var stream = await source.OpenReadAsync(path, CancellationToken.None).ConfigureAwait(false);
         var held = new MemoryStream();
         var chunk = new byte[ChunkBytes];
 
         while (held.Length < limit)
         {
-            var read = stream.Read(chunk, 0, (int)Math.Min(chunk.Length, limit - held.Length));
+            var wanted = (int)Math.Min(chunk.Length, limit - held.Length);
+            var read = await stream.ReadAsync(chunk.AsMemory(0, wanted), CancellationToken.None)
+                .ConfigureAwait(false);
 
             if (read <= 0)
             {
                 break;
             }
 
-            held.Write(chunk, 0, read);
+            await held.WriteAsync(chunk.AsMemory(0, read), CancellationToken.None).ConfigureAwait(false);
         }
 
         return held.ToArray();

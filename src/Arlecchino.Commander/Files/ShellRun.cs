@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Arlecchino.Commander.Files;
 
@@ -13,9 +15,10 @@ namespace Arlecchino.Commander.Files;
 /// </summary>
 public interface IShellRun : IDisposable
 {
-    /// <summary>Reads it to its end.</summary>
+    /// <summary>Reads it to its end, waiting on it rather than occupying anybody with the wait.</summary>
+    /// <param name="token">Gives up the wait; what was already printed is kept.</param>
     /// <returns>Everything it printed, with how it ended as the last line.</returns>
-    List<string> Collect();
+    Task<List<string>> CollectAsync(CancellationToken token);
 
     /// <summary>Stops it, when there is anything to stop.</summary>
     /// <returns>Why it could not be stopped, or an empty string when it was.</returns>
@@ -38,7 +41,7 @@ public sealed class LocalRun : IShellRun
     }
 
     /// <inheritdoc/>
-    public List<string> Collect()
+    public async Task<List<string>> CollectAsync(CancellationToken token)
     {
         if (_started is null)
         {
@@ -47,7 +50,7 @@ public sealed class LocalRun : IShellRun
 
         try
         {
-            return Shells.Collect(_started);
+            return await Shells.CollectAsync(_started, token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is InvalidOperationException or IOException)
         {
@@ -101,9 +104,9 @@ public sealed class RemoteRun : IShellRun
     }
 
     /// <inheritdoc/>
-    public List<string> Collect()
+    public async Task<List<string>> CollectAsync(CancellationToken token)
     {
-        if (_source.Run(_command, _folder) is not { } said)
+        if (await _source.RunAsync(_command, _folder, token).ConfigureAwait(false) is not { } said)
         {
             return ["[failed] the server offered no shell"];
         }

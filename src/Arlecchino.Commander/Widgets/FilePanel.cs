@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files;
 using Arlecchino.Commander.Model;
@@ -28,6 +29,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     private readonly List<FileEntry> _entries = [];
 
     private string _error = "";
+    private string _free = "";
     private string _typed = "";
     private int _width = TitleGuess;
     private bool _loading;
@@ -88,6 +90,13 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     public FileEntry? Current => _table.SelectedRow;
 
+    /// <summary>
+    /// How much room is left where the panel is looking, as the source last answered. Asked along with
+    /// the folder rather than when it is drawn: it belongs to the folder, and a frame that asks its own
+    /// questions is a frame that shows the answer to the one before it.
+    /// </summary>
+    public string Free => _free;
+
     /// <summary>Whether the search that runs while you type is on, in which case typing is its own.</summary>
     public bool IsSearching => _searching;
 
@@ -134,15 +143,28 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         return marked;
     }
 
+    /// <summary>
+    /// Goes to a folder, once the source has said it is there. Asking is a round trip on a server, so
+    /// the panel is left as it is until the answer comes back rather than emptied on the way.
+    /// </summary>
+    /// <param name="folder">Where to go.</param>
     public void GoTo(string folder)
     {
-        if (!_state.Source.FolderExists(folder))
-        {
-            return;
-        }
+        _ = Going();
 
-        _state.GoTo(folder);
-        Reload();
+        async Task Going()
+        {
+            if (!await _state.Source.FolderExistsAsync(folder, CancellationToken.None).ConfigureAwait(false))
+            {
+                return;
+            }
+
+            FrameThread.Post(() =>
+            {
+                _state.GoTo(folder);
+                Reload();
+            });
+        }
     }
 
     /// <summary>Goes back to the folder this panel was in before this one.</summary>
@@ -227,6 +249,12 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         Reload();
     }
 
+    /// <summary>
+    /// Reads the folder and lands on it. Every source is read the same way, the disk included: a
+    /// folder of a hundred thousand names takes as long as it takes, and the frame that asked for it
+    /// carries on drawing meanwhile, saying that it is loading. The alternative — a quick path that
+    /// reads a local folder in the middle of composing a frame — is the one that freezes.
+    /// </summary>
     public void Reload()
     {
         var cursor = _state.Cursor.Length > 0 ? _state.Cursor : Current?.Name ?? "";
@@ -235,21 +263,26 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         var hidden = _state.ShowHidden;
 
         _state.Cursor = "";
-
-        if (!source.IsRemote)
-        {
-            Landed(source, folder, Read(source, folder, hidden), cursor);
-            return;
-        }
-
         _loading = true;
 
-        Task.Run(() =>
+        _ = Reading();
+
+        async Task Reading()
         {
-            var read = Read(source, folder, hidden);
+            var read = await ReadAsync(source, folder, hidden).ConfigureAwait(false);
 
             FrameThread.Post(() => Landed(source, folder, read, cursor));
-        });
+
+            var free = await FreeAsync(source, folder).ConfigureAwait(false);
+
+            FrameThread.Post(() =>
+            {
+                if (ReferenceEquals(source, _state.Source) && folder == _state.Folder)
+                {
+                    _free = free;
+                }
+            });
+        }
     }
 
     public void SortBy(Sorting sorting)
@@ -429,14 +462,33 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     public FocusResult HandleMouse(MouseEvent mouse) => _table.HandleMouse(mouse);
 
-    private static (IReadOnlyList<FileEntry> Entries, string Error) Read(
+    /// <summary>
+    /// How much room is left, asked after the listing rather than beside it. Two questions at once
+    /// would take two sessions of a pool that has a few, and the names are what the frame is waiting on.
+    /// </summary>
+    /// <param name="source">Who to ask.</param>
+    /// <param name="folder">Where the panel is looking.</param>
+    /// <returns>What it said, or nothing when it would not say.</returns>
+    private static async Task<string> FreeAsync(IFileSource source, string folder)
+    {
+        try
+        {
+            return await source.FreeAsync(folder, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return "";
+        }
+    }
+
+    private static async Task<(IReadOnlyList<FileEntry> Entries, string Error)> ReadAsync(
         IFileSource source,
         string folder,
         bool hidden)
     {
         try
         {
-            return (source.List(folder, hidden), "");
+            return (await source.ListAsync(folder, hidden, CancellationToken.None).ConfigureAwait(false), "");
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
         {

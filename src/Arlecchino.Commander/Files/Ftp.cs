@@ -4,6 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Arlecchino.Commander.Files;
 
@@ -70,15 +72,21 @@ public sealed class FtpConnection : IDisposable
     /// <param name="port">Which port it listens on.</param>
     /// <param name="user">Who to sign in as.</param>
     /// <param name="password">The password.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>The connection, ready for commands.</returns>
     /// <exception cref="IOException">The server refused, or never answered.</exception>
-    public static FtpConnection Open(string host, int port, string user, string password)
+    public static async Task<FtpConnection> OpenAsync(
+        string host,
+        int port,
+        string user,
+        string password,
+        CancellationToken token)
     {
         var control = new TcpClient();
 
         try
         {
-            control.Connect(host, port <= 0 ? 21 : port);
+            await control.ConnectAsync(host, port <= 0 ? 21 : port, token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is SocketException or ArgumentException)
         {
@@ -91,12 +99,12 @@ public sealed class FtpConnection : IDisposable
 
         try
         {
-            Expect(connection.Read(), "the greeting");
-            Expect(connection.Send($"USER {user}"), "USER", allow: 331);
-            Expect(connection.Send($"PASS {password}"), "PASS");
+            Expect(await connection.ReadAsync(token).ConfigureAwait(false), "the greeting");
+            Expect(await connection.SendAsync($"USER {user}", token).ConfigureAwait(false), "USER", allow: 331);
+            Expect(await connection.SendAsync($"PASS {password}", token).ConfigureAwait(false), "PASS");
 
-            connection.Send("OPTS UTF8 ON");
-            Expect(connection.Send("TYPE I"), "TYPE I");
+            await connection.SendAsync("OPTS UTF8 ON", token).ConfigureAwait(false);
+            Expect(await connection.SendAsync("TYPE I", token).ConfigureAwait(false), "TYPE I");
 
             return connection;
         }
@@ -110,80 +118,99 @@ public sealed class FtpConnection : IDisposable
 
     /// <summary>Lists a folder.</summary>
     /// <param name="folder">Which folder.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>What is in it, without <c>.</c> and <c>..</c>.</returns>
     /// <exception cref="IOException">The server refused, or never answered.</exception>
-    public IReadOnlyList<FtpEntry> List(string folder)
+    public async Task<IReadOnlyList<FtpEntry>> ListAsync(string folder, CancellationToken token)
     {
         if (!_machineListing)
         {
-            return FtpListings.Plain(Listing("LIST", folder) ?? "");
+            return FtpListings.Plain(await ListingAsync("LIST", folder, token).ConfigureAwait(false) ?? "");
         }
 
-        if (Listing("MLSD", folder) is { } machine)
+        if (await ListingAsync("MLSD", folder, token).ConfigureAwait(false) is { } machine)
         {
             return FtpListings.Machine(machine);
         }
 
         _machineListing = false;
 
-        return FtpListings.Plain(Listing("LIST", folder) ?? "");
+        return FtpListings.Plain(await ListingAsync("LIST", folder, token).ConfigureAwait(false) ?? "");
     }
 
     /// <summary>Whether the folder is there and can be entered.</summary>
     /// <param name="folder">Which folder.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns><c>true</c> when the server changed into it.</returns>
-    public bool FolderExists(string folder) => Send($"CWD {folder}").Worked;
+    public async Task<bool> FolderExistsAsync(string folder, CancellationToken token) =>
+        (await SendAsync($"CWD {folder}", token).ConfigureAwait(false)).Worked;
 
     /// <summary>Makes a folder.</summary>
     /// <param name="path">Where it goes.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns>A task that finishes once the server has answered.</returns>
     /// <exception cref="IOException">The server refused.</exception>
-    public void CreateFolder(string path) => Expect(Send($"MKD {path}"), "MKD");
+    public async Task CreateFolderAsync(string path, CancellationToken token) =>
+        Expect(await SendAsync($"MKD {path}", token).ConfigureAwait(false), "MKD");
 
     /// <summary>Removes a file.</summary>
     /// <param name="path">Which file.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns>A task that finishes once the server has answered.</returns>
     /// <exception cref="IOException">The server refused.</exception>
-    public void DeleteFile(string path) => Expect(Send($"DELE {path}"), "DELE");
+    public async Task DeleteFileAsync(string path, CancellationToken token) =>
+        Expect(await SendAsync($"DELE {path}", token).ConfigureAwait(false), "DELE");
 
     /// <summary>Removes a folder, which the server refuses unless it is empty.</summary>
     /// <param name="path">Which folder.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns>A task that finishes once the server has answered.</returns>
     /// <exception cref="IOException">The server refused.</exception>
-    public void DeleteFolder(string path) => Expect(Send($"RMD {path}"), "RMD");
+    public async Task DeleteFolderAsync(string path, CancellationToken token) =>
+        Expect(await SendAsync($"RMD {path}", token).ConfigureAwait(false), "RMD");
 
     /// <summary>Moves or renames an entry, which FTP asks for in two halves.</summary>
     /// <param name="from">Where it is now.</param>
     /// <param name="target">Where it is going.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns>A task that finishes once both halves have been answered.</returns>
     /// <exception cref="IOException">The server refused either half.</exception>
-    public void Rename(string from, string target)
+    public async Task RenameAsync(string from, string target, CancellationToken token)
     {
-        Expect(Send($"RNFR {from}"), "RNFR", allow: 350);
-        Expect(Send($"RNTO {target}"), "RNTO");
+        Expect(await SendAsync($"RNFR {from}", token).ConfigureAwait(false), "RNFR", allow: 350);
+        Expect(await SendAsync($"RNTO {target}", token).ConfigureAwait(false), "RNTO");
     }
 
     /// <summary>Sets the permissions, which is not FTP itself but a <c>SITE</c> command most servers have.</summary>
     /// <param name="path">The file or folder.</param>
     /// <param name="mode">The octal digits.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns><c>false</c> when the server has no such command.</returns>
-    public bool TryChangeMode(string path, int mode) =>
-        Send($"SITE CHMOD {mode:000} {path}").Worked;
+    public async Task<bool> TryChangeModeAsync(string path, int mode, CancellationToken token) =>
+        (await SendAsync($"SITE CHMOD {mode:000} {path}", token).ConfigureAwait(false)).Worked;
 
     /// <summary>Opens a file to read.</summary>
     /// <param name="path">Which file.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>The bytes. Closing it finishes the transfer with the server.</returns>
     /// <exception cref="IOException">The server refused, or never answered.</exception>
-    public Stream OpenRead(string path) => Transfer($"RETR {path}");
+    public Task<Stream> OpenReadAsync(string path, CancellationToken token) =>
+        TransferAsync($"RETR {path}", token);
 
     /// <summary>Opens a file to write, replacing whatever was there.</summary>
     /// <param name="path">Which file.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>Where to write. Closing it finishes the transfer with the server.</returns>
     /// <exception cref="IOException">The server refused, or never answered.</exception>
-    public Stream OpenWrite(string path) => Transfer($"STOR {path}");
+    public Task<Stream> OpenWriteAsync(string path, CancellationToken token) =>
+        TransferAsync($"STOR {path}", token);
 
     /// <inheritdoc/>
     public void Dispose()
     {
         try
         {
-            Send("QUIT");
+            SendAsync("QUIT", CancellationToken.None).GetAwaiter().GetResult();
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException or SocketException)
         {
@@ -199,12 +226,13 @@ public sealed class FtpConnection : IDisposable
     /// </summary>
     /// <param name="command">The command.</param>
     /// <param name="folder">The folder to run it on.</param>
+    /// <param name="token">Gives up the wait.</param>
     /// <returns>What came over, or <c>null</c> when the server said it does not know the command.</returns>
-    private string? Listing(string command, string folder)
+    private async Task<string?> ListingAsync(string command, string folder, CancellationToken token)
     {
-        using var data = OpenData();
+        using var data = await OpenDataAsync(token).ConfigureAwait(false);
 
-        var began = Send($"{command} {folder}");
+        var began = await SendAsync($"{command} {folder}", token).ConfigureAwait(false);
 
         if (began.Code is 500 or 501 or 502)
         {
@@ -214,21 +242,21 @@ public sealed class FtpConnection : IDisposable
         Expect(began, command);
 
         using var reading = new StreamReader(data.GetStream(), Plain);
-        var text = reading.ReadToEnd();
+        var text = await reading.ReadToEndAsync(token).ConfigureAwait(false);
 
         data.Close();
-        Expect(Read(), command);
+        Expect(await ReadAsync(token).ConfigureAwait(false), command);
 
         return text;
     }
 
-    private FtpStream Transfer(string command)
+    private async Task<Stream> TransferAsync(string command, CancellationToken token)
     {
-        var data = OpenData();
+        var data = await OpenDataAsync(token).ConfigureAwait(false);
 
         try
         {
-            Expect(Send(command), command);
+            Expect(await SendAsync(command, token).ConfigureAwait(false), command);
         }
         catch
         {
@@ -237,7 +265,7 @@ public sealed class FtpConnection : IDisposable
             throw;
         }
 
-        return new(data, this);
+        return new FtpStream(data, this);
     }
 
     /// <summary>
@@ -248,13 +276,13 @@ public sealed class FtpConnection : IDisposable
     /// </summary>
     /// <returns>The data connection.</returns>
     /// <exception cref="IOException">The server would not open one.</exception>
-    private TcpClient OpenData()
+    private async Task<TcpClient> OpenDataAsync(CancellationToken token)
     {
-        var extended = Send("EPSV");
+        var extended = await SendAsync("EPSV", token).ConfigureAwait(false);
 
         var port = extended.Worked
             ? FtpListings.ExtendedPort(extended.Text)
-            : FtpListings.PassivePort(Expect(Send("PASV"), "PASV").Text);
+            : FtpListings.PassivePort(Expect(await SendAsync("PASV", token).ConfigureAwait(false), "PASV").Text);
 
         if (port <= 0)
         {
@@ -265,7 +293,7 @@ public sealed class FtpConnection : IDisposable
 
         try
         {
-            data.Connect(_host, port);
+            await data.ConnectAsync(_host, port, token).ConfigureAwait(false);
 
             return data;
         }
@@ -278,20 +306,21 @@ public sealed class FtpConnection : IDisposable
     }
 
     /// <summary>Reads the reply that ends a transfer, once the data connection has closed.</summary>
-    internal void Finish() => Read();
+    /// <returns>A task that finishes when the server has said the transfer is over.</returns>
+    internal Task FinishAsync() => ReadAsync(CancellationToken.None);
 
-    private FtpReply Send(string command)
+    private async Task<FtpReply> SendAsync(string command, CancellationToken token)
     {
         try
         {
-            _writer.WriteLine(command);
+            await _writer.WriteLineAsync(command.AsMemory(), token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException)
         {
             throw new IOException($"the connection went away while sending {Named(command)}", error);
         }
 
-        return Read();
+        return await ReadAsync(token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -300,9 +329,9 @@ public sealed class FtpConnection : IDisposable
     /// </summary>
     /// <returns>The code and the text.</returns>
     /// <exception cref="IOException">The connection went away mid-reply.</exception>
-    private FtpReply Read()
+    private async Task<FtpReply> ReadAsync(CancellationToken token)
     {
-        var first = Line();
+        var first = await LineAsync(token).ConfigureAwait(false);
         var code = Code(first);
 
         if (code == 0 || first.Length < 4 || first[3] != '-')
@@ -315,7 +344,7 @@ public sealed class FtpConnection : IDisposable
 
         while (true)
         {
-            var next = Line();
+            var next = await LineAsync(token).ConfigureAwait(false);
 
             text.Append('\n').Append(next);
 
@@ -326,13 +355,13 @@ public sealed class FtpConnection : IDisposable
         }
     }
 
-    private string Line()
+    private async Task<string> LineAsync(CancellationToken token)
     {
         string? line;
 
         try
         {
-            line = _reader.ReadLine();
+            line = await _reader.ReadLineAsync(token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException)
         {
@@ -402,7 +431,22 @@ internal sealed class FtpStream : Stream
 
     public override void Write(byte[] buffer, int offset, int count) => _stream.Write(buffer, offset, count);
 
+    /// <summary>
+    /// Reads without holding a thread. Left to the base class this would run the blocking read on a
+    /// pool thread and call it asynchronous, which for a transfer over a network is the whole cost.
+    /// </summary>
+    /// <param name="buffer">Where the bytes go.</param>
+    /// <param name="token">Gives up the read.</param>
+    /// <returns>How many bytes arrived.</returns>
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken token = default) =>
+        _stream.ReadAsync(buffer, token);
+
+    public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken token = default) =>
+        _stream.WriteAsync(buffer, token);
+
     public override void Flush() => _stream.Flush();
+
+    public override Task FlushAsync(CancellationToken token) => _stream.FlushAsync(token);
 
     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 
@@ -413,6 +457,7 @@ internal sealed class FtpStream : Stream
         if (!disposing || _closed)
         {
             base.Dispose(disposing);
+
             return;
         }
 
@@ -423,12 +468,43 @@ internal sealed class FtpStream : Stream
 
         try
         {
-            _connection.Finish();
+            _connection.FinishAsync().GetAwaiter().GetResult();
         }
         catch (IOException)
         {
         }
 
         base.Dispose(disposing);
+    }
+
+    /// <summary>
+    /// Closes the transfer and waits for the server to say it is over. A transfer ends with a reply on
+    /// the control connection, which is a round trip: closing a file is one more thing not worth
+    /// holding a thread through.
+    /// </summary>
+    /// <returns>A task that finishes once the server has answered.</returns>
+    public override async ValueTask DisposeAsync()
+    {
+        if (_closed)
+        {
+            await base.DisposeAsync().ConfigureAwait(false);
+
+            return;
+        }
+
+        _closed = true;
+
+        await _stream.DisposeAsync().ConfigureAwait(false);
+        _data.Dispose();
+
+        try
+        {
+            await _connection.FinishAsync().ConfigureAwait(false);
+        }
+        catch (IOException)
+        {
+        }
+
+        await base.DisposeAsync().ConfigureAwait(false);
     }
 }
