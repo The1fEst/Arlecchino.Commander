@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +36,7 @@ public sealed class CommanderView : IArlecchinoView
     private const int CardWidth = 34;
     private const int SideRoom = 2;
     private const int Fresh = -1;
+    private const int PageRows = 10;
     private const string StopsHint = "Esc stops";
     private const string PrefixHint =
         "Ctrl+X · c permissions, o owner, s symlink, l hard link, d compare, p path, t names, h hotlist, j jobs";
@@ -254,6 +257,166 @@ public sealed class CommanderView : IArlecchinoView
         DrawJob(_surface.Content);
     }
 
+    /// <summary>Opens a list to pick one thing out of.</summary>
+    /// <param name="title">What the list is called.</param>
+    /// <param name="items">What is in it.</param>
+    /// <param name="chose">What to do with what was picked.</param>
+    private void Pick(string title, IReadOnlyList<string> items, Action<string> chose) =>
+        Pick(title, [.. items.Select(static item => new Pick(item))], chose);
+
+    /// <summary>Opens a list whose rows say something about themselves as well as their name.</summary>
+    /// <param name="title">What the list is called.</param>
+    /// <param name="items">What is in it.</param>
+    /// <param name="chose">What to do with what was picked.</param>
+    private void Pick(string title, IReadOnlyList<Pick> items, Action<string> chose) =>
+        _state.Modal = new ChoiceListModal(
+            new() { Title = title, Items = items, Chose = chose },
+            _state,
+            _keymap,
+            _keys);
+
+    /// <summary>
+    /// Opens the one dialog every operation is asked through. It goes in the slot the framework keeps
+    /// for whatever is on top, so this screen holds no dialog of its own — the drawing, the keys and
+    /// the closing are all the framework's, and only what is asked is ours.
+    /// </summary>
+    /// <param name="operation">What to ask.</param>
+    private void Ask(Operation operation) =>
+        _state.Modal = new OperationModal(operation, _state, _keymap, _keys, Completing);
+
+    /// <summary>
+    /// Asks for one thing in words, through the same dialog everything else is asked through. The small
+    /// questions — a pattern, an owner, a filter — get the shape the large ones get, because a second
+    /// shape for small questions is a second thing to learn.
+    /// </summary>
+    /// <param name="title">What the question is called.</param>
+    /// <param name="label">What the field is for.</param>
+    /// <param name="value">What is in it to begin with.</param>
+    /// <param name="verb">The word on the button.</param>
+    /// <param name="answered">What to do with the answer.</param>
+    /// <param name="hint">What to say beside the field.</param>
+    /// <param name="secret">Whether what is typed is a secret.</param>
+    private void AskFor(
+        string title,
+        string label,
+        string value,
+        string verb,
+        Action<string> answered,
+        string hint = "",
+        bool secret = false) =>
+        Ask(new()
+        {
+            Title = title,
+            Key = "",
+            Verb = verb,
+            Weight = Weight.Reversible,
+            FieldLabel = label,
+            Value = value,
+            FieldHint = hint,
+            Secret = secret,
+            Confirm = asking => answered(asking.Value),
+        });
+
+    /// <summary>Says something that needs no answer, in the same shape as everything that does.</summary>
+    /// <param name="title">What happened.</param>
+    /// <param name="message">The detail of it.</param>
+    private void Say(string title, string message) =>
+        Ask(new()
+        {
+            Title = title,
+            Key = "",
+            Verb = "Close",
+            Weight = Weight.Destroys,
+            Note = _ => new(message, true),
+            Confirm = static _ => { },
+        });
+
+    /// <summary>
+    /// Finishes the path in the field from what is on the far side. The listing is a round trip on a
+    /// server, so the key press does not wait on it — the field fills in when the answer arrives, and
+    /// it is only filled in if nothing has been typed in the meantime.
+    /// </summary>
+    /// <param name="asking">What is being asked.</param>
+    private static void Completing(Operation asking)
+    {
+        if (asking.Over is not { } source)
+        {
+            return;
+        }
+
+        var typed = asking.Value;
+        var cut = typed.LastIndexOfAny(['/', '\\']);
+        var folder = cut < 0 ? typed : cut == 0 ? typed[..1] : typed[..cut];
+        var start = cut < 0 ? "" : typed[(cut + 1)..];
+
+        Answering(
+            () => Names(source, folder, start),
+            found =>
+            {
+                if (found.Length == 0 || asking.Value != typed)
+                {
+                    return;
+                }
+
+                asking.Value = source.Combine(folder, found);
+                asking.Caret = asking.Value.Length;
+            });
+    }
+
+    /// <summary>
+    /// The one name a half-typed one can only mean, or as much of it as every candidate agrees on.
+    /// Completing to the longest shared beginning is what a shell does, and it is what stops the field
+    /// from guessing wrong when two folders start alike.
+    /// </summary>
+    /// <param name="source">Where to look.</param>
+    /// <param name="folder">The folder that was typed out in full.</param>
+    /// <param name="start">What was typed of the name.</param>
+    /// <returns>The name to put there, or nothing when nothing fits.</returns>
+    private static async Task<string> Names(IFileSource source, string folder, string start)
+    {
+        try
+        {
+            var entries = await source.ListAsync(folder, showHidden: true, CancellationToken.None)
+                .ConfigureAwait(false);
+            var shared = "";
+
+            foreach (var entry in entries)
+            {
+                if (entry.IsParent || !entry.IsFolder ||
+                    !entry.Name.StartsWith(start, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                shared = shared.Length == 0 ? entry.Name : Common(shared, entry.Name);
+            }
+
+            return shared;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or
+                                          InvalidOperationException)
+        {
+            return "";
+        }
+    }
+
+    /// <summary>How much two names agree on from the front.</summary>
+    /// <param name="first">One name.</param>
+    /// <param name="second">The other.</param>
+    /// <returns>The beginning they share.</returns>
+    private static string Common(string first, string second)
+    {
+        var shared = 0;
+
+        while (shared < first.Length && shared < second.Length &&
+            char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
+        {
+            shared++;
+        }
+
+        return first[..shared];
+    }
+
     /// <summary>
     /// Keys the screen itself takes before the panels see them: the second half of a <c>Ctrl+X</c>
     /// pair, and everything the command line claims while there is something typed on it.
@@ -403,11 +566,15 @@ public sealed class CommanderView : IArlecchinoView
         new()
         {
             Binding = new(ConsoleKey.Escape),
-            Label = static () => "stop what is running",
-            IsEnabled = () => _operations.IsBusy || _runner.IsRunning,
+            Label = () => _state.Modal is null ? "stop what is running" : "call it off",
+            IsEnabled = () => _state.Modal is not null || _operations.IsBusy || _runner.IsRunning,
             Run = () =>
             {
-                if (_runner.IsRunning)
+                if (_state.Modal is not null)
+                {
+                    _state.CloseModal();
+                }
+                else if (_runner.IsRunning)
                 {
                     _runner.Stop();
                 }
@@ -434,11 +601,20 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        _state.RequestText(
-            $"Copy {Counted(sources)} to {to.Source.Label}",
-            to.Folder,
-            Filled,
-            target => _operations.Copy(from.Source, sources, to.Source, target));
+        Ask(new()
+        {
+            Title = $"Copy{Many(sources)}",
+            Key = "F5",
+            Verb = "Copy",
+            Weight = Weight.Moves,
+            Items = sources,
+            FieldLabel = "where",
+            Host = to.Source.IsRemote ? to.Source.Label : "",
+            Value = to.Folder,
+            FieldHint = Carrying(sources, to),
+            Over = to.Source,
+            Confirm = asking => _operations.Copy(from.Source, sources, to.Source, asking.Value),
+        });
     }
 
     private void Move()
@@ -452,11 +628,23 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        _state.RequestText(
-            $"Move {Counted(sources)} to {to.Source.Label}",
-            to.Folder,
-            Filled,
-            target => _operations.Move(from.Source, sources, to.Source, target));
+        var across = !ReferenceEquals(from.Source, to.Source) ||
+            !from.Source.SameVolume(from.Folder, to.Folder);
+
+        Ask(new()
+        {
+            Title = $"Move{Many(sources)}",
+            Key = "F6",
+            Verb = "Move",
+            Weight = Weight.Moves,
+            Items = sources,
+            FieldLabel = "where to",
+            Host = to.Source.IsRemote ? to.Source.Label : "",
+            Value = to.Folder,
+            FieldHint = across ? "copied first, removed after" : "nothing is copied, the names change",
+            Over = to.Source,
+            Confirm = asking => _operations.Move(from.Source, sources, to.Source, asking.Value),
+        });
     }
 
     private void Rename()
@@ -468,10 +656,25 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        _state.RequestText($"Rename {current.Name} to", current.Name, Filled, name =>
+        Ask(new()
         {
-            panel.State.Cursor = panel.Source.NameOf(name);
-            _operations.Rename(panel.Source, current, panel.Source.Combine(panel.Folder, name));
+            Title = "Rename",
+            Subtitle = current.Name,
+            Key = "Shift+F6",
+            Verb = "Rename",
+            Weight = Weight.Reversible,
+            FieldLabel = "new name",
+            Value = current.Name,
+            FieldHint = "the folder stays the same",
+            Note = asking => Taken(panel, current.Name, asking.Value)
+                ? new("Something in this folder is called that already, and renaming onto it may replace it.",
+                    true)
+                : null,
+            Confirm = asking =>
+            {
+                panel.State.Cursor = panel.Source.NameOf(asking.Value);
+                _operations.Rename(panel.Source, current, panel.Source.Combine(panel.Folder, asking.Value));
+            },
         });
     }
 
@@ -479,7 +682,38 @@ public sealed class CommanderView : IArlecchinoView
     {
         var panel = Active();
 
-        _state.RequestText("Create folder", "", Filled, name => Answering(
+        Ask(new()
+        {
+            Title = "New folder",
+            Subtitle = $"inside {Paths.Homed(panel.Source, panel.Folder)}",
+            Key = "F7",
+            Verb = "Create",
+            Weight = Weight.Reversible,
+            FieldLabel = "name",
+            FieldHint = "slashes make nested folders",
+            Note = static asking => asking.Value.Contains('/', StringComparison.Ordinal)
+                ? new("Every folder named along the way is made, not just the last one.")
+                : null,
+            Options = [new("jump the cursor onto it", true)],
+            Confirm = asking => Making(panel, asking),
+        });
+    }
+
+    /// <summary>Makes the folder that was asked for, and lands the cursor on it when that was asked too.</summary>
+    /// <param name="panel">Where it goes.</param>
+    /// <param name="asking">What was answered.</param>
+    private void Making(FilePanel panel, Operation asking)
+    {
+        var name = asking.Value;
+
+        if (name.Trim().Length == 0)
+        {
+            _state.Output = "A name is needed";
+
+            return;
+        }
+
+        Answering(
             () => FileTasks.CreateFolderAsync(panel.Source, panel.Folder, name, CancellationToken.None),
             created =>
             {
@@ -490,9 +724,64 @@ public sealed class CommanderView : IArlecchinoView
                     return;
                 }
 
-                panel.State.Cursor = panel.Source.NameOf(created);
+                if (asking.Ticked("jump the cursor onto it"))
+                {
+                    panel.State.Cursor = panel.Source.NameOf(created);
+                }
+
                 panel.Reload();
-            }));
+            });
+    }
+
+    /// <summary>
+    /// How much is being carried, short enough to sit beside the field. A folder is not measured — that
+    /// is a walk of its own — so it is counted rather than weighed.
+    /// </summary>
+    /// <param name="sources">What is being carried.</param>
+    /// <param name="to">Where to.</param>
+    /// <returns>The words.</returns>
+    private static string Carrying(IReadOnlyList<FileEntry> sources, FilePanel to)
+    {
+        var bytes = 0L;
+        var folders = 0;
+
+        foreach (var entry in sources)
+        {
+            bytes += entry.Size;
+            folders += entry.IsFolder ? 1 : 0;
+        }
+
+        var size = bytes > 0 ? Sizes.Brief(bytes) : "";
+        var trees = folders == 0 ? "" : folders == 1 ? "a folder" : $"{folders} folders";
+        var both = size.Length > 0 && trees.Length > 0 ? $"{size} and {trees}" : size + trees;
+
+        return to.Source.IsRemote ? $"{both} over SFTP" : both;
+    }
+
+    /// <summary>
+    /// Whether something else in the folder is already called this. The name being renamed does not
+    /// count against itself, or a dialog opened on a file would warn about the file it is renaming.
+    /// </summary>
+    /// <param name="panel">The folder.</param>
+    /// <param name="was">What it is called now.</param>
+    /// <param name="wanted">What it is being called.</param>
+    /// <returns><c>true</c> when the name is taken by something else.</returns>
+    private static bool Taken(FilePanel panel, string was, string wanted)
+    {
+        if (wanted == was || wanted.Trim().Length == 0)
+        {
+            return false;
+        }
+
+        foreach (var entry in panel.Entries)
+        {
+            if (!entry.IsParent && string.Equals(entry.Name, wanted, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -529,20 +818,42 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
+        var folders = 0;
+
+        foreach (var entry in targets)
+        {
+            folders += entry.IsFolder ? 1 : 0;
+        }
+
         Answering(
             () => panel.Source.ModeAsync(targets[0], CancellationToken.None),
-            current => _state.RequestText(
-                $"Permissions of {Counted(targets)}",
-                current.Length == 0 ? "644" : current,
-                Octal,
-                mode => Answering(() => Changing(panel, targets, mode), refused =>
+            current => Ask(new()
+            {
+                Title = $"Permissions{Many(targets)}",
+                Subtitle = panel.Source.IsRemote
+                    ? "over SFTP, using the server's own request"
+                    : $"in {Paths.Homed(panel.Source, panel.Folder)}",
+                Key = "Ctrl+X, C",
+                Verb = "Apply",
+                Weight = Weight.Reversible,
+                Items = targets,
+                FieldLabel = "mode",
+                Value = current.Length == 0 ? "644" : current,
+                FieldHint = folders > 0
+                    ? $"{(folders == 1 ? "the folder keeps" : "the folders keep")} what is inside as it is"
+                    : "three octal digits",
+                Note = asking => Octal(asking.Value) is { } wrong
+                    ? new(wrong, true)
+                    : new(Modes.Letters(asking.Value)),
+                Confirm = asking => Answering(() => Changing(panel, targets, asking.Value), refused =>
                 {
                     _state.Output = refused == 0
-                        ? $"{Counted(targets)} now {mode}"
-                        : $"{refused} of {targets.Count} would not take {mode}";
+                        ? $"{Counted(targets)} now {asking.Value}"
+                        : $"{refused} of {targets.Count} would not take {asking.Value}";
 
                     panel.Reload();
-                })));
+                }),
+            }));
     }
 
     private static async Task<int> Changing(FilePanel panel, IReadOnlyList<FileEntry> targets, string mode)
@@ -575,7 +886,7 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        _state.RequestText($"Owner of {Counted(targets)}", "", Filled, owner =>
+        AskFor("Change owner", "owner", "", "Change", owner =>
         {
             var command = new StringBuilder("chown ").Append(owner.Trim());
 
@@ -607,7 +918,7 @@ public sealed class CommanderView : IArlecchinoView
         var beside = Alike(panel.Source, other.Source) ? other : panel;
         var kind = hard ? "Hard link" : "Symbolic link";
 
-        _state.RequestText($"{kind} to {current.Name} in {beside.Folder}, named", current.Name, Filled, name =>
+        AskFor(kind, $"in {Paths.Homed(beside.Source, beside.Folder)}, named", current.Name, "Link", name =>
             Answering(
                 () => beside.Source.TryLinkAsync(
                     beside.Source.Combine(beside.Folder, name.Trim()),
@@ -701,9 +1012,33 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        _state.RequestConfirmation(
-            $"Delete {Counted(sources)}?",
-            () => _operations.Delete(panel.Source, sources));
+        var bytes = 0L;
+        var folders = 0;
+
+        foreach (var entry in sources)
+        {
+            bytes += entry.Size;
+            folders += entry.IsFolder ? 1 : 0;
+        }
+
+        Ask(new()
+        {
+            Title = $"Delete{Many(sources)}",
+            Subtitle = $"from {Paths.Homed(panel.Source, panel.Folder)}",
+            Key = "F8",
+            Verb = "Delete",
+            Weight = Weight.Destroys,
+            Items = sources,
+            ItemsLabel = "going away",
+            Note = _ => new(bytes == 0 && folders > 0
+                ? $"Everything inside {(folders == 1 ? "the folder" : "the folders")}, however much that " +
+                    "turns out to be. There is no undoing it."
+                : folders > 0
+                    ? $"{Sizes.Brief(bytes)} named here, and everything inside " +
+                        $"{(folders == 1 ? "the folder" : "the folders")}. There is no undoing it."
+                    : $"{Sizes.Brief(bytes)}. There is no undoing it.", true),
+            Confirm = _ => _operations.Delete(panel.Source, sources),
+        });
     }
 
     private bool Nothing(IReadOnlyList<FileEntry> sources)
@@ -720,6 +1055,16 @@ public sealed class CommanderView : IArlecchinoView
 
     private static string Counted(IReadOnlyList<FileEntry> sources) =>
         sources.Count == 1 ? sources[0].Name : $"{sources.Count} items";
+
+    /// <summary>
+    /// How many things an operation is about to act on, for a title. The names themselves are not
+    /// repeated here: the dialog lists them a few rows further down, and a title that names what the
+    /// list names is a line spent saying nothing.
+    /// </summary>
+    /// <param name="sources">What is being acted on.</param>
+    /// <returns>The count, or nothing at all when there is one of them.</returns>
+    private static string Many(IReadOnlyList<FileEntry> sources) =>
+        sources.Count == 1 ? "" : $" {sources.Count} items";
 
     /// <summary>
     /// Checks what was typed into a dialog. A validator runs on every keystroke, so it asks only what
@@ -785,7 +1130,7 @@ public sealed class CommanderView : IArlecchinoView
             titles.Add(entry.Title);
         }
 
-        _state.RequestChoice("Menu", titles, chosen =>
+        Pick("Menu", titles, chosen =>
         {
             foreach (var entry in entries)
             {
@@ -844,8 +1189,8 @@ public sealed class CommanderView : IArlecchinoView
     {
         var panel = Active();
 
-        _state.RequestText("Find files matching", "*", Filled, pattern =>
-            _state.RequestText("Holding the text", "", null, content =>
+        AskFor("Find files", "matching", "*", "Next", pattern =>
+            AskFor("Find files", "holding the text", "", "Find", content =>
             {
                 _finder.Start(panel.Source, panel.Folder, pattern.Trim(), content.Trim(), () => { });
 
@@ -856,12 +1201,12 @@ public sealed class CommanderView : IArlecchinoView
     }
 
     private void ChooseDrive(FilePanel panel) =>
-        _state.RequestChoice("Drive", Listing.Drives(), panel.GoTo, panel.Folder);
+        Pick("Drive", Listing.Drives(), panel.GoTo);
 
     private void Filter() => Filter(Active());
 
     private void Filter(FilePanel panel) =>
-        _state.RequestText("Show only names containing", panel.State.Filter, null, text =>
+        AskFor("Filter", "show only names containing", panel.State.Filter, "Filter", text =>
         {
             panel.State.Filter = text.Trim();
             panel.Reload();
@@ -876,7 +1221,7 @@ public sealed class CommanderView : IArlecchinoView
             titles.Add(section.Title);
         }
 
-        _state.RequestChoice("Menu", titles, OpenSection);
+        Pick("Menu", titles, OpenSection);
     }
 
     private void OpenSection(string title)
@@ -891,7 +1236,7 @@ public sealed class CommanderView : IArlecchinoView
             var section = Sections[index];
             var chosen = index;
 
-            _state.RequestChoice(section.Title, section.Items, item => Run(chosen, item));
+            Pick(section.Title, section.Items, item => Run(chosen, item));
             return;
         }
     }
@@ -1071,7 +1416,7 @@ public sealed class CommanderView : IArlecchinoView
             listed.Add(host.Describe());
         }
 
-        _state.RequestChoice("Saved hosts", listed, chosen =>
+        Pick("Saved hosts", listed, chosen =>
         {
             for (var index = 0; index < listed.Count; index++)
             {
@@ -1105,14 +1450,13 @@ public sealed class CommanderView : IArlecchinoView
     {
         if (!denied || wanted.Password.Length > 0)
         {
-            _state.RequestMessage($"Could not open {host.Alias}", message);
+            Say($"Could not open {host.Alias}", message);
             return;
         }
 
         _state.Output = message;
-        _state.RequestPassword(
-            $"Password for {host.User}@{host.HostName}",
-            password => Dial(panel, host, wanted with { Password = password }));
+        AskFor($"Password for {host.User}@{host.HostName}", "password", "", "Connect",
+            password => Dial(panel, host, wanted with { Password = password }), secret: true);
     }
 
     private void Connect(FilePanel panel)
@@ -1291,7 +1635,7 @@ public sealed class CommanderView : IArlecchinoView
     {
         var panel = Active();
 
-        _state.RequestText(marking ? "Mark files matching" : "Unmark files matching", "*", Filled, pattern =>
+        AskFor(marking ? "Mark files" : "Unmark files", "matching", "*", marking ? "Mark" : "Unmark", pattern =>
         {
             panel.MarkGroup(pattern.Trim(), marking);
 
@@ -1343,7 +1687,7 @@ public sealed class CommanderView : IArlecchinoView
             return;
         }
 
-        _state.RequestChoice("Folders been in", listed, panel.GoTo, panel.Folder);
+        Pick("Folders been in", listed, panel.GoTo);
     }
 
     /// <summary>
@@ -1360,7 +1704,7 @@ public sealed class CommanderView : IArlecchinoView
             listed.Add(DropHot);
         }
 
-        _state.RequestChoice("Hotlist", listed, chosen =>
+        Pick("Hotlist", listed, chosen =>
         {
             switch (chosen)
             {
@@ -1368,7 +1712,7 @@ public sealed class CommanderView : IArlecchinoView
                     Remember(panel.Folder);
                     break;
                 case DropHot:
-                    _state.RequestChoice("Forget", new List<string>(_panels.Hotlist), Forget);
+                    Pick("Forget", new List<string>(_panels.Hotlist), Forget);
                     break;
                 default:
                     panel.GoTo(chosen);

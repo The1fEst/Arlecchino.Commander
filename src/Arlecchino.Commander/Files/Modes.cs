@@ -54,6 +54,34 @@ public static class Modes
     public static string Write(int mode) => Convert.ToString(mode, Digits).PadLeft(3, '0');
 
     /// <summary>
+    /// The digits written out as <c>rwxr-xr-x</c>. Three digits are the compact way of saying it and
+    /// the letters are the readable one; a dialog that changes permissions should say both, since
+    /// hardly anybody reads <c>750</c> without pausing.
+    /// </summary>
+    /// <param name="mode">Three or four octal digits, as typed.</param>
+    /// <returns>The nine letters, or nothing when the digits were not digits.</returns>
+    public static string Letters(string mode)
+    {
+        if (Read(mode) is not { } value)
+        {
+            return "";
+        }
+
+        var letters = new char[9];
+
+        for (var third = 0; third < 3; third++)
+        {
+            var bits = (value >> ((2 - third) * 3)) & 7;
+
+            letters[third * 3] = (bits & 4) != 0 ? 'r' : '-';
+            letters[(third * 3) + 1] = (bits & 2) != 0 ? 'w' : '-';
+            letters[(third * 3) + 2] = (bits & 1) != 0 ? 'x' : '-';
+        }
+
+        return new(letters);
+    }
+
+    /// <summary>
     /// The same number as a <see cref="UnixFileMode"/>, which carries the standard bits in the
     /// standard places and so needs no translating.
     /// </summary>

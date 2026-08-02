@@ -44,34 +44,136 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.Equal(ViewKind.Viewer, _app.Navigator.CurrentRoute);
     }
 
+    /// <summary>
+    /// Every operation is asked through the same dialog, so every one of them names itself, says what
+    /// it will act on, and offers the same two keys to answer with.
+    /// </summary>
     [Fact]
     public void CopyingAsksBeforeItCopies()
     {
         OnAlpha();
         _app.Press(ConsoleKey.F5);
-        _app.Frame();
 
-        Assert.NotNull(_app.State.Modal);
+        var screen = _app.Frame();
+
+        Assert.Contains("Copy", screen, StringComparison.Ordinal);
+        Assert.Contains("WHERE", screen, StringComparison.Ordinal);
+        Assert.Contains("Enter Copy", screen, StringComparison.Ordinal);
+        Assert.Contains("Esc Cancel", screen, StringComparison.Ordinal);
     }
 
     [Fact]
     public void MakingAFolderAsksWhatToCallIt()
     {
         _app.Press(ConsoleKey.F7);
-        _app.Frame();
 
-        Assert.NotNull(_app.State.Modal);
+        var screen = _app.Frame();
+
+        Assert.Contains("New folder", screen, StringComparison.Ordinal);
+        Assert.Contains("NAME", screen, StringComparison.Ordinal);
+        Assert.Contains("Enter Create", screen, StringComparison.Ordinal);
     }
 
+    /// <summary>Nothing is deleted by the asking, and the dialog says there is no undoing it.</summary>
     [Fact]
     public void DeletingAsksBeforeItDeletes()
     {
         OnAlpha();
         _app.Press(ConsoleKey.F8);
+
+        var screen = _app.Frame();
+
+        Assert.Contains("Delete", screen, StringComparison.Ordinal);
+        Assert.Contains("GOING AWAY", screen, StringComparison.Ordinal);
+        Assert.Contains("no undoing it", screen, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(_app.Folder, "alpha.txt")));
+    }
+
+    /// <summary>Escape leaves everything as it was, which is what makes the dialog safe to open.</summary>
+    [Fact]
+    public void CallingTheDialogOffChangesNothing()
+    {
+        OnAlpha();
+        _app.Press(ConsoleKey.F8);
+        _app.Frame();
+        _app.Press(ConsoleKey.Escape);
+
+        var screen = _app.Frame();
+
+        Assert.DoesNotContain("GOING AWAY", screen, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(_app.Folder, "alpha.txt")));
+    }
+
+    /// <summary>What is typed into the one field is what the operation is given.</summary>
+    [Fact]
+    public void TheFolderIsMadeUnderTheNameThatWasTyped()
+    {
+        _app.Press(ConsoleKey.F7);
+        _app.Frame();
+        _app.Type("benchmarks");
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => Directory.Exists(Path.Combine(_app.Folder, "benchmarks"))));
+    }
+
+    /// <summary>
+    /// Tab finishes the path in the field, to as much as every candidate agrees on. Typing a
+    /// destination out in full is the slowest thing the dialog ever asks for.
+    /// </summary>
+    [Fact]
+    public void TabFinishesThePathInTheField()
+    {
+        Directory.CreateDirectory(Path.Combine(_app.Folder, "nestling"));
+
+        _app.Panels.Left.Marks.Clear();
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.F5);
+        _app.Frame();
+        _app.Type("/nestl");
+        _app.Press(ConsoleKey.Tab);
+
+        Assert.True(_app.Until(() => _app.Frame().Contains("nestling", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// It completes to as much as the candidates agree on and no further. Two folders that start alike
+    /// are a question the field cannot answer, so it answers the part it can.
+    /// </summary>
+    [Fact]
+    public void TabStopsWhereTheNamesStopAgreeing()
+    {
+        Directory.CreateDirectory(Path.Combine(_app.Folder, "nestling"));
+
+        _app.Panels.Left.Marks.Clear();
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.F5);
+        _app.Frame();
+        _app.Type("/nes");
+        _app.Press(ConsoleKey.Tab);
+        _app.Until(() => false);
+
+        var field = Array.Find(_app.FrameLines(),
+            line => line.Contains($"{_app.Folder}/nes", StringComparison.Ordinal));
+
+        Assert.NotNull(field);
+        Assert.Contains("/nest", field, StringComparison.Ordinal);
+        Assert.DoesNotContain("nestling", field, StringComparison.Ordinal);
+        Assert.DoesNotContain("nested", field, StringComparison.Ordinal);
+    }
+
+    /// <summary>Tab reaches the switches and Space turns them, which is the whole of the dialog's input.</summary>
+    [Fact]
+    public void TabReachesTheSwitchesAndSpaceTurnsThem()
+    {
+        _app.Press(ConsoleKey.F7);
         _app.Frame();
 
-        Assert.NotNull(_app.State.Modal);
-        Assert.True(File.Exists(Path.Combine(_app.Folder, "alpha.txt")));
+        Assert.Contains("[×] jump the cursor onto it", _app.Frame(), StringComparison.Ordinal);
+
+        _app.Press(ConsoleKey.Tab);
+        _app.Press(ConsoleKey.Spacebar);
+
+        Assert.Contains("[ ] jump the cursor onto it", _app.Frame(), StringComparison.Ordinal);
     }
 
     [Fact]

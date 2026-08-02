@@ -4,6 +4,7 @@ using System.IO;
 using Arlecchino.Commander.Files;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
+using Arlecchino.Commander.Widgets;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
 using Arlecchino.Forms;
@@ -39,6 +40,8 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     private readonly PaneTree _layout;
     private readonly IDisposable _watchingScheme;
     private readonly IDisposable _watchingSaved;
+    private readonly ArlecchinoKeymap _keymap;
+    private readonly KeyText _keys;
 
     public ConnectView(
         Surface surface,
@@ -48,11 +51,15 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         ArlecchinoOptions options,
         IServiceProvider services)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         _surface = surface;
         _session = session;
         _panels = panels;
         _state = state;
         _services = services;
+        _keymap = options.Keymap;
+        _keys = KeyText.For(options.TextInput);
 
         var saved = SshConfig.Hosts();
 
@@ -171,7 +178,19 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _session.Connecting.Value = false;
         _session.Failure.Value = message;
 
-        _state.RequestMessage(denied ? "The server refused those credentials" : "Could not connect", message);
+        _state.Modal = new OperationModal(
+            new()
+            {
+                Title = denied ? "The server refused those credentials" : "Could not connect",
+                Key = "",
+                Verb = "Close",
+                Weight = Weight.Destroys,
+                Note = _ => new(message, true),
+                Confirm = static _ => { },
+            },
+            _state,
+            _keymap,
+            _keys);
     }
 
     private PanelState Side() => _panels.RightIsActive.Value ? _panels.Right : _panels.Left;

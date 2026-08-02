@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files;
 using Arlecchino.Commander.Stores;
+using Arlecchino.Commander.Widgets;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
@@ -31,15 +32,21 @@ public sealed class SshView : IArlecchinoView
     private readonly List<string> _lines = [];
     private readonly PaneTree _layout;
     private readonly FocusRing _focus;
+    private readonly ArlecchinoKeymap _keymap;
+    private readonly KeyText _keys;
 
     private string _command = "";
     private bool _running;
 
     public SshView(Surface surface, Remote session, ArlecchinoState state, ArlecchinoOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         _surface = surface;
         _session = session;
         _state = state;
+        _keymap = options.Keymap;
+        _keys = KeyText.For(options.TextInput);
 
         var output = new ScrollPane(options.Keymap)
         {
@@ -122,7 +129,21 @@ public sealed class SshView : IArlecchinoView
             return;
         }
 
-        _state.RequestText($"Run on {ssh.Host}", _command, Filled, command => Run(ssh, command.Trim()));
+        _state.Modal = new OperationModal(
+            new()
+            {
+                Title = $"Run on {ssh.Host}",
+                Key = "",
+                Verb = "Run",
+                Weight = Weight.Moves,
+                FieldLabel = "command",
+                Value = _command,
+                FieldHint = "it runs where the panel is looking",
+                Confirm = asking => Run(ssh, asking.Value.Trim()),
+            },
+            _state,
+            _keymap,
+            _keys);
     }
 
     private void Run(Connection ssh, string command)
