@@ -11,8 +11,6 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <IsPackable>false</IsPackable>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <!-- Compiled ahead of time for the releases, so this code is held to it on every build: anything
-         of ours that reflection would only find at runtime fails here rather than on someone's disk. -->
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
@@ -20,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arlecchino" Version="3.0.0" />
+    <PackageReference Include="Arlecchino" Version="3.1.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
     <PackageReference Include="SSH.NET" Version="2025.1.0" />
   </ItemGroup>
