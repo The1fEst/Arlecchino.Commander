@@ -119,9 +119,10 @@ void Shots()
 // right here and wrong in the picture says the fault is in the painting rather than in the program.
 //
 // Every frame is captured at the size of this terminal rather than the fixed one the pictures use,
-// because a frame composed for 200 columns and shown in 120 is not the screen anybody would see. One
-// row is left over for the newline the frame ends with, and nothing is written on it: a line of ours
-// under the application's own bar is one more thing to mistake for part of the screen.
+// because a frame composed for 200 columns and shown in 120 is not the screen anybody would see. It
+// gets every row: the newline the frame ends with is taken off rather than given a row of its own,
+// the cursor is put away, and wrapping is turned off so writing the last cell cannot scroll the top
+// row off the screen. What is on screen is the application and nothing else.
 void Show()
 {
     if (Console.IsInputRedirected || Console.IsOutputRedirected)
@@ -132,13 +133,13 @@ void Show()
     }
 
     var columns = Math.Max(40, Console.WindowWidth);
-    var rows = Math.Max(10, Console.WindowHeight - 1);
+    var rows = Math.Max(10, Console.WindowHeight);
     var size = $"{columns}x{rows}";
     var scenes = Scenes(size);
 
     Fixture.Lay(fixture, scratchLeft, scratchRight);
 
-    Console.Write("\e[?1049h");
+    Console.Write("\e[?1049h\e[?25l\e[?7l");
 
     try
     {
@@ -162,7 +163,7 @@ void Show()
                 scene.Connect);
 
             Console.Write("\e[2J\e[H");
-            Console.Write(ansi.Length == 0 ? $"{scene.Name}: nothing came back" : ansi);
+            Console.Write(ansi.Length == 0 ? $"{scene.Name}: nothing came back" : ansi.TrimEnd('\r', '\n'));
 
             if (Stop())
             {
@@ -172,7 +173,7 @@ void Show()
     }
     finally
     {
-        Console.Write("\e[?1049l");
+        Console.Write("\e[?7h\e[?25h\e[?1049l");
     }
 }
 
