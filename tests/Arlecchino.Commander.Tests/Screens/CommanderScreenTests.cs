@@ -470,12 +470,14 @@ public sealed class CommanderScreenTests : IDisposable
         {
             var at = lines[row].IndexOf(text, StringComparison.Ordinal);
 
-            if (at >= 0)
+            if (at < 0)
             {
-                _app.Click(row, at);
-
-                return;
+                continue;
             }
+
+            _app.Click(row, at);
+
+            return;
         }
 
         Assert.Fail($"'{text}' is not on the screen.");

@@ -21,7 +21,6 @@ public sealed class Doings
     private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
     private readonly Finder _finder;
-    private readonly Runner _runner;
     private readonly IServiceProvider _services;
 
     /// <summary>Gathers everything the screen can do.</summary>
@@ -51,7 +50,6 @@ public sealed class Doings
         _sessions = sessions;
         _state = state;
         _finder = finder;
-        _runner = runner;
         _services = services;
 
         Files = new(dialogs, operations, state, panels);

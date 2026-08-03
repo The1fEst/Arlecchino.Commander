@@ -47,15 +47,17 @@ public sealed class TabWindow
 
         _first = Math.Clamp(_first, 0, Math.Max(0, widths.Count - 1));
 
-        if (_seen != wanted)
+        if (_seen == wanted)
         {
-            _seen = wanted;
-            _first = Math.Min(_first, wanted);
+            return Math.Max(Ends(widths, room), _first + 1);
+        }
 
-            while (_first < wanted && Ends(widths, room) <= wanted)
-            {
-                _first++;
-            }
+        _seen = wanted;
+        _first = Math.Min(_first, wanted);
+
+        while (_first < wanted && Ends(widths, room) <= wanted)
+        {
+            _first++;
         }
 
         return Math.Max(Ends(widths, room), _first + 1);

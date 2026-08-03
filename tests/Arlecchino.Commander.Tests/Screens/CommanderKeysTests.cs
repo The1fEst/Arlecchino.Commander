@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using Arlecchino.Commander.Views;
-using Arlecchino.Input;
 using Xunit;
 using static Arlecchino.Commander.Localization;
 
@@ -427,6 +426,6 @@ public sealed class CommanderKeysTests : IDisposable
         var stop = _app.Navigator.CurrentCommands
             .Single(command => command.Label() == Loc(LocString.KeyStop));
 
-        Assert.Equal(new KeyBinding(ConsoleKey.Escape, ConsoleModifiers.Alt), stop.Binding);
+        Assert.Equal(new(ConsoleKey.Escape, ConsoleModifiers.Alt), stop.Binding);
     }
 }
