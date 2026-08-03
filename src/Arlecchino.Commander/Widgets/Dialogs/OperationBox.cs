@@ -9,6 +9,21 @@ using Arlecchino.Commander.Widgets.Chrome;
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
 /// <summary>
+/// Where a question ended up on screen, so a click can be told what it landed on. The box is as tall
+/// as what is written in it and sits a third of the way down whatever the terminal is, so only the
+/// drawing knows where its parts went.
+/// </summary>
+/// <param name="Box">The whole box, for telling a click on it from a click outside.</param>
+/// <param name="Confirm">The button that goes ahead.</param>
+/// <param name="Cancel">The button that does not.</param>
+/// <param name="Options">The switches, one row each, or empty when there are none.</param>
+public readonly record struct OperationSpots(
+    SurfaceRegion Box,
+    SurfaceRegion Confirm,
+    SurfaceRegion Cancel,
+    SurfaceRegion Options);
+
+/// <summary>
 /// Draws an <see cref="Operation"/>. One shell serves all of them, so what changes between copying and
 /// deleting is the words and the tone — never the shape, and never where to look for the button.
 /// </summary>
@@ -22,7 +37,8 @@ public static class OperationBox
     /// <summary>Draws the dialog over whatever is behind it.</summary>
     /// <param name="screen">The whole screen.</param>
     /// <param name="operation">What is being asked.</param>
-    public static void Draw(SurfaceRegion screen, Operation operation)
+    /// <returns>Where it landed, for the clicks.</returns>
+    public static OperationSpots Draw(SurfaceRegion screen, Operation operation)
     {
         ArgumentNullException.ThrowIfNull(operation);
 
@@ -31,7 +47,7 @@ public static class OperationBox
 
         if (width < 30 || screen.Height < rows + 2)
         {
-            return;
+            return default;
         }
 
         var top = Math.Max(0, (screen.Height - rows) / 3);
@@ -58,10 +74,18 @@ public static class OperationBox
         row += 2;
         row = What(inside, operation, coat, row);
         row = Field(inside, operation, coat, fill, row);
+
+        var switches = operation.Options.Count == 0
+            ? default
+            : inside.Rows(row, operation.Options.Count);
+
         row = Options(inside, operation, coat, fill, row);
 
         Note(inside, operation, band, row);
-        Buttons(inside, operation, coat, fill, on, row + Lines(operation));
+
+        var (confirm, cancel) = Buttons(inside, operation, coat, fill, on, row + Lines(operation));
+
+        return new(box, confirm, cancel, switches);
     }
 
     /// <summary>
@@ -227,7 +251,15 @@ public static class OperationBox
         inside.Write(row, 0, said.Warns ? "!" : "i", Skin.Paint(said.Warns ? Skin.Amber : Skin.Sea, band));
     }
 
-    private static void Buttons(
+    /// <summary>Draws the two buttons and says where they went, so a click can find them.</summary>
+    /// <param name="inside">Where to draw.</param>
+    /// <param name="operation">What is being asked.</param>
+    /// <param name="coat">The surface underneath.</param>
+    /// <param name="fill">The colour of the operation.</param>
+    /// <param name="on">What is written on that colour.</param>
+    /// <param name="row">Which row they go on.</param>
+    /// <returns>The two buttons.</returns>
+    private static (SurfaceRegion Confirm, SurfaceRegion Cancel) Buttons(
         SurfaceRegion inside,
         Operation operation,
         Skin.Coat coat,
@@ -237,13 +269,14 @@ public static class OperationBox
     {
         if (row >= inside.Height)
         {
-            return;
+            return default;
         }
 
         var go = "  " + Loc(LocString.OperationConfirm, operation.Verb) + "  ";
+        var no = "  " + Loc(LocString.OperationCancel) + "  ";
 
         inside.Write(row, 0, go, Skin.Paint(on, fill, TextStyle.Bold));
-        inside.Write(row, go.Length + 2, "  " + Loc(LocString.OperationCancel) + "  ", Skin.Paint(new(0xA7, 0x9F, 0xAE), Skin.Chip));
+        inside.Write(row, go.Length + 2, no, Skin.Paint(new(0xA7, 0x9F, 0xAE), Skin.Chip));
 
         var tab = operation.Over is not null
             ? Loc(LocString.OperationTabCompletes)
@@ -255,6 +288,12 @@ public static class OperationBox
         {
             inside.WriteLine(row, tab, coat.Label, Align.Right);
         }
+
+        var top = inside.Top + row;
+
+        return (
+            new(inside.Surface, inside.Left, top, go.Length, 1),
+            new(inside.Surface, inside.Left + go.Length + 2, top, no.Length, 1));
     }
 
     /// <summary>Breaks a sentence over lines without breaking a word.</summary>

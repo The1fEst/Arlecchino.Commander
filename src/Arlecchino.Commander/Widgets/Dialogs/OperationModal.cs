@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Arlecchino.Input;
 using Arlecchino.Modals;
 
 namespace Arlecchino.Commander.Widgets.Dialogs;
@@ -12,6 +13,8 @@ namespace Arlecchino.Commander.Widgets.Dialogs;
 public sealed class OperationModal : Modal
 {
     private readonly Action<Operation>? _completing;
+
+    private OperationSpots _spots;
 
     /// <summary>Opens the dialog.</summary>
     /// <param name="asking">What is being asked.</param>
@@ -33,7 +36,11 @@ public sealed class OperationModal : Modal
     public Operation Asking { get; }
 
     /// <inheritdoc/>
-    public override void Draw(ModalFrame frame) => OperationBox.Draw(frame.Screen, Asking);
+    public override void Draw(ModalFrame frame)
+    {
+        _spots = OperationBox.Draw(frame.Screen, Asking);
+        Box = _spots.Box;
+    }
 
     /// <inheritdoc/>
     public override void Handle(ModalFrame frame, ConsoleKeyInfo key)
@@ -75,6 +82,50 @@ public sealed class OperationModal : Modal
         }
 
         Typing(frame, key);
+    }
+
+    /// <summary>
+    /// Clicks. The two buttons do what their words say, and a switch is turned by clicking its row —
+    /// which is the same as reaching it with Tab and pressing Space, and rather more obvious.
+    ///
+    /// A button is a single click and not two, unlike a row of a list: it says on it what it is going
+    /// to do, and having read that there is nothing a second click would confirm.
+    /// </summary>
+    /// <param name="frame">How to close, once an answer is given.</param>
+    /// <param name="mouse">The event that arrived.</param>
+    public override void HandleMouse(ModalFrame frame, MouseEvent mouse)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+
+        if (mouse.Action != MouseAction.Pressed)
+        {
+            return;
+        }
+
+        if (_spots.Cancel.Contains(mouse.Row, mouse.Column))
+        {
+            frame.Close();
+
+            return;
+        }
+
+        if (_spots.Confirm.Contains(mouse.Row, mouse.Column))
+        {
+            frame.Close();
+            Asking.Confirm(Asking);
+
+            return;
+        }
+
+        if (!_spots.Options.Contains(mouse.Row, mouse.Column))
+        {
+            return;
+        }
+
+        var (row, _) = _spots.Options.ToLocal(mouse.Row, mouse.Column);
+
+        Asking.Chosen = row;
+        Asking.Toggle();
     }
 
     /// <summary>

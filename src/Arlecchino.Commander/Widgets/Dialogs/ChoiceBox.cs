@@ -6,6 +6,16 @@ using Arlecchino.Commander.Widgets.Chrome;
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
 /// <summary>
+/// Where a list ended up on screen, so a click can be told what it landed on. Drawing is the only
+/// thing that knows this — the box places itself from the size of the terminal and the length of the
+/// list — so it is answered by drawing rather than worked out a second time.
+/// </summary>
+/// <param name="Box">The whole box, for telling a click on it from a click outside.</param>
+/// <param name="Rows">The rows that are showing.</param>
+/// <param name="First">Which entry the topmost showing row is.</param>
+public readonly record struct ChoiceSpots(SurfaceRegion Box, SurfaceRegion Rows, int First);
+
+/// <summary>
 /// Draws a <see cref="Choosing"/>. It is the same overlay as the operation dialog wears — the same
 /// surface, the same rules, the same place on screen — so a list and a question read as two things the
 /// application says rather than two applications.
@@ -36,7 +46,8 @@ public static class ChoiceBox
     /// <summary>Draws the list over whatever is behind it.</summary>
     /// <param name="screen">The whole screen.</param>
     /// <param name="choosing">What is being picked from.</param>
-    public static void Draw(SurfaceRegion screen, Choosing choosing)
+    /// <returns>Where it landed, for the clicks.</returns>
+    public static ChoiceSpots Draw(SurfaceRegion screen, Choosing choosing)
     {
         ArgumentNullException.ThrowIfNull(choosing);
 
@@ -46,7 +57,7 @@ public static class ChoiceBox
 
         if (width < 30 || screen.Height < rows + 2)
         {
-            return;
+            return default;
         }
 
         var left = (screen.Width - width) / 2;
@@ -64,9 +75,12 @@ public static class ChoiceBox
         inside.WriteLine(1, Counted(choosing), coat.Label, Align.Right);
 
         Query(inside, choosing, coat);
-        Rows(inside, choosing, coat, shown);
+
+        var first = Rows(inside, choosing, coat, shown);
 
         inside.Write(inside.Height - 2, 0, choosing.Footer, coat.Label);
+
+        return new(box, inside.Rows(4, shown), first);
     }
 
     private static string Counted(Choosing choosing) => choosing.Typed.Length == 0
@@ -96,13 +110,19 @@ public static class ChoiceBox
         inside.Write(2, 4, Loc(LocString.ChoosingNarrow), coat.Ghost);
     }
 
-    private static void Rows(SurfaceRegion inside, Choosing choosing, Skin.Coat coat, int shown)
+    /// <summary>Draws the rows that fit, scrolled to keep the chosen one in view.</summary>
+    /// <param name="inside">Where to draw.</param>
+    /// <param name="choosing">What is being picked from.</param>
+    /// <param name="coat">The surface underneath.</param>
+    /// <param name="shown">How many rows there is room for.</param>
+    /// <returns>Which entry the topmost row is, which is what turns a click into an entry.</returns>
+    private static int Rows(SurfaceRegion inside, Choosing choosing, Skin.Coat coat, int shown)
     {
         if (choosing.Matching.Count == 0)
         {
             inside.Write(4, 0, Loc(LocString.ChoosingNothing), coat.Label);
 
-            return;
+            return 0;
         }
 
         var first = Math.Max(0, Math.Min(choosing.Chosen - (shown / 2), choosing.Matching.Count - shown));
@@ -140,5 +160,7 @@ public static class ChoiceBox
                 row.WriteLine(0, pick.Hint, here ? Skin.ChosenMeta : coat.Label, Align.Right);
             }
         }
+
+        return first;
     }
 }

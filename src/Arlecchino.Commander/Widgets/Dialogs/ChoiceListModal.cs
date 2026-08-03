@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Arlecchino.Input;
 using Arlecchino.Modals;
 
 namespace Arlecchino.Commander.Widgets.Dialogs;
@@ -12,6 +13,8 @@ namespace Arlecchino.Commander.Widgets.Dialogs;
 public sealed class ChoiceListModal : Modal
 {
     private const int PageRows = 10;
+
+    private ChoiceSpots _spots;
 
     /// <summary>Opens the list.</summary>
     /// <param name="picking">What is being picked from.</param>
@@ -28,7 +31,11 @@ public sealed class ChoiceListModal : Modal
     public Choosing Picking { get; }
 
     /// <inheritdoc/>
-    public override void Draw(ModalFrame frame) => ChoiceBox.Draw(frame.Screen, Picking);
+    public override void Draw(ModalFrame frame)
+    {
+        _spots = ChoiceBox.Draw(frame.Screen, Picking);
+        Box = _spots.Box;
+    }
 
     /// <inheritdoc/>
     public override void Handle(ModalFrame frame, ConsoleKeyInfo key)
@@ -42,18 +49,14 @@ public sealed class ChoiceListModal : Modal
 
         if (frame.Keymap.Confirm.Matches(key))
         {
-            var chosen = Picking.Current;
+            if (Picking.Current is { } chosen)
+            {
+                Take(frame, chosen);
+
+                return;
+            }
 
             frame.Close();
-
-            if (chosen is { Run: { } run })
-            {
-                run();
-            }
-            else if (chosen is not null)
-            {
-                Picking.Chose(chosen.Label);
-            }
 
             return;
         }
@@ -90,5 +93,66 @@ public sealed class ChoiceListModal : Modal
         {
             Picking.Put(typed);
         }
+    }
+
+    /// <summary>
+    /// Clicks. A click on a row selects it and a second click on the row already selected picks it,
+    /// which is the rule everywhere else a list is clicked — a single click that runs something makes
+    /// the list a place where a slip does the wrong thing rather than the next thing.
+    ///
+    /// A click outside the box changes nothing. A list is not dismissed by clicking away, because a
+    /// stray click should not discard what has been typed into it.
+    /// </summary>
+    /// <param name="frame">How to close, once something is picked.</param>
+    /// <param name="mouse">The event that arrived.</param>
+    public override void HandleMouse(ModalFrame frame, MouseEvent mouse)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+
+        if (mouse.Action is MouseAction.ScrolledUp or MouseAction.ScrolledDown && _spots.Box.Contains(mouse.Row, mouse.Column))
+        {
+            Picking.Move(mouse.Action == MouseAction.ScrolledDown ? 1 : -1);
+
+            return;
+        }
+
+        if (mouse.Action != MouseAction.Pressed || !_spots.Rows.Contains(mouse.Row, mouse.Column))
+        {
+            return;
+        }
+
+        var (row, _) = _spots.Rows.ToLocal(mouse.Row, mouse.Column);
+        var wanted = _spots.First + row;
+
+        if (wanted >= Picking.Matching.Count)
+        {
+            return;
+        }
+
+        if (wanted != Picking.Chosen)
+        {
+            Picking.Chosen = wanted;
+
+            return;
+        }
+
+        Take(frame, Picking.Matching[wanted]);
+    }
+
+    /// <summary>Closes the list and does what the row says, which is the same as Enter on it.</summary>
+    /// <param name="frame">How to close.</param>
+    /// <param name="picked">The row.</param>
+    private void Take(ModalFrame frame, Pick picked)
+    {
+        frame.Close();
+
+        if (picked.Run is { } run)
+        {
+            run();
+
+            return;
+        }
+
+        Picking.Chose(picked.Label);
     }
 }
