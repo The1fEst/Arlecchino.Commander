@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commands;
-using Arlecchino.Input;
 using Arlecchino.Navigation;
 using Arlecchino.State;
 using Microsoft.Extensions.Hosting;
@@ -47,102 +46,44 @@ public static class CommanderKeys
 
         return
         [
-            ViewCommand.For(ConsoleKey.F2, static () => Loc(LocString.TabsTitle), () => TabList.Open(doings)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.F1, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyDriveLeft), () => doings.ChooseDrive(panels.Left)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.F2, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyDriveRight), () => doings.ChooseDrive(panels.Right)),
-            new()
-            {
-                Binding = new(ConsoleKey.F7, ConsoleModifiers.Alt),
-                Label = static () => Loc(LocString.MenuFindFile),
-                Run = doings.Find,
-            },
-            ViewCommand.Navigating(ConsoleKey.F3, static () => Loc(LocString.View), doings.Read),
-            ViewCommand.For(ConsoleKey.F4, static () => Loc(LocString.Filter), () => doings.Filter(panels.Active)),
-            ViewCommand.For(ConsoleKey.F5, static () => Loc(LocString.Copy), doings.Files.Copy),
-            ViewCommand.For(ConsoleKey.F6, static () => Loc(LocString.Move), doings.Files.Move),
-            ViewCommand.For(new KeyBinding(ConsoleKey.F6, ConsoleModifiers.Shift),
-                static () => Loc(LocString.Rename), doings.Files.Rename),
-            ViewCommand.For(ConsoleKey.F7, static () => Loc(LocString.MenuMakeFolder), doings.Files.MakeFolder),
-            ViewCommand.For(ConsoleKey.F8, static () => Loc(LocString.Delete), doings.Files.Delete),
-            ViewCommand.For(ConsoleKey.F9, static () => Loc(LocString.Menu), () => Menu.Open(doings)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.R, ConsoleModifiers.Control),
-                static () => Loc(LocString.MenuReload), doings.Reload),
-            ViewCommand.For(new KeyBinding(ConsoleKey.H, ConsoleModifiers.Control),
-                static () => Loc(LocString.MenuShowHidden), () => doings.ToggleHidden(panels.Active)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.U, ConsoleModifiers.Control),
-                static () => Loc(LocString.MenuSwapPanels), doings.Swap),
-            ViewCommand.For(
-                new KeyBinding(ConsoleKey.S, ConsoleModifiers.Control, ConsoleKey.S, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeySearch), () => panels.Active.Search()),
-            ViewCommand.For(new KeyBinding(ConsoleKey.PageUp, ConsoleModifiers.Control),
-                static () => Loc(LocString.KeyFolderAbove), () => panels.Active.Ascend()),
-            ViewCommand.For(new KeyBinding(ConsoleKey.PageDown, ConsoleModifiers.Control),
-                static () => Loc(LocString.KeyOpenFolder), () => panels.Active.Descend()),
-            ViewCommand.For(new KeyBinding(ConsoleKey.G, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyTop), () => panels.Active.Top()),
-            ViewCommand.For(new KeyBinding(ConsoleKey.R, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyMiddle), () => panels.Active.Middle()),
-            ViewCommand.For(new KeyBinding(ConsoleKey.J, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyBottom), () => panels.Active.Bottom()),
-            ViewCommand.For(new KeyBinding(ConsoleKey.H, ConsoleModifiers.Alt),
-                static () => Loc(LocString.FoldersBeenIn), () => doings.Places.History(panels.Active)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.Y, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyBack), doings.Back),
-            ViewCommand.For(new KeyBinding(ConsoleKey.U, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyForward), doings.Forward),
-            ViewCommand.For(new KeyBinding(ConsoleKey.B, ConsoleModifiers.Control, ConsoleKey.Oem5,
-                    ConsoleModifiers.Control),
-                static () => Loc(LocString.Hotlist), () => doings.Places.Hotlist(panels.Active)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.I, ConsoleModifiers.Alt),
-                static () => Loc(LocString.MenuBothPanelsHere),
-                () => panels.Passive.GoTo(panels.Active.Folder)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.O, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyOtherPanelInto), doings.Beside),
-            ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Control),
-                static () => Loc(LocString.PaletteTitle), () => Menu.Palette(doings)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Alt),
-                static () => Loc(LocString.MenuOpenSavedHost), () => doings.Dialling.Saved(panels.Active)),
-            ViewCommand.For(new KeyBinding(ConsoleKey.T, ConsoleModifiers.Alt),
-                static () => Loc(LocString.TabsNew), sessions.Add),
-            new()
-            {
-                Binding = new(ConsoleKey.W, ConsoleModifiers.Alt),
-                Label = static () => Loc(LocString.TabsClose),
-                IsEnabled = () => sessions.All.Count > 1,
-                Run = () => Closed(sessions),
-            },
-            new()
-            {
-                Binding = new(ConsoleKey.PageDown, ConsoleModifiers.Alt),
-                Label = static () => Loc(LocString.TabsNext),
-                IsEnabled = () => sessions.All.Count > 1,
-                Run = () => Stepped(sessions, forward: true),
-            },
-            new()
-            {
-                Binding = new(ConsoleKey.PageUp, ConsoleModifiers.Alt),
-                Label = static () => Loc(LocString.TabsPrevious),
-                IsEnabled = () => sessions.All.Count > 1,
-                Run = () => Stepped(sessions, forward: false),
-            },
-            ViewCommand.For(ConsoleKey.F10, static () => Loc(LocString.BarQuit), lifetime.StopApplication),
-            new()
-            {
-                Binding = new(ConsoleKey.O, ConsoleModifiers.Control),
-                Label = static () => Loc(LocString.MenuWhatCommandsSaid),
-                Run = static () => ViewKind.Output,
-            },
-            ViewCommand.For(new KeyBinding(ConsoleKey.Enter, ConsoleModifiers.Alt),
-                static () => Loc(LocString.KeyNameOntoLine), () => Named(panels, typing)),
-            new()
-            {
-                Binding = new(ConsoleKey.Escape, ConsoleModifiers.Alt),
-                Label = static () => Loc(LocString.KeyStop),
-                IsEnabled = () => operations.IsBusy || runner.IsRunning,
-                Run = () => Stop(operations, runner),
-            },
+            Bind.To(new(ConsoleKey.F2), LocString.TabsTitle, () => TabList.Open(doings)),
+            Bind.To(new(ConsoleKey.F1, ConsoleModifiers.Alt), LocString.KeyDriveLeft, () => doings.ChooseDrive(panels.Left)),
+            Bind.To(new(ConsoleKey.F2, ConsoleModifiers.Alt), LocString.KeyDriveRight, () => doings.ChooseDrive(panels.Right)),
+            Bind.Going(new(ConsoleKey.F7, ConsoleModifiers.Alt), LocString.MenuFindFile, doings.Find),
+            Bind.Going(new(ConsoleKey.F3), LocString.View, doings.Read),
+            Bind.To(new(ConsoleKey.F4), LocString.Filter, () => doings.Filter(panels.Active)),
+            Bind.To(new(ConsoleKey.F5), LocString.Copy, doings.Files.Copy),
+            Bind.To(new(ConsoleKey.F6), LocString.Move, doings.Files.Move),
+            Bind.To(new(ConsoleKey.F6, ConsoleModifiers.Shift), LocString.Rename, doings.Files.Rename),
+            Bind.To(new(ConsoleKey.F7), LocString.MenuMakeFolder, doings.Files.MakeFolder),
+            Bind.To(new(ConsoleKey.F8), LocString.Delete, doings.Files.Delete),
+            Bind.To(new(ConsoleKey.F9), LocString.Menu, () => Menu.Open(doings)),
+            Bind.To(new(ConsoleKey.R, ConsoleModifiers.Control), LocString.MenuReload, doings.Reload),
+            Bind.To(new(ConsoleKey.H, ConsoleModifiers.Control), LocString.MenuShowHidden, () => doings.ToggleHidden(panels.Active)),
+            Bind.To(new(ConsoleKey.U, ConsoleModifiers.Control), LocString.MenuSwapPanels, doings.Swap),
+            Bind.To(new(ConsoleKey.S, ConsoleModifiers.Control, ConsoleKey.S, ConsoleModifiers.Alt), LocString.KeySearch, () => panels.Active.Search()),
+            Bind.To(new(ConsoleKey.PageUp, ConsoleModifiers.Control), LocString.KeyFolderAbove, () => panels.Active.Ascend()),
+            Bind.To(new(ConsoleKey.PageDown, ConsoleModifiers.Control), LocString.KeyOpenFolder, () => panels.Active.Descend()),
+            Bind.To(new(ConsoleKey.G, ConsoleModifiers.Alt), LocString.KeyTop, () => panels.Active.Top()),
+            Bind.To(new(ConsoleKey.R, ConsoleModifiers.Alt), LocString.KeyMiddle, () => panels.Active.Middle()),
+            Bind.To(new(ConsoleKey.J, ConsoleModifiers.Alt), LocString.KeyBottom, () => panels.Active.Bottom()),
+            Bind.To(new(ConsoleKey.H, ConsoleModifiers.Alt), LocString.FoldersBeenIn, () => doings.Places.History(panels.Active)),
+            Bind.To(new(ConsoleKey.Y, ConsoleModifiers.Alt), LocString.KeyBack, doings.Back),
+            Bind.To(new(ConsoleKey.U, ConsoleModifiers.Alt), LocString.KeyForward, doings.Forward),
+            Bind.To(new(ConsoleKey.B, ConsoleModifiers.Control, ConsoleKey.Oem5, ConsoleModifiers.Control), LocString.Hotlist, () => doings.Places.Hotlist(panels.Active)),
+            Bind.To(new(ConsoleKey.I, ConsoleModifiers.Alt), LocString.MenuBothPanelsHere, () => panels.Passive.GoTo(panels.Active.Folder)),
+            Bind.To(new(ConsoleKey.O, ConsoleModifiers.Alt), LocString.KeyOtherPanelInto, doings.Beside),
+            Bind.To(new(ConsoleKey.K, ConsoleModifiers.Control), LocString.PaletteTitle, () => Menu.Palette(doings)),
+            Bind.To(new(ConsoleKey.K, ConsoleModifiers.Alt), LocString.MenuOpenSavedHost, () => doings.Dialling.Saved(panels.Active)),
+            Bind.To(new(ConsoleKey.T, ConsoleModifiers.Alt), LocString.TabsNew, sessions.Add),
+            Bind.When(new(ConsoleKey.W, ConsoleModifiers.Alt), LocString.TabsClose, Several(sessions), () => Closed(sessions)),
+            Bind.When(new(ConsoleKey.PageDown, ConsoleModifiers.Alt), LocString.TabsNext, Several(sessions), () => Stepped(sessions, forward: true)),
+            Bind.When(new(ConsoleKey.PageUp, ConsoleModifiers.Alt), LocString.TabsPrevious, Several(sessions), () => Stepped(sessions, forward: false)),
+            Bind.To(new(ConsoleKey.F10), LocString.BarQuit, lifetime.StopApplication),
+            Bind.Going(new(ConsoleKey.O, ConsoleModifiers.Control), LocString.MenuWhatCommandsSaid,
+                static () => ViewKind.Output),
+            Bind.To(new(ConsoleKey.Enter, ConsoleModifiers.Alt), LocString.KeyNameOntoLine, () => Named(panels, typing)),
+            Bind.When(new(ConsoleKey.Escape, ConsoleModifiers.Alt), LocString.KeyStop, () => operations.IsBusy || runner.IsRunning, () => Stop(operations, runner)),
         ];
     }
 
@@ -201,6 +142,11 @@ public static class CommanderKeys
                 break;
         }
     }
+
+    /// <summary>Whether there is more than one tab, which is what the three tab keys wait for.</summary>
+    /// <param name="sessions">The tabs.</param>
+    /// <returns>Whether those keys are available.</returns>
+    private static Func<bool> Several(Sessions sessions) => () => sessions.All.Count > 1;
 
     /// <summary>Closes the tab on screen.</summary>
     /// <param name="sessions">The tabs.</param>
