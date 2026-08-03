@@ -6,6 +6,24 @@ using Arlecchino.Rendering.Colors;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
 
+/// <summary>What part of the band a click landed on.</summary>
+public enum TabPart
+{
+    /// <summary>A tab, which is to be shown.</summary>
+    Tab,
+
+    /// <summary>The cross on a tab, which is to close it.</summary>
+    Close,
+
+    /// <summary>The plus at the end, which is not a tab but the making of one.</summary>
+    Fresh,
+}
+
+/// <summary>What a click on the band landed on.</summary>
+/// <param name="Part">Which part.</param>
+/// <param name="Index">Which tab, where the part belongs to one.</param>
+public readonly record struct TabHit(TabPart Part, int Index);
+
 /// <summary>
 /// The band along the top: what this is, which tabs are open, and the one key that leads everywhere.
 /// It is drawn on the lit surface, so the step down to the panels marks the edge between them without
@@ -16,13 +34,22 @@ public sealed class Banner
     /// <summary>How many rows it takes.</summary>
     public const int Height = 1;
 
-    /// <summary>What a click on the last tab means: not a tab, but the making of one.</summary>
-    public const int Fresh = -1;
-
     private const int TabRow = 0;
 
+    /// <summary>What a tab costs besides its name: the lit dot, the two edges and the space they sit in.</summary>
+    private const int Chrome = 5;
+
+    /// <summary>What the cross costs on top of that: a space to stand off the name, and itself.</summary>
+    private const int Crossed = 2;
+
+    /// <summary>
+    /// What is kept clear at the right-hand end: the plus that opens a tab, and a gap so it does not
+    /// read as part of the line about the palette that is written there.
+    /// </summary>
+    private const int Reserved = 4;
+
     private readonly Sessions _sessions;
-    private readonly List<(int Column, int Width, int Index)> _tabs = [];
+    private readonly List<(int Column, int Width, TabPart Part, int Index)> _tabs = [];
 
     private SurfaceRegion _band;
 
@@ -59,14 +86,19 @@ public sealed class Banner
 
         _tabs.Clear();
 
+        var closable = _sessions.All.Count > 1;
+        var palette = Loc(LocString.HeaderPalette);
+        var room = header.Width - palette.Length - Reserved;
+
         column += kind.Length + 1;
         for (var index = 0; index < _sessions.All.Count; index++)
         {
             var session = _sessions.All[index];
             var label = session.Label;
             var live = index == _sessions.Open.Value;
+            var width = label.Length + Chrome + (closable ? Crossed : 0);
 
-            if (column + label.Length + 6 > header.Width - 4)
+            if (column + width + 1 > room)
             {
                 break;
             }
@@ -74,18 +106,25 @@ public sealed class Banner
             var under = live ? Skin.Chip : Skin.Lit;
             var lit = new Skin.Coat(under);
 
-            header.Write(TabRow, column, new(' ', label.Length + 5), Skin.Paint(Skin.Bone, under));
+            header.Write(TabRow, column, new(' ', width), Skin.Paint(Skin.Bone, under));
             Sides(header, column + 1, session, live, lit);
 
-            _tabs.Add((column, label.Length + 5, index));
+            _tabs.Add((column, closable ? label.Length + Chrome - Crossed : width, TabPart.Tab, index));
 
-            column += label.Length + 6;
+            if (closable)
+            {
+                header.Write(TabRow, column + label.Length + 4, "×", live ? lit.Text : lit.Trace);
+
+                _tabs.Add((column + label.Length + 3, Crossed + 1, TabPart.Close, index));
+            }
+
+            column += width + 1;
         }
 
-        header.WriteLine(TabRow, Loc(LocString.HeaderPalette), coat.Faded, Align.Right);
+        header.WriteLine(TabRow, palette, coat.Faded, Align.Right);
         header.Write(TabRow, column + 1, "+", coat.Trace);
 
-        _tabs.Add((column, 3, Fresh));
+        _tabs.Add((column, 3, TabPart.Fresh, 0));
     }
 
     /// <summary>
@@ -95,8 +134,8 @@ public sealed class Banner
     /// </summary>
     /// <param name="row">Which row of the frame it was on.</param>
     /// <param name="column">How far along that row.</param>
-    /// <returns>The session it belongs to, or nothing when it missed every tab.</returns>
-    public int? Tab(int row, int column)
+    /// <returns>What it landed on, or nothing when it landed on none of it.</returns>
+    public TabHit? Tab(int row, int column)
     {
         if (!_band.Contains(row, column))
         {
@@ -105,11 +144,11 @@ public sealed class Banner
 
         var (_, along) = _band.ToLocal(row, column);
 
-        foreach (var (at, width, index) in _tabs)
+        foreach (var (at, width, part, index) in _tabs)
         {
             if (along >= at && along < at + width)
             {
-                return index;
+                return new(part, index);
             }
         }
 

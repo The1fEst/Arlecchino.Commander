@@ -194,6 +194,57 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Equal(2, _app.Sessions.All.Count);
     }
 
+    /// <summary>The cross on a tab closes it.</summary>
+    [Fact]
+    public void ClickingTheCrossClosesThatTab()
+    {
+        _app.Sessions.Add();
+        _app.Settled();
+
+        var lines = _app.FrameLines();
+        var row = Array.FindIndex(lines, static line => line.Contains("local ⇄", StringComparison.Ordinal));
+
+        Assert.True(row >= 0);
+
+        _app.Click(row, lines[row].IndexOf('×'));
+        _app.Settled();
+
+        Assert.Single(_app.Sessions.All);
+    }
+
+    /// <summary>
+    /// The cross belongs to itself and not to the tab it sits on. The two hit areas touch, so a cross
+    /// that grew a cell or a tab that did would leave one of them unreachable — which is exactly what
+    /// used to be wrong with the plus at the end.
+    /// </summary>
+    [Fact]
+    public void ClickingATabBesideItsCrossStillShowsIt()
+    {
+        _app.Sessions.Add();
+        _app.Settled();
+
+        var lines = _app.FrameLines();
+        var row = Array.FindIndex(lines, static line => line.Contains("local ⇄", StringComparison.Ordinal));
+        var cross = lines[row].IndexOf('×');
+
+        _app.Click(row, cross - 2);
+        _app.Settled();
+
+        Assert.Equal(2, _app.Sessions.All.Count);
+        Assert.Equal(0, _app.Sessions.Open.Value);
+    }
+
+    /// <summary>With one tab open there is no cross: the last one does not close.</summary>
+    [Fact]
+    public void TheOnlyTabWearsNoCross()
+    {
+        var lines = _app.FrameLines();
+        var row = Array.FindIndex(lines, static line => line.Contains("local ⇄", StringComparison.Ordinal));
+
+        Assert.True(row >= 0);
+        Assert.DoesNotContain('×', lines[row]);
+    }
+
     /// <summary>A tab can be opened, stepped between and closed without touching the mouse.</summary>
     [Fact]
     public void TabsAreWorkedFromTheKeyboard()

@@ -180,25 +180,30 @@ public sealed class CommanderView : IArlecchinoView
     }
 
     /// <summary>
-    /// Clicks. A click on a tab shows it, which is the one thing on this screen a mouse is better at
-    /// than the keyboard; everything else goes to whichever panel was clicked in.
+    /// Clicks. The band along the top is the one part of this screen a mouse is better at than the
+    /// keyboard, so it answers to one: a tab is shown, its cross closes it, the plus at the end opens
+    /// another. Everything else goes to whichever panel was clicked in.
     /// </summary>
     /// <param name="mouse">The event that arrived.</param>
     /// <returns>Where to go, which is nowhere.</returns>
     public ViewRoute HandleMouse(MouseEvent mouse)
     {
-        if (mouse.Action != MouseAction.Pressed || _banner.Tab(mouse.Row, mouse.Column) is not { } index)
+        if (mouse.Action != MouseAction.Pressed || _banner.Tab(mouse.Row, mouse.Column) is not { } hit)
         {
             return Routed(_focus.HandleMouse(mouse));
         }
 
-        if (index == Banner.Fresh)
+        switch (hit.Part)
         {
-            _sessions.Add();
-        }
-        else
-        {
-            _sessions.Show(index);
+            case TabPart.Fresh:
+                _sessions.Add();
+                break;
+            case TabPart.Close:
+                _sessions.Close(_sessions.All[hit.Index]);
+                break;
+            default:
+                _sessions.Show(hit.Index);
+                break;
         }
 
         return ViewRoute.None;
