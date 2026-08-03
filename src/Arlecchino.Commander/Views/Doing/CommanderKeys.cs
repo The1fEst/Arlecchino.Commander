@@ -23,8 +23,8 @@ public static class CommanderKeys
     /// <param name="doings">Everything the screen can do.</param>
     /// <param name="panels">The two panels on screen.</param>
     /// <param name="sessions">The tabs, which four of these keys open, close and step between.</param>
-    /// <param name="operations">The file work, which Escape calls off.</param>
-    /// <param name="runner">The commands, which Escape stops.</param>
+    /// <param name="operations">The file work, which Alt+Esc calls off.</param>
+    /// <param name="runner">The commands, which Alt+Esc stops.</param>
     /// <param name="typing">The command line, which Alt+Enter writes to.</param>
     /// <param name="state">Where the dialog on top lives.</param>
     /// <param name="lifetime">How the application is quit.</param>
