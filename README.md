@@ -59,8 +59,10 @@ of time — one file, nothing to install, no .NET on the machine required. They 
 - **Tabs.** Each one holds two panels of its own, so a second pair of folders — or a server on one
   side — is a tab away rather than a place you have to navigate back to. `Alt+T` opens one, `Alt+W`
   closes it, `Alt+PgDn` and `Alt+PgUp` step between them, and the band along the top shows what each
-  one is connected to and takes a click on it, on its `×`, or on the `+` at the end. `F2` lists them
-  all, and the palette finds one by name — typing the name of a server goes to the tab that is on it.
+  one is connected to and takes a click on it, on its `×`, or on the `+` at the end. Too many tabs for
+  the band shortens the names first and then scrolls, with `‹` and `›` for the ones off either side;
+  going to a tab always brings it back into view. `F2` lists them all, and the palette finds one by
+  name — typing the name of a server goes to the tab that is on it.
 - **Getting around the way Midnight Commander does.** `Ctrl+S` searches as you type, `+` and `-` mark
   and unmark by shell pattern, `*` inverts the marks, `Alt+G` `Alt+R` `Alt+J` jump to the top, the
   middle and the bottom, `Ctrl+PgUp` and `Ctrl+PgDn` leave and enter a folder, `Alt+H` lists the

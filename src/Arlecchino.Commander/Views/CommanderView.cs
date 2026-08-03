@@ -182,7 +182,8 @@ public sealed class CommanderView : IArlecchinoView
     /// <summary>
     /// Clicks. The band along the top is the one part of this screen a mouse is better at than the
     /// keyboard, so it answers to one: a tab is shown, its cross closes it, the plus at the end opens
-    /// another. Everything else goes to whichever panel was clicked in.
+    /// another, and a marker at either end scrolls to the tabs that did not fit. Everything else goes
+    /// to whichever panel was clicked in.
     /// </summary>
     /// <param name="mouse">The event that arrived.</param>
     /// <returns>Where to go, which is nowhere.</returns>
@@ -200,6 +201,10 @@ public sealed class CommanderView : IArlecchinoView
                 break;
             case TabPart.Close:
                 _sessions.Close(_sessions.All[hit.Index]);
+                break;
+            case TabPart.Scroll:
+                _banner.Scroll(hit.Index);
+                _state.Invalidate();
                 break;
             default:
                 _sessions.Show(hit.Index);

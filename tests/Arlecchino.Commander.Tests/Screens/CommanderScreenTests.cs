@@ -260,20 +260,72 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void TooManyTabsShortenTheirNamesRatherThanDisappear()
     {
-        using var narrow = new ScreenApp(ViewKind.Commander, width: 120);
-
-        narrow.Settled();
-        narrow.Sessions.Add();
-        narrow.Sessions.Add();
-        narrow.Sessions.Add();
-        narrow.Settled();
+        using var narrow = Tabbed(130, 4);
 
         var band = narrow.FrameLines()[0];
 
         Assert.Equal(4, band.Count(letter => letter == '×'));
         Assert.Contains('…', band);
         Assert.DoesNotContain("local ⇄ local", band, StringComparison.Ordinal);
-        Assert.Contains('+', band);
+        Assert.DoesNotContain('‹', band);
+    }
+
+    /// <summary>
+    /// Past the point where shortening leaves a name saying anything, the strip scrolls instead. The
+    /// tab being worked in is the one that must stay in view — a strip that has scrolled away from the
+    /// panels on screen says nothing about where the work is.
+    /// </summary>
+    [Fact]
+    public void PastShorteningTheStripScrollsAndKeepsTheOpenTabInView()
+    {
+        using var narrow = Tabbed(110, 4);
+
+        var band = narrow.FrameLines()[0];
+
+        Assert.Equal(2, band.Count(letter => letter == '×'));
+        Assert.Contains('‹', band);
+        Assert.Contains('›', band);
+        Assert.Equal(3, narrow.Sessions.Open.Value);
+
+        narrow.Click(0, band.IndexOf('●'));
+        narrow.Settled();
+
+        Assert.Equal(2, narrow.Sessions.Open.Value);
+    }
+
+    /// <summary>Clicking a marker scrolls to the tabs that did not fit.</summary>
+    [Fact]
+    public void ClickingTheMarkerScrollsToTheTabsBehindIt()
+    {
+        using var narrow = Tabbed(110, 4);
+
+        narrow.Click(0, narrow.FrameLines()[0].IndexOf('‹'));
+        narrow.Settled();
+
+        narrow.Click(0, narrow.FrameLines()[0].IndexOf('●'));
+        narrow.Settled();
+
+        Assert.Equal(1, narrow.Sessions.Open.Value);
+    }
+
+    /// <summary>An application of a given width with a given number of tabs open, settled and drawn.</summary>
+    /// <param name="width">How wide the terminal is.</param>
+    /// <param name="tabs">How many tabs to have open.</param>
+    /// <returns>The application, for the test to dispose.</returns>
+    private static ScreenApp Tabbed(int width, int tabs)
+    {
+        var app = new ScreenApp(ViewKind.Commander, width);
+
+        app.Settled();
+
+        for (var opened = 1; opened < tabs; opened++)
+        {
+            app.Sessions.Add();
+        }
+
+        app.Settled();
+
+        return app;
     }
 
     /// <summary>With one tab open there is no cross: the last one does not close.</summary>
