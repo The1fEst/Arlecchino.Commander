@@ -4,6 +4,7 @@ using System.Linq;
 using Arlecchino.Commander.Views;
 using Arlecchino.Input;
 using Xunit;
+using static Arlecchino.Commander.Localization;
 
 using Arlecchino.Commander.Tests.Support;
 
@@ -393,9 +394,9 @@ public sealed class CommanderKeysTests : IDisposable
             Assert.Contains(key, bar, StringComparison.Ordinal);
         }
 
-        Assert.Contains("view", known);
-        Assert.Contains("copy", known);
-        Assert.Contains("delete", known);
+        Assert.Contains(Loc(LocString.View), known);
+        Assert.Contains(Loc(LocString.Copy), known);
+        Assert.Contains(Loc(LocString.Delete), known);
     }
 
     /// <summary>
@@ -424,7 +425,7 @@ public sealed class CommanderKeysTests : IDisposable
     public void StoppingTheWorkIsAltEscape()
     {
         var stop = _app.Navigator.CurrentCommands
-            .Single(command => command.Label() == "stop what is running");
+            .Single(command => command.Label() == Loc(LocString.KeyStop));
 
         Assert.Equal(new KeyBinding(ConsoleKey.Escape, ConsoleModifiers.Alt), stop.Binding);
     }
