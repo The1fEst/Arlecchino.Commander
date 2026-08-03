@@ -234,6 +234,48 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Equal(0, _app.Sessions.Open.Value);
     }
 
+    /// <summary>
+    /// The dot says which panel a tab was left in, and it says it for the tabs not on screen too. The
+    /// store holds that side only for the tab being worked in, so reading the store for all of them
+    /// put the dot on the left of every tab in the band whatever side it was really left on.
+    /// </summary>
+    [Fact]
+    public void TheDotSaysWhichSideATabWasLeftIn()
+    {
+        _app.Press(ConsoleKey.Tab);
+        _app.Press(ConsoleKey.T, alt: true);
+        _app.Settled();
+
+        var band = _app.FrameLines()[0];
+
+        Assert.Contains("local ⇄ ● local", band, StringComparison.Ordinal);
+        Assert.Contains("● local ⇄ local", band, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Too many tabs for the band shortens their names rather than dropping the ones that no longer
+    /// fit. A tab that is not drawn cannot be clicked, and the one that would go is not the one anybody
+    /// would have chosen.
+    /// </summary>
+    [Fact]
+    public void TooManyTabsShortenTheirNamesRatherThanDisappear()
+    {
+        using var narrow = new ScreenApp(ViewKind.Commander, width: 120);
+
+        narrow.Settled();
+        narrow.Sessions.Add();
+        narrow.Sessions.Add();
+        narrow.Sessions.Add();
+        narrow.Settled();
+
+        var band = narrow.FrameLines()[0];
+
+        Assert.Equal(4, band.Count(letter => letter == '×'));
+        Assert.Contains('…', band);
+        Assert.DoesNotContain("local ⇄ local", band, StringComparison.Ordinal);
+        Assert.Contains('+', band);
+    }
+
     /// <summary>With one tab open there is no cross: the last one does not close.</summary>
     [Fact]
     public void TheOnlyTabWearsNoCross()
