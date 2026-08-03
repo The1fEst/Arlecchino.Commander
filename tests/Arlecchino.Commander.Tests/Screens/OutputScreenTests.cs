@@ -1,20 +1,22 @@
 using System;
+using Arlecchino.Commander.Tests.Support;
 using Arlecchino.Commander.Views;
 using Xunit;
-
-using Arlecchino.Commander.Tests.Support;
 
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-/// What a command left behind, as the person who ran it sees it. The runner is filled by hand here:
-/// what is being asked is how the lines reach the screen, not whether a shell can be started.
+///     What a command left behind, as the person who ran it sees it. The runner is filled by hand here:
+///     what is being asked is how the lines reach the screen, not whether a shell can be started.
 /// </summary>
 public sealed class OutputScreenTests : IDisposable
 {
     private readonly ScreenApp _app = new(ViewKind.Output);
 
-    public void Dispose() => _app.Dispose();
+    public void Dispose()
+    {
+        _app.Dispose();
+    }
 
     [Fact]
     public void WithNothingRunItSaysSo()
@@ -46,7 +48,7 @@ public sealed class OutputScreenTests : IDisposable
         var lines = _app.FrameLines();
 
         Assert.Equal(30, lines.Length);
-        Assert.All(lines, static row => Assert.True(row.Length <= 100));
+        Assert.All(lines, row => Assert.True(row.Length <= _app.Width));
     }
 
     [Fact]

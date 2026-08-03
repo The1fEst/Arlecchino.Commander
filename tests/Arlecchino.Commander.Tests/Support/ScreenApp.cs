@@ -12,9 +12,9 @@ using Microsoft.Extensions.Hosting;
 namespace Arlecchino.Commander.Tests.Support;
 
 /// <summary>
-/// The application wired up the way it wires itself, drawing into a terminal in memory. The options
-/// matter as much as the services: given the framework's defaults instead of Commander's, the hints box
-/// lands over the right panel and the test reads a screen the application never shows anyone.
+///     The application wired up the way it wires itself, drawing into a terminal in memory. The options
+///     matter as much as the services: given the framework's defaults instead of Commander's, the hints box
+///     lands over the right panel and the test reads a screen the application never shows anyone.
 /// </summary>
 public sealed class ScreenApp : IDisposable
 {
@@ -24,29 +24,39 @@ public sealed class ScreenApp : IDisposable
 
     private readonly ArlecchinoTestHost _host;
 
-    public ScreenApp(ViewRoute start, int width = 100, int height = 30)
+    public ScreenApp(ViewRoute start, int width = 130, int height = 30)
     {
+        Width = width;
         Folder = Directory.CreateTempSubdirectory("commander-screen").FullName;
 
-        _host = new(width, height, builder =>
-        {
-            CommanderOptions.Apply(builder.Options);
-            builder.Services.AddSingleton<IHostApplicationLifetime>(new Lifetime());
+        _host = new(width,
+            height,
+            builder =>
+            {
+                CommanderOptions.Apply(builder.Options);
+                builder.Services.AddSingleton<IHostApplicationLifetime>(new Lifetime());
 
-            builder
-                .AddGeneratedViews()
-                .AddGeneratedStores()
-                .AddGeneratedCommands()
-                .UseMouse()
-                .UseCommanderScreens()
-                .StartAt(start);
-        });
+                builder
+                    .AddGeneratedViews()
+                    .AddGeneratedStores()
+                    .AddGeneratedCommands()
+                    .UseMouse()
+                    .UseCommanderScreens()
+                    .StartAt(start);
+            });
 
         Sessions.Start(Folder, Folder);
     }
 
     /// <summary>A folder of its own, gone when the test is.</summary>
     public string Folder { get; }
+
+    /// <summary>
+    ///     How wide the terminal is. A test that asks whether anything spilled over the edge has to
+    ///     compare against this rather than against a number typed into it, or it stops meaning anything
+    ///     the day the default changes.
+    /// </summary>
+    public int Width { get; }
 
     private ScreenGrid Screen => _host.Screen;
 
@@ -64,21 +74,41 @@ public sealed class ScreenApp : IDisposable
 
     public ArlecchinoState State => _host.State;
 
-    public string Frame() => _host.Frame();
+    public void Dispose()
+    {
+        _host.Dispose();
+        Directory.Delete(Folder, true);
+    }
 
-    public string[] FrameLines() => _host.FrameLines();
+    public string Frame()
+    {
+        return _host.Frame();
+    }
 
-    public void Press(ConsoleKey key, bool shift = false, bool alt = false, bool control = false) =>
+    public string[] FrameLines()
+    {
+        return _host.FrameLines();
+    }
+
+    public void Press(ConsoleKey key, bool shift = false, bool alt = false, bool control = false)
+    {
         _host.Press(key, shift, alt, control);
+    }
 
-    public void Type(string text) => _host.Type(text);
+    public void Type(string text)
+    {
+        _host.Type(text);
+    }
 
-    public void Click(int row, int column) => _host.Click(row, column);
+    public void Click(int row, int column)
+    {
+        _host.Click(row, column);
+    }
 
     /// <summary>
-    /// Draws frames until something is so, or gives up. Work that finishes off the drawing thread is
-    /// posted back to it and runs as a frame is built, so waiting here means drawing rather than
-    /// sleeping.
+    ///     Draws frames until something is so, or gives up. Work that finishes off the drawing thread is
+    ///     posted back to it and runs as a frame is built, so waiting here means drawing rather than
+    ///     sleeping.
     /// </summary>
     /// <param name="done">What is being waited for.</param>
     /// <returns><c>true</c> when it became so.</returns>
@@ -102,9 +132,9 @@ public sealed class ScreenApp : IDisposable
     }
 
     /// <summary>
-    /// Draws frames until no panel is still reading. A folder is read off the drawing thread, so the
-    /// first frame of a fresh application says <c>loading…</c> where the files will be — a test that
-    /// reads that frame is looking at the screen from before the disk answered.
+    ///     Draws frames until no panel is still reading. A folder is read off the drawing thread, so the
+    ///     first frame of a fresh application says <c>loading…</c> where the files will be — a test that
+    ///     reads that frame is looking at the screen from before the disk answered.
     /// </summary>
     /// <exception cref="TimeoutException">The reading never finished.</exception>
     public void Settled()
@@ -125,7 +155,10 @@ public sealed class ScreenApp : IDisposable
     /// <summary>Draws frames until some text is on screen, for what arrives after a read.</summary>
     /// <param name="text">What to wait for.</param>
     /// <returns><c>true</c> when it appeared.</returns>
-    public bool Shows(string text) => Until(() => Frame().Contains(text, StringComparison.Ordinal));
+    public bool Shows(string text)
+    {
+        return Until(() => Frame().Contains(text, StringComparison.Ordinal));
+    }
 
     /// <summary>A file with something in it, for the tests that need one.</summary>
     /// <param name="name">What to call it.</param>
@@ -157,12 +190,6 @@ public sealed class ScreenApp : IDisposable
         return "";
     }
 
-    public void Dispose()
-    {
-        _host.Dispose();
-        Directory.Delete(Folder, true);
-    }
-
     private sealed class Lifetime : IHostApplicationLifetime
     {
         private readonly CancellationTokenSource _stopping = new();
@@ -173,6 +200,9 @@ public sealed class ScreenApp : IDisposable
 
         public CancellationToken ApplicationStopped => CancellationToken.None;
 
-        public void StopApplication() => _stopping.Cancel();
+        public void StopApplication()
+        {
+            _stopping.Cancel();
+        }
     }
 }

@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panels;
+using Arlecchino.Commander.Views.Doing;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Commander.Widgets.Dialogs;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
@@ -17,46 +18,42 @@ using Microsoft.Extensions.Hosting;
 using static Arlecchino.Layout.PaneSplit;
 using static Arlecchino.Layout.PaneTree;
 
-using Arlecchino.Commander.Views.Doing;
-
 namespace Arlecchino.Commander.Views;
 
 /// <summary>
-/// The screen the application opens on: two panels, a band above them, a command line and a bar of
-/// keys below.
-///
-/// It draws and it routes. What every key and every menu entry actually does lives in
-/// <see cref="Doings"/>, which is handed the same pair of panels this screen is showing — so the
-/// screen has no operation of its own to keep in step with the menu, and the menu has no idea which
-/// screen it was opened from.
+///     The screen the application opens on: two panels, a band above them, a command line and a bar of
+///     keys below.
+///     It draws and it routes. What every key and every menu entry actually does lives in
+///     <see cref="Doings" />, which is handed the same pair of panels this screen is showing — so the
+///     screen has no operation of its own to keep in step with the menu, and the menu has no idea which
+///     screen it was opened from.
 /// </summary>
 public sealed class CommanderView : IArlecchinoView
 {
     private const int FooterRows = 2;
-
-    private readonly Surface _surface;
-    private readonly Sessions _sessions;
-    private readonly ArlecchinoState _state;
-    private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
-    private readonly Dictionary<Session, (FilePanel Left, FilePanel Right)> _panes = [];
-
-    private readonly Pair _panels;
-    private readonly Doings _doings;
-    private readonly Typing _typing;
-    private readonly Banner _banner;
-    private readonly Gutter _gutter;
     private readonly ActionBar _bar;
     private readonly JobCard _card;
     private readonly IReadOnlyList<ViewCommand> _commands;
+    private readonly Doings _doings;
+    private readonly Gutter _gutter;
+    private readonly ArlecchinoKeymap _keymap;
+    private readonly KeyText _keys;
     private readonly Operations _operations;
+
+    private readonly Pair _panels;
+    private readonly Dictionary<Session, (FilePanel Left, FilePanel Right)> _panes = [];
+    private readonly Sessions _sessions;
+    private readonly ArlecchinoState _state;
+
+    private readonly Surface _surface;
+    private readonly Typing _typing;
 
     private FocusRing _focus;
     private PaneTree _layout;
-    private Session _showing;
-    private int _seen;
     private int _moved;
     private bool _prefix;
+    private int _seen;
+    private Session _showing;
 
     /// <summary>Builds the screen over whichever tab was open.</summary>
     /// <param name="surface">What is drawn on.</param>
@@ -102,7 +99,6 @@ public sealed class CommanderView : IArlecchinoView
         _panels = new(left, right);
         _doings = new(dialogs, _panels, sessions, operations, runner, finder, remote, state, services);
         _typing = new(new(runner.History, _keys, _keymap), runner, state, _keymap, _panels);
-        _banner = new(sessions);
         _gutter = new(sessions, _panels);
         _bar = new(_panels);
         _card = new(runner, state);
@@ -115,9 +111,9 @@ public sealed class CommanderView : IArlecchinoView
     }
 
     /// <summary>
-    /// Draws the screen, reloading the panels first when work that was running elsewhere has finished
-    /// since the last frame — the operation outlives this screen, so the screen catches up rather than
-    /// being told.
+    ///     Draws the screen, reloading the panels first when work that was running elsewhere has finished
+    ///     since the last frame — the operation outlives this screen, so the screen catches up rather than
+    ///     being told.
     /// </summary>
     public void Draw()
     {
@@ -147,8 +143,8 @@ public sealed class CommanderView : IArlecchinoView
     }
 
     /// <summary>
-    /// Keys the screen itself takes before the panels see them: the second half of a <c>Ctrl+X</c>
-    /// pair, and everything the command line claims while there is something typed on it.
+    ///     Keys the screen itself takes before the panels see them: the second half of a <c>Ctrl+X</c>
+    ///     pair, and everything the command line claims while there is something typed on it.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns>Where to go, which is nowhere for all of these.</returns>
@@ -180,47 +176,27 @@ public sealed class CommanderView : IArlecchinoView
     }
 
     /// <summary>
-    /// Clicks. The band along the top is the one part of this screen a mouse is better at than the
-    /// keyboard, so it answers to one: a tab is shown, its cross closes it, the plus at the end opens
-    /// another, and a marker at either end scrolls to the tabs that did not fit. Everything else goes
-    /// to whichever panel was clicked in.
+    ///     Clicks, which go to whichever panel was clicked in. The band along the top is not here any more
+    ///     — it belongs to the layout, and the layout is asked before the view is — so everything that
+    ///     reaches this has landed below it.
     /// </summary>
     /// <param name="mouse">The event that arrived.</param>
     /// <returns>Where to go, which is nowhere.</returns>
     public ViewRoute HandleMouse(MouseEvent mouse)
     {
-        if (mouse.Action != MouseAction.Pressed || _banner.Tab(mouse.Row, mouse.Column) is not { } hit)
-        {
-            return Routed(_focus.HandleMouse(mouse));
-        }
-
-        switch (hit.Part)
-        {
-            case TabPart.Fresh:
-                _sessions.Add();
-                break;
-            case TabPart.Close:
-                _sessions.Close(_sessions.All[hit.Index]);
-                break;
-            case TabPart.Scroll:
-                _banner.Scroll(hit.Index);
-                _state.Invalidate();
-                break;
-            default:
-                _sessions.Show(hit.Index);
-                break;
-        }
-
-        return ViewRoute.None;
+        return Routed(_focus.HandleMouse(mouse));
     }
 
-    /// <inheritdoc/>
-    public IReadOnlyList<ViewCommand> Commands() => _commands;
+    /// <inheritdoc />
+    public IReadOnlyList<ViewCommand> Commands()
+    {
+        return _commands;
+    }
 
     /// <summary>
-    /// The two panels of a session, made once and kept. A tab that is come back to shows what it showed
-    /// before — the same cursor, the same place in a long folder — which it could not do if its panels
-    /// were built afresh every time it was switched to.
+    ///     The two panels of a session, made once and kept. A tab that is come back to shows what it showed
+    ///     before — the same cursor, the same place in a long folder — which it could not do if its panels
+    ///     were built afresh every time it was switched to.
     /// </summary>
     /// <param name="session">Whose panels.</param>
     /// <returns>The pair.</returns>
@@ -231,11 +207,14 @@ public sealed class CommanderView : IArlecchinoView
             return made;
         }
 
-        FilePanel Over(PanelState state) => new(state, _keymap, _keys)
+        FilePanel Over(PanelState state)
         {
-            OnOpenFile = entry => _doings.Open(entry),
-            OnGroup = marking => _doings.Group(marking),
-        };
+            return new(state, _keymap, _keys)
+            {
+                OnOpenFile = entry => _doings.Open(entry),
+                OnGroup = marking => _doings.Group(marking)
+            };
+        }
 
         made = (Over(session.Left), Over(session.Right));
         _panes[session] = made;
@@ -243,11 +222,9 @@ public sealed class CommanderView : IArlecchinoView
         return made;
     }
 
-    private PaneTree Lay() => Branch(
-        Rows,
-        PaneSize.Cells(Banner.Height),
-        Leaf(_banner.Draw),
-        Branch(
+    private PaneTree Lay()
+    {
+        return Branch(
             Rows,
             PaneSize.CellsFromEnd(FooterRows),
             Branch(
@@ -255,11 +232,12 @@ public sealed class CommanderView : IArlecchinoView
                 PaneSize.Fraction(0.5),
                 Leaf(_panels.Left),
                 Branch(Columns, PaneSize.Cells(Gutter.Width), Leaf(_gutter.Draw), Leaf(_panels.Right))),
-            Branch(Rows, ActionBar.Height, Leaf(_typing.Draw), Leaf(_bar.Draw))));
+            Branch(Rows, ActionBar.Height, Leaf(_typing.Draw), Leaf(_bar.Draw)));
+    }
 
     /// <summary>
-    /// Swaps the panels over when the tab has changed. The layout holds the two it was built with, so a
-    /// new tab means a new layout and a focus ring to go with it.
+    ///     Swaps the panels over when the tab has changed. The layout holds the two it was built with, so a
+    ///     new tab means a new layout and a focus ring to go with it.
     /// </summary>
     private void Showing()
     {

@@ -1,27 +1,30 @@
 using System;
 using Arlecchino.Commander.Model;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Input;
 using Arlecchino.Rendering;
+using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
-using Arlecchino.Commander.Widgets.Chrome;
 
 namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
-/// What a panel looks like: the rule down its edge, the trail along the top, the column heads, and
-/// the band along the bottom that says what the cursor is on.
-///
-/// There is no box around any of it — the panel is told from the one beside it by the step in the
-/// background and by the accent rule, which only the panel being worked in has. Everything here reads
-/// the panel and writes nothing back to it, apart from the three words it is told to say while a
-/// folder is being read.
+///     What a panel looks like: the rule down its edge, the trail along the top, the column heads, and
+///     the band along the bottom that says what the cursor is on.
+///     There is no box around any of it — the panel is told from the one beside it by the step in the
+///     background and by the accent rule, which only the panel being worked in has. Everything here reads
+///     the panel and writes nothing back to it, apart from the three words it is told to say while a
+///     folder is being read.
 /// </summary>
 public sealed class PanelPaint
 {
     private const int SideRoom = 1;
     private const int Chrome = 6;
-    private const int HeadRow = 3;
-    private const int ListRow = 4;
+    private const int HeadRow = 2;
+    private const int ListRow = HeadRow + 2;
+
+    private static readonly TermColor _activeColor = Skin.Paint(Skin.Unlit, Skin.Lit);
+    private static readonly TermColor _inactiveColor = Skin.Paint(Skin.Unlit, Skin.Unlit);
 
     private SurfaceRegion _heads;
 
@@ -35,7 +38,7 @@ public sealed class PanelPaint
     public string Free { get; set; } = "";
 
     /// <summary>
-    /// Draws everything but the files themselves.
+    ///     Draws everything but the files themselves.
     /// </summary>
     /// <param name="region">The whole panel, rule included.</param>
     /// <param name="panel">The panel being drawn.</param>
@@ -52,6 +55,7 @@ public sealed class PanelPaint
         }
 
         var coat = panel.IsFocused ? Skin.Lively : Skin.Quiet;
+        var color = panel.IsFocused ? _activeColor : _inactiveColor;
 
         region.Fill(coat.Text);
 
@@ -59,27 +63,29 @@ public sealed class PanelPaint
 
         edge.Fill(panel.IsFocused ? Skin.Paint(Skin.Crimson, Skin.Crimson) : coat.Text);
 
-        var body = rest.Inset(new Margin(SideRoom, 0, 2, 0));
+        rest.Rows(0, 1).Fill(color, '▀');
+        rest.Rows(rest.Height - 1, 1).Fill(color, '▄');
 
+        var body = rest.Inset(SideRoom);
         if (body.IsEmpty)
         {
             return none;
         }
 
-        Breadcrumb.Draw(body.Rows(0, 1), panel.State, coat, PanelRow.Under(coat), Tally(panel));
+        Breadcrumb.Draw(body.Rows(HeadRow - 2, 1), panel.State, coat, PanelRow.Under(coat), Tally(panel));
 
         if (body.Height <= Chrome)
         {
             return none;
         }
 
-        body.Rows(2, 1).Fill(coat.Rule, '─');
+        body.Rows(HeadRow - 1, 1).Fill(coat.Rule, '─');
 
         _heads = body.Rows(HeadRow, 1);
 
         Heads(_heads, panel.State, coat);
 
-        body.Rows(body.Height - 2, 1).Fill(coat.Rule, '─');
+        body.Rows(HeadRow + 1, 1).Fill(coat.Rule, '─');
         Foot(body.Rows(body.Height - 1, 1), panel, coat);
 
         if (Error.Length == 0)
@@ -87,10 +93,11 @@ public sealed class PanelPaint
             return body.Rows(ListRow, body.Height - Chrome);
         }
 
-        body.Rows(ListRow, 1).WriteLine(
-            0,
-            TextWidth.Truncate(Error, body.Width),
-            Skin.Paint(Skin.Crimson, PanelRow.Under(coat)));
+        body.Rows(ListRow, 1)
+            .WriteLine(
+                0,
+                TextWidth.Truncate(Error, body.Width),
+                Skin.Paint(Skin.Crimson, PanelRow.Under(coat)));
 
         return none;
     }
@@ -98,10 +105,12 @@ public sealed class PanelPaint
     /// <summary>Which column head a click landed on.</summary>
     /// <param name="mouse">The event that arrived.</param>
     /// <returns>What it sorts by, or nothing when it missed the heads.</returns>
-    public Sorting? Hit(MouseEvent mouse) =>
-        mouse.Action == MouseAction.Pressed && _heads.Contains(mouse.Row, mouse.Column)
+    public Sorting? Hit(MouseEvent mouse)
+    {
+        return mouse.Action == MouseAction.Pressed && _heads.Contains(mouse.Row, mouse.Column)
             ? PanelColumns.Hit(_heads.ToLocal(mouse.Row, mouse.Column).Column, _heads.Width)
             : null;
+    }
 
     /// <summary>The column heads, in small capitals, with the sort arrow on the one that is sorted by.</summary>
     /// <param name="row">The row to draw on.</param>
@@ -110,20 +119,31 @@ public sealed class PanelPaint
     private static void Heads(SurfaceRegion row, PanelState state, Skin.Coat coat)
     {
         var (name, size, date) = PanelColumns.Widths(row.Width);
-        var gap = PanelColumns.Gap;
 
         Head(row, Kinds.TagWidth, name, Loc(LocString.PanelName), Sorting.Name, state, coat, Align.Left);
 
         if (size > 0)
         {
-            Head(row, Kinds.TagWidth + name + gap, size, Loc(LocString.PanelSize), Sorting.Size, state, coat,
+            Head(row,
+                Kinds.TagWidth + name + PanelColumns.Gap,
+                size,
+                Loc(LocString.PanelSize),
+                Sorting.Size,
+                state,
+                coat,
                 Align.Right);
         }
 
         if (date > 0)
         {
-            Head(row, Kinds.TagWidth + name + gap + size + gap, date, Loc(LocString.PanelModified),
-                Sorting.Modified, state, coat, Align.Right);
+            Head(row,
+                Kinds.TagWidth + name + PanelColumns.Gap + size + PanelColumns.Gap,
+                date,
+                Loc(LocString.PanelModified),
+                Sorting.Modified,
+                state,
+                coat,
+                Align.Right);
         }
     }
 
@@ -182,8 +202,8 @@ public sealed class PanelPaint
     }
 
     /// <summary>
-    /// The foot: what the cursor is on, or what has been marked. Marking turns the whole band the
-    /// colour of a mark, so the panel says it is holding something without anything having to be read.
+    ///     The foot: what the cursor is on, or what has been marked. Marking turns the whole band the
+    ///     colour of a mark, so the panel says it is holding something without anything having to be read.
     /// </summary>
     /// <param name="row">The row to draw on.</param>
     /// <param name="panel">The panel being drawn.</param>

@@ -4,11 +4,10 @@ using Arlecchino.Rendering;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The band along the top: what this is, which tabs are open, and the one key that leads everywhere.
-/// It is drawn on the lit surface, so the step down to the panels marks the edge between them without
-/// a rule having to be spent on it.
-///
-/// What the tabs do with the room left between the name and the hint is <see cref="TabStrip"/>'s.
+///     The band along the top: what this is, which tabs are open, and the one key that leads everywhere.
+///     It is drawn on the lit surface, so the step down to the panels marks the edge between them without
+///     a rule having to be spent on it.
+///     What the tabs do with the room left between the name and the hint is <see cref="TabStrip" />'s.
 /// </summary>
 public sealed class Banner
 {
@@ -24,16 +23,18 @@ public sealed class Banner
 
     /// <summary>Draws the band over a set of tabs.</summary>
     /// <param name="sessions">The sessions there are, and which of them is open.</param>
-    public Banner(Sessions sessions) => _strip = new(sessions);
+    public Banner(Sessions sessions)
+    {
+        _strip = new(sessions);
+    }
 
     /// <summary>Draws it.</summary>
     /// <param name="header">The row to draw on.</param>
     public void Draw(SurfaceRegion header)
     {
-        var coat = Skin.Lively;
+        var coat = Skin.Quiet;
 
         header.Fill(coat.Text);
-        header = header.Inset(new Margin(2, 0, 2, 0));
 
         if (header.Height < Height)
         {
@@ -60,16 +61,22 @@ public sealed class Banner
     }
 
     /// <summary>
-    /// What a click on the band landed on. The click arrives in frame cells and the tabs were measured
-    /// inside a strip that sits well in from the edge of a content area that is itself inset — so the
-    /// two are put in the same coordinates rather than assumed to already share them.
+    ///     What a click on the band landed on. The click arrives in frame cells and the tabs were measured
+    ///     inside a strip that sits well in from the edge of a content area that is itself inset — so the
+    ///     two are put in the same coordinates rather than assumed to already share them.
     /// </summary>
     /// <param name="row">Which row of the frame it was on.</param>
     /// <param name="column">How far along that row.</param>
     /// <returns>What it landed on, or nothing when it landed on none of it.</returns>
-    public TabHit? Tab(int row, int column) => _strip.At(row, column);
+    public TabHit? Tab(int row, int column)
+    {
+        return _strip.At(row, column);
+    }
 
     /// <summary>Scrolls the tabs, for a click on one of the markers.</summary>
     /// <param name="by">Which way, and how far.</param>
-    public void Scroll(int by) => _strip.Scroll(by);
+    public void Scroll(int by)
+    {
+        _strip.Scroll(by);
+    }
 }

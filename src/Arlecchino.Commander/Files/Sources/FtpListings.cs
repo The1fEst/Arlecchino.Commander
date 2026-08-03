@@ -5,16 +5,16 @@ using System.Globalization;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// Reads what a server said. Everything here is a pure reading of text, which is where the whole of
-/// the guesswork in FTP lives: a listing has two shapes and a half, and the two ways of asking for a
-/// data connection answer with the port buried differently.
+///     Reads what a server said. Everything here is a pure reading of text, which is where the whole of
+///     the guesswork in FTP lives: a listing has two shapes and a half, and the two ways of asking for a
+///     data connection answer with the port buried differently.
 /// </summary>
 public static class FtpListings
 {
     /// <summary>
-    /// Reads an <c>MLSD</c> listing, which is the one worth having: every entry is
-    /// <c>fact=value;…; name</c>, the facts are named, and the time is written the same way by
-    /// everyone. Entries for the folder itself and its parent are left out.
+    ///     Reads an <c>MLSD</c> listing, which is the one worth having: every entry is
+    ///     <c>fact=value;…; name</c>, the facts are named, and the time is written the same way by
+    ///     everyone. Entries for the folder itself and its parent are left out.
     /// </summary>
     /// <param name="text">What came over the data connection.</param>
     /// <returns>The entries.</returns>
@@ -37,7 +37,7 @@ public static class FtpListings
             var kind = "";
             var size = 0L;
             var mode = 0;
-            var modified = default(DateTime);
+            var modified = DateTime.MinValue;
 
             foreach (var fact in line[..split].Split(';', StringSplitOptions.RemoveEmptyEntries))
             {
@@ -85,9 +85,9 @@ public static class FtpListings
     }
 
     /// <summary>
-    /// Reads a <c>LIST</c> listing, which is whatever the server felt like printing. Two shapes cover
-    /// nearly everything: the Unix one that <c>ls -l</c> writes, and the one old Windows servers write.
-    /// Anything else is skipped rather than guessed at.
+    ///     Reads a <c>LIST</c> listing, which is whatever the server felt like printing. Two shapes cover
+    ///     nearly everything: the Unix one that <c>ls -l</c> writes, and the one old Windows servers write.
+    ///     Anything else is skipped rather than guessed at.
     /// </summary>
     /// <param name="text">What came over the data connection.</param>
     /// <returns>The entries it could read.</returns>
@@ -111,8 +111,8 @@ public static class FtpListings
     }
 
     /// <summary>
-    /// Finds the port in the answer to <c>EPSV</c>, which writes it between three delimiters of its own
-    /// choosing: <c>229 Entering Extended Passive Mode (|||6446|)</c>.
+    ///     Finds the port in the answer to <c>EPSV</c>, which writes it between three delimiters of its own
+    ///     choosing: <c>229 Entering Extended Passive Mode (|||6446|)</c>.
     /// </summary>
     /// <param name="text">The reply.</param>
     /// <returns>The port, or nought when it is not in there.</returns>
@@ -136,8 +136,8 @@ public static class FtpListings
     }
 
     /// <summary>
-    /// Finds the port in the answer to <c>PASV</c>, where it is the last two of six numbers, high byte
-    /// first: <c>227 Entering Passive Mode (10,0,0,1,25,14)</c> means 25 × 256 + 14.
+    ///     Finds the port in the answer to <c>PASV</c>, where it is the last two of six numbers, high byte
+    ///     first: <c>227 Entering Passive Mode (10,0,0,1,25,14)</c> means 25 × 256 + 14.
     /// </summary>
     /// <param name="text">The reply.</param>
     /// <returns>The port, or nought when it is not in there.</returns>
@@ -163,7 +163,7 @@ public static class FtpListings
         var high = Port(numbers[^2]);
         var low = Port(numbers[^1]);
 
-        return high < 0 || low < 0 || high > 255 || low > 255 ? 0 : (high * 256) + low;
+        return high < 0 || low < 0 || high > 255 || low > 255 ? 0 : high * 256 + low;
     }
 
     private static FtpEntry? Unix(string line)
@@ -198,9 +198,9 @@ public static class FtpListings
     }
 
     /// <summary>
-    /// Reads the date <c>ls -l</c> writes, which is three words and a decision. Something changed
-    /// within the last half year is written with the time and no year at all — so the year is the one
-    /// that puts it in the past, since a listing cannot hold tomorrow.
+    ///     Reads the date <c>ls -l</c> writes, which is three words and a decision. Something changed
+    ///     within the last half year is written with the time and no year at all — so the year is the one
+    ///     that puts it in the past, since a listing cannot hold tomorrow.
     /// </summary>
     /// <param name="month">The month, as three letters.</param>
     /// <param name="day">The day.</param>
@@ -254,8 +254,8 @@ public static class FtpListings
     }
 
     /// <summary>
-    /// Everything from the given word to the end of the line, taken from the line itself rather than
-    /// from the split, so that a name holding spaces survives.
+    ///     Everything from the given word to the end of the line, taken from the line itself rather than
+    ///     from the split, so that a name holding spaces survives.
     /// </summary>
     /// <param name="line">The whole line.</param>
     /// <param name="parts">It, split on spaces.</param>
@@ -284,17 +284,18 @@ public static class FtpListings
 
         for (var group = 0; group < 3; group++)
         {
-            var at = 1 + (group * 3);
+            var at = 1 + group * 3;
             var value = (line[at] == 'r' ? 4 : 0) + (line[at + 1] == 'w' ? 2 : 0) + (line[at + 2] is 'x' or 's' ? 1 : 0);
 
-            digits = (digits * 10) + value;
+            digits = digits * 10 + value;
         }
 
         return digits;
     }
 
-    private static DateTime Stamp(string value) =>
-        DateTime.TryParseExact(
+    private static DateTime Stamp(string value)
+    {
+        return DateTime.TryParseExact(
             value.Length > 14 ? value[..14] : value,
             "yyyyMMddHHmmss",
             CultureInfo.InvariantCulture,
@@ -302,11 +303,14 @@ public static class FtpListings
             out var stamp)
             ? stamp.ToLocalTime()
             : default;
+    }
 
-    private static DateTime Dated(string date, string time) =>
-        DateTime.TryParse($"{date} {time}", CultureInfo.InvariantCulture, DateTimeStyles.None, out var stamp)
+    private static DateTime Dated(string date, string time)
+    {
+        return DateTime.TryParse($"{date} {time}", CultureInfo.InvariantCulture, DateTimeStyles.None, out var stamp)
             ? stamp
             : default;
+    }
 
     private static int Octal(string value)
     {
@@ -319,21 +323,22 @@ public static class FtpListings
                 return 0;
             }
 
-            digits = (digits * 10) + (letter - '0');
+            digits = digits * 10 + (letter - '0');
         }
 
         return digits % 1000;
     }
 
-    private static int Port(string value) =>
-        int.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var port) ? port : -1;
+    private static int Port(string value)
+    {
+        return int.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var port) ? port : -1;
+    }
 
     private static IEnumerable<string> Lines(string text)
     {
         foreach (var line in text.ReplaceLineEndings("\n").Split('\n'))
         {
             var trimmed = line.TrimEnd();
-
             if (trimmed.Length > 0)
             {
                 yield return trimmed;

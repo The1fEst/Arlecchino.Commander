@@ -1,22 +1,24 @@
 using System;
 using System.IO;
+using Arlecchino.Commander.Tests.Support;
 using Arlecchino.Commander.Views;
 using Xunit;
-
-using Arlecchino.Commander.Tests.Support;
 
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-/// A file as the viewer shows it. Which file it is goes in before the first frame is asked for, but
-/// the bytes arrive after it: the view is built with an empty body and fills in when the read is
-/// answered, so what is on screen is waited for rather than assumed.
+///     A file as the viewer shows it. Which file it is goes in before the first frame is asked for, but
+///     the bytes arrive after it: the view is built with an empty body and fills in when the read is
+///     answered, so what is on screen is waited for rather than assumed.
 /// </summary>
 public sealed class ViewerScreenTests : IDisposable
 {
     private readonly ScreenApp _app = new(ViewKind.Viewer);
 
-    public void Dispose() => _app.Dispose();
+    public void Dispose()
+    {
+        _app.Dispose();
+    }
 
     private void Viewing(string name, string text)
     {
@@ -52,7 +54,7 @@ public sealed class ViewerScreenTests : IDisposable
 
         var lines = _app.FrameLines();
 
-        Assert.All(lines, static row => Assert.True(row.Length <= 100));
+        Assert.All(lines, row => Assert.True(row.Length <= _app.Width));
     }
 
     [Fact]

@@ -3,22 +3,27 @@ using System.IO;
 using System.Linq;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
+using Arlecchino.Commander.Tests.Support;
 using Arlecchino.Commander.Views;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Diagnostics;
 using Xunit;
 
-using Arlecchino.Commander.Tests.Support;
-
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-/// The panels as they reach the screen. Everything else here is about parsing what a server or a disk
-/// said; this is about what the person in front of the terminal ends up looking at, which until now
-/// nothing asserted.
+///     The panels as they reach the screen. Everything else here is about parsing what a server or a disk
+///     said; this is about what the person in front of the terminal ends up looking at, which until now
+///     nothing asserted.
 /// </summary>
 public sealed class CommanderScreenTests : IDisposable
 {
+    /// <summary>
+    ///     The narrowest terminal the application will draw in at all, which is where four tabs stop
+    ///     fitting even shortened and the strip has to scroll.
+    /// </summary>
+    private const int Cramped = 125;
+
     private readonly ScreenApp _app = new(ViewKind.Commander);
 
     public CommanderScreenTests()
@@ -31,7 +36,10 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Settled();
     }
 
-    public void Dispose() => _app.Dispose();
+    public void Dispose()
+    {
+        _app.Dispose();
+    }
 
     [Fact]
     public void BothPanelsShowWhatIsInTheFolder()
@@ -46,8 +54,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// The one thing a frame read as text cannot answer. A folder and a file read the same; what tells
-    /// them apart is the colour, and the colour is on the screen rather than in the words.
+    ///     The one thing a frame read as text cannot answer. A folder and a file read the same; what tells
+    ///     them apart is the colour, and the colour is on the screen rather than in the words.
     /// </summary>
     [Fact]
     public void AFolderIsDrawnInTheColourFoldersGet()
@@ -116,8 +124,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// A tab is a pair of panels of its own. Opening one leaves the pair already on screen alone, and
-    /// switching back shows them as they were.
+    ///     A tab is a pair of panels of its own. Opening one leaves the pair already on screen alone, and
+    ///     switching back shows them as they were.
     /// </summary>
     [Fact]
     public void EachTabHasPanelsOfItsOwn()
@@ -144,8 +152,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// Connecting lands in the panel that asked for it rather than in a tab of its own, and the tab
-    /// says so: the side that went to the server is named after it.
+    ///     Connecting lands in the panel that asked for it rather than in a tab of its own, and the tab
+    ///     says so: the side that went to the server is named after it.
     /// </summary>
     [Fact]
     public void ConnectingStaysInTheTabItWasAskedFrom()
@@ -177,8 +185,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// Clicking the <c>+</c> at the end of the tabs opens one. It is three cells wide, so it is the one
-    /// place on the band where the hit-testing has to agree with the drawing exactly.
+    ///     Clicking the <c>+</c> at the end of the tabs opens one. It is three cells wide, so it is the one
+    ///     place on the band where the hit-testing has to agree with the drawing exactly.
     /// </summary>
     [Fact]
     public void ClickingThePlusOpensATab()
@@ -213,9 +221,9 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// The cross belongs to itself and not to the tab it sits on. The two hit areas touch, so a cross
-    /// that grew a cell or a tab that did would leave one of them unreachable — which is exactly what
-    /// used to be wrong with the plus at the end.
+    ///     The cross belongs to itself and not to the tab it sits on. The two hit areas touch, so a cross
+    ///     that grew a cell or a tab that did would leave one of them unreachable — which is exactly what
+    ///     used to be wrong with the plus at the end.
     /// </summary>
     [Fact]
     public void ClickingATabBesideItsCrossStillShowsIt()
@@ -235,9 +243,9 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// The dot says which panel a tab was left in, and it says it for the tabs not on screen too. The
-    /// store holds that side only for the tab being worked in, so reading the store for all of them
-    /// put the dot on the left of every tab in the band whatever side it was really left on.
+    ///     The dot says which panel a tab was left in, and it says it for the tabs not on screen too. The
+    ///     store holds that side only for the tab being worked in, so reading the store for all of them
+    ///     put the dot on the left of every tab in the band whatever side it was really left on.
     /// </summary>
     [Fact]
     public void TheDotSaysWhichSideATabWasLeftIn()
@@ -253,9 +261,9 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// Too many tabs for the band shortens their names rather than dropping the ones that no longer
-    /// fit. A tab that is not drawn cannot be clicked, and the one that would go is not the one anybody
-    /// would have chosen.
+    ///     Too many tabs for the band shortens their names rather than dropping the ones that no longer
+    ///     fit. A tab that is not drawn cannot be clicked, and the one that would go is not the one anybody
+    ///     would have chosen.
     /// </summary>
     [Fact]
     public void TooManyTabsShortenTheirNamesRatherThanDisappear()
@@ -271,18 +279,18 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// Past the point where shortening leaves a name saying anything, the strip scrolls instead. The
-    /// tab being worked in is the one that must stay in view — a strip that has scrolled away from the
-    /// panels on screen says nothing about where the work is.
+    ///     Past the point where shortening leaves a name saying anything, the strip scrolls instead. The
+    ///     tab being worked in is the one that must stay in view — a strip that has scrolled away from the
+    ///     panels on screen says nothing about where the work is.
     /// </summary>
     [Fact]
     public void PastShorteningTheStripScrollsAndKeepsTheOpenTabInView()
     {
-        using var narrow = Tabbed(110, 4);
+        using var narrow = Tabbed(Cramped, 4);
 
         var band = narrow.FrameLines()[0];
 
-        Assert.Equal(2, band.Count(letter => letter == '×'));
+        Assert.Equal(3, band.Count(letter => letter == '×'));
         Assert.Contains('‹', band);
         Assert.Contains('›', band);
         Assert.Equal(3, narrow.Sessions.Open.Value);
@@ -290,14 +298,14 @@ public sealed class CommanderScreenTests : IDisposable
         narrow.Click(0, band.IndexOf('●'));
         narrow.Settled();
 
-        Assert.Equal(2, narrow.Sessions.Open.Value);
+        Assert.Equal(1, narrow.Sessions.Open.Value);
     }
 
     /// <summary>Clicking a marker scrolls to the tabs that did not fit.</summary>
     [Fact]
     public void ClickingTheMarkerScrollsToTheTabsBehindIt()
     {
-        using var narrow = Tabbed(110, 4);
+        using var narrow = Tabbed(Cramped, 4);
 
         narrow.Click(0, narrow.FrameLines()[0].IndexOf('‹'));
         narrow.Settled();
@@ -305,7 +313,7 @@ public sealed class CommanderScreenTests : IDisposable
         narrow.Click(0, narrow.FrameLines()[0].IndexOf('●'));
         narrow.Settled();
 
-        Assert.Equal(1, narrow.Sessions.Open.Value);
+        Assert.Equal(0, narrow.Sessions.Open.Value);
     }
 
     /// <summary>An application of a given width with a given number of tabs open, settled and drawn.</summary>
@@ -366,9 +374,9 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// <c>Ctrl+PageUp</c> goes to the folder above, the way it always has. It once meant the tab beside
-    /// this one as well, in code the router never reached — a view's commands are read before its
-    /// <c>Handle</c>, so the folder won every time and the tab could not be got to at all.
+    ///     <c>Ctrl+PageUp</c> goes to the folder above, the way it always has. It once meant the tab beside
+    ///     this one as well, in code the router never reached — a view's commands are read before its
+    ///     <c>Handle</c>, so the folder won every time and the tab could not be got to at all.
     /// </summary>
     [Fact]
     public void ControlPageUpGoesToTheFolderAbove()
@@ -383,8 +391,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// The button that says <c>Enter Make</c> makes the folder when it is clicked. A button that can
-    /// only be pressed by the key printed on it is a picture of a button.
+    ///     The button that says <c>Enter Make</c> makes the folder when it is clicked. A button that can
+    ///     only be pressed by the key printed on it is a picture of a button.
     /// </summary>
     [Fact]
     public void ClickingTheConfirmButtonAnswersTheQuestion()
@@ -416,8 +424,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// A row of a list is selected by a click and run by a second one on the row already selected,
-    /// which is the rule everywhere else a list is clicked.
+    ///     A row of a list is selected by a click and run by a second one on the row already selected,
+    ///     which is the rule everywhere else a list is clicked.
     /// </summary>
     [Fact]
     public void ClickingARowTwiceRunsIt()
@@ -504,9 +512,9 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// The bar along the bottom says what the keys of this moment do, in words. It is not a fixed row
-    /// of ten: what is on it is what makes sense for what the cursor is on, spelled out rather than
-    /// abbreviated to fit.
+    ///     The bar along the bottom says what the keys of this moment do, in words. It is not a fixed row
+    ///     of ten: what is on it is what makes sense for what the cursor is on, spelled out rather than
+    ///     abbreviated to fit.
     /// </summary>
     [Fact]
     public void TheActionsAlongTheBottomAreSpelledOut()
@@ -520,8 +528,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// The column heads are the first thing anybody with a mouse clicks, so clicking one sorts by it.
-    /// Clicking the same one again turns the order around, which is what the arrow beside it says.
+    ///     The column heads are the first thing anybody with a mouse clicks, so clicking one sorts by it.
+    ///     Clicking the same one again turns the order around, which is what the arrow beside it says.
     /// </summary>
     [Fact]
     public void ClickingAColumnHeadSortsByIt()
@@ -545,8 +553,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// Marking changes every verb on the bar: with something in hand the question is no longer what
-    /// this row is but what happens to what was marked.
+    ///     Marking changes every verb on the bar: with something in hand the question is no longer what
+    ///     this row is but what happens to what was marked.
     /// </summary>
     [Fact]
     public void MarkingSomethingRewritesTheBar()
@@ -565,8 +573,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// A folder that cannot be read is an exception on the way up from the disk. What has to reach the
-    /// screen is a sentence, not a stack trace and not an empty panel that looks like an empty folder.
+    ///     A folder that cannot be read is an exception on the way up from the disk. What has to reach the
+    ///     screen is a sentence, not a stack trace and not an empty panel that looks like an empty folder.
     /// </summary>
     [Fact]
     public void AFolderThatCannotBeReadIsSaidOnThePanel()
@@ -597,8 +605,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    /// The card in the corner is the whole of the reporting: what a job came to is its colour, and
-    /// what it says is the words the output row used to hold on its own.
+    ///     The card in the corner is the whole of the reporting: what a job came to is its colour, and
+    ///     what it says is the words the output row used to hold on its own.
     /// </summary>
     [Fact]
     public void WorkThatWentWellGetsACardInTheColourThingsThatWorkedGet()
@@ -614,7 +622,7 @@ public sealed class CommanderScreenTests : IDisposable
     {
         _app.State.Notifications.Raise(new(DateTimeOffset.Now, NotificationLevel.Failure, "3 files would not copy")
         {
-            Detail = static () => "one.txt: in use",
+            Detail = static () => "one.txt: in use"
         });
 
         var frame = _app.Frame();

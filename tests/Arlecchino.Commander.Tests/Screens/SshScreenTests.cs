@@ -1,20 +1,22 @@
 using System;
+using Arlecchino.Commander.Tests.Support;
 using Arlecchino.Commander.Views;
 using Xunit;
-
-using Arlecchino.Commander.Tests.Support;
 
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-/// The shell over a connection, with no connection. That is the state worth pinning: it must say so
-/// plainly rather than draw an empty pane or reach for a session that is not there.
+///     The shell over a connection, with no connection. That is the state worth pinning: it must say so
+///     plainly rather than draw an empty pane or reach for a session that is not there.
 /// </summary>
 public sealed class SshScreenTests : IDisposable
 {
     private readonly ScreenApp _app = new(ViewKind.Ssh);
 
-    public void Dispose() => _app.Dispose();
+    public void Dispose()
+    {
+        _app.Dispose();
+    }
 
     [Fact]
     public void WithNothingConnectedItSaysWhatIsMissing()
@@ -29,8 +31,8 @@ public sealed class SshScreenTests : IDisposable
     }
 
     /// <summary>
-    /// With no session there is nothing to run on, and the view says so instead of asking for a command
-    /// it could not send anywhere.
+    ///     With no session there is nothing to run on, and the view says so instead of asking for a command
+    ///     it could not send anywhere.
     /// </summary>
     [Fact]
     public void RunningWithNoSessionIsRefusedRatherThanAttempted()
@@ -49,7 +51,7 @@ public sealed class SshScreenTests : IDisposable
         var lines = _app.FrameLines();
 
         Assert.Equal(30, lines.Length);
-        Assert.All(lines, static row => Assert.True(row.Length <= 100));
+        Assert.All(lines, row => Assert.True(row.Length <= _app.Width));
     }
 
     [Fact]
