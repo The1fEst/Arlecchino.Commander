@@ -126,7 +126,7 @@ public sealed class Operations : IArlecchinoStore
     {
         if (IsBusy)
         {
-            _state.Output = $"{_busy} still, Esc stops it";
+            _state.Output = Loc(LocString.SaidBusyStops, _busy);
             return;
         }
 

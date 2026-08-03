@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Arlecchino.Commander.Views;
+using Arlecchino.Input;
 using Xunit;
 
 using Arlecchino.Commander.Tests.Support;
@@ -398,12 +399,11 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Escape is bound to stopping the work, and most of the time there is no work. The command says
-    /// so and stands aside, which is what lets the same key end the search that runs while you type —
-    /// one key for "get me out of this", whichever thing there is to get out of.
+    /// Escape belongs to whatever is on screen: it ends the search that runs while you type, and it
+    /// leaves a filter, a dialog or a screen. Nothing on this screen claims it.
     /// </summary>
     [Fact]
-    public void EscapeEndsTheSearchWhenThereIsNothingToStop()
+    public void EscapeEndsTheSearch()
     {
         _app.Press(ConsoleKey.S, control: true);
         _app.Type("al");
@@ -413,5 +413,19 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Press(ConsoleKey.Escape);
 
         Assert.DoesNotContain("jump to", _app.Frame(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Stopping the work is <c>Alt+Esc</c>. It was plain Escape, which meant one key stood for "get
+    /// out of this" most of the time and "stop the copy" whenever something was running — and you
+    /// cannot press a key you have to think about first.
+    /// </summary>
+    [Fact]
+    public void StoppingTheWorkIsAltEscape()
+    {
+        var stop = _app.Navigator.CurrentCommands
+            .Single(command => command.Label() == "stop what is running");
+
+        Assert.Equal(new KeyBinding(ConsoleKey.Escape, ConsoleModifiers.Alt), stop.Binding);
     }
 }

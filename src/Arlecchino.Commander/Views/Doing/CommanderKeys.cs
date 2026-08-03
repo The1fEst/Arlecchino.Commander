@@ -134,7 +134,7 @@ public static class CommanderKeys
                 static () => "name onto the command line", () => Named(panels, typing)),
             new()
             {
-                Binding = new(ConsoleKey.Escape),
+                Binding = new(ConsoleKey.Escape, ConsoleModifiers.Alt),
                 Label = static () => "stop what is running",
                 IsEnabled = () => operations.IsBusy || runner.IsRunning,
                 Run = () => Stop(operations, runner),
@@ -232,9 +232,12 @@ public static class CommanderKeys
 
     /// <summary>
     /// Calls off whatever is running: a command first, then the file work. A dialog is not here — the
-    /// framework hands every key to the dialog on top before this screen sees any of them — and with
-    /// nothing running at all the key is not taken, so Escape reaches the panels and ends the search
-    /// that runs while you type.
+    /// framework hands every key to the dialog on top before this screen sees any of them.
+    ///
+    /// It is <c>Alt+Esc</c> and not <c>Esc</c> because plain Escape is already the way out of half a
+    /// dozen things — a search being typed, a filter, a dialog, the screen you are on — and a key that
+    /// means "get out of this" some of the time and "stop the copy" the rest of the time is one you
+    /// hesitate over. Stopping work that is running deserves a key nothing else is asking for.
     /// </summary>
     /// <param name="operations">The file work.</param>
     /// <param name="runner">The commands.</param>

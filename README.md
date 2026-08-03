@@ -30,7 +30,7 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
 
 ![Copying asks where to](assets/screenshots/copy.png)
 
-![A copy running in the background, with a bar and Esc to stop](assets/screenshots/progress.png)
+![A copy running in the background, with a bar and Alt+Esc to stop](assets/screenshots/progress.png)
 
 ![The same copy opened in full, with Stop offered](assets/screenshots/notification.png)
 
@@ -89,7 +89,7 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   `HostName`, `User`, `Port` and `IdentityFile`, or the default keys in `~/.ssh` when it names none.
 - **Commands over SSH.** The `Command` menu runs one on the connected host and shows what it said.
 - **Work that does not freeze the screen.** Copy, move and delete run in the background with a bar,
-  the file being worked on, and `Esc` to stop; each reports itself as a notification that turns into
+  the file being worked on, and `Alt+Esc` to stop; each reports itself as a notification that turns into
   what came of it, with the errors readable in full behind `Enter`.
 
 ## Reading a frame without a terminal
