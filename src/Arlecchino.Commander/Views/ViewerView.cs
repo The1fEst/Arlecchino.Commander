@@ -39,7 +39,7 @@ public sealed class ViewerView : IArlecchinoView
     private PaneTree _layout;
     private FocusRing _focus;
 
-    private string _kind = "reading";
+    private string _kind = Loc(LocString.ViewerReading);
     private long _read;
 
     /// <summary>
@@ -67,8 +67,8 @@ public sealed class ViewerView : IArlecchinoView
 
         var status = new StatusBar
         {
-            Left = [() => $"{Sizes.Grouped(_read)} bytes · {_kind}"],
-            Right = [static () => "Esc back", static () => "↑↓ PgUp PgDn scroll"],
+            Left = [() => Loc(LocString.ViewerBytes, Sizes.Grouped(_read), _kind)],
+            Right = [static () => Loc(LocString.ViewerBack), static () => Loc(LocString.ViewerScroll)],
         };
 
         _layout = Chrome(empty);
@@ -104,9 +104,9 @@ public sealed class ViewerView : IArlecchinoView
 
     public IReadOnlyList<ViewCommand> Commands() =>
     [
-        ViewCommand.Navigating(ConsoleKey.Escape, static () => "back", static () => ViewKind.Commander),
-        ViewCommand.Navigating(ConsoleKey.F3, static () => "back", static () => ViewKind.Commander),
-        ViewCommand.For(ConsoleKey.F10, static () => "quit", _lifetime.StopApplication),
+        Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
+        Bind.Going(new(ConsoleKey.F3), LocString.KeyBack, static () => ViewKind.Commander),
+        Bind.To(new(ConsoleKey.F10), LocString.BarQuit, _lifetime.StopApplication),
     ];
 
     /// <summary>
@@ -142,7 +142,7 @@ public sealed class ViewerView : IArlecchinoView
 
                     picture.Show(raster.Pixels, raster.Width, raster.Height);
 
-                    return (picture, $"png, {raster.Width}×{raster.Height}", whole.Length);
+                    return (picture, Loc(LocString.ViewerPicture, raster.Width, raster.Height), whole.Length);
                 }
             }
 
@@ -154,16 +154,16 @@ public sealed class ViewerView : IArlecchinoView
                     : Encoding.UTF8.GetString(head).Replace("\t", "    ", StringComparison.Ordinal),
             };
 
-            return (text, Truncated(binary ? "hex" : "text", head.Length, size), size);
+            return (text, Truncated(Loc(binary ? LocString.ViewerHex : LocString.ViewerText), head.Length, size), size);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return (new TextView(options.Keymap) { Text = error.Message }, "unreadable", 0);
+            return (new TextView(options.Keymap) { Text = error.Message }, Loc(LocString.ViewerUnreadable), 0);
         }
     }
 
     private static string Truncated(string kind, int read, long size) =>
-        read < size ? $"{kind}, first {Sizes.Brief(read)}" : kind;
+        read < size ? Loc(LocString.ViewerFirst, kind, Sizes.Brief(read)) : kind;
 
     /// <summary>
     /// The front of a file, as much of it as the viewer will show. The whole of a large file is never

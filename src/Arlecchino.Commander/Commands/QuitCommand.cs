@@ -16,7 +16,7 @@ public sealed class QuitCommand : IArlecchinoCommand
 
     public string Icon => "×";
 
-    public string Label => "Quit";
+    public string Label => Loc(LocString.BarQuit);
 
     public ViewRoute Execute()
     {

@@ -61,23 +61,25 @@ public sealed class OutputView : IArlecchinoView
 
     public IReadOnlyList<ViewCommand> Commands() =>
     [
-        ViewCommand.Navigating(ConsoleKey.Escape, static () => "back", static () => ViewKind.Commander),
-        ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Control), static () => "clear", _runner.Clear),
+        Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
+        Bind.To(new(ConsoleKey.K, ConsoleModifiers.Control), LocString.KeyClear, _runner.Clear),
     ];
 
     private void DrawHeader(SurfaceRegion header) =>
-        Sheet.Title(header, "Output", "everything the commands typed on the command line have printed");
+        Sheet.Title(header, Loc(LocString.OutputTitle), Loc(LocString.OutputSaid));
 
-    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Ctrl+K clears · Esc back");
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), Loc(LocString.OutputHints));
 
     private string Said()
     {
         if (_runner.IsRunning)
         {
-            return $"running {_runner.Last}";
+            return Loc(LocString.OutputRunning, _runner.Last);
         }
 
-        return _runner.Lines.Count == 0 ? "nothing run yet" : $"{_runner.Lines.Count} lines";
+        return _runner.Lines.Count == 0
+            ? Loc(LocString.OutputNothing)
+            : Loc(LocString.OutputLines, _runner.Lines.Count);
     }
 
     /// <summary>

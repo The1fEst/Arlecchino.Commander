@@ -63,24 +63,20 @@ public sealed class FindView : IArlecchinoView
 
     public IReadOnlyList<ViewCommand> Commands() =>
     [
-        ViewCommand.Navigating(ConsoleKey.Escape, static () => "back", static () => ViewKind.Commander),
-        new()
-        {
-            Binding = new(ConsoleKey.F3),
-            Label = static () => "stop the search",
-            IsEnabled = () => _finder.IsRunning,
-            Run = () =>
-            {
-                _finder.Stop();
-
-                return ViewRoute.None;
-            },
-        },
+        Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
+        Bind.When(new(ConsoleKey.F3), LocString.FindStop, () => _finder.IsRunning, Stop),
     ];
+
+    private ViewRoute Stop()
+    {
+        _finder.Stop();
+
+        return ViewRoute.None;
+    }
 
     private void DrawHeader(SurfaceRegion header)
     {
-        Sheet.Title(header, _finder.What, $"{_finder.Found.Count} found in {_finder.Looked} folders");
+        Sheet.Title(header, _finder.What, Loc(LocString.FindFoundIn, _finder.Found.Count, _finder.Looked));
 
         if (!_finder.IsRunning)
         {
@@ -91,7 +87,7 @@ public sealed class FindView : IArlecchinoView
         _spinner.Draw(header.SplitLeft(header.Width - 1).Right);
     }
 
-    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Enter goes there · Esc back");
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), Loc(LocString.FindHints));
 
     /// <summary>
     /// A result as it is listed: the path below the folder the search started from, because every
@@ -106,12 +102,14 @@ public sealed class FindView : IArlecchinoView
             ? hit.Folder[root.Length..].TrimStart('/', '\\')
             : hit.Folder;
 
-        return folder.Length == 0 ? hit.Entry.Name : $"{folder}  ·  {hit.Entry.Name}";
+        return folder.Length == 0 ? hit.Entry.Name : Loc(LocString.Joined, folder, hit.Entry.Name);
     }
 
     private string Said() => _finder.IsRunning
-        ? $"{_spinner.Current} searching, F3 stops"
-        : _finder.Found.Count == 0 ? "nothing found" : $"{_finder.Found.Count} found";
+        ? Loc(LocString.FindSearching, _spinner.Current)
+        : _finder.Found.Count == 0
+            ? Loc(LocString.FindNothing)
+            : Loc(LocString.FindFound, _finder.Found.Count);
 
     /// <summary>
     /// Sends the panel that was active to the folder a result is in, with the cursor on the file

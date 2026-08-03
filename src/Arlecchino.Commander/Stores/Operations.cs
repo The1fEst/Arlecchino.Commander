@@ -52,25 +52,28 @@ public sealed class Operations : IArlecchinoStore
     public void Copy(IFileSource from, IReadOnlyList<FileEntry> sources, IFileSource to, string target) =>
         Start(
             (outcome, token) => FileTasks.CopyAsync(from, sources, to, target, outcome, token),
-            "Copied",
-            "Copying",
+            Loc(LocString.WorkCopied),
+            Loc(LocString.WorkCopying),
             Sizing(from, sources));
 
     public void Move(IFileSource from, IReadOnlyList<FileEntry> sources, IFileSource to, string target) =>
         Start(
             (outcome, token) => MovingAsync(from, sources, to, target, outcome, token),
-            "Moved",
-            "Moving",
+            Loc(LocString.WorkMoved),
+            Loc(LocString.WorkMoving),
             Sizing(from, sources));
 
     public void Rename(IFileSource source, FileEntry entry, string target) =>
-        Start((outcome, _) => FileTasks.RenameAsync(source, entry, target, outcome), "Renamed", "Renaming");
+        Start(
+            (outcome, _) => FileTasks.RenameAsync(source, entry, target, outcome),
+            Loc(LocString.WorkRenamed),
+            Loc(LocString.WorkRenaming));
 
     public void Delete(IFileSource source, IReadOnlyList<FileEntry> entries) =>
         Start(
             (outcome, token) => FileTasks.DeleteAsync(source, entries, outcome, token),
-            "Deleted",
-            "Deleting",
+            Loc(LocString.WorkDeleted),
+            Loc(LocString.WorkDeleting),
             Sizing(source, entries));
 
     private static async Task MovingAsync(
@@ -141,7 +144,7 @@ public sealed class Operations : IArlecchinoStore
             Progress = Progress,
             Share = () => outcome.IsMeasured ? outcome.Share : null,
             Detail = Progress,
-            Actions = [new(static () => "Stop", Cancel)],
+            Actions = [new(static () => Loc(LocString.WorkStop), Cancel)],
         });
 
         Redraw(cancelling.Token);

@@ -19,7 +19,7 @@ public sealed class LocalSource : IFileSource
 {
     private const int Block = 128 * 1024;
 
-    public string Label => "local";
+    public string Label => Loc(LocString.HeaderLocal);
 
     public bool IsRemote => false;
 

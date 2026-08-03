@@ -142,7 +142,7 @@ public static class OperationBox
         for (var index = 0; index < shown; index++)
         {
             var entry = operation.Items[index];
-            var meta = entry.IsFolder ? "folder" : Sizes.Brief(entry.Size);
+            var meta = entry.IsFolder ? Loc(LocString.KindFolder) : Sizes.Brief(entry.Size);
 
             inside.Write(row + 1 + index, 0, Kinds.Tag(entry), coat.Faded);
             inside.Write(row + 1 + index, Kinds.TagWidth,

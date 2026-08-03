@@ -51,7 +51,7 @@ public sealed class Runner : IArlecchinoStore
 
         if (IsRunning)
         {
-            _state.Output = "A command is still running";
+            _state.Output = Loc(LocString.SaidCommandRunning);
             return;
         }
 
@@ -75,7 +75,7 @@ public sealed class Runner : IArlecchinoStore
                 Lines.Add(said);
                 Trim();
 
-                _state.Output = $"{command} · Ctrl+O reads what it said";
+                _state.Output = Loc(LocString.SaidCommandDone, command);
 
                 finished();
             });
@@ -89,13 +89,13 @@ public sealed class Runner : IArlecchinoStore
 
         if (running is null)
         {
-            _state.Output = "Nothing is running";
+            _state.Output = Loc(LocString.SaidNothingRunning);
             return;
         }
 
         var refused = running.Interrupt();
 
-        _state.Output = refused.Length == 0 ? "Stopped" : refused;
+        _state.Output = refused.Length == 0 ? Loc(LocString.SaidStopped) : refused;
     }
 
     public void Clear() => Lines.Clear();
@@ -118,7 +118,7 @@ public sealed class Runner : IArlecchinoStore
     {
         if (source.Start(command, folder) is not { } run)
         {
-            return [$"[failed] {source.Label} runs no commands"];
+            return [$"[failed] {Loc(LocString.SaidRunsNoCommands, source.Label)}"];
         }
 
         _running = run;

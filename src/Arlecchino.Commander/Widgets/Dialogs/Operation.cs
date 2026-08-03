@@ -74,7 +74,7 @@ public sealed class Operation
     public IReadOnlyList<FileEntry> Items { get; init; } = [];
 
     /// <summary>What to call the list of them.</summary>
-    public string ItemsLabel { get; init; } = "what";
+    public string ItemsLabel { get; init; } = Loc(LocString.OperationWhat);
 
     /// <summary>What the one field is for, or nothing when there is no field — as for deleting.</summary>
     public string? FieldLabel { get; init; }

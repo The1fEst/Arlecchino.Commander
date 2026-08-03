@@ -28,17 +28,9 @@ public sealed class HostCheck
     public void Refuse(HostVerdict verdict, string host, string kind, string fingerprint) =>
         Refusal = verdict switch
         {
-            HostVerdict.Changed =>
-                $"The {kind} key of {host} is not the one known_hosts has for it. This is what an " +
-                $"attempt to sit in the middle of the connection looks like. If the server was " +
-                $"genuinely rebuilt, remove its line with: ssh-keygen -R {host}",
-
-            HostVerdict.Revoked =>
-                $"The {kind} key of {host} is marked revoked in known_hosts.",
-
-            _ =>
-                $"{host} is not in known_hosts, so there is nothing to check its {kind} key against " +
-                $"(SHA256:{fingerprint}). Connect once with: ssh {host}",
+            HostVerdict.Changed => Loc(LocString.HostKeyChanged, kind, host, fingerprint),
+            HostVerdict.Revoked => Loc(LocString.HostKeyRevoked, kind, host, fingerprint),
+            _ => Loc(LocString.HostKeyUnknown, kind, host, fingerprint),
         };
 }
 

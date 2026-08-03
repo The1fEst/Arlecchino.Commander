@@ -74,19 +74,19 @@ public sealed class SshView : IArlecchinoView
 
     public IReadOnlyList<ViewCommand> Commands() =>
     [
-        ViewCommand.Navigating(ConsoleKey.Escape, static () => "back", static () => ViewKind.Commander),
-        ViewCommand.For(ConsoleKey.Enter, static () => "run a command", Ask),
-        ViewCommand.For(new KeyBinding(ConsoleKey.K, ConsoleModifiers.Control), static () => "clear", _lines.Clear),
+        Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
+        Bind.To(new(ConsoleKey.Enter), LocString.SshRun, Ask),
+        Bind.To(new(ConsoleKey.K, ConsoleModifiers.Control), LocString.KeyClear, _lines.Clear),
     ];
 
     private void DrawHeader(SurfaceRegion header)
     {
         Sheet.Title(
             header,
-            _session.Ssh is { } ssh ? $"SSH · {ssh.Label}" : "SSH · nothing connected",
+            _session.Ssh is { } ssh ? Loc(LocString.SshTitle, ssh.Label) : Loc(LocString.SshNowhere),
             _session.Ssh is null
-                ? "Connect a panel over sftp first; those credentials are reused here"
-                : $"Last command: {(_command.Length == 0 ? "none yet" : _command)}");
+                ? Loc(LocString.SshCredentials)
+                : Loc(LocString.SshLast, _command.Length == 0 ? Loc(LocString.SshNoneYet) : _command));
 
         if (!_running)
         {
@@ -97,36 +97,36 @@ public sealed class SshView : IArlecchinoView
         _spinner.Draw(header.SplitLeft(header.Width - 1).Right);
     }
 
-    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Enter runs · Ctrl+K clears · Esc back");
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), Loc(LocString.SshHints));
 
     private string Said() => _running
-        ? $"{_spinner.Current} running"
-        : _lines.Count == 0 ? "nothing run yet" : $"{_lines.Count} lines";
+        ? Loc(LocString.SshRunning, _spinner.Current)
+        : _lines.Count == 0 ? Loc(LocString.OutputNothing) : Loc(LocString.OutputLines, _lines.Count);
 
     private void Ask()
     {
         if (_running)
         {
-            _state.Output = "Still running";
+            _state.Output = Loc(LocString.SaidStillRunning);
             return;
         }
 
         if (_session.Ssh is not { } ssh)
         {
-            _state.Output = "Connect a panel over sftp first";
+            _state.Output = Loc(LocString.SshConnectFirst);
             return;
         }
 
         _state.Modal = new OperationModal(
             new()
             {
-                Title = $"Run on {ssh.Host}",
+                Title = Loc(LocString.SshRunOn, ssh.Host),
                 Key = "",
-                Verb = "Run",
+                Verb = Loc(LocString.SshVerb),
                 Weight = Weight.Moves,
-                FieldLabel = "command",
+                FieldLabel = Loc(LocString.SshCommand),
                 Value = _command,
-                FieldHint = "it runs where the panel is looking",
+                FieldHint = Loc(LocString.SshWhere),
                 Confirm = asking => Run(ssh, asking.Value.Trim()),
             });
     }

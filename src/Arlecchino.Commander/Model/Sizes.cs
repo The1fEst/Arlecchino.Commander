@@ -57,7 +57,7 @@ public static class Sizes
 
         if (day == today.AddDays(-1))
         {
-            return "yesterday";
+            return Loc(LocString.Yesterday);
         }
 
         return day.Year == today.Year

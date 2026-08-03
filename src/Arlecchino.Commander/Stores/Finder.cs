@@ -68,7 +68,7 @@ public sealed class Finder : IArlecchinoStore
 
         if (IsRunning)
         {
-            _state.Output = "A search is still running";
+            _state.Output = Loc(LocString.SaidSearchRunning);
             return;
         }
 

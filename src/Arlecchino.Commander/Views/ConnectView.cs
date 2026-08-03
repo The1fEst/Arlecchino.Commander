@@ -63,21 +63,23 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         {
             Fields =
             [
-                Field.Choice(static () => "Saved host", Aliases(saved), session.Saved,
-                    static () => "a Host entry from ~/.ssh/config; picking one fills the rest in"),
-                Field.Choice(static () => "Protocol", Schemes, session.Scheme,
-                    static () => "sftp goes over SSH, ftp is plain"),
-                Field.Text(static () => "Host", session.Host, Filled, static () => "name or address of the server"),
-                Field.Number(static () => "Port", session.Port, LowestPort, HighestPort,
-                    static () => "22 for sftp, 21 for ftp"),
-                Field.Text(static () => "User", session.User, Filled),
-                Field.Secret(static () => "Password", session.Password,
-                    static () => "the passphrase when a key file is given; kept in memory only"),
-                Field.PathFrom(static () => "Key file", session.KeyFile, ViewKind.Connect, false, Keys,
-                    static () => "an OpenSSH private key for sftp; empty means password login"),
-                Field.Text(static () => "Folder", session.Folder, null,
-                    static () => "where the panel opens; empty means the home folder"),
-                Field.Action(static () => "Connect", Start, () => !session.Connecting.Value && Ready(session)),
+                Field.Choice(static () => Loc(LocString.ConnectSaved), Aliases(saved), session.Saved,
+                    static () => Loc(LocString.ConnectSavedHint)),
+                Field.Choice(static () => Loc(LocString.ConnectProtocol), Schemes, session.Scheme,
+                    static () => Loc(LocString.ConnectProtocolHint)),
+                Field.Text(static () => Loc(LocString.ConnectHost), session.Host, Filled,
+                    static () => Loc(LocString.ConnectHostHint)),
+                Field.Number(static () => Loc(LocString.ConnectPort), session.Port, LowestPort, HighestPort,
+                    static () => Loc(LocString.ConnectPortHint)),
+                Field.Text(static () => Loc(LocString.ConnectUser), session.User, Filled),
+                Field.Secret(static () => Loc(LocString.ConnectPassword), session.Password,
+                    static () => Loc(LocString.ConnectPasswordHint)),
+                Field.PathFrom(static () => Loc(LocString.ConnectKeyFile), session.KeyFile, ViewKind.Connect,
+                    false, Keys, static () => Loc(LocString.ConnectKeyFileHint)),
+                Field.Text(static () => Loc(LocString.ConnectFolder), session.Folder, null,
+                    static () => Loc(LocString.ConnectFolderHint)),
+                Field.Action(static () => Loc(LocString.ConnectVerb), Start,
+                    () => !session.Connecting.Value && Ready(session)),
             ],
         };
 
@@ -107,17 +109,14 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     public IReadOnlyList<ViewCommand> Commands() =>
     [
-        ViewCommand.Navigating(ConsoleKey.Escape, static () => "back", static () => ViewKind.Commander),
+        Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
     ];
 
     private void DrawHeader(SurfaceRegion header)
     {
-        var side = _sessions.RightIsActive.Value ? "right" : "left";
+        var side = Loc(_sessions.RightIsActive.Value ? LocString.ConnectRight : LocString.ConnectLeft);
 
-        Sheet.Title(
-            header,
-            $"Connect the {side} panel",
-            "the panel keeps browsing the server until it is disconnected");
+        Sheet.Title(header, Loc(LocString.ConnectTitle, side), Loc(LocString.ConnectSide));
 
         if (!_session.Connecting.Value)
         {
@@ -128,16 +127,16 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _spinner.Draw(header.SplitLeft(header.Width - 1).Right);
     }
 
-    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), "Esc back");
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), Loc(LocString.ConnectHints));
 
     private string Said()
     {
         if (_session.Connecting.Value)
         {
-            return $"{_spinner.Current} connecting to {_session.Host.Value}";
+            return Loc(LocString.ConnectBusy, _spinner.Current, _session.Host.Value);
         }
 
-        return _session.Failure.Value.Length > 0 ? _session.Failure.Value : "nothing connected yet";
+        return _session.Failure.Value.Length > 0 ? _session.Failure.Value : Loc(LocString.ConnectNothing);
     }
 
     private ViewRoute Start()
@@ -163,7 +162,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
         Side().Connect(source, folder);
 
-        _state.Output = $"Connected to {connection.Label}";
+        _state.Output = Loc(LocString.ConnectLanded, connection.Label);
         _services.GetRequiredService<Navigator>().Apply(ViewKind.Commander);
     }
 
@@ -175,9 +174,9 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _state.Modal = new OperationModal(
             new()
             {
-                Title = denied ? "The server refused those credentials" : "Could not connect",
+                Title = Loc(denied ? LocString.ConnectRefused : LocString.ConnectFailed),
                 Key = "",
-                Verb = "Close",
+                Verb = Loc(LocString.ConnectClose),
                 Weight = Weight.Destroys,
                 Note = _ => new(message, true),
                 Confirm = static _ => { },
@@ -186,7 +185,8 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     private PanelState Side() => _sessions.RightIsActive.Value ? _sessions.Right : _sessions.Left;
 
-    private static string? Filled(string text) => text.Trim().Length == 0 ? "This one is needed" : null;
+    private static string? Filled(string text) =>
+        text.Trim().Length == 0 ? Loc(LocString.ConnectNeeded) : null;
 
     private static string Keys() => Path.Combine(Listing.Home(), ".ssh");
 
