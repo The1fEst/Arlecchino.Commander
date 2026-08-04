@@ -64,6 +64,7 @@ public sealed class CommanderView : IArlecchinoView
     /// <param name="finder">What walks a folder looking for something.</param>
     /// <param name="state">Where the dialog on top and the last word said live.</param>
     /// <param name="options">The keys and the terminal this was started with.</param>
+    /// <param name="terminal">What reaches the clipboard of the machine the user is sitting at.</param>
     /// <param name="services">Where the navigator is found, which is built after this screen is.</param>
     /// <param name="lifetime">How the application is quit.</param>
     public CommanderView(
@@ -75,6 +76,7 @@ public sealed class CommanderView : IArlecchinoView
         Finder finder,
         ArlecchinoState state,
         ArlecchinoOptions options,
+        IArlecchinoTerminal terminal,
         IServiceProvider services,
         IHostApplicationLifetime lifetime)
     {
@@ -97,7 +99,7 @@ public sealed class CommanderView : IArlecchinoView
         var dialogs = new Dialogs(state);
 
         _panels = new(left, right);
-        _doings = new(dialogs, _panels, sessions, operations, runner, finder, remote, state, services);
+        _doings = new(dialogs, _panels, sessions, operations, runner, finder, remote, state, terminal, services);
         _typing = new(new(runner.History, _keys, _keymap), runner, state, _keymap, _panels);
         _gutter = new(sessions, _panels);
         _bar = new(_panels);

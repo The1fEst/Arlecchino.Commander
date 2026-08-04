@@ -81,6 +81,44 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Equal(Skin.Lively.Marked.Ansi, _app.StyleOf("alpha.txt"));
     }
 
+    /// <summary>
+    ///     Copying with nothing marked takes what the cursor is on, which is the rule every other
+    ///     operation on this screen already follows.
+    /// </summary>
+    [Fact]
+    public void CopyingPathsWithNothingMarkedTakesTheOneUnderTheCursor()
+    {
+        _app.Frame();
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.C, alt: true);
+        _app.Frame();
+
+        Assert.Equal(Path.Combine(_app.Folder, "alpha.txt"), _app.Copied);
+    }
+
+    /// <summary>
+    ///     Marked files go over whole and one to a line, so what lands on the clipboard can be pasted into
+    ///     a shell or an editor without anybody unpicking a separator first.
+    /// </summary>
+    [Fact]
+    public void CopyingPathsTakesEveryMarkedFileOnItsOwnLine()
+    {
+        _app.Frame();
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.Spacebar);
+        _app.Press(ConsoleKey.Spacebar);
+        _app.Press(ConsoleKey.C, alt: true);
+        _app.Frame();
+
+        Assert.Equal(
+            $"{Path.Combine(_app.Folder, "alpha.txt")}\n{Path.Combine(_app.Folder, "beta.txt")}",
+            _app.Copied);
+    }
+
     [Fact]
     public void MovingTheCursorLeavesTheRestOfTheScreenAlone()
     {

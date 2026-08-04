@@ -34,8 +34,6 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
 
 ![The same copy opened in full, with Stop offered](assets/screenshots/notification.png)
 
-![Hosts read from ~/.ssh/config](assets/screenshots/hosts.png)
-
 ![A panel browsing a server over SFTP](assets/screenshots/server.png)
 
 ![A command run on that server](assets/screenshots/ssh.png)

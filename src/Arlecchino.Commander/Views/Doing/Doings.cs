@@ -21,6 +21,7 @@ public sealed class Doings
     private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
     private readonly Finder _finder;
+    private readonly IArlecchinoTerminal _terminal;
     private readonly IServiceProvider _services;
 
     /// <summary>Gathers everything the screen can do.</summary>
@@ -32,6 +33,7 @@ public sealed class Doings
     /// <param name="finder">What walks a folder looking for something.</param>
     /// <param name="remote">Where the connection that was made is remembered.</param>
     /// <param name="state">Where the last word said is kept.</param>
+    /// <param name="terminal">What reaches the clipboard of the machine the user is sitting at.</param>
     /// <param name="services">Where the navigator is found, which is built after this screen is.</param>
     public Doings(
         Dialogs dialogs,
@@ -42,6 +44,7 @@ public sealed class Doings
         Finder finder,
         Remote remote,
         ArlecchinoState state,
+        IArlecchinoTerminal terminal,
         IServiceProvider services)
     {
         Dialogs = dialogs;
@@ -50,6 +53,7 @@ public sealed class Doings
         _sessions = sessions;
         _state = state;
         _finder = finder;
+        _terminal = terminal;
         _services = services;
 
         Files = new(dialogs, operations, state, panels);
@@ -100,6 +104,41 @@ public sealed class Doings
         _state.Output = Loc(LocString.SaidNothingToOpen);
 
         return ViewRoute.None;
+    }
+
+    /// <summary>
+    /// Puts the full path of everything marked on the clipboard, one to a line, or the path under the
+    /// cursor when nothing is marked.
+    ///
+    /// It goes through the terminal rather than through this machine, so a path copied while the panel
+    /// is showing a server still lands on the clipboard of the computer the user is sitting at. A
+    /// terminal with that switched off says nothing and drops it, which is why the count is reported
+    /// here: it is the only sign the key did anything at all.
+    /// </summary>
+    public void CopyPaths()
+    {
+        var panel = Panels.Active;
+        var targets = panel.Targets();
+
+        if (targets.Count == 0)
+        {
+            _state.Output = Loc(LocString.SaidNothingSelected);
+
+            return;
+        }
+
+        var paths = new string[targets.Count];
+
+        for (var at = 0; at < targets.Count; at++)
+        {
+            paths[at] = targets[at].Path;
+        }
+
+        _terminal.CopyToClipboard(string.Join('\n', paths));
+
+        _state.Output = targets.Count == 1
+            ? Loc(LocString.SaidPathCopied, paths[0])
+            : Loc(LocString.SaidPathsCopied, targets.Count);
     }
 
     /// <summary>Opens a file for reading, which is what a panel asks for when Enter lands on one.</summary>

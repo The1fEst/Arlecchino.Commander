@@ -141,6 +141,7 @@ public static class Menu
         new(LocString.MenuCompareDirectories, doings.Compare),
         new(LocString.FoldersBeenIn, () => doings.Places.History(doings.Panels.Active)),
         new(LocString.Hotlist, () => doings.Places.Hotlist(doings.Panels.Active)),
+        new(LocString.MenuCopyPaths, doings.CopyPaths),
         new(LocString.MenuMarkGroup, () => doings.Group(marking: true)),
         new(LocString.MenuUnmarkGroup, () => doings.Group(marking: false)),
         new(LocString.MenuInvertMarks, () => doings.Panels.Active.Invert()),

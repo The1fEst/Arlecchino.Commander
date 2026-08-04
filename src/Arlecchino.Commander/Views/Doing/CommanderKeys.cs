@@ -61,6 +61,7 @@ public static class CommanderKeys
             Bind.To(new(ConsoleKey.R, ConsoleModifiers.Control), LocString.MenuReload, doings.Reload),
             Bind.To(new(ConsoleKey.H, ConsoleModifiers.Control), LocString.MenuShowHidden, () => doings.ToggleHidden(panels.Active)),
             Bind.To(new(ConsoleKey.U, ConsoleModifiers.Control), LocString.MenuSwapPanels, doings.Swap),
+            Bind.To(new(ConsoleKey.C, ConsoleModifiers.Alt), LocString.MenuCopyPaths, doings.CopyPaths),
             Bind.To(new(ConsoleKey.S, ConsoleModifiers.Control, ConsoleKey.S, ConsoleModifiers.Alt), LocString.KeySearch, () => panels.Active.Search()),
             Bind.To(new(ConsoleKey.PageUp, ConsoleModifiers.Control), LocString.KeyFolderAbove, () => panels.Active.Ascend()),
             Bind.To(new(ConsoleKey.PageDown, ConsoleModifiers.Control), LocString.KeyOpenFolder, () => panels.Active.Descend()),

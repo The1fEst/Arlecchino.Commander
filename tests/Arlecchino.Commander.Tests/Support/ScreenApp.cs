@@ -74,6 +74,12 @@ public sealed class ScreenApp : IDisposable
 
     public ArlecchinoState State => _host.State;
 
+    /// <summary>
+    ///     What was last put on the clipboard. The terminal in memory keeps it rather than sending it, so
+    ///     what is asserted is the text itself and not merely that something was sent.
+    /// </summary>
+    public string? Copied => _host.Terminal.Copied;
+
     public void Dispose()
     {
         _host.Dispose();
