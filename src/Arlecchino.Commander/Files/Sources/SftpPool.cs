@@ -19,6 +19,20 @@ namespace Arlecchino.Commander.Files.Sources;
 /// </summary>
 public sealed class SftpPool : IDisposable
 {
+    /// <summary>
+    /// How much of a file is asked for in one request. A session sends one and waits for the answer
+    /// before sending the next, so this and the round trip to the server are the whole of how fast a
+    /// single file moves: the stock 32 KB over a link a tenth of a second wide is under 300 KB a second,
+    /// whatever the line underneath it could carry.
+    ///
+    /// Sixty-four is the ceiling and not a preference. Neither end of an SSH connection may send a
+    /// packet larger than the other end said it would take, and this library says 64 KB of itself —
+    /// so a server will not answer with more however much is asked for. Writing is capped lower still,
+    /// by what the server says, which for OpenSSH is 32 KB and is not ours to raise. Getting past that
+    /// means having several requests in flight at once rather than making each one bigger.
+    /// </summary>
+    private const uint Packet = 64 * 1024;
+
     private readonly ConcurrentBag<SftpClient> _free = [];
     private readonly ConcurrentBag<SftpClient> _all = [];
     private readonly SemaphoreSlim _slots;
@@ -75,7 +89,7 @@ public sealed class SftpPool : IDisposable
 
     private SftpClient Open()
     {
-        var client = new SftpClient(Credentials.For(_connection));
+        var client = new SftpClient(Credentials.For(_connection)) { BufferSize = Packet };
         var check = Credentials.Watch(client, _connection);
 
         try
