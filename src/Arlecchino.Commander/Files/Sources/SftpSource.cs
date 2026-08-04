@@ -559,7 +559,7 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
         try
         {
-            await lease.Client.UploadFileAsync(reading, target, token).ConfigureAwait(false);
+            await SftpUpload.SendAsync(lease.Client, reading, target, token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
         {

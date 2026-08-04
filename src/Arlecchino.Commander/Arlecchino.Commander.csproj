@@ -35,6 +35,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Arlecchino.Commander.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AdditionalFiles Include="Localization\*.toml" />
   </ItemGroup>
 
