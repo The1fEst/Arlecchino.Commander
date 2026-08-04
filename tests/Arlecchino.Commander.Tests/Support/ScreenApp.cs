@@ -90,6 +90,16 @@ public sealed class ScreenApp : IDisposable
         return _host.FrameLines();
     }
 
+    /// <summary>The band of tabs as it reads.</summary>
+    /// <returns>The row the tabs are drawn on.</returns>
+    public string BandLine() => FrameLines()[LayoutView.Margin];
+
+    /// <summary>
+    ///     The bar of actions along the bottom, which the same margin lifts off the floor of the terminal.
+    /// </summary>
+    /// <returns>The row the actions are spelled out on.</returns>
+    public string BarLine() => FrameLines()[^(LayoutView.Margin + 1)];
+
     public void Press(ConsoleKey key, bool shift = false, bool alt = false, bool control = false)
     {
         _host.Press(key, shift, alt, control);

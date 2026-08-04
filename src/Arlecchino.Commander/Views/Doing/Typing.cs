@@ -106,17 +106,18 @@ public sealed class Typing
 
         var wanted = command.Length > 3 ? command[3..].Trim().Trim('"') : "";
 
-        Answers.From(() => Where(panel, wanted), where =>
-        {
-            if (where is null)
+        Answers.From(() => Where(panel, wanted),
+            where =>
             {
-                _state.Output = Loc(LocString.SaidNoFolder, wanted);
+                if (where is null)
+                {
+                    _state.Output = Loc(LocString.SaidNoFolder, wanted);
 
-                return;
-            }
+                    return;
+                }
 
-            panel.GoTo(where);
-        });
+                panel.GoTo(where);
+            });
 
         return true;
     }

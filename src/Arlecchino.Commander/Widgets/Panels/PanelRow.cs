@@ -40,14 +40,18 @@ public static class PanelRow
         var tone = Kinds.ToneOf(entry);
 
         row.Write(0, 0, Kinds.Tag(entry), Tag(tone, cursor, chosen, marked, coat));
-        row.Write(0, Kinds.TagWidth, TextWidth.Truncate(entry.Name, name),
+        row.Write(0,
+            Kinds.TagWidth,
+            TextWidth.Truncate(entry.Name, name),
             Name(tone, cursor, chosen, marked, coat));
 
         if (size > 0)
         {
             var what = entry.IsFolder ? Loc(LocString.PanelFolderKind) : Sizes.Brief(entry.Size);
 
-            row.Write(0, Kinds.TagWidth + name + PanelColumns.Gap + size - TextWidth.Of(what), what,
+            row.Write(0,
+                Kinds.TagWidth + name + PanelColumns.Gap + size - TextWidth.Of(what),
+                what,
                 Quiet(cursor, chosen, marked, coat));
         }
 

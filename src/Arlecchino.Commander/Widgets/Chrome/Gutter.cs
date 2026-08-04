@@ -1,7 +1,6 @@
 using System;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Rendering;
-
 using Arlecchino.Commander.Widgets.Panels;
 
 namespace Arlecchino.Commander.Widgets.Chrome;

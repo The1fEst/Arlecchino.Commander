@@ -161,9 +161,7 @@ public sealed class Operations : IArlecchinoStore
 
                 await work(outcome, cancelling.Token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
-            {
-            }
+            catch (OperationCanceledException) { }
             finally
             {
                 var stopped = cancelling.Token.IsCancellationRequested;

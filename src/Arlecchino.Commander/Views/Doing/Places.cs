@@ -74,21 +74,23 @@ public sealed class Places
             listed.Add(drop);
         }
 
-        _dialogs.Pick(Loc(LocString.Hotlist), listed, chosen =>
-        {
-            if (chosen == add)
+        _dialogs.Pick(Loc(LocString.Hotlist),
+            listed,
+            chosen =>
             {
-                Remember(panel.Folder);
-            }
-            else if (chosen == drop)
-            {
-                _dialogs.Pick(Loc(LocString.PickForget), new List<string>(_sessions.Hotlist), Forget);
-            }
-            else
-            {
-                panel.GoTo(chosen);
-            }
-        });
+                if (chosen == add)
+                {
+                    Remember(panel.Folder);
+                }
+                else if (chosen == drop)
+                {
+                    _dialogs.Pick(Loc(LocString.PickForget), new List<string>(_sessions.Hotlist), Forget);
+                }
+                else
+                {
+                    panel.GoTo(chosen);
+                }
+            });
     }
 
     /// <summary>Keeps a folder, unless it is kept already.</summary>

@@ -254,7 +254,7 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Press(ConsoleKey.T, alt: true);
         _app.Settled();
 
-        var band = _app.FrameLines()[0];
+        var band = _app.BandLine();
 
         Assert.Contains("local ⇄ ● local", band, StringComparison.Ordinal);
         Assert.Contains("● local ⇄ local", band, StringComparison.Ordinal);
@@ -270,7 +270,7 @@ public sealed class CommanderScreenTests : IDisposable
     {
         using var narrow = Tabbed(130, 4);
 
-        var band = narrow.FrameLines()[0];
+        var band = narrow.BandLine();
 
         Assert.Equal(4, band.Count(letter => letter == '×'));
         Assert.Contains('…', band);
@@ -282,23 +282,27 @@ public sealed class CommanderScreenTests : IDisposable
     ///     Past the point where shortening leaves a name saying anything, the strip scrolls instead. The
     ///     tab being worked in is the one that must stay in view — a strip that has scrolled away from the
     ///     panels on screen says nothing about where the work is.
+    ///
+    ///     Five tabs at the narrowest width rather than four: the frame around the application spends a
+    ///     cell a side, not two, so four now fit shortened and it takes a fifth to make the strip scroll.
     /// </summary>
     [Fact]
     public void PastShorteningTheStripScrollsAndKeepsTheOpenTabInView()
     {
-        using var narrow = Tabbed(Cramped, 4);
+        using var narrow = Tabbed(Cramped, 5);
 
-        var band = narrow.FrameLines()[0];
+        var band = narrow.BandLine();
+        var showing = band.Count(letter => letter == '×');
 
-        Assert.Equal(3, band.Count(letter => letter == '×'));
+        Assert.True(showing < 5, band);
         Assert.Contains('‹', band);
         Assert.Contains('›', band);
-        Assert.Equal(3, narrow.Sessions.Open.Value);
+        Assert.Equal(4, narrow.Sessions.Open.Value);
 
-        narrow.Click(0, band.IndexOf('●'));
+        narrow.Click(LayoutView.Margin, band.IndexOf('●'));
         narrow.Settled();
 
-        Assert.Equal(1, narrow.Sessions.Open.Value);
+        Assert.Equal(5 - showing, narrow.Sessions.Open.Value);
     }
 
     /// <summary>Clicking a marker scrolls to the tabs that did not fit.</summary>
@@ -307,10 +311,10 @@ public sealed class CommanderScreenTests : IDisposable
     {
         using var narrow = Tabbed(Cramped, 4);
 
-        narrow.Click(0, narrow.FrameLines()[0].IndexOf('‹'));
+        narrow.Click(LayoutView.Margin, narrow.BandLine().IndexOf('‹'));
         narrow.Settled();
 
-        narrow.Click(0, narrow.FrameLines()[0].IndexOf('●'));
+        narrow.Click(LayoutView.Margin, narrow.BandLine().IndexOf('●'));
         narrow.Settled();
 
         Assert.Equal(0, narrow.Sessions.Open.Value);
@@ -521,7 +525,7 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void TheActionsAlongTheBottomAreSpelledOut()
     {
-        var bar = _app.FrameLines()[^1];
+        var bar = _app.BarLine();
 
         Assert.Contains("F3", bar, StringComparison.Ordinal);
         Assert.Contains("View", bar, StringComparison.Ordinal);
@@ -568,7 +572,7 @@ public sealed class CommanderScreenTests : IDisposable
         wide.Press(ConsoleKey.DownArrow);
         wide.Press(ConsoleKey.Spacebar);
 
-        var bar = wide.FrameLines()[^1];
+        var bar = wide.BarLine();
 
         Assert.Contains("Copy 1 item", bar, StringComparison.Ordinal);
         Assert.Contains("Delete 1 item", bar, StringComparison.Ordinal);

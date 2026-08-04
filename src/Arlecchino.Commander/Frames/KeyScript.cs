@@ -17,8 +17,11 @@ public static class KeyScript
         }
 
         return Named(name) is { } key
-            ? new(Character(key), key, modifiers.HasFlag(ConsoleModifiers.Shift),
-                modifiers.HasFlag(ConsoleModifiers.Alt), modifiers.HasFlag(ConsoleModifiers.Control))
+            ? new(Character(key),
+                key,
+                modifiers.HasFlag(ConsoleModifiers.Shift),
+                modifiers.HasFlag(ConsoleModifiers.Alt),
+                modifiers.HasFlag(ConsoleModifiers.Control))
             : Typed(name, modifiers);
     }
 
@@ -95,7 +98,10 @@ public static class KeyScript
                 ? ConsoleKey.D0 + (character - '0')
                 : default;
 
-        return new(character, key, modifiers.HasFlag(ConsoleModifiers.Shift), modifiers.HasFlag(ConsoleModifiers.Alt),
+        return new(character,
+            key,
+            modifiers.HasFlag(ConsoleModifiers.Shift),
+            modifiers.HasFlag(ConsoleModifiers.Alt),
             modifiers.HasFlag(ConsoleModifiers.Control));
     }
 }

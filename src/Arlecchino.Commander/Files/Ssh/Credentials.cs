@@ -50,7 +50,8 @@ public static class Credentials
     /// <param name="info">The connection to narrow.</param>
     private static void Narrow(ConnectionInfo info)
     {
-        Keep(info.KeyExchangeAlgorithms, [
+        Keep(info.KeyExchangeAlgorithms,
+        [
             "curve25519-sha256",
             "curve25519-sha256@libssh.org",
             "ecdh-sha2-nistp256",
@@ -62,7 +63,8 @@ public static class Credentials
             "diffie-hellman-group14-sha256",
         ]);
 
-        Keep(info.HostKeyAlgorithms, [
+        Keep(info.HostKeyAlgorithms,
+        [
             "ssh-ed25519-cert-v01@openssh.com",
             "ecdsa-sha2-nistp256-cert-v01@openssh.com",
             "ecdsa-sha2-nistp384-cert-v01@openssh.com",
@@ -77,7 +79,8 @@ public static class Credentials
             "rsa-sha2-256",
         ]);
 
-        Keep(info.Encryptions, [
+        Keep(info.Encryptions,
+        [
             "chacha20-poly1305@openssh.com",
             "aes256-gcm@openssh.com",
             "aes128-gcm@openssh.com",
@@ -86,7 +89,8 @@ public static class Credentials
             "aes128-ctr",
         ]);
 
-        Keep(info.HmacAlgorithms, [
+        Keep(info.HmacAlgorithms,
+        [
             "hmac-sha2-256-etm@openssh.com",
             "hmac-sha2-512-etm@openssh.com",
             "hmac-sha2-256",

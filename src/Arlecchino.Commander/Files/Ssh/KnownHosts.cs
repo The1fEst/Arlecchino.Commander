@@ -6,7 +6,6 @@ using System.Linq;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
-
 using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Files.Ssh;
@@ -246,10 +245,7 @@ public sealed class KnownHosts
         [SuppressMessage(
             "Security",
             "CA5350:Do Not Use Weak Cryptographic Algorithms",
-            Justification = "The algorithm is not ours to choose: OpenSSH hashes the names in known_hosts "
-                + "with HMAC-SHA1, and a name written by it can only be matched by hashing the same way. "
-                + "Nothing is protected by it — it hides which hosts appear in the file, and what proves "
-                + "the server is the comparison of the key bytes underneath.")]
+            Justification = "The algorithm is not ours to choose: OpenSSH hashes the names in known_hosts " + "with HMAC-SHA1, and a name written by it can only be matched by hashing the same way. " + "Nothing is protected by it — it hides which hosts appear in the file, and what proves " + "the server is the comparison of the key bytes underneath.")]
         private static bool Hashed(string name, string host)
         {
             var parts = name.Split('|');

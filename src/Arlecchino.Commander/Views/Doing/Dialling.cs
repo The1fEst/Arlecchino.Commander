@@ -53,20 +53,22 @@ public sealed class Dialling
             listed.Add(host.Describe());
         }
 
-        _dialogs.Pick(Loc(LocString.PickSavedHosts), listed, chosen =>
-        {
-            for (var index = 0; index < listed.Count; index++)
+        _dialogs.Pick(Loc(LocString.PickSavedHosts),
+            listed,
+            chosen =>
             {
-                if (listed[index] != chosen)
+                for (var index = 0; index < listed.Count; index++)
                 {
-                    continue;
+                    if (listed[index] != chosen)
+                    {
+                        continue;
+                    }
+
+                    Dial(panel, saved[index], saved[index].AsConnection(""));
+
+                    return;
                 }
-
-                Dial(panel, saved[index], saved[index].AsConnection(""));
-
-                return;
-            }
-        });
+            });
     }
 
     /// <summary>Puts a panel back on the disk.</summary>

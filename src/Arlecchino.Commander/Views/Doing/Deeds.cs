@@ -74,7 +74,7 @@ public sealed class Deeds : PanelWork
         }
 
         var across = !ReferenceEquals(from.Source, to.Source) ||
-            !from.Source.SameVolume(from.Folder, to.Folder);
+                     !from.Source.SameVolume(from.Folder, to.Folder);
 
         Dialogs.Ask(new()
         {
@@ -252,7 +252,9 @@ public sealed class Deeds : PanelWork
         var size = bytes > 0 ? Sizes.Brief(bytes) : "";
         var trees = folders == 0
             ? ""
-            : folders == 1 ? Loc(LocString.CarryingFolder) : Loc(LocString.CarryingFolders, folders);
+            : folders == 1
+                ? Loc(LocString.CarryingFolder)
+                : Loc(LocString.CarryingFolders, folders);
         var both = size.Length > 0 && trees.Length > 0 ? Loc(LocString.CarryingBoth, size, trees) : size + trees;
 
         return to.Source.IsRemote ? Loc(LocString.CarryingOverSftp, both) : both;

@@ -26,9 +26,7 @@ public sealed class FtpConversationTests : IDisposable
     [Fact]
     public async Task SigningInWalksThroughTheCommandsInOrder()
     {
-        using (await Connect())
-        {
-        }
+        using (await Connect()) { }
 
         Assert.Equal(
             ["USER demo", "PASS secret", "OPTS UTF8 ON", "TYPE I", "QUIT"],
@@ -148,8 +146,7 @@ public sealed class FtpConversationTests : IDisposable
 
         using var ftp = await Connect();
 
-        var thrown = await Assert.ThrowsAsync<IOException>(
-            () => ftp.CreateFolderAsync("/made", CancellationToken.None));
+        var thrown = await Assert.ThrowsAsync<IOException>(() => ftp.CreateFolderAsync("/made", CancellationToken.None));
 
         Assert.Contains("MKD", thrown.Message, StringComparison.Ordinal);
     }
@@ -207,9 +204,7 @@ internal sealed class FakeFtpServer : IDisposable
         {
             _listener.Stop();
         }
-        catch (SocketException)
-        {
-        }
+        catch (SocketException) { }
 
         _thread.Join(TimeSpan.FromSeconds(2));
     }
@@ -235,9 +230,7 @@ internal sealed class FakeFtpServer : IDisposable
             Answer(reader, writer);
         }
         catch (Exception error) when (error is IOException or SocketException or ObjectDisposedException or
-                                          InvalidOperationException)
-        {
-        }
+                                          InvalidOperationException) { }
     }
 
     private void Answer(StreamReader reader, StreamWriter writer)

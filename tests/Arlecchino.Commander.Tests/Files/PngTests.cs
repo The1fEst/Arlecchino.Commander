@@ -12,10 +12,13 @@ public sealed class PngTests
     [Fact]
     public void ATruecolourPictureIsReadPixelForPixel()
     {
-        var raster = Png.Read(Written(2, 2, colour: 2, [
-            [0, 255, 0, 0, 0, 255, 0],
-            [0, 0, 0, 255, 255, 255, 255],
-        ]));
+        var raster = Png.Read(Written(2,
+            2,
+            colour: 2,
+            [
+                [0, 255, 0, 0, 0, 255, 0],
+                [0, 0, 0, 255, 255, 255, 255],
+            ]));
 
         Assert.NotNull(raster);
         Assert.Equal(2, raster.Width);
@@ -70,11 +73,14 @@ public sealed class PngTests
     [Fact]
     public void EachRowFilterIsUndone()
     {
-        var raster = Png.Read(Written(2, 3, colour: 2, [
-            [0, 10, 10, 10, 20, 20, 20],
-            [1, 10, 10, 10, 5, 5, 5],
-            [2, 0, 0, 0, 0, 0, 0],
-        ]));
+        var raster = Png.Read(Written(2,
+            3,
+            colour: 2,
+            [
+                [0, 10, 10, 10, 20, 20, 20],
+                [1, 10, 10, 10, 5, 5, 5],
+                [2, 0, 0, 0, 0, 0, 0],
+            ]));
 
         Assert.NotNull(raster);
         Assert.Equal(10, raster.Pixels[0].Red);
@@ -101,10 +107,13 @@ public sealed class PngTests
     [Fact]
     public void ATruncatedPngComesBackAsNothing()
     {
-        var whole = Written(2, 2, colour: 2, [
-            [0, 1, 2, 3, 4, 5, 6],
-            [0, 7, 8, 9, 10, 11, 12],
-        ]);
+        var whole = Written(2,
+            2,
+            colour: 2,
+            [
+                [0, 1, 2, 3, 4, 5, 6],
+                [0, 7, 8, 9, 10, 11, 12],
+            ]);
 
         Assert.Null(Png.Read(whole[..(whole.Length / 2)]));
     }

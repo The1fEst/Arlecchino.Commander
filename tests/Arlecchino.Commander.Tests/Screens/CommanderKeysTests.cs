@@ -4,7 +4,6 @@ using System.Linq;
 using Arlecchino.Commander.Views;
 using Xunit;
 using static Arlecchino.Commander.Localization;
-
 using Arlecchino.Commander.Tests.Support;
 
 namespace Arlecchino.Commander.Tests.Screens;
@@ -385,7 +384,7 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void EveryKeyTheBarAdvertisesIsOneTheViewKnows()
     {
-        var bar = _app.FrameLines()[^1];
+        var bar = _app.BarLine();
         var known = _app.Navigator.CurrentCommands.Select(static command => command.Label()).ToList();
 
         foreach (var key in new[] { "F3", "F5", "F8" })

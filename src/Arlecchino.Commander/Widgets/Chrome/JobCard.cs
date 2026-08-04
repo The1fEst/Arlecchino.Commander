@@ -144,7 +144,8 @@ public sealed class JobCard
         var coat = Skin.Overlay;
 
         card.Fill(coat.Text);
-        card.Rows(0, card.Height).Inset(new Margin(0, 0, card.Width - 1, 0))
+        card.Rows(0, card.Height)
+            .Inset(new Margin(0, 0, card.Width - 1, 0))
             .Fill(Skin.Paint(job.Rule, job.Rule));
 
         var inside = card.Inset(new Margin(2, 0, 1, 0));

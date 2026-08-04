@@ -101,7 +101,9 @@ public sealed class SshView : IArlecchinoView
 
     private string Said() => _running
         ? Loc(LocString.SshRunning, _spinner.Current)
-        : _lines.Count == 0 ? Loc(LocString.OutputNothing) : Loc(LocString.OutputLines, _lines.Count);
+        : _lines.Count == 0
+            ? Loc(LocString.OutputNothing)
+            : Loc(LocString.OutputLines, _lines.Count);
 
     private void Ask()
     {

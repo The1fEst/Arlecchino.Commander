@@ -3,7 +3,6 @@ using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Input;
 using Arlecchino.Rendering;
-using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
 
 namespace Arlecchino.Commander.Widgets.Panels;
@@ -22,9 +21,6 @@ public sealed class PanelPaint
     private const int Chrome = 6;
     private const int HeadRow = 2;
     private const int ListRow = HeadRow + 2;
-
-    private static readonly TermColor _activeColor = Skin.Paint(Skin.Unlit, Skin.Lit);
-    private static readonly TermColor _inactiveColor = Skin.Paint(Skin.Unlit, Skin.Unlit);
 
     private SurfaceRegion _heads;
 
@@ -55,14 +51,13 @@ public sealed class PanelPaint
         }
 
         var coat = panel.IsFocused ? Skin.Lively : Skin.Quiet;
-        var color = panel.IsFocused ? _activeColor : _inactiveColor;
+        var color = panel.IsFocused ? Skin.BorderActiveColor : Skin.BorderInactiveColor;
 
         region.Fill(coat.Text);
 
         var (edge, rest) = region.SplitLeft(1);
 
-        edge.Fill(panel.IsFocused ? Skin.Paint(Skin.Crimson, Skin.Crimson) : coat.Text);
-
+        edge.Fill(panel.IsFocused ? Skin.CrimsonFill : coat.Text);
         rest.Rows(0, 1).Fill(color, '▀');
         rest.Rows(rest.Height - 1, 1).Fill(color, '▄');
 

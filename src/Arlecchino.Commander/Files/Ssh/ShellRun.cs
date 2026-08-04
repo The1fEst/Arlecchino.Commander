@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Arlecchino.Commander.Files.Sources;
 
 namespace Arlecchino.Commander.Files.Ssh;
@@ -120,7 +119,5 @@ public sealed class RemoteRun : IShellRun
     public string Interrupt() => "A command on the server cannot be stopped from here";
 
     /// <inheritdoc/>
-    public void Dispose()
-    {
-    }
+    public void Dispose() { }
 }

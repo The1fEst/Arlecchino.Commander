@@ -63,7 +63,8 @@ public static class Completion
 
             foreach (var entry in entries)
             {
-                if (entry.IsParent || !entry.IsFolder ||
+                if (entry.IsParent ||
+                    !entry.IsFolder ||
                     !entry.Name.StartsWith(start, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -89,8 +90,9 @@ public static class Completion
     {
         var shared = 0;
 
-        while (shared < first.Length && shared < second.Length &&
-            char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
+        while (shared < first.Length &&
+               shared < second.Length &&
+               char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
         {
             shared++;
         }

@@ -234,8 +234,10 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             return true;
         }
 
-        if (key.Modifiers.HasFlag(ConsoleModifiers.Control) || key.Modifiers.HasFlag(ConsoleModifiers.Alt) ||
-            _keys.Resolve(key) is not { } typed || char.IsControl(typed))
+        if (key.Modifiers.HasFlag(ConsoleModifiers.Control) ||
+            key.Modifiers.HasFlag(ConsoleModifiers.Alt) ||
+            _keys.Resolve(key) is not { } typed ||
+            char.IsControl(typed))
         {
             _searching = false;
 
@@ -333,7 +335,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             return FocusResult.Handled;
         }
 
-        if (key.Modifiers == 0 && _keys.Resolve(key) is { } marking &&
+        if (key.Modifiers == 0 &&
+            _keys.Resolve(key) is { } marking &&
             Marking.Typed(marking, _state, _entries, OnGroup))
         {
             return FocusResult.Handled;
@@ -389,7 +392,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     }
 
     private bool Kept(FileEntry entry) =>
-        _state.Filter.Length == 0 || entry.IsFolder ||
+        _state.Filter.Length == 0 ||
+        entry.IsFolder ||
         entry.Name.Contains(_state.Filter, StringComparison.OrdinalIgnoreCase);
 
     private void Sort()

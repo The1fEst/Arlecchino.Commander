@@ -141,8 +141,7 @@ public static class HeadlessFrame
         {
             FrameThread.RunPending(static _ => { });
             Thread.Sleep(PollInterval);
-        }
-        while (DateTime.UtcNow < deadline);
+        } while (DateTime.UtcNow < deadline);
 
         FrameThread.RunPending(static _ => { });
     }
@@ -216,8 +215,6 @@ public static class HeadlessFrame
 
         public CancellationToken ApplicationStopped => CancellationToken.None;
 
-        public void StopApplication()
-        {
-        }
+        public void StopApplication() { }
     }
 }

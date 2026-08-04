@@ -69,14 +69,15 @@ public sealed class Rights : PanelWork
                 Note = asking => Modes.Read(asking.Value) is null
                     ? new(Loc(LocString.PermissionsWrong), true)
                     : new(Modes.Letters(asking.Value)),
-                Confirm = asking => Answers.From(() => Changing(panel, targets, asking.Value), refused =>
-                {
-                    State.Output = refused == 0
-                        ? Loc(LocString.SaidModeChanged, Counted(targets), asking.Value)
-                        : Loc(LocString.SaidModeRefused, refused, targets.Count, asking.Value);
+                Confirm = asking => Answers.From(() => Changing(panel, targets, asking.Value),
+                    refused =>
+                    {
+                        State.Output = refused == 0
+                            ? Loc(LocString.SaidModeChanged, Counted(targets), asking.Value)
+                            : Loc(LocString.SaidModeRefused, refused, targets.Count, asking.Value);
 
-                    panel.Reload();
-                }),
+                        panel.Reload();
+                    }),
             }));
     }
 

@@ -137,7 +137,11 @@ public sealed class FileTasksTests : IDisposable
         var file = File(from, "notes.txt", "what was written");
         var outcome = new Outcome();
 
-        await FileTasks.MoveAsync(_source, Entries(file), _source, Path.Combine(_root, "nowhere", "deeper"), outcome,
+        await FileTasks.MoveAsync(_source,
+            Entries(file),
+            _source,
+            Path.Combine(_root, "nowhere", "deeper"),
+            outcome,
             CancellationToken.None);
 
         Assert.True(outcome.Failed);
@@ -175,7 +179,9 @@ public sealed class FileTasksTests : IDisposable
     [Fact]
     public async Task MakingAFolderMakesTheOnesAboveItAsWell()
     {
-        var made = await FileTasks.CreateFolderAsync(_source, Path.Combine(_root, "above"), "fresh",
+        var made = await FileTasks.CreateFolderAsync(_source,
+            Path.Combine(_root, "above"),
+            "fresh",
             CancellationToken.None);
 
         Assert.NotNull(made);

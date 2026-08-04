@@ -74,7 +74,16 @@ public sealed class NotesView : IArlecchinoView
     }
 
     /// <inheritdoc/>
-    public void Draw() => _layout.Draw(_surface.Content);
+    public void Draw()
+    {
+        var (edge, body) = _surface.Content.SplitLeft(1);
+
+        edge.Fill(Skin.CrimsonFill);
+
+        body = body.Inset(new Margin(1, 0, 0, 0));
+
+        _layout.Draw(body);
+    }
 
     /// <inheritdoc/>
     public ViewRoute Handle(ConsoleKeyInfo key)
@@ -109,7 +118,7 @@ public sealed class NotesView : IArlecchinoView
     /// <inheritdoc/>
     public IReadOnlyList<ViewCommand> Commands() => [];
 
-    private void DrawHeader(SurfaceRegion header) =>
+    private static void DrawHeader(SurfaceRegion header) =>
         Sheet.Title(header, Loc(LocString.NotesTitle), Loc(LocString.NotesSaid));
 
     private void DrawFooter(SurfaceRegion footer) =>

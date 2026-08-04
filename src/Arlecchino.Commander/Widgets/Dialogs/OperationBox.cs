@@ -145,8 +145,10 @@ public static class OperationBox
             var meta = entry.IsFolder ? Loc(LocString.KindFolder) : Sizes.Brief(entry.Size);
 
             inside.Write(row + 1 + index, 0, Kinds.Tag(entry), coat.Faded);
-            inside.Write(row + 1 + index, Kinds.TagWidth,
-                TextWidth.Truncate(entry.Name, inside.Width - Kinds.TagWidth - 12), coat.Text);
+            inside.Write(row + 1 + index,
+                Kinds.TagWidth,
+                TextWidth.Truncate(entry.Name, inside.Width - Kinds.TagWidth - 12),
+                coat.Text);
             inside.WriteLine(row + 1 + index, meta, coat.Label, Align.Right);
         }
 
@@ -189,15 +191,18 @@ public static class OperationBox
 
         if (operation.Chosen < 0)
         {
-            line.Write(0, at + operation.Caret - offset,
+            line.Write(0,
+                at + operation.Caret - offset,
                 operation.Caret < operation.Value.Length ? operation.Value[operation.Caret].ToString() : " ",
                 Skin.Paint(Skin.Ink, fill));
         }
 
         if (operation.FieldHint.Length > 0)
         {
-            inside.WriteLine(row, TextWidth.Truncate(operation.FieldHint, inside.Width - label.Length - 2),
-                coat.Label, Align.Right);
+            inside.WriteLine(row,
+                TextWidth.Truncate(operation.FieldHint, inside.Width - label.Length - 2),
+                coat.Label,
+                Align.Right);
         }
 
         return row + 3;
@@ -210,7 +215,9 @@ public static class OperationBox
             var option = operation.Options[index];
             var here = operation.Chosen == index;
 
-            inside.Write(row + index, 0, option.On ? "[×]" : "[ ]",
+            inside.Write(row + index,
+                0,
+                option.On ? "[×]" : "[ ]",
                 option.On ? Skin.Paint(fill, Skin.Over) : coat.Label);
 
             inside.Write(row + index, 4, option.Label, here ? coat.Strong : coat.Second);

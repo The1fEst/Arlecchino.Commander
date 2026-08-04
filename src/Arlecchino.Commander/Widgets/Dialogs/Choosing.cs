@@ -118,8 +118,9 @@ public sealed class Choosing
     {
         var shared = 0;
 
-        while (shared < first.Length && shared < second.Length &&
-            char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
+        while (shared < first.Length &&
+               shared < second.Length &&
+               char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
         {
             shared++;
         }

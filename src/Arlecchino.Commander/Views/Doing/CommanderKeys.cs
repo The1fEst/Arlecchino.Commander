@@ -80,8 +80,7 @@ public static class CommanderKeys
             Bind.When(new(ConsoleKey.PageDown, ConsoleModifiers.Alt), LocString.TabsNext, Several(sessions), () => Stepped(sessions, forward: true)),
             Bind.When(new(ConsoleKey.PageUp, ConsoleModifiers.Alt), LocString.TabsPrevious, Several(sessions), () => Stepped(sessions, forward: false)),
             Bind.To(new(ConsoleKey.F10), LocString.BarQuit, lifetime.StopApplication),
-            Bind.Going(new(ConsoleKey.O, ConsoleModifiers.Control), LocString.MenuWhatCommandsSaid,
-                static () => ViewKind.Output),
+            Bind.Going(new(ConsoleKey.O, ConsoleModifiers.Control), LocString.MenuWhatCommandsSaid, static () => ViewKind.Output),
             Bind.To(new(ConsoleKey.Enter, ConsoleModifiers.Alt), LocString.KeyNameOntoLine, () => Named(panels, typing)),
             Bind.When(new(ConsoleKey.Escape, ConsoleModifiers.Alt), LocString.KeyStop, () => operations.IsBusy || runner.IsRunning, () => Stop(operations, runner)),
         ];

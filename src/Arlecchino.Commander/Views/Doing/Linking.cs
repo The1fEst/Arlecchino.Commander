@@ -19,9 +19,7 @@ public sealed class Linking : PanelWork
     /// <param name="state">Where the last word said is kept.</param>
     /// <param name="panels">The two panels on screen.</param>
     public Linking(Dialogs dialogs, ArlecchinoState state, Pair panels)
-        : base(dialogs, state, panels)
-    {
-    }
+        : base(dialogs, state, panels) { }
 
     /// <summary>Links what is under the cursor.</summary>
     /// <param name="hard">Whether to make a hard link rather than a symbolic one.</param>

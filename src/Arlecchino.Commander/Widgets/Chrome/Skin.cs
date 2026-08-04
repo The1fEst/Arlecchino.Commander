@@ -114,28 +114,47 @@ public static class Skin
     };
 
     /// <summary>The name of the row the cursor is on: ink on bone, which no other row can be.</summary>
-    public static TermColor CursorName => Paint(Ink, Bone, TextStyle.Bold);
+    public static TermColor CursorName => field ??= Paint(Ink, Bone, TextStyle.Bold);
 
     /// <summary>Its size and anything else that qualifies the name.</summary>
-    public static TermColor CursorMeta => Paint(GhostInk, Bone);
+    public static TermColor CursorMeta => field ??= Paint(GhostInk, Bone);
 
     /// <summary>Its date, which is quieter still.</summary>
-    public static TermColor CursorDate => Paint(LabelInk, Bone);
+    public static TermColor CursorDate => field ??= Paint(LabelInk, Bone);
 
     /// <summary>Its kind tag, the one span of the row that keeps the accent.</summary>
-    public static TermColor CursorTag => Paint(Crimson, Bone);
+    public static TermColor CursorTag => field ??= Paint(Crimson, Bone);
 
     /// <summary>The bone behind all of it, for the width the row does not write on.</summary>
-    public static TermColor CursorRow => Paint(Ink, Bone);
+    public static TermColor CursorRow => field ??= Paint(Ink, Bone);
 
     /// <summary>The chosen row of a list drawn over the screen, which fills with the accent instead.</summary>
-    public static TermColor ChosenName => Paint(OnCrimson, Crimson, TextStyle.Bold);
+    public static TermColor ChosenName => field ??= Paint(OnCrimson, Crimson, TextStyle.Bold);
 
     /// <summary>What qualifies it, lightened so nothing faint is left on a filled row.</summary>
-    public static TermColor ChosenMeta => Paint(new(0xF0, 0xBD, 0xB5), Crimson);
+    public static TermColor ChosenMeta => field ??= Paint(new(0xF0, 0xBD, 0xB5), Crimson);
 
     /// <summary>The accent behind all of it.</summary>
-    public static TermColor ChosenRow => Paint(OnCrimson, Crimson);
+    public static TermColor ChosenRow => field ??= Paint(OnCrimson, Crimson);
+
+    /// <summary>
+    /// Crimson on crimson, which is to say no text at all: the accent as something to fill a run of
+    /// cells with. It marks the edge of whatever is being worked in.
+    /// </summary>
+    public static TermColor CrimsonFill => field ??= Paint(Crimson, Crimson);
+
+    /// <summary>
+    /// What closes the top and bottom of the panel being worked in. It is drawn with half blocks, so
+    /// the two colours are the two halves of the row: the surround above the line and the panel below
+    /// it, which lets a panel end halfway down a cell instead of a whole one short.
+    /// </summary>
+    public static TermColor BorderActiveColor => field ??= Paint(Unlit, Lit);
+
+    /// <summary>
+    /// The same edge on the panel beside it, both halves the same, so the row is still spent on a
+    /// border and nothing is drawn on it. Only one panel is worked in, and only it wears a line.
+    /// </summary>
+    public static TermColor BorderInactiveColor => field ??= Paint(Unlit, Unlit);
 
     /// <summary>
     /// A colour, remembered. Styles are compared by what they are made of rather than by reference, so
@@ -203,8 +222,13 @@ public static class Skin
         _ when colour == Sea => TerminalColor.Cyan,
         _ when colour == Calm || colour == CalmText => TerminalColor.Green,
         _ when colour == Amber || colour == AmberRule => TerminalColor.Yellow,
-        _ when colour == SecondaryInk || colour == MutedInk || colour == FaintInk ||
-            colour == LabelInk || colour == TraceInk || colour == GhostInk || colour == IdleInk =>
+        _ when colour == SecondaryInk ||
+               colour == MutedInk ||
+               colour == FaintInk ||
+               colour == LabelInk ||
+               colour == TraceInk ||
+               colour == GhostInk ||
+               colour == IdleInk =>
             TerminalColor.BrightBlack,
         _ => TerminalColor.Default,
     };
@@ -273,8 +297,10 @@ public static class Skin
 
         private Rgb Tinted => Blend(Crimson, 0.13, under);
 
-        private Rgb RuleInk => under == Unlit ? HairlineDim : under == Over || under == Chip
-            ? HairlineOver
-            : Hairline;
+        private Rgb RuleInk => under == Unlit
+            ? HairlineDim
+            : under == Over || under == Chip
+                ? HairlineOver
+                : Hairline;
     }
 }

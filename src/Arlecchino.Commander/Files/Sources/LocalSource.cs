@@ -149,24 +149,26 @@ public sealed class LocalSource : IFileSource
     /// <param name="token">Unused: opening does not wait.</param>
     /// <returns>The bytes.</returns>
     public Task<Stream> OpenReadAsync(string path, CancellationToken token) =>
-        Task.FromResult<Stream>(new FileStream(path, new FileStreamOptions
-        {
-            Mode = FileMode.Open,
-            Access = FileAccess.Read,
-            Share = FileShare.Read,
-            BufferSize = Block,
-            Options = FileOptions.Asynchronous | FileOptions.SequentialScan,
-        }));
+        Task.FromResult<Stream>(new FileStream(path,
+            new FileStreamOptions
+            {
+                Mode = FileMode.Open,
+                Access = FileAccess.Read,
+                Share = FileShare.Read,
+                BufferSize = Block,
+                Options = FileOptions.Asynchronous | FileOptions.SequentialScan,
+            }));
 
     public Task<Stream> CreateAsync(string path, CancellationToken token) =>
-        Task.FromResult<Stream>(new FileStream(path, new FileStreamOptions
-        {
-            Mode = FileMode.Create,
-            Access = FileAccess.Write,
-            Share = FileShare.None,
-            BufferSize = Block,
-            Options = FileOptions.Asynchronous,
-        }));
+        Task.FromResult<Stream>(new FileStream(path,
+            new FileStreamOptions
+            {
+                Mode = FileMode.Create,
+                Access = FileAccess.Write,
+                Share = FileShare.None,
+                BufferSize = Block,
+                Options = FileOptions.Asynchronous,
+            }));
 
     public Task CreateFolderAsync(string path, CancellationToken token)
     {
@@ -205,9 +207,7 @@ public sealed class LocalSource : IFileSource
         return Task.CompletedTask;
     }
 
-    public void Dispose()
-    {
-    }
+    public void Dispose() { }
 
     private static FileSystemInfo Info(FileEntry entry) => entry.IsFolder
         ? new DirectoryInfo(entry.Path)

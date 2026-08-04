@@ -5,7 +5,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Model;
-
 using Arlecchino.Commander.Files.Sources;
 
 namespace Arlecchino.Commander.Files.Work;
@@ -49,28 +48,31 @@ public static class FileTasks
         var bytes = 0L;
 
         await SpreadAsync(
-            source,
-            entries,
-            async entry =>
-            {
-                if (!entry.IsFolder)
+                source,
+                entries,
+                async entry =>
                 {
-                    Interlocked.Increment(ref files);
-                    Interlocked.Add(ref bytes, entry.Size);
+                    if (!entry.IsFolder)
+                    {
+                        Interlocked.Increment(ref files);
+                        Interlocked.Add(ref bytes, entry.Size);
 
-                    return;
-                }
+                        return;
+                    }
 
-                Interlocked.Increment(ref folders);
+                    Interlocked.Increment(ref folders);
 
-                var below = await MeasureAsync(source, await ChildrenAsync(source, entry, token).ConfigureAwait(false),
-                    token).ConfigureAwait(false);
+                    var below = await MeasureAsync(source,
+                            await ChildrenAsync(source, entry, token).ConfigureAwait(false),
+                            token)
+                        .ConfigureAwait(false);
 
-                Interlocked.Add(ref files, below.Files);
-                Interlocked.Add(ref folders, below.Folders);
-                Interlocked.Add(ref bytes, below.Bytes);
-            },
-            token).ConfigureAwait(false);
+                    Interlocked.Add(ref files, below.Files);
+                    Interlocked.Add(ref folders, below.Folders);
+                    Interlocked.Add(ref bytes, below.Bytes);
+                },
+                token)
+            .ConfigureAwait(false);
 
         return new(files, folders, bytes);
     }
@@ -235,9 +237,7 @@ public static class FileTasks
 
             outcome.CountedFolder();
         }
-        catch (OperationCanceledException)
-        {
-        }
+        catch (OperationCanceledException) { }
         catch (Exception error) when (IsExpected(error))
         {
             outcome.Failing(entry.Name, error.Message);
@@ -338,9 +338,7 @@ public static class FileTasks
                     token)
                 .ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
-        {
-        }
+        catch (OperationCanceledException) { }
         catch (Exception error) when (IsExpected(error))
         {
             outcome.Failing(source.Name, error.Message);
@@ -465,9 +463,7 @@ public static class FileTasks
                     CancellationToken.None)
                 .ConfigureAwait(false);
         }
-        catch (Exception error) when (IsExpected(error))
-        {
-        }
+        catch (Exception error) when (IsExpected(error)) { }
     }
 
     private static bool IsExpected(Exception error) =>

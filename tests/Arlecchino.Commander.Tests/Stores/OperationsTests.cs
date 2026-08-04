@@ -6,7 +6,6 @@ using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Views;
 using Xunit;
-
 using Arlecchino.Commander.Tests.Support;
 
 namespace Arlecchino.Commander.Tests.Stores;

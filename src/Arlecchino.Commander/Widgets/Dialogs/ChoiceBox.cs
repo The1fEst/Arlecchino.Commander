@@ -142,12 +142,16 @@ public static class ChoiceBox
                 row.Fill(Skin.ChosenRow);
             }
 
-            row.Write(0, 0, TextWidth.Truncate(pick.Label, Math.Max(1, name)),
+            row.Write(0,
+                0,
+                TextWidth.Truncate(pick.Label, Math.Max(1, name)),
                 here ? Skin.ChosenName : coat.Text);
 
             if (pick.Hint.Length > 0 && name > 0)
             {
-                row.Write(0, name + 2, TextWidth.Truncate(pick.Hint, row.Width - name - pick.Key.Length - 4),
+                row.Write(0,
+                    name + 2,
+                    TextWidth.Truncate(pick.Hint, row.Width - name - pick.Key.Length - 4),
                     here ? Skin.ChosenMeta : coat.Label);
             }
 

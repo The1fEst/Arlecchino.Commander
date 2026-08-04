@@ -79,7 +79,7 @@ public sealed class SftpSource : IFileSource
         try
         {
             return await client.ExistsAsync(folder, token).ConfigureAwait(false) &&
-                (await client.GetAttributesAsync(folder, token).ConfigureAwait(false)).IsDirectory;
+                   (await client.GetAttributesAsync(folder, token).ConfigureAwait(false)).IsDirectory;
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException)
         {
@@ -155,8 +155,8 @@ public sealed class SftpSource : IFileSource
         if (hard)
         {
             return await LinkingAsync(path, target, token).ConfigureAwait(false) is { } command &&
-                await RunAsync(command, RemotePaths.Parent(path) ?? RemotePaths.Root, token)
-                    .ConfigureAwait(false) is { Status: 0 };
+                   await RunAsync(command, RemotePaths.Parent(path) ?? RemotePaths.Root, token)
+                       .ConfigureAwait(false) is { Status: 0 };
         }
 
         using var lease = _pool.Take();
