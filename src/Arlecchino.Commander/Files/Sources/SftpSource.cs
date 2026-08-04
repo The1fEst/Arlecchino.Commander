@@ -87,7 +87,37 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
         }
     }
 
-    public Task<string> FreeAsync(string folder, CancellationToken token) => Task.FromResult("");
+    /// <summary>
+    /// How much room is left where the panel is looking. SFTP itself has no request for it, but OpenSSH
+    /// answers one of its own, and every server worth connecting to is OpenSSH. A server that is not
+    /// simply refuses, and the footer goes back to saying nothing rather than saying something wrong.
+    ///
+    /// The blocks are counted in <c>BlockSize</c>, which despite the name is the fundamental size the
+    /// counts are quoted in; <c>FileSystemBlockSize</c> is the size a transfer would prefer and has
+    /// nothing to do with how much is left. Blocks available, not blocks free: the difference between
+    /// the two is the share of the disk kept back for root, which nobody logging in as anyone else
+    /// can have.
+    /// </summary>
+    /// <param name="folder">Where the panel is looking.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns>The line for the footer, or nothing when the server would not answer.</returns>
+    public async Task<string> FreeAsync(string folder, CancellationToken token)
+    {
+        using var lease = _pool.Take();
+
+        try
+        {
+            var status = await lease.Client.GetStatusAsync(folder, token).ConfigureAwait(false);
+            var free = status.AvailableBlocks * status.BlockSize;
+
+            return Sizes.Free(free > long.MaxValue ? long.MaxValue : (long)free);
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or
+                                          SocketException or NotSupportedException)
+        {
+            return "";
+        }
+    }
 
     public async Task<string> ModeAsync(FileEntry entry, CancellationToken token)
     {

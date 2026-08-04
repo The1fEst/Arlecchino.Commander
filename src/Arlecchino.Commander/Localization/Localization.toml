@@ -150,6 +150,7 @@ WorkStop = "Stop"
 
 Yesterday = "yesterday"
 KindFolder = "folder"
+Free = "{0} free"
 
 HostKeyChanged = "The {0} key of {1} is not the one known_hosts has for it. This is what an attempt to sit in the middle of the connection looks like. If the server was genuinely rebuilt, remove its line with: ssh-keygen -R {1}"
 HostKeyRevoked = "The {0} key of {1} is marked revoked in known_hosts."

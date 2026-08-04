@@ -33,6 +33,15 @@ public static class Sizes
     }
 
     /// <summary>
+    /// How much room is left, as the footer of a panel says it. A disk and a server work the figure out
+    /// by different means and neither of them says it in words, so the words are here rather than at
+    /// either end.
+    /// </summary>
+    /// <param name="bytes">How many bytes are left.</param>
+    /// <returns>The line for the footer.</returns>
+    public static string Free(long bytes) => Loc(LocString.Free, Brief(bytes));
+
+    /// <summary>
     /// When something happened, told the way a person would: the time for today, <c>yesterday</c> for
     /// yesterday, a day and a month for this year, and the year as well for anything older. A column of
     /// <c>02.08.26 08:52</c> answers a question nobody asked; what is wanted at a glance is how old the
