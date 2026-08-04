@@ -493,6 +493,25 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
         error is SshException or SocketException or IOException or ObjectDisposedException
             or UnauthorizedAccessException;
 
+    /// <summary>
+    /// Moves something to a name that may already be taken. The plain SFTP rename refuses to land on an
+    /// anything that exists, which made this the one operation in the program that stopped at a name
+    /// already taken: a disk overwrites on a move, and a copy overwrites on either end.
+    ///
+    /// So the plain rename is asked first — it is the asynchronous one, it is a single round trip, and
+    /// it is what succeeds whenever the name is free. Only when it refuses is the OpenSSH rename tried,
+    /// which replaces whatever is there in one step, with no moment in between where neither the old
+    /// name nor the new one holds the file. That one the library offers in no waiting form, so the
+    /// second attempt spends its round trip on this thread; it is reached only by a move onto an
+    /// occupied name, and never on the drawing thread.
+    ///
+    /// A server without the extension refuses that one too, and the move fails saying so, rather than
+    /// deleting what is in the way to make room — an unpicked deletion is not something to do on the
+    /// strength of a failed rename.
+    /// </summary>
+    /// <param name="from">Where it is now.</param>
+    /// <param name="target">Where it is going.</param>
+    /// <param name="token">Gives up the wait.</param>
     public async Task MoveAsync(string from, string target, CancellationToken token)
     {
         using var lease = _pool.Take();
@@ -500,7 +519,14 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
         try
         {
-            await client.RenameFileAsync(from, target, token).ConfigureAwait(false);
+            try
+            {
+                await client.RenameFileAsync(from, target, token).ConfigureAwait(false);
+            }
+            catch (SshException)
+            {
+                client.RenameFile(from, target, true);
+            }
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
         {
