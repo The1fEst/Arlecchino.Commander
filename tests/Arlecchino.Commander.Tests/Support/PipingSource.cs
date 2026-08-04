@@ -81,6 +81,13 @@ public sealed class PipingSource : IFileSource, IMovesWholeFiles
         _disk.TryLinkAsync(path, target, hard, token);
 
     /// <inheritdoc/>
+    public bool HasTrash => _disk.HasTrash;
+
+    /// <inheritdoc/>
+    public Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token) =>
+        _disk.TryTrashAsync(entry, token);
+
+    /// <inheritdoc/>
     public string Quote(string path) => _disk.Quote(path);
 
     /// <inheritdoc/>

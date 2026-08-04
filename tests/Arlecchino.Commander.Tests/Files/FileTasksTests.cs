@@ -170,7 +170,7 @@ public sealed class FileTasksTests : IDisposable
 
         var outcome = new Outcome();
 
-        await FileTasks.DeleteAsync(_source, Entries(tree), outcome, CancellationToken.None);
+        await FileTasks.DeleteAsync(_source, Entries(tree), toTrash: false, outcome, CancellationToken.None);
 
         Assert.False(outcome.Failed);
         Assert.False(Directory.Exists(tree));
@@ -272,7 +272,12 @@ public sealed class FileTasksTests : IDisposable
 
         var outcome = new Outcome();
 
-        await FileTasks.DeleteAsync(_source, Entries(Path.Combine(from, "notes.txt")), outcome, calledOff.Token);
+        await FileTasks.DeleteAsync(
+            _source,
+            Entries(Path.Combine(from, "notes.txt")),
+            toTrash: false,
+            outcome,
+            calledOff.Token);
 
         Assert.True(System.IO.File.Exists(Path.Combine(from, "notes.txt")));
     }

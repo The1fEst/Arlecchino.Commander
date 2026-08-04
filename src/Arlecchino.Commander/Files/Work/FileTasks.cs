@@ -181,9 +181,19 @@ public static class FileTasks
     public static Task RenameAsync(IFileSource source, FileEntry entry, string target, Outcome outcome) =>
         MoveOneAsync(source, entry, source, target, outcome, CancellationToken.None);
 
+    /// <summary>
+    /// Gets rid of what was chosen, either for good or by putting it where it could be fetched back
+    /// from.
+    /// </summary>
+    /// <param name="source">Where the entries live.</param>
+    /// <param name="entries">What to get rid of.</param>
+    /// <param name="toTrash">Whether to put it in the trash rather than delete it.</param>
+    /// <param name="outcome">What is being told how it went.</param>
+    /// <param name="token">Gives up the work; what is already gone stays gone.</param>
     public static async Task DeleteAsync(
         IFileSource source,
         IReadOnlyList<FileEntry> entries,
+        bool toTrash,
         Outcome outcome,
         CancellationToken token)
     {
@@ -196,7 +206,7 @@ public static class FileTasks
                 return;
             }
 
-            await DeleteOneAsync(source, entry, outcome, token).ConfigureAwait(false);
+            await DeleteOneAsync(source, entry, toTrash, outcome, token).ConfigureAwait(false);
         }
     }
 
@@ -230,12 +240,34 @@ public static class FileTasks
     private static async Task DeleteOneAsync(
         IFileSource source,
         FileEntry entry,
+        bool toTrash,
         Outcome outcome,
         CancellationToken token)
     {
         try
         {
             outcome.Reached(entry.Name);
+
+            if (toTrash)
+            {
+                if (await source.TryTrashAsync(entry, token).ConfigureAwait(false))
+                {
+                    if (entry.IsFolder)
+                    {
+                        outcome.Swept();
+                    }
+                    else
+                    {
+                        outcome.Counted(0);
+                    }
+
+                    return;
+                }
+
+                outcome.Failing(entry.Name, Loc(LocString.TrashRefused));
+
+                return;
+            }
 
             if (!entry.IsFolder)
             {
@@ -254,7 +286,11 @@ public static class FileTasks
 
             var children = await ChildrenAsync(source, entry, token).ConfigureAwait(false);
 
-            await SpreadAsync(source, children, child => DeleteOneAsync(source, child, outcome, token), token)
+            await SpreadAsync(
+                    source,
+                    children,
+                    child => DeleteOneAsync(source, child, toTrash: false, outcome, token),
+                    token)
                 .ConfigureAwait(false);
 
             if (token.IsCancellationRequested)
@@ -406,7 +442,7 @@ public static class FileTasks
 
             if (!copied.Failed && !token.IsCancellationRequested)
             {
-                await DeleteOneAsync(from, source, new(), token).ConfigureAwait(false);
+                await DeleteOneAsync(from, source, toTrash: false, new(), token).ConfigureAwait(false);
             }
 
             return;

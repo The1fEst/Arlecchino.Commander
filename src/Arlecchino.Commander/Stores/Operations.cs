@@ -69,12 +69,19 @@ public sealed class Operations : IArlecchinoStore
             Loc(LocString.WorkRenamed),
             Loc(LocString.WorkRenaming));
 
-    public void Delete(IFileSource source, IReadOnlyList<FileEntry> entries) =>
+    /// <summary>
+    /// Gets rid of what was chosen. Putting something in the trash is a rename and nothing more, so it
+    /// is not counted first — the counting pass exists to fill a progress bar that a rename outruns.
+    /// </summary>
+    /// <param name="source">Where the entries live.</param>
+    /// <param name="entries">What to get rid of.</param>
+    /// <param name="toTrash">Whether to put it where it could be fetched back from.</param>
+    public void Delete(IFileSource source, IReadOnlyList<FileEntry> entries, bool toTrash = false) =>
         Start(
-            (outcome, token) => FileTasks.DeleteAsync(source, entries, outcome, token),
-            Loc(LocString.WorkDeleted),
-            Loc(LocString.WorkDeleting),
-            Sizing(source, entries));
+            (outcome, token) => FileTasks.DeleteAsync(source, entries, toTrash, outcome, token),
+            Loc(toTrash ? LocString.WorkTrashed : LocString.WorkDeleted),
+            Loc(toTrash ? LocString.WorkTrashing : LocString.WorkDeleting),
+            toTrash ? null : Sizing(source, entries));
 
     private static async Task MovingAsync(
         IFileSource from,

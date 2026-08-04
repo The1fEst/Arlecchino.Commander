@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Arlecchino.Commander.Files.Trash;
 using Arlecchino.Commander.Views;
 using Xunit;
 using static Arlecchino.Commander.Localization;
@@ -76,7 +77,11 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.Contains("Enter Create", screen, StringComparison.Ordinal);
     }
 
-    /// <summary>Nothing is deleted by the asking, and the dialog says there is no undoing it.</summary>
+    /// <summary>
+    /// Nothing goes anywhere by the asking. What the dialog promises depends on where the file is
+    /// headed — a machine with a trash says it can be fetched back out of it, one without says it
+    /// cannot — because the one thing this dialog must not do is offer a comfort that is not there.
+    /// </summary>
     [Fact]
     public void DeletingAsksBeforeItDeletes()
     {
@@ -85,8 +90,27 @@ public sealed class CommanderKeysTests : IDisposable
 
         var screen = _app.Frame();
 
-        Assert.Contains("Delete", screen, StringComparison.Ordinal);
         Assert.Contains("GOING AWAY", screen, StringComparison.Ordinal);
+        Assert.Contains(
+            Trash.Here.Works ? "out of the trash" : "no undoing it",
+            screen,
+            StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(_app.Folder, "alpha.txt")));
+    }
+
+    /// <summary>
+    /// Shift asks for the other one, which is final wherever it runs. Somebody who wants a thing gone
+    /// should not have to go and empty the trash afterwards.
+    /// </summary>
+    [Fact]
+    public void DeletingForGoodSaysItCannotBeUndone()
+    {
+        OnAlpha();
+        _app.Press(ConsoleKey.F8, shift: true);
+
+        var screen = _app.Frame();
+
+        Assert.Contains("Delete", screen, StringComparison.Ordinal);
         Assert.Contains("no undoing it", screen, StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(_app.Folder, "alpha.txt")));
     }

@@ -52,6 +52,15 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
     public static SftpSource Connect(Connection connection) => new(connection, new(connection, Sessions));
 
+    /// <summary>A server has no trash, so nothing deleted there can be fetched back.</summary>
+    public bool HasTrash => false;
+
+    /// <summary>Nothing: there is nowhere on a server to put it.</summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <param name="token">Unused: nothing is waited on.</param>
+    /// <returns><c>false</c>, always.</returns>
+    public Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token) => Task.FromResult(false);
+
     /// <summary>
     /// Wraps a path the way the server's shell reads it. Which shell that is has usually been worked
     /// out already, by the first command sent over the connection; before that it is a guess, and the

@@ -37,6 +37,22 @@ public interface IFileSource : IDisposable
     bool WalksCheaply { get; }
 
     /// <summary>
+    /// Whether a deleted file can be put somewhere it could be fetched back from. Asked before the
+    /// work rather than during it, because it changes what the panel says it is about to do: a dialog
+    /// promising there is no undoing it is a lie when the file is going to the trash, and a comfort
+    /// nobody should take is worse than either.
+    /// </summary>
+    bool HasTrash { get; }
+
+    /// <summary>
+    /// Puts something where the user could get it back from, instead of deleting it.
+    /// </summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns><c>false</c> when this source has nowhere to put it, leaving it where it was.</returns>
+    Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token);
+
+    /// <summary>
     /// Removes a folder and everything under it in one go, when the source can do that itself. A
     /// server reached over SSH can, and one command beats one round trip per file by a long way.
     /// </summary>

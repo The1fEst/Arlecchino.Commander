@@ -145,8 +145,20 @@ public sealed class Deeds : PanelWork
         });
     }
 
-    /// <summary>Deletes what is marked, having said how much of it there is and that it is final.</summary>
-    public void Delete()
+    /// <summary>
+    /// Gets rid of what is marked, putting it in the trash where there is one. What the dialog promises
+    /// is what will happen: the trash is offered only where something could actually be fetched back
+    /// out of it, and everywhere else this is the same final thing it always was.
+    /// </summary>
+    public void Delete() => Removing(Here.Source.HasTrash);
+
+    /// <summary>
+    /// Deletes what is marked outright, trash or no trash. Somebody who wants a thing gone rather than
+    /// moved should not have to go and empty the trash afterwards.
+    /// </summary>
+    public void DeleteForGood() => Removing(toTrash: false);
+
+    private void Removing(bool toTrash)
     {
         var panel = Here;
         var sources = panel.Targets();
@@ -167,34 +179,52 @@ public sealed class Deeds : PanelWork
 
         Dialogs.Ask(new()
         {
-            Title = sources.Count == 1 ? Loc(LocString.Delete) : Loc(LocString.DeleteManyTitle, sources.Count),
+            Title = Heading(sources.Count, toTrash),
             Subtitle = Loc(LocString.DeleteFrom, Paths.Homed(panel.Source, panel.Folder)),
-            Key = "F8",
-            Verb = Loc(LocString.Delete),
+            Key = toTrash ? "F8" : "Shift+F8",
+            Verb = Loc(toTrash ? LocString.TrashVerb : LocString.Delete),
             Weight = Weight.Destroys,
             Items = sources,
             ItemsLabel = Loc(LocString.OperationGoingAway),
-            Note = _ => new(Losing(bytes, folders), true),
-            Confirm = _ => _operations.Delete(panel.Source, sources),
+            Note = _ => new(Losing(bytes, folders, toTrash), true),
+            Confirm = _ => _operations.Delete(panel.Source, sources, toTrash),
         });
     }
 
-    /// <summary>What deleting would cost, in the words that fit what is being deleted.</summary>
+    /// <summary>The title of the dialog, which says which of the two things is about to happen.</summary>
+    /// <param name="count">How many were chosen.</param>
+    /// <param name="toTrash">Whether they are going to the trash.</param>
+    /// <returns>The title.</returns>
+    private static string Heading(int count, bool toTrash)
+    {
+        if (toTrash)
+        {
+            return count == 1 ? Loc(LocString.TrashTitle) : Loc(LocString.TrashManyTitle, count);
+        }
+
+        return count == 1 ? Loc(LocString.Delete) : Loc(LocString.DeleteManyTitle, count);
+    }
+
+    /// <summary>What this would cost, in the words that fit what is being got rid of and where to.</summary>
     /// <param name="bytes">How much is named in the list.</param>
     /// <param name="folders">How many folders are in it.</param>
+    /// <param name="toTrash">Whether it is going somewhere it could be fetched back from.</param>
     /// <returns>The words.</returns>
-    private static string Losing(long bytes, int folders)
+    private static string Losing(long bytes, int folders, bool toTrash)
     {
         if (folders == 0)
         {
-            return Loc(LocString.DeletePlain, Sizes.Brief(bytes));
+            return Loc(toTrash ? LocString.TrashPlain : LocString.DeletePlain, Sizes.Brief(bytes));
         }
 
         var these = folders == 1 ? Loc(LocString.DeleteOneFolder) : Loc(LocString.DeleteManyFolders);
 
-        return bytes == 0
-            ? Loc(LocString.DeleteFolders, these)
-            : Loc(LocString.DeleteNamed, Sizes.Brief(bytes), these);
+        if (bytes == 0)
+        {
+            return Loc(toTrash ? LocString.TrashFolders : LocString.DeleteFolders, these);
+        }
+
+        return Loc(toTrash ? LocString.TrashNamed : LocString.DeleteNamed, Sizes.Brief(bytes), these);
     }
 
     /// <summary>Makes the folder that was asked for, and lands the cursor on it when that was asked too.</summary>

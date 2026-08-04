@@ -57,6 +57,7 @@ public static class CommanderKeys
             Bind.To(new(ConsoleKey.F6, ConsoleModifiers.Shift), LocString.Rename, doings.Files.Rename),
             Bind.To(new(ConsoleKey.F7), LocString.MenuMakeFolder, doings.Files.MakeFolder),
             Bind.To(new(ConsoleKey.F8), LocString.Delete, doings.Files.Delete),
+            Bind.To(new(ConsoleKey.F8, ConsoleModifiers.Shift), LocString.MenuDeleteForGood, doings.Files.DeleteForGood),
             Bind.To(new(ConsoleKey.F9), LocString.Menu, () => Menu.Open(doings)),
             Bind.To(new(ConsoleKey.R, ConsoleModifiers.Control), LocString.MenuReload, doings.Reload),
             Bind.To(new(ConsoleKey.H, ConsoleModifiers.Control), LocString.MenuShowHidden, () => doings.ToggleHidden(panels.Active)),

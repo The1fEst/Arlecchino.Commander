@@ -131,6 +131,15 @@ public sealed class FtpSource : IFileSource
     public Task<bool> TryLinkAsync(string path, string target, bool hard, CancellationToken token) =>
         Task.FromResult(false);
 
+    /// <summary>A server has no trash, so nothing deleted there can be fetched back.</summary>
+    public bool HasTrash => false;
+
+    /// <summary>Nothing: there is nowhere on a server to put it.</summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <param name="token">Unused: nothing is waited on.</param>
+    /// <returns><c>false</c>, always.</returns>
+    public Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token) => Task.FromResult(false);
+
     /// <summary>
     /// The path as it stands. There is no shell here to read it back, so there are no rules to escape
     /// it by; what this returns is only ever shown, never run.

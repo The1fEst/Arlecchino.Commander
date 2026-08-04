@@ -129,6 +129,7 @@ public static class Menu
         new(LocString.MenuSymbolicLink, () => doings.Linking.Make(hard: false)),
         new(LocString.MenuHardLink, () => doings.Linking.Make(hard: true)),
         new(LocString.Delete, doings.Files.Delete),
+        new(LocString.MenuDeleteForGood, doings.Files.DeleteForGood),
     ];
 
     /// <summary>What the menu of things done to both panels holds.</summary>

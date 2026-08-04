@@ -114,6 +114,23 @@ public sealed class LocalSource : IFileSource
     }
 
     /// <inheritdoc/>
+    public bool HasTrash => Trash.Trash.Here.Works;
+
+    /// <summary>
+    /// Puts something in the trash of this machine. It runs off the drawing thread because a folder of
+    /// any size is a rename on a good day and a copy on a bad one, and neither belongs in a frame.
+    /// </summary>
+    /// <param name="entry">The file or folder.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns><c>false</c> when it could not be put there and is still where it was.</returns>
+    public Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        return Task.Run(() => Trash.Trash.Here.TryPut(entry.Path), token);
+    }
+
+    /// <inheritdoc/>
     public string Quote(string path) => Shells.Local.Quote(path);
 
     public IShellRun Start(string command, string folder) => new LocalRun(command, folder);
