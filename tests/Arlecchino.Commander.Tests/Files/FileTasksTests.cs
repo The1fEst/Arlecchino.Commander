@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
+using Arlecchino.Commander.Tests.Support;
 using Xunit;
 
 namespace Arlecchino.Commander.Tests.Files;
@@ -73,6 +74,69 @@ public sealed class FileTasksTests : IDisposable
         Assert.False(outcome.Failed);
         Assert.Equal("what was written", await System.IO.File.ReadAllTextAsync(Path.Combine(to, "notes.txt")));
         Assert.False(System.IO.File.Exists(file));
+    }
+
+    /// <summary>
+    ///     An end that can carry a whole file is asked to, instead of having one read out of it a block
+    ///     at a time. It is the destination that is asked when both could: writing is the narrower way
+    ///     over SFTP, where a server takes a third of what it will send.
+    /// </summary>
+    [Fact]
+    public async Task TheDestinationCarriesTheFileWhenItCan()
+    {
+        var from = Folder("from");
+        var to = Folder("to");
+        var file = File(from, "notes.txt", "what was written");
+        var outcome = new Outcome();
+
+        using var piping = new PipingSource();
+
+        await FileTasks.CopyAsync(_source, Entries(file), piping, to, outcome, CancellationToken.None);
+
+        Assert.False(outcome.Failed);
+        Assert.Equal(1, piping.Sent);
+        Assert.Equal(0, piping.Fetched);
+        Assert.Equal("what was written", await System.IO.File.ReadAllTextAsync(Path.Combine(to, "notes.txt")));
+    }
+
+    /// <summary>With only the far end able to carry a whole file, it is the one that does.</summary>
+    [Fact]
+    public async Task TheSourceCarriesTheFileWhenTheDestinationCannot()
+    {
+        var from = Folder("from");
+        var to = Folder("to");
+        var file = File(from, "notes.txt", "what was written");
+        var outcome = new Outcome();
+
+        using var piping = new PipingSource();
+
+        await FileTasks.CopyAsync(piping, Entries(file), _source, to, outcome, CancellationToken.None);
+
+        Assert.False(outcome.Failed);
+        Assert.Equal(1, piping.Fetched);
+        Assert.Equal(0, piping.Sent);
+        Assert.Equal("what was written", await System.IO.File.ReadAllTextAsync(Path.Combine(to, "notes.txt")));
+    }
+
+    /// <summary>
+    ///     The pipelined paths report nothing as they run, so the bytes are counted on the stream at the
+    ///     other end. Without that a large file over a slow link leaves the bar still until it lands.
+    /// </summary>
+    [Fact]
+    public async Task ACarriedFileStillMovesTheBar()
+    {
+        var from = Folder("from");
+        var to = Folder("to");
+        var file = File(from, "notes.txt", new('x', 5000));
+        var outcome = new Outcome();
+
+        using var piping = new PipingSource();
+
+        outcome.Planning(new(1, 0, 5000));
+
+        await FileTasks.CopyAsync(_source, Entries(file), piping, to, outcome, CancellationToken.None);
+
+        Assert.Equal(1d, outcome.Share);
     }
 
     [Fact]

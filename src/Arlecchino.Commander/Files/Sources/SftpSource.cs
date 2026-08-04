@@ -13,7 +13,7 @@ using Arlecchino.Commander.Files.Work;
 
 namespace Arlecchino.Commander.Files.Sources;
 
-public sealed class SftpSource : IFileSource
+public sealed class SftpSource : IFileSource, IMovesWholeFiles
 {
     private const int Sessions = 8;
 
@@ -494,6 +494,36 @@ public sealed class SftpSource : IFileSource
 
         _shellGate.Dispose();
         _pool.Dispose();
+    }
+
+    /// <inheritdoc/>
+    public async Task SendAsync(Stream reading, string target, CancellationToken token)
+    {
+        using var lease = _pool.Take();
+
+        try
+        {
+            await lease.Client.UploadFileAsync(reading, target, token).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
+        {
+            throw RemotePaths.AsIoException(error);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task FetchAsync(string source, Stream writing, CancellationToken token)
+    {
+        using var lease = _pool.Take();
+
+        try
+        {
+            await lease.Client.DownloadFileAsync(source, writing, token).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)
+        {
+            throw RemotePaths.AsIoException(error);
+        }
     }
 
     /// <summary>

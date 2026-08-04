@@ -392,10 +392,17 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// Moves the bytes of one file, a block at a time. Reading the whole thing in one call would be
-    /// shorter to write and would take the stop key with it: the block is where the work looks up.
-    /// Counting per block is the other half of that — a bar that only moves as each file finishes says
-    /// nothing at all while a large one is going over.
+    /// Moves the bytes of one file.
+    ///
+    /// An end that can move a whole file itself is asked to, because it can keep several requests in
+    /// flight where a stream can only send one and wait. The destination is asked first: writing is the
+    /// narrower of the two over SFTP, where a server will take a third of what it will send.
+    ///
+    /// With neither end able to, the bytes go a block at a time. Reading the whole thing in one call
+    /// would be shorter to write and would take the stop key with it: the block is where the work looks
+    /// up. Counting per block is the other half of that — a bar that only moves as each file finishes
+    /// says nothing at all while a large one is going over, which is why the pipelined paths are counted
+    /// on the stream at the other end rather than left silent.
     /// </summary>
     /// <param name="from">Where the bytes are.</param>
     /// <param name="source">The file.</param>
@@ -412,25 +419,32 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(Block);
-
         try
         {
-            await using (var reading = await from.OpenReadAsync(source, token).ConfigureAwait(false))
-            await using (var writing = await to.CreateAsync(target, token).ConfigureAwait(false))
+            switch (to, from)
             {
-                while (true)
-                {
-                    var read = await reading.ReadAsync(buffer.AsMemory(0, Block), token).ConfigureAwait(false);
-
-                    if (read == 0)
+                case (IMovesWholeFiles sink, _):
+                    await using (var reading = await from.OpenReadAsync(source, token).ConfigureAwait(false))
                     {
-                        break;
+                        await sink.SendAsync(new CountedStream(reading, outcome.Moved), target, token)
+                            .ConfigureAwait(false);
                     }
 
-                    await writing.WriteAsync(buffer.AsMemory(0, read), token).ConfigureAwait(false);
-                    outcome.Moved(read);
-                }
+                    break;
+
+                case (_, IMovesWholeFiles spring):
+                    await using (var writing = await to.CreateAsync(target, token).ConfigureAwait(false))
+                    {
+                        await spring.FetchAsync(source, new CountedStream(writing, outcome.Moved), token)
+                            .ConfigureAwait(false);
+                    }
+
+                    break;
+
+                default:
+                    await BlocksAsync(from, source, to, target, outcome, token).ConfigureAwait(false);
+
+                    break;
             }
 
             outcome.Counted(0);
@@ -440,6 +454,46 @@ public static class FileTasks
             await Abandon(to, target).ConfigureAwait(false);
 
             throw;
+        }
+    }
+
+    /// <summary>
+    /// The bytes of one file, a block at a time, for the two ends that can do no better between them.
+    /// </summary>
+    /// <param name="from">Where the bytes are.</param>
+    /// <param name="source">The file.</param>
+    /// <param name="to">Where they are going.</param>
+    /// <param name="target">The name they are going under.</param>
+    /// <param name="outcome">Told how much moved, as it moves.</param>
+    /// <param name="token">Stops it between blocks.</param>
+    /// <returns>A task that finishes when the file has been written.</returns>
+    private static async Task BlocksAsync(
+        IFileSource from,
+        string source,
+        IFileSource to,
+        string target,
+        Outcome outcome,
+        CancellationToken token)
+    {
+        var buffer = ArrayPool<byte>.Shared.Rent(Block);
+
+        try
+        {
+            await using var reading = await from.OpenReadAsync(source, token).ConfigureAwait(false);
+            await using var writing = await to.CreateAsync(target, token).ConfigureAwait(false);
+
+            while (true)
+            {
+                var read = await reading.ReadAsync(buffer.AsMemory(0, Block), token).ConfigureAwait(false);
+
+                if (read == 0)
+                {
+                    break;
+                }
+
+                await writing.WriteAsync(buffer.AsMemory(0, read), token).ConfigureAwait(false);
+                outcome.Moved(read);
+            }
         }
         finally
         {
