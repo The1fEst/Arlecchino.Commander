@@ -78,6 +78,38 @@ public static class FileTasks
     }
 
     /// <summary>
+    /// Whether the place a copy is going is the thing being copied, or somewhere inside it.
+    ///
+    /// A folder copied into its own tree has no end: the copy walks what it is writing, so every child
+    /// it lays down is another child to copy. It does not even fail honestly — each level lists what is
+    /// there at the moment it looks, so how deep the nest gets depends on how fast the disk is, and the
+    /// same copy twice leaves two different messes.
+    ///
+    /// A file onto itself is the shorter version of the same mistake. On a disk it is caught already —
+    /// the read holds the file in a way the write is refused — but that is the operating system saying
+    /// no, not this program, and a server keeps no such lock: there the write would open the file, empty
+    /// it, and only then would the read discover there is nothing left to copy.
+    ///
+    /// Both start the same way, with two panels showing one folder, which is nobody's mistake.
+    /// </summary>
+    /// <param name="source">The end both paths belong to.</param>
+    /// <param name="outer">What is being copied.</param>
+    /// <param name="inner">Where it is going.</param>
+    /// <returns><c>true</c> when the copy would be reading what it writes.</returns>
+    private static bool Encloses(IFileSource source, string outer, string inner)
+    {
+        for (var at = inner; at is not null; at = source.Parent(at))
+        {
+            if (string.Equals(at, outer, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// What is inside a folder, without the entry that leads back out of it. A folder that cannot be
     /// read counts as empty here — the work itself will report why when it gets there.
     /// </summary>
@@ -314,6 +346,15 @@ public static class FileTasks
 
         if (token.IsCancellationRequested)
         {
+            return;
+        }
+
+        if (ReferenceEquals(from, to) && Encloses(from, source.Path, target))
+        {
+            outcome.Failing(
+                source.Name,
+                Loc(source.IsFolder ? LocString.CarryingIntoItself : LocString.CarryingOntoItself));
+
             return;
         }
 

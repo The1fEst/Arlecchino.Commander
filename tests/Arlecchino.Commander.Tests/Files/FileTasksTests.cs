@@ -276,4 +276,47 @@ public sealed class FileTasksTests : IDisposable
 
         Assert.True(System.IO.File.Exists(Path.Combine(from, "notes.txt")));
     }
+
+    /// <summary>
+    /// Copying a file into the folder it is already in. Both panels showing one folder is an ordinary
+    /// thing to have happen, and the copy that follows names the file as both what is read and what is
+    /// written. Whatever comes of it, the one outcome that must not be is a file left shorter than it
+    /// was — the work is copying, and copying has never been a way to lose anything.
+    /// </summary>
+    [Fact]
+    public async Task CopyingAFileOntoItselfDoesNotDestroyIt()
+    {
+        var here = Folder("here");
+        var file = File(here, "notes.txt", "what was written");
+        var outcome = new Outcome();
+
+        await FileTasks.CopyAsync(_source, Entries(file), _source, here, outcome, CancellationToken.None);
+
+        Assert.Equal("what was written", await System.IO.File.ReadAllTextAsync(file));
+        Assert.True(outcome.Failed, "the copy was refused, and saying so is the point");
+    }
+
+    /// <summary>
+    /// Copying a folder into a folder inside it. The copy has to walk what it is writing into, so every
+    /// child it lays down is another child to copy, and the only thing that ends it is the disk. Bounded
+    /// here by the clock, because a test that proves this by running out of room is not a test.
+    /// </summary>
+    [Fact]
+    public async Task CopyingAFolderIntoItselfEnds()
+    {
+        var tree = Folder("tree");
+        var into = Directory.CreateDirectory(Path.Combine(tree, "into")).FullName;
+
+        File(tree, "notes.txt", "what was written");
+
+        using var clock = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var outcome = new Outcome();
+
+        await FileTasks.CopyAsync(_source, Entries(tree), _source, into, outcome, clock.Token);
+
+        Assert.False(clock.IsCancellationRequested, "the copy was still going when the clock ran out");
+        Assert.False(Directory.Exists(Path.Combine(into, "tree", "into", "tree")));
+        Assert.Empty(Directory.GetFileSystemEntries(into));
+        Assert.True(outcome.Failed, "the copy was refused, and saying so is the point");
+    }
 }

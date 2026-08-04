@@ -259,6 +259,8 @@ CarryingFolder = "a folder"
 CarryingFolders = "{0} folders"
 CarryingBoth = "{0} and {1}"
 CarryingOverSftp = "{0} over SFTP"
+CarryingIntoItself = "a folder cannot be copied into itself"
+CarryingOntoItself = "a file cannot be copied onto itself"
 
 ChoosingNarrow = "type to narrow the list"
 ChoosingNothing = "nothing here goes by that name"
