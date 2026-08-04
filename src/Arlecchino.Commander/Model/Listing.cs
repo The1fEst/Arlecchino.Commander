@@ -103,12 +103,12 @@ public static class Listing
         {
             Sorting.Size => first.Size.CompareTo(second.Size),
             Sorting.Modified => first.Modified.CompareTo(second.Modified),
-            _ => string.Compare(first.Name, second.Name, StringComparison.OrdinalIgnoreCase),
+            _ => Natural.Compare(first.Name, second.Name),
         };
 
         if (order == 0)
         {
-            order = string.Compare(first.Name, second.Name, StringComparison.OrdinalIgnoreCase);
+            order = Natural.Compare(first.Name, second.Name);
         }
 
         return descending ? -order : order;
