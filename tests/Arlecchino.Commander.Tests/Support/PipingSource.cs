@@ -81,6 +81,9 @@ public sealed class PipingSource : IFileSource, IMovesWholeFiles
         _disk.TryLinkAsync(path, target, hard, token);
 
     /// <inheritdoc/>
+    public string Quote(string path) => _disk.Quote(path);
+
+    /// <inheritdoc/>
     public IShellRun Start(string command, string folder) => _disk.Start(command, folder);
 
     /// <inheritdoc/>

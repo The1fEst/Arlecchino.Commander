@@ -113,6 +113,9 @@ public sealed class LocalSource : IFileSource
         }
     }
 
+    /// <inheritdoc/>
+    public string Quote(string path) => Shells.Local.Quote(path);
+
     public IShellRun Start(string command, string folder) => new LocalRun(command, folder);
 
     /// <summary>

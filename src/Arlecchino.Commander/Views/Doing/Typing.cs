@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Panels;
@@ -79,6 +80,11 @@ public sealed class Typing
     /// <summary>
     /// Runs what is on the line where the panel is looking. A <c>cd</c> is not run at all: it moves
     /// the panel, because a shell started for one command would forget it the moment it ended.
+    ///
+    /// What the panel is showing is filled in first, so <c>%s</c> and its fellows name the marked files
+    /// rather than reaching the shell as themselves. The <c>cd</c> is decided on what was typed, not on
+    /// what it expanded to — the point is to spot the word, and expanding first would only put paths in
+    /// front of it.
     /// </summary>
     private void Enter()
     {
@@ -90,7 +96,14 @@ public sealed class Typing
             return;
         }
 
-        _runner.Run(command, panel.Folder, panel.Source, panel.Reload);
+        var filled = Placeholders.Expand(
+            command,
+            panel.Source,
+            panel.Folder,
+            panel.Targets(),
+            panel.Current);
+
+        _runner.Run(filled, panel.Folder, panel.Source, panel.Reload);
     }
 
     /// <summary>Moves the panel when what was typed was a <c>cd</c>.</summary>

@@ -69,6 +69,16 @@ public interface IFileSource : IDisposable
     Task<bool> TryLinkAsync(string path, string target, bool hard, CancellationToken token);
 
     /// <summary>
+    /// Wraps a path so that the shell on this end reads it back as one word. A name with a space or an
+    /// apostrophe in it is ordinary and is not the user's problem to work around, so a path this
+    /// program puts into a command is escaped by the end that will read it — a disk under Windows and
+    /// a server answering with a POSIX shell do not agree on how.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <returns>The path, ready to stand in a command line.</returns>
+    string Quote(string path);
+
+    /// <summary>
     /// Starts a command where the panel is looking, when this source can run one at all.
     /// </summary>
     /// <param name="command">What was typed.</param>

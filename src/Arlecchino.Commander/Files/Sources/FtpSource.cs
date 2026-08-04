@@ -131,6 +131,14 @@ public sealed class FtpSource : IFileSource
     public Task<bool> TryLinkAsync(string path, string target, bool hard, CancellationToken token) =>
         Task.FromResult(false);
 
+    /// <summary>
+    /// The path as it stands. There is no shell here to read it back, so there are no rules to escape
+    /// it by; what this returns is only ever shown, never run.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <returns>The same path.</returns>
+    public string Quote(string path) => path;
+
     /// <summary>FTP has no shell, so nothing runs here.</summary>
     /// <param name="command">What was typed.</param>
     /// <param name="folder">The folder it would run in.</param>

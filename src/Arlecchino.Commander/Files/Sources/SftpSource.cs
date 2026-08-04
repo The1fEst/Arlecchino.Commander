@@ -52,6 +52,16 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
     public static SftpSource Connect(Connection connection) => new(connection, new(connection, Sessions));
 
+    /// <summary>
+    /// Wraps a path the way the server's shell reads it. Which shell that is has usually been worked
+    /// out already, by the first command sent over the connection; before that it is a guess, and the
+    /// guess is POSIX, because a server offering SFTP that is not answering with a POSIX shell is the
+    /// rare one.
+    /// </summary>
+    /// <param name="path">The path, as SFTP spells it.</param>
+    /// <returns>The path, ready to stand in a command line.</returns>
+    public string Quote(string path) => (_dialect ?? PosixShell.Instance).Quote(path);
+
     public IShellRun Start(string command, string folder) => new RemoteRun(this, command, folder);
 
     public bool WalksCheaply => false;

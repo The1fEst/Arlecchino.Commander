@@ -44,7 +44,7 @@ public abstract class Shell
     /// <summary>Wraps a path so that this shell reads it back as one word, whatever is in it.</summary>
     /// <param name="path">The path, as SFTP spells it.</param>
     /// <returns>The path, quoted.</returns>
-    protected abstract string Quote(string path);
+    public abstract string Quote(string path);
 
     /// <summary>
     /// Fills in what starts this shell with a command to run: the executable and the arguments that
@@ -128,7 +128,7 @@ public sealed class PosixShell : Shell
     }
 
     /// <inheritdoc/>
-    protected override string Quote(string path) =>
+    public override string Quote(string path) =>
         $"'{path.Replace("'", @"'\''", StringComparison.Ordinal)}'";
 }
 
@@ -187,7 +187,7 @@ public sealed class WindowsCommandShell : WindowsShell
     public override string Within(string folder, string command) => $"cd /d {Quote(folder)} && {command}";
 
     /// <inheritdoc/>
-    protected override string Quote(string path) => $"\"{Local(path)}\"";
+    public override string Quote(string path) => $"\"{Local(path)}\"";
 
     /// <summary>
     /// Fills in <c>cmd.exe</c> behind <c>/s /c</c>, which is the only spelling it reads back
@@ -241,7 +241,7 @@ public sealed class PowerShellShell : WindowsShell
     }
 
     /// <inheritdoc/>
-    protected override string Quote(string path) =>
+    public override string Quote(string path) =>
         $"'{Local(path).Replace("'", "''", StringComparison.Ordinal)}'";
 }
 
@@ -264,7 +264,7 @@ public sealed class ForeignShell : Shell
     public override string Within(string folder, string command) => command;
 
     /// <inheritdoc/>
-    protected override string Quote(string path) => path;
+    public override string Quote(string path) => path;
 
     /// <inheritdoc/>
     public override void Hand(ProcessStartInfo started, string command) =>
