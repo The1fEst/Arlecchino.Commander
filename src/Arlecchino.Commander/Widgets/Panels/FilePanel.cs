@@ -236,6 +236,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
         if (key.Modifiers.HasFlag(KeyModifiers.Control) ||
             key.Modifiers.HasFlag(KeyModifiers.Alt) ||
+            key.Modifiers.HasFlag(KeyModifiers.Super) ||
             _keys.Resolve(key) is not { } typed ||
             char.IsControl(typed))
         {

@@ -60,7 +60,7 @@ public sealed class CommandLine
     /// <returns><c>true</c> when the line took it and the panel should not see it.</returns>
     public bool Handle(KeyPress key)
     {
-        if (key.Modifiers.HasFlag(KeyModifiers.Alt))
+        if (key.Modifiers.HasFlag(KeyModifiers.Alt) || key.Modifiers.HasFlag(KeyModifiers.Super))
         {
             return key.Key switch
             {

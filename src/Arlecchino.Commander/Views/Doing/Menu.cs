@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
-using Arlecchino.Input;
 using Arlecchino.Navigation;
 
 namespace Arlecchino.Commander.Views.Doing;
@@ -53,31 +51,6 @@ public static class Menu
             Everything(doings),
             static _ => { },
             Loc(LocString.PaletteHints));
-    }
-
-    /// <summary>A key binding as it is written in a palette.</summary>
-    /// <param name="binding">The binding.</param>
-    /// <returns>The words for it.</returns>
-    private static string Written(KeyBinding binding)
-    {
-        var said = new StringBuilder();
-
-        if (binding.Modifiers.HasFlag(KeyModifiers.Control))
-        {
-            said.Append("Ctrl+");
-        }
-
-        if (binding.Modifiers.HasFlag(KeyModifiers.Alt))
-        {
-            said.Append("Alt+");
-        }
-
-        if (binding.Modifiers.HasFlag(KeyModifiers.Shift))
-        {
-            said.Append("Shift+");
-        }
-
-        return said.Append(binding.Key.ToString()).ToString();
     }
 
     /// <summary>
@@ -219,7 +192,7 @@ public static class Menu
             everything.Add(new(
                 Capitalised(command.Label()),
                 Loc(LocString.PaletteKey),
-                Written(command.Binding),
+                command.Binding.ToString(),
                 () => navigation.Apply(run.Run())));
         }
 

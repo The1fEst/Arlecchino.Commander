@@ -440,16 +440,21 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Stopping the work is <c>Alt+Esc</c>. It was plain Escape, which meant one key stood for "get
-    /// out of this" most of the time and "stop the copy" whenever something was running — and you
-    /// cannot press a key you have to think about first.
+    /// Stopping the work is Escape held with a modifier. It was plain Escape, which meant one key stood for
+    /// "get out of this" most of the time and "stop the copy" whenever something was running — and you cannot
+    /// press a key you have to think about first.
+    ///
+    /// Which modifier depends on the machine: a Mac terminal keeps Option for the characters it types, so the
+    /// binding names Command there and Alt everywhere else, and answers to both either way.
     /// </summary>
     [Fact]
-    public void StoppingTheWorkIsAltEscape()
+    public void StoppingTheWorkIsEscapeHeldWithAModifier()
     {
         var stop = _app.Navigator.CurrentCommands
             .Single(command => command.Label() == Loc(LocString.KeyStop));
 
-        Assert.Equal(new(ConsoleKey.Escape, KeyModifiers.Alt), stop.Binding);
+        Assert.Equal(KeyBinding.AltOrSuper(ConsoleKey.Escape), stop.Binding);
+        Assert.True(stop.Binding.Matches(new(ConsoleKey.Escape, KeyModifiers.Alt)));
+        Assert.True(stop.Binding.Matches(new(ConsoleKey.Escape, KeyModifiers.Super)));
     }
 }
