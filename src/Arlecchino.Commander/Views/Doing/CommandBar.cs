@@ -16,9 +16,9 @@ namespace Arlecchino.Commander.Views.Doing;
 /// The line a command is typed on, and what happens when it is entered. It is the one row between the
 /// panels and the bar of keys, and it is always that one row however tall the bar below it has grown.
 ///
-/// The line takes a key only while there is something typed on it: an empty line leaves Space, Enter,
-/// Backspace and the marking keys to the panel, which is what makes a command line and a file list
-/// able to share one keyboard without a mode switch between them.
+/// The line takes a key only while there is something typed on it. An empty line leaves Space, Enter,
+/// Backspace and the marking keys to the panel, which is what makes a command line and a file list able to
+/// share one keyboard without a mode switch between them.
 /// </summary>
 public sealed class CommandBar
 {
@@ -30,7 +30,7 @@ public sealed class CommandBar
     private readonly ArlecchinoKeymap _keymap;
     private readonly Pair _panels;
 
-    /// <summary>Sets the line up under a pair of panels.</summary>
+    /// <summary>Puts the line under a pair of panels.</summary>
     /// <param name="line">The line itself.</param>
     /// <param name="runner">What runs what is typed.</param>
     /// <param name="state">Where the last word said is kept.</param>

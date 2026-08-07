@@ -144,9 +144,9 @@ public static class Skin
     public static TermColor CrimsonFill => field ??= Paint(Crimson, Crimson);
 
     /// <summary>
-    /// What closes the top and bottom of the panel being worked in. It is drawn with half blocks, so
-    /// the two colors are the two halves of the row: the surround above the line and the panel below
-    /// it, which lets a panel end halfway down a cell instead of a whole one short.
+    /// What closes the top and bottom of the panel being worked in. It is drawn with half blocks, so the two
+    /// colors are the two halves of the row: the surround above the line and the panel below it. That lets a
+    /// panel end halfway down a cell instead of a whole one short.
     /// </summary>
     public static TermColor BorderActiveColor => field ??= Paint(Unlit, Lit);
 

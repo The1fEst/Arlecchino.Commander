@@ -11,8 +11,8 @@ namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
 /// A handful of SFTP sessions to the same server, handed out one at a time. One session answers one
-/// request at a time, so a delete of a hundred files over a link with any latency spends the whole
-/// minute waiting; several sessions let the next request leave before the last one has answered.
+/// request at a time, so deleting a hundred files over a link with any latency spends the whole minute
+/// waiting; several sessions let the next request leave before the last one has answered.
 ///
 /// Sessions are opened as they are first needed and then kept, because opening one costs a round trip
 /// of its own.
@@ -20,10 +20,10 @@ namespace Arlecchino.Commander.Files.Sources;
 public sealed class SftpPool : IDisposable
 {
     /// <summary>
-    /// How much of a file is asked for in one request. A session sends one and waits for the answer
-    /// before sending the next, so this and the round trip to the server are the whole of how fast a
-    /// single file moves: the stock 32 KB over a link a tenth of a second wide is under 300 KB a second,
-    /// whatever the line underneath it could carry.
+    /// How much of a file is asked for in one request. A session sends one and waits for the answer before
+    /// sending the next, so this and the round trip to the server are the whole of how fast a single file
+    /// moves. The stock 32 KB over a link a tenth of a second wide is under 300 KB a second, whatever the
+    /// line underneath it could carry.
     ///
     /// Sixty-four is the ceiling and not a preference. Neither end of an SSH connection may send a
     /// packet larger than the other end said it would take, and this library says 64 KB of itself —

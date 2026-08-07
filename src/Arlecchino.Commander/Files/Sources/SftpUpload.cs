@@ -12,28 +12,28 @@ namespace Arlecchino.Commander.Files.Sources;
 /// <summary>
 /// Writes a whole file to a server over several handles at once.
 ///
-/// Reading from a server is already as fast as the line allows: the library keeps a hundred read
-/// requests outstanding and the answers arrive in a stream. Writing has no such arrangement anywhere in
-/// it — one write is sent, its status is waited for, and only then is the next sent. A server will not
-/// take more than 32 KB in one write however much is offered, so a file climbs at 32 KB per round trip:
-/// on a link a tenth of a second wide that is under 300 KB a second, whatever the line beneath could
-/// carry, and no buffer size changes it.
+/// Reading from a server is already as fast as the line allows: the library keeps a hundred read requests
+/// outstanding and the answers arrive in a stream. Writing has no such arrangement anywhere in it — one
+/// write is sent, its status is waited for, and only then is the next sent. A server will not take more
+/// than 32 KB in one write however much is offered, so a file climbs at 32 KB per round trip. On a link a
+/// tenth of a second wide that is under 300 KB a second, whatever the line beneath could carry, and no
+/// buffer size changes it.
 ///
 /// What changes it is having several writes in the air, and that needs several open handles rather than
-/// several connections: one SFTP session carries any number of requests at once, telling the answers
-/// apart by the number it stamped on each. So the handles here all come from the one session the caller
-/// leased, and the pool stays free for the panels to list folders while the file goes.
+/// several connections. One SFTP session carries any number of requests at once, telling the answers apart
+/// by the number it stamped on each. So the handles here all come from the one session the caller leased,
+/// and the pool stays free for the panels to list folders while the file goes.
 ///
-/// The reader stays single: the bytes arrive in one stream and are handed out in order, which is what
-/// lets the caller count what it has read as progress. Each handle then seeks to where its piece
-/// belongs and writes it there, since a write in SFTP names its own offset and needs no turn.
+/// The reader stays single: the bytes arrive in one stream and are handed out in order, which is what lets
+/// the caller count what it has read as progress. Each handle then seeks to where its piece belongs and
+/// writes it there, since SFTP has each write name its own offset and wait for no turn.
 /// </summary>
 internal static class SftpUpload
 {
     /// <summary>
-    /// How much of the file one handle claims at a time. Any size well past the 32 KB a write is capped
-    /// at will do — it only has to be enough that a handle is not back asking for more before the last
-    /// of its writes has gone.
+    /// How much of the file one handle claims at a time. Any size well past the 32 KB that writes are capped
+    /// at will do — it only has to be enough that a handle is not back asking for more before the last of its
+    /// writes has gone.
     /// </summary>
     private const int Chunk = 512 * 1024;
 
@@ -66,10 +66,10 @@ internal static class SftpUpload
     }
 
     /// <summary>
-    /// The same, told where to get its handles rather than how. What can go wrong here is a piece
-    /// landing at the wrong offset, which a server would accept without a word and hand back as a file
-    /// quietly unlike the one that was sent — so the handles are asked for through this, and a test can
-    /// answer with its own and read back what was assembled.
+    /// The same, told where to get its handles rather than how. What can go wrong here is a piece landing at
+    /// the wrong offset, which a server would accept without a word and hand back as a file quietly unlike
+    /// the one that was sent. So the handles are asked for through this, and a test can answer with its own
+    /// and read back what was assembled.
     /// </summary>
     /// <param name="opening">Opens one handle; told whether it is the one that truncates.</param>
     /// <param name="reading">Where the bytes come from, read to its end.</param>

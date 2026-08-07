@@ -96,9 +96,9 @@ public sealed class ChoiceListModal : Modal
     }
 
     /// <summary>
-    /// Clicks. A click on a row selects it and a second click on the row already selected picks it,
-    /// which is the rule everywhere else a list is clicked — a single click that runs something makes
-    /// the list a place where a slip does the wrong thing rather than the next thing.
+    /// Clicks. A click on a row selects it, and a second click on the row already selected picks it, which is
+    /// the rule everywhere else a list is clicked. A single click that runs something makes the list a place
+    /// where a slip does the wrong thing rather than the next thing.
     ///
     /// A click outside the box changes nothing. A list is not dismissed by clicking away, because a
     /// stray click should not discard what has been typed into it.

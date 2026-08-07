@@ -65,7 +65,7 @@ public sealed class Outcome
 
     /// <summary>
     /// How far along the work is, from <c>0</c> to <c>1</c>. Bytes carry the answer when they are
-    /// being moved and counts carry it otherwise, so a delete — which shifts no bytes — still fills
+    /// being moved and counts carry it otherwise, so a deletion — which shifts no bytes — still fills
     /// the bar as it works through the tree.
     /// </summary>
     public double Share
@@ -141,7 +141,7 @@ public sealed class Outcome
     }
 
     /// <summary>What has been done so far, for a status line that is redrawn while the work runs.</summary>
-    /// <returns>The counts, and the item being worked on when there is one.</returns>
+    /// <returns>The counts and the item being worked on, when there is one.</returns>
     public string Progress()
     {
         if (!IsMeasured)

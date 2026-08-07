@@ -111,7 +111,7 @@ public sealed class Operations : IArlecchinoStore
 
     /// <summary>
     /// The counting pass, or nothing when counting would cost more than the work. Walking a tree on a
-    /// server is a request per folder, and a delete there is one command anyway, so the bar is worth
+    /// server is a request per folder, and a deletion there is one command anyway, so the bar is worth
     /// less than the wait it would add.
     /// </summary>
     /// <param name="source">Where the entries live.</param>
@@ -123,10 +123,10 @@ public sealed class Operations : IArlecchinoStore
         source.WalksCheaply ? token => FileTasks.MeasureAsync(source, entries, token) : null;
 
     /// <summary>
-    /// Runs the work away from the drawing thread — even on a local disk, where a folder deep enough
-    /// would otherwise freeze the frame — and reports it as a notification that counts up while it goes
-    /// and turns into what came of it at the end. Nothing is occupied while the disk or the server is
-    /// thinking; what comes back is posted to the frame, the only thread allowed to change the screen.
+    /// Runs the work away from the drawing thread, even on a local disk, where a folder deep enough would
+    /// otherwise freeze the frame. It reports itself as a notification that counts up while it goes and
+    /// turns into what came of it at the end. Nothing is occupied while the disk or the server is thinking;
+    /// what comes back is posted to the frame, the only thread allowed to change the screen.
     /// </summary>
     private void Start(
         Func<Outcome, CancellationToken, Task> work,

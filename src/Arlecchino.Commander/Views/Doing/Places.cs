@@ -29,7 +29,7 @@ public sealed class Places
         _state = state;
     }
 
-    /// <summary>Opens where a panel has been, newest first and each folder named once.</summary>
+    /// <summary>Opens where a panel has been, the newest first and each folder named once.</summary>
     /// <param name="panel">Whose history.</param>
     public void History(FilePanel panel)
     {

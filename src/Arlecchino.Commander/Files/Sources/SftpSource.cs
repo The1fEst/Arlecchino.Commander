@@ -62,10 +62,9 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     public Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token) => Task.FromResult(false);
 
     /// <summary>
-    /// Wraps a path the way the server's shell reads it. Which shell that is has usually been worked
-    /// out already, by the first command sent over the connection; before that it is a guess, and the
-    /// guess is POSIX, because a server offering SFTP that is not answering with a POSIX shell is the
-    /// rare one.
+    /// Wraps a path the way the server's shell reads it. Which shell that is has usually been worked out
+    /// already, by the first command sent over the connection. Before that it is a guess, and the guess is
+    /// POSIX: a server offering SFTP that is not answering with a POSIX shell is the rare one.
     /// </summary>
     /// <param name="path">The path, as SFTP spells it.</param>
     /// <returns>The path, ready to stand in a command line.</returns>
@@ -158,9 +157,9 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     }
 
     /// <summary>
-    /// Sets the permissions. SFTP has a request for it and the library has no waiting form of that
-    /// request, so this is the one place a round trip is spent on the thread that asked — it is one
-    /// request, and it is never on the drawing thread.
+    /// Sets the permissions. SFTP has a request for it and the library has no waiting form of that request,
+    /// so this is the one place a round trip is spent on the thread that asked. It is one request, and it is
+    /// never on the drawing thread.
     /// </summary>
     /// <param name="entry">The file or folder.</param>
     /// <param name="mode">The octal digits, as typed.</param>
@@ -327,7 +326,7 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
     /// <summary>
     /// Removes the tree with one command over SSH rather than a request per file. A server on
-    /// the other side of the world answers a delete in a fraction of a second, which a thousand times
+    /// the other side of the world answers a deletion in a fraction of a second, which a thousand times
     /// over is a coffee break; the same tree goes in one round trip this way.
     ///
     /// Whether it worked is read from the exit status, so only a shell whose status means something
@@ -371,7 +370,7 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     /// <param name="path">Where the link goes.</param>
     /// <param name="target">What it points at.</param>
     /// <param name="token">Gives up the wait.</param>
-    /// <returns>The command, or <c>null</c> when there is no shell or it cannot make one.</returns>
+    /// <returns>The command, or <c>null</c> when there is no shell, or when it cannot make one.</returns>
     private async Task<string?> LinkingAsync(string path, string target, CancellationToken token)
     {
         await _shellGate.WaitAsync(token).ConfigureAwait(false);
@@ -447,9 +446,9 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     }
 
     /// <summary>
-    /// What answers on the other side. A Unix server is a Unix server, but an OpenSSH server on
-    /// Windows hands the command to whatever was set as its default shell — <c>cmd.exe</c> on a stock
-    /// install, PowerShell on many others — and the three of them share no way of removing a folder.
+    /// What answers on the other side. A Unix server is a Unix server, but an OpenSSH server on Windows
+    /// hands the command to whatever was set as its default shell: <c>cmd.exe</c> on a stock install,
+    /// PowerShell on many others. The three of them share no way of removing a folder.
     /// Asked once per connection and remembered.
     /// </summary>
     /// <param name="shell">The session to ask over.</param>
@@ -513,20 +512,20 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
             or UnauthorizedAccessException;
 
     /// <summary>
-    /// Moves something to a name that may already be taken. The plain SFTP rename refuses to land on an
-    /// anything that exists, which made this the one operation in the program that stopped at a name
-    /// already taken: a disk overwrites on a move, and a copy overwrites on either end.
+    /// Moves something to a name that may already be taken. The plain SFTP rename refuses to land on
+    /// anything already there, which made this the one operation in the program that stopped at an occupied
+    /// name: a disk overwrites on a move, and a copy overwrites on either end.
     ///
-    /// So the plain rename is asked first — it is the asynchronous one, it is a single round trip, and
-    /// it is what succeeds whenever the name is free. Only when it refuses is the OpenSSH rename tried,
-    /// which replaces whatever is there in one step, with no moment in between where neither the old
-    /// name nor the new one holds the file. That one the library offers in no waiting form, so the
-    /// second attempt spends its round trip on this thread; it is reached only by a move onto an
-    /// occupied name, and never on the drawing thread.
+    /// So the plain rename is asked first. It is the asynchronous one, it is a single round trip, and it is
+    /// what succeeds whenever the name is free. Only when it refuses is the OpenSSH rename tried, which
+    /// replaces whatever is there in one step, with no moment in between where neither the old name nor the
+    /// new one holds the file. That one the library offers in no waiting form, so the second attempt spends
+    /// its round trip on this thread; it is reached only by a move onto an occupied name, and never on the
+    /// drawing thread.
     ///
-    /// A server without the extension refuses that one too, and the move fails saying so, rather than
-    /// deleting what is in the way to make room — an unpicked deletion is not something to do on the
-    /// strength of a failed rename.
+    /// A server without the extension refuses that one too. The move then fails saying so, rather than
+    /// deleting what is in the way to make room: an unpicked deletion is not something to do on the strength
+    /// of a failed rename.
     /// </summary>
     /// <param name="from">Where it is now.</param>
     /// <param name="target">Where it is going.</param>
@@ -602,9 +601,9 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     }
 
     /// <summary>
-    /// Opens a stream that holds its session until it is closed. The lease goes back to the pool with
-    /// the stream rather than when this returns: the bytes have not been read yet, and a session handed
-    /// back early is one another copy would take while this one is still using it.
+    /// Opens a stream that holds its session until it is closed. The lease goes back to the pool with the
+    /// stream rather than when this returns. The bytes have not been read yet, and a session handed back
+    /// early is one another copy would take while this one is still using it.
     /// </summary>
     /// <param name="lease">The session the stream will use.</param>
     /// <param name="open">Asks the server for the stream.</param>

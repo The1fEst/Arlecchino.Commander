@@ -19,8 +19,8 @@ public sealed class Sessions : IArlecchinoStore
     public IReadOnlyList<Session> All => _sessions;
 
     /// <summary>
-    /// Which session is on screen. An atom, so opening a tab or stepping between them marks the frame
-    /// stale by itself rather than having to be announced.
+    /// Which session the screen is showing. An atom, so opening a tab or stepping between them marks the
+    /// frame stale by itself rather than having to be announced.
     /// </summary>
     public Atom<int> Open { get; } = new LocalAtom<int>(0);
 
@@ -43,8 +43,8 @@ public sealed class Sessions : IArlecchinoStore
     public List<string> Hotlist { get; } = [];
 
     /// <summary>
-    /// Counts the times a panel was sent somewhere by a screen other than the panels themselves, so
-    /// that screen can put the cursor where it likes and the panels catch up when they are next drawn.
+    /// Counts the times a panel was sent somewhere by a screen other than the panels themselves. That screen
+    /// can then put the cursor where it likes, and the panels catch up when they are next drawn.
     /// </summary>
     public Atom<int> Revision { get; } = new LocalAtom<int>(0);
 

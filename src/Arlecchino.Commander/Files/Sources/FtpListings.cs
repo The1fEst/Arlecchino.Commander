@@ -5,9 +5,9 @@ using System.Globalization;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-///     Reads what a server said. Everything here is a pure reading of text, which is where the whole of
-///     the guesswork in FTP lives: a listing has two shapes and a half, and the two ways of asking for a
-///     data connection answer with the port buried differently.
+///     Reads what a server said. Everything here is a pure reading of text, which is where the whole of the
+///     guesswork in FTP lives. A listing has two shapes and a half, and the two ways of asking for a data
+///     connection answer with the port buried differently.
 /// </summary>
 public static class FtpListings
 {

@@ -3,10 +3,10 @@ namespace Arlecchino.Commander.Widgets.Panels;
 /// <summary>
 /// The two panels on screen, and which of them is being worked in.
 ///
-/// Everything that acts on a file acts on "this panel" and "the other one" rather than on the left
-/// and the right, and every one of them used to be handed a pair of delegates to find out which was
-/// which. They are handed this instead: it is one object, the screen swaps what is in it when the tab
-/// changes, and nothing holding it is left pointing at the panels of a tab that is no longer showing.
+/// Everything that acts on a file acts on "this panel" and "the other one" rather than on the left and the
+/// right. Every one of them used to be handed a pair of delegates to find out which was which; they are
+/// handed this instead. It is one object, the screen swaps what is in it when the tab changes, and nothing
+/// holding it is left pointing at the panels of a tab that is no longer showing.
 /// </summary>
 public sealed class Pair
 {

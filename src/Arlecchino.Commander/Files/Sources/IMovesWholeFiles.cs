@@ -9,9 +9,9 @@ namespace Arlecchino.Commander.Files.Sources;
 ///
 /// It is here for the one thing a stream cannot do over a network: keep several requests in flight. A
 /// stream sends one request and waits for the answer before sending the next, so a file crosses at one
-/// request per round trip however large the requests are — over a link a tenth of a second wide that is
-/// a fixed ceiling no buffer size can lift. A source moving the whole file has the next request already
-/// gone when the last one answers, and on such a link that is the whole difference.
+/// request per round trip however large the requests are. Over a link a tenth of a second wide that is a
+/// fixed ceiling no buffer size can lift. A source moving the whole file has the next request already gone
+/// when the last one answers, and on such a link that is the whole difference.
 ///
 /// The work is handed a stream rather than a path on purpose: the other end is then anything at all —
 /// a disk, another server — and only the end that can pipeline has to know how.

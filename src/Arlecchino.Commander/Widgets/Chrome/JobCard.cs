@@ -14,11 +14,10 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 /// <summary>
 /// What is running, as a stack of cards in the corner rather than a band across the screen.
 ///
-/// Work must never block the panels, and a card says so by sitting beside them: it covers a few rows
-/// of the panel it is over and nothing else. Two copies at once are two cards, and a card that has
-/// finished stays for as long as the message would have stayed on the output row and then goes — the
-/// rule down its left edge is the whole of the report, red while it runs, green when it worked, amber
-/// when something did not.
+/// Work must never block the panels, and a card says so by sitting beside them: it covers a few rows of the
+/// panel it is over and nothing else. Two copies at once are two cards, and a card that has finished stays
+/// for as long as the message would have stayed on the output row and then goes. The rule down its left edge
+/// is the whole of the report: red while it runs, green when it worked, amber when something did not.
 /// </summary>
 public sealed class JobCard
 {
@@ -26,10 +25,10 @@ public sealed class JobCard
 
     /// <summary>
     ///     How tall every card is, whatever it has to say. Cards used to be as tall as their contents, which
-    ///     meant a stack that changed shape under the cursor as one job finished and the next reported
-    ///     itself; one height for all of them keeps the panel underneath covered in the same place from the
-    ///     first card to the last. It is room for a wrapped title, the bar or the reason it went wrong, and
-    ///     the row that says which key reads it.
+    ///     meant a stack that changed shape under the cursor as one job finished and the next reported itself.
+    ///     One height for all of them keeps the panel underneath covered in the same place from the first card
+    ///     to the last. It is room for a wrapped title, the bar or the reason it went wrong, and the row that
+    ///     says which key reads it.
     /// </summary>
     private const int CardRows = 5;
 
@@ -57,10 +56,9 @@ public sealed class JobCard
     }
 
     /// <summary>
-    ///     Draws the stack, or nothing at all when there is nothing to say. The cards are laid from the
-    ///     bottom of the region upwards, so the newest one is always in the same corner and the older ones
-    ///     move away from it; a card that would reach the top of the panel is not drawn rather than drawn
-    ///     half.
+    ///     Draws the stack, or nothing at all when there is nothing to say. The cards are laid from the bottom
+    ///     of the region upwards, so the newest one is always in the same corner and the older ones move away
+    ///     from it. A card that would reach the top of the panel is not drawn rather than drawn half.
     /// </summary>
     /// <param name="over">Everything above the footer, which the cards place themselves in.</param>
     public void Draw(SurfaceRegion over)
@@ -92,8 +90,8 @@ public sealed class JobCard
     }
 
     /// <summary>
-    /// Which cards to draw, newest at the bottom. A command that is running is not a notification —
-    /// the runner reports it itself — so it is put at the front of the stack by hand.
+    /// Which cards to draw, the newest at the bottom. A command that is running is not a notification —
+    /// the runner reports it on its own — so it is put at the front of the stack by hand.
     /// </summary>
     /// <returns>The cards, in the order they are drawn from the bottom up.</returns>
     private List<Job> Showing()
@@ -145,9 +143,9 @@ public sealed class JobCard
     }
 
     /// <summary>
-    ///     Draws one card, filled from both ends. The row that names a key is the last one and the bar or the
-    ///     reason is the row above it, counted back from the foot so they stay where the eye left them
-    ///     whether the title above took one row or three.
+    ///     Draws one card, filled from both ends. The row that names a key is the last one, and the bar or the
+    ///     reason is the row above it. Both are counted back from the foot, so they stay where the eye left
+    ///     them whether the title above took one row or three.
     ///     The title is wrapped and not cut: what a card is usually saying is a path, and the end of a path
     ///     is the part that says which file this is. Three rows is where the wrapping stops, since a title
     ///     longer than that would reach the rows the bar and the hint are holding.

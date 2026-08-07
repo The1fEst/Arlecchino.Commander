@@ -37,9 +37,9 @@ public static class ChoiceBox
     /// How much of a row the name may take before what qualifies it starts. Fixed rather than measured,
     /// so the hints of a hundred rows line up instead of stepping about with the longest name on screen.
     ///
-    /// It only applies to a row that has something to line up with. A list whose rows are names and
-    /// nothing else — the saved hosts, the folders been in — gives the whole row to the name, since a
-    /// column reserved for hints that are not there is a path cut off for no reason.
+    /// It only applies to a row that has something to line up with. A list whose rows are names and nothing
+    /// else — the saved hosts, the folders been in — gives the whole row to the name. A column reserved for
+    /// hints that are not there is a path cut off for no reason.
     /// </summary>
     private const int Naming = 24;
 
@@ -88,8 +88,8 @@ public static class ChoiceBox
         : Loc(LocString.ChoosingCount, choosing.Matching.Count, choosing.Items.Count);
 
     /// <summary>
-    /// The line what is typed lands on. It is drawn whether or not anything has been typed, so nobody
-    /// has to discover that the list narrows — the prompt is there saying it does.
+    /// The line what is typed lands on. It is drawn whether anything has been typed or not, so nobody has
+    /// to discover that the list narrows — the prompt is there saying it does.
     /// </summary>
     /// <param name="inside">Where to draw.</param>
     /// <param name="choosing">What is being picked from.</param>

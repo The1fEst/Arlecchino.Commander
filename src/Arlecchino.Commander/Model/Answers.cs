@@ -7,7 +7,7 @@ namespace Arlecchino.Commander.Model;
 /// Asking something slow and doing something with what comes back.
 ///
 /// A key press must not wait on a server: the question goes off on its own and the answer is handed to
-/// the drawing thread, which is the only one allowed to change what is on screen. Everything in the
+/// the drawing thread, which is the only one allowed to change what the screen shows. Everything in the
 /// application that reaches past the disk goes through here, so there is one place where that promise
 /// is either kept or broken.
 /// </summary>

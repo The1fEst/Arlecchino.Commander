@@ -13,9 +13,9 @@ namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
 /// A server reached over FTP. One control connection answers one request at a time and in the order it
-/// was asked, so every request waits its turn — but it waits by yielding rather than by holding a
-/// thread, which is why the turnstile here is a semaphore and not a lock: a lock cannot be held across
-/// the wait for a reply.
+/// was asked, so every request waits its turn — but it waits by yielding rather than by holding a thread.
+/// That is why the turnstile here is a semaphore and not a lock: a lock cannot be held across the wait for
+/// a reply.
 /// </summary>
 public sealed class FtpSource : IFileSource
 {

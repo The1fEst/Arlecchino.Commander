@@ -39,7 +39,7 @@ public sealed class Choosing
     /// <summary>What is written along the bottom.</summary>
     public string Footer { get; init; } = Loc(LocString.ChoosingHints);
 
-    /// <summary>What has been typed to narrow the list.</summary>
+    /// <summary>Whatever has been typed to narrow the list.</summary>
     public string Typed
     {
         get => _typed;

@@ -15,15 +15,15 @@ public static class CommanderOptions
     ///     opens on a typed character, and every character belongs to the command line here — a colon
     ///     most of all, since <c>cd C:\Users</c> cannot be typed without one. Every command is on the key
     ///     screen behind <c>F1</c> anyway.
-    ///     The palette goes in here rather than at the one place the application is started from, because
-    ///     there are three of those — the application, the headless frame a screenshot is taken from, and
-    ///     the test host — and a screen that is one color under test and another in front of a person is
-    ///     worse than no test at all.
+    ///     The palette goes in here rather than at the one place the application is started from. There are
+    ///     three of those: the application, the headless frame a screenshot is taken from, and the test host.
+    ///     A screen that is one color under test and another in front of a person is worse than no test at
+    ///     all.
     ///     The smallest width is what two panels and the gutter between them need to stay readable, and
-    ///     nothing more: the bar of keys used to set it, because ten labels had to fit on one row or the
-    ///     last of them were dropped, and now the bar carries what does not fit onto a second row instead.
-    ///     Both paddings are nought because the frame is not the framework's to draw here: the layout keeps a
-    ///     margin of its own round every screen of this application, and the framework's own would sit
+    ///     nothing more. The bar of keys used to set it, because ten labels had to fit on one row or the last
+    ///     of them were dropped; now the bar carries what does not fit onto a second row instead.
+    ///     Both paddings are zero because the frame is not the framework's to draw here. The layout keeps a
+    ///     margin of its own around every screen of this application, and the framework's own would sit
     ///     outside it and spend the cells twice.
     /// </summary>
     /// <param name="options">The options to fill in.</param>

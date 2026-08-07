@@ -24,13 +24,12 @@ namespace Arlecchino.Commander.Views;
 ///     The screen the application opens on: two panels, a band above them, a command line and a bar of
 ///     keys below.
 ///     It draws and it routes. What every key and every menu entry actually does lives in
-///     <see cref="Doings" />, which is handed the same pair of panels this screen is showing — so the
-///     screen has no operation of its own to keep in step with the menu, and the menu has no idea which
-///     screen it was opened from.
-///     The footer is not a fixed two rows any more. The bar of keys wraps when the terminal is narrow and
-///     only finds out how tall it is by drawing itself, so the screen subscribes to the height it reports
-///     and lays itself out again when it changes rather than guessing at a number that a resize would
-///     make wrong.
+///     <see cref="Doings" />, which is handed the same pair of panels this screen is showing. So the screen
+///     has no operation of its own to keep in step with the menu, and the menu has no idea which screen it
+///     was opened from.
+///     The footer is no longer a fixed two rows. The bar of keys wraps when the terminal is narrow, and it
+///     only finds out how tall it is by drawing itself. So the screen subscribes to the height it reports and
+///     lays itself out again when that changes, rather than guessing at a number a resize would make wrong.
 /// </summary>
 public sealed class CommanderView : IArlecchinoView, IDisposable
 {
@@ -62,7 +61,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
     /// <summary>Builds the screen over whichever tab was open.</summary>
     /// <param name="surface">What is drawn on.</param>
-    /// <param name="sessions">Every tab, and which one is open.</param>
+    /// <param name="sessions">Every tab and which one is open.</param>
     /// <param name="remote">Where the connection that was made is remembered.</param>
     /// <param name="operations">What carries file work out.</param>
     /// <param name="runner">What runs commands.</param>
@@ -189,9 +188,9 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Clicks, which go to whichever panel was clicked in. The band along the top is not here any more
-    ///     — it belongs to the layout, and the layout is asked before the view is — so everything that
-    ///     reaches this has landed below it.
+    ///     Clicks, which go to whichever panel was clicked in. The band along the top is no longer here — it
+    ///     belongs to the layout, and the layout is asked before the view is — so everything that reaches
+    ///     this has landed below it.
     /// </summary>
     /// <param name="mouse">The event that arrived.</param>
     /// <returns>Where to go, which is nowhere.</returns>
@@ -237,9 +236,9 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
     /// <summary>
     ///     Lays the screen out: the two panels side by side with the gutter between them, and the command
-    ///     line and the bar of keys under both. Both splits are measured from the end, so the footer keeps
-    ///     the rows it asked for and the panels take whatever is left over — which is the way round that
-    ///     survives a terminal being made shorter.
+    ///     line and the bar of keys under both. Both splits are measured from the end, so the footer keeps the
+    ///     rows it asked for, and the panels take whatever is left over. That is the way round that survives
+    ///     a terminal being made shorter.
     /// </summary>
     /// <returns>The layout, which the focus ring is made from as well as drawn.</returns>
     private PaneTree Lay()

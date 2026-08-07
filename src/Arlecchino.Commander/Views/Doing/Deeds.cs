@@ -13,17 +13,17 @@ namespace Arlecchino.Commander.Views.Doing;
 /// <summary>
 /// The five things the function keys do to files: copy, move, rename, make a folder, delete.
 ///
-/// None of them happens on the key press. Each opens the one dialog, which says in words what is
-/// about to happen and to how much, and only then hands the work to something that runs on its own —
-/// the panels stay usable while a copy of eight gigabytes is going on behind them.
+/// None of them happens on the key press. Each opens the one dialog, which says in words what is about to
+/// happen and to how much. Only then is the work handed to something that runs on its own, so the panels
+/// stay usable while a copy of eight gigabytes is going on behind them.
 /// </summary>
 public sealed class Deeds : PanelWork
 {
     private readonly Operations _operations;
 
-    /// <summary>Sets the operations up over a pair of panels.</summary>
+    /// <summary>Puts the operations over a pair of panels.</summary>
     /// <param name="dialogs">How anything is asked.</param>
-    /// <param name="operations">What carries the work out.</param>
+    /// <param name="operations">What carries the work through.</param>
     /// <param name="state">Where the last word said is kept.</param>
     /// <param name="panels">The two panels on screen.</param>
     public Deeds(Dialogs dialogs, Operations operations, ArlecchinoState state, Pair panels)
@@ -58,9 +58,9 @@ public sealed class Deeds : PanelWork
     }
 
     /// <summary>
-    /// Moves what is marked. Whether it is a move at all depends on where it lands: within one volume
-    /// nothing is copied and only the names change, and across two it is a copy followed by a delete —
-    /// which is a different promise, and the dialog says which one is being made.
+    /// Moves what is marked. Whether it is a move at all depends on where it lands. Within one volume nothing
+    /// is copied and only the names change; across two it is a copy followed by a deletion, which is a
+    /// different promise, and the dialog says which one is being made.
     /// </summary>
     public void Move()
     {
@@ -154,7 +154,7 @@ public sealed class Deeds : PanelWork
 
     /// <summary>
     /// Deletes what is marked outright, trash or no trash. Somebody who wants a thing gone rather than
-    /// moved should not have to go and empty the trash afterwards.
+    /// moved should not have to go and empty the trash afterward.
     /// </summary>
     public void DeleteForGood() => Removing(toTrash: false);
 

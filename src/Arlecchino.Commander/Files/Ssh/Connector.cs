@@ -11,7 +11,7 @@ public static class Connector
     /// <summary>
     ///     Opens a connection and answers on the drawing thread. Signing in is several round trips, and
     ///     none of them may happen here: what comes back is posted to the frame, since that is the only
-    ///     thread allowed to change what is on screen.
+    ///     thread allowed to change what the screen shows.
     ///     Signing in over SSH is handed to a thread of its own, because the library has no asynchronous
     ///     way to do it. An <c>async</c> method runs on its caller until the first <c>await</c>, so a
     ///     blocking connect written straight into one still blocks whoever called it — and the caller here

@@ -9,10 +9,10 @@ namespace Arlecchino.Commander.Model;
 /// therefore read as the number it is rather than as the characters it is made of.
 ///
 /// Leading zeroes are the one place where that reading has to stop. <c>08</c> and <c>8</c> are the same
-/// number but not the same name, and a folder of <c>007</c>, <c>08</c>, <c>9</c> is padded on purpose;
+/// number under a different name, and a folder of <c>007</c>, <c>08</c>, <c>9</c> is padded on purpose;
 /// so a run that begins with a zero is compared digit by digit, where the shorter padding sorts first.
 /// </summary>
-public static class Natural
+public static class NaturalSort
 {
     /// <summary>Compares two names, reading runs of digits as numbers.</summary>
     /// <param name="first">One name.</param>

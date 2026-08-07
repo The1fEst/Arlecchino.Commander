@@ -27,9 +27,9 @@ public sealed class PanelState
     public string Filter { get; set; } = "";
 
     /// <summary>
-    /// What is marked in this panel, by name. A set atom rather than a <c>HashSet</c>, so marking
-    /// marks the frame stale by itself and a mark made from anywhere but the drawing thread is
-    /// caught rather than tolerated.
+    /// What is marked in this panel, by name. A set atom rather than a <c>HashSet</c>, so a mark makes the
+    /// frame stale by itself, and one made from anywhere other than the drawing thread is caught rather than
+    /// tolerated.
     /// </summary>
     public LocalAtomsSet<string> Marks { get; } = new(comparer: StringComparer.OrdinalIgnoreCase);
 
@@ -39,7 +39,7 @@ public sealed class PanelState
 
     public bool Descending { get; set; }
 
-    /// <summary>Every folder this panel has been in on the source it is on, oldest first.</summary>
+    /// <summary>Every folder this panel has been in on the source it is on, the oldest first.</summary>
     public IReadOnlyList<string> Visited => _visited;
 
     public void GoTo(string folder)

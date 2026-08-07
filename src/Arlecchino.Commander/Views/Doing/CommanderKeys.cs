@@ -89,9 +89,9 @@ public static class CommanderKeys
     }
 
     /// <summary>
-    /// The second half of a <c>Ctrl+X</c> pair. These are the operations that are wanted often enough
-    /// to have a key and not often enough to have one of their own; a pair leaves the alphabet free
-    /// for the panels while still putting them a keystroke and a letter away.
+    /// The second half of a <c>Ctrl+X</c> pair. These are the operations wanted often enough to have a key
+    /// and seldom enough not to have one of their own. A pair leaves the alphabet free for the panels while
+    /// still putting them a keystroke and a letter away.
     /// </summary>
     /// <param name="doings">Everything the screen can do.</param>
     /// <param name="commandBar">The command line, which two of the pairs write to.</param>
@@ -185,10 +185,10 @@ public static class CommanderKeys
     /// Calls off whatever is running: a command first, then the file work. A dialog is not here — the
     /// framework hands every key to the dialog on top before this screen sees any of them.
     ///
-    /// It is <c>Alt+Esc</c> and not <c>Esc</c> because plain Escape is already the way out of half a
-    /// dozen things — a search being typed, a filter, a dialog, the screen you are on — and a key that
-    /// means "get out of this" some of the time and "stop the copy" the rest of the time is one you
-    /// hesitate over. Stopping work that is running deserves a key nothing else is asking for.
+    /// It is <c>Alt+Esc</c> and not <c>Esc</c> because plain Escape is already the way out of half a dozen
+    /// things: a search being typed, a filter, a dialog, the screen you are on. A key that means "get out of
+    /// this" some of the time and "stop the copy" the rest of the time is one you hesitate over, and stopping
+    /// work that is running deserves a key nothing else is asking for.
     /// </summary>
     /// <param name="operations">The file work.</param>
     /// <param name="runner">The commands.</param>

@@ -19,7 +19,7 @@ public static class TabFace
     /// <summary>What a tab costs besides its name: the lit dot, the two edges and the space they sit in.</summary>
     public const int Chrome = 5;
 
-    /// <summary>What the cross costs on top of that: a space to stand off the name, and itself.</summary>
+    /// <summary>What the cross costs on top of that: a space to keep it off the name, and itself.</summary>
     public const int Crossed = 2;
 
     /// <summary>What a name may take when there is room for every tab to be written out in full.</summary>
@@ -75,10 +75,10 @@ public static class TabFace
     }
 
     /// <summary>
-    /// The two sides of a tab, with the dot against whichever of them is being worked in. A tab holds
-    /// two panels, so the dot is the only thing on it that can answer which of the two has the focus —
-    /// a dot that never moves answers nothing. A side on a server is named after it, in the color
-    /// servers get, so a glance at the tab says what it is connected to.
+    /// The two sides of a tab, with the dot against whichever of them is being worked in. A tab holds two
+    /// panels, so the dot is the only thing on it that can answer which of the two has the focus, and a dot
+    /// that never moves is no answer at all. A side on a server is named after it, in the color servers get,
+    /// so a glance at the tab says what it is connected to.
     /// </summary>
     /// <param name="strip">Where to draw.</param>
     /// <param name="column">Where the tab's text starts.</param>

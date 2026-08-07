@@ -25,7 +25,7 @@ public sealed class Session
     /// <summary>The panel on the right.</summary>
     public PanelState Right { get; }
 
-    /// <summary>Which side is being worked in, kept per session so a tab comes back as it was left.</summary>
+    /// <summary>Which side is being worked in, kept per session, so a tab comes back as it was left.</summary>
     public bool RightIsActive { get; set; }
 
     /// <summary>What the left side is showing: the server it is on, or the disk.</summary>

@@ -100,9 +100,9 @@ public sealed class PosixShell : Shell
     public static readonly PosixShell Instance = new();
 
     /// <summary>
-    /// Removes the folder without <c>-f</c>. That flag walks past a read-only file, which is often
-    /// the last thing standing between a delete and something that should not have gone with it, and
-    /// it answers nought whether or not there was anything there at all.
+    /// Removes the folder without <c>-f</c>. That flag walks past a read-only file, which is often the last
+    /// thing standing between a deletion and something that should not have gone with it, and it answers
+    /// nought whether anything was there at all.
     /// </summary>
     /// <param name="path">The folder, as SFTP spells it.</param>
     /// <returns>The command.</returns>
@@ -162,7 +162,7 @@ public sealed class WindowsCommandShell : WindowsShell
     /// Answers that there is no one-line way, so the tree is walked instead. Two things are wrong
     /// with the command that would have done it, and either alone would be enough.
     ///
-    /// It takes what it was not asked to. <c>rmdir /s</c> removes a read-only file along with the
+    /// It takes what nobody asked it to take. <c>rmdir /s</c> removes a read-only file along with the
     /// rest, and <c>cmd.exe</c> has no switch that stops it — the flag to leave off is not
     /// <c>/q</c>, which only answers the question the command would ask. <c>del</c> without
     /// <c>/f</c> does respect the attribute, but a <c>rmdir</c> after it takes the survivor anyway,
@@ -246,8 +246,8 @@ public sealed class PowerShellShell : WindowsShell
 }
 
 /// <summary>
-/// Something none of the others, or a server that would not answer. It takes no shortcuts: a command
-/// goes over as it was typed and a folder is removed the long way, one entry at a time.
+/// Something none of the others, or a server that would not answer. It takes no shortcuts: a command goes
+/// over as it was typed, and a folder is removed the long way, one entry at a time.
 /// </summary>
 public sealed class ForeignShell : Shell
 {

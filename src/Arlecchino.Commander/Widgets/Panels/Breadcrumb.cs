@@ -17,7 +17,7 @@ public static class Breadcrumb
 {
     private const int Least = 4;
 
-    /// <summary>Draws it, with whatever the panel wants said at the right of the same row.</summary>
+    /// <summary>Draws it, with whatever the panel wants to say at the right of the same row.</summary>
     /// <param name="row">The row to draw on.</param>
     /// <param name="state">What the panel is showing.</param>
     /// <param name="coat">The surface underneath.</param>

@@ -85,7 +85,7 @@ public sealed class LocalRun : IShellRun
 
 /// <summary>
 /// A command sent to a server over the session the panel already holds. It is run when it is read,
-/// since the shell answers with everything at once; there is nothing to kill afterwards.
+/// since the shell answers with everything at once; there is nothing to kill afterward.
 /// </summary>
 public sealed class RemoteRun : IShellRun
 {

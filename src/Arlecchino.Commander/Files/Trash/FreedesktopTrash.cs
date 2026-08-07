@@ -15,10 +15,10 @@ namespace Arlecchino.Commander.Files.Trash;
 /// the name: two programs emptying an armful into the trash at once would otherwise agree on a name and
 /// one would land on top of the other. Only once the name is ours does the file move.
 ///
-/// Only the trash in the user's home is used. The specification also allows one per mounted volume, and
-/// a file on another disk belongs there — but a move to the home trash across a disk boundary stops
-/// being a rename and becomes a copy of everything, which is not what somebody pressing delete asked
-/// for. So that case is refused rather than served slowly and wrongly.
+/// Only the trash in the user's home is used. The specification also allows one per mounted volume, and a
+/// file on another disk belongs there. But a move to the home trash across a disk boundary stops being a
+/// rename and becomes a copy of everything, which is not what somebody pressing delete asked for. So that
+/// case is refused rather than served slowly and wrongly.
 /// </summary>
 public sealed class FreedesktopTrash : Trash
 {

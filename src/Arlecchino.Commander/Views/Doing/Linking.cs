@@ -8,9 +8,9 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// Making one name stand for another. A link is put in the other panel when both are looking at the
-/// same machine and beside itself when they are not — a link across two machines would point at
-/// nothing, and making one anyway is a way of finding that out an hour later.
+/// Making one name stand for another. A link is put in the other panel when both are looking at the same
+/// machine, and beside itself when they are not. A link across two machines would point at nothing, and
+/// making one anyway is a way of finding that out an hour later.
 /// </summary>
 public sealed class Linking : PanelWork
 {

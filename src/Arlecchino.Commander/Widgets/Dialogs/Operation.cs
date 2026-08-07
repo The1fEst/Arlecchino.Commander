@@ -63,10 +63,10 @@ public sealed class Operation
     public required Weight Weight { get; init; }
 
     /// <summary>
-    /// What will actually happen, for the operations where the verb does not say it — worked out from
-    /// what has been typed rather than fixed when the dialog opened, so a name that turns out to be
-    /// taken says so while it is being typed. Nothing where the verb is answer enough: a band that
-    /// restates the button teaches people to stop reading the band.
+    /// What will actually happen, for the operations where the verb does not say it. It is worked out from
+    /// what has been typed rather than fixed when the dialog opened, so a name that turns out to be taken
+    /// says so while it is being typed. Nothing where the verb is answer enough: a band that restates the
+    /// button teaches people to stop reading the band.
     /// </summary>
     public Func<Operation, Remark?>? Note { get; init; }
 

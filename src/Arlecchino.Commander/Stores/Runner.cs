@@ -25,7 +25,7 @@ public sealed class Runner : IArlecchinoStore
     public Runner(ArlecchinoState state) => _state = state;
 
     /// <summary>
-    /// What the commands have said, oldest first, trimmed to the newest two thousand lines. A list
+    /// What the commands have said, the oldest first, trimmed to the newest two thousand lines. A list
     /// atom rather than a list, so output landing on the drawing thread marks the frame stale by
     /// itself, and a trim is one change rather than one per line dropped.
     /// </summary>

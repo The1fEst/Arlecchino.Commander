@@ -7,9 +7,9 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 /// The frame every screen that is not the panels is drawn in: a band naming it, a hairline, the body,
 /// a hairline, and a band along the bottom saying what is going on and which keys leave.
 ///
-/// There is no box around anything. A titled border is how the framework frames a pane by default,
-/// and it is the one thing this design has no use for — the screens are told apart by the band at the
-/// top, which is the same band the panels have, so the second screen reads as the same program.
+/// There is no box around anything. A titled border is how the framework frames a pane by default, and it is
+/// the one thing this design has no use for. The screens are told apart by the band at the top, which is the
+/// same band the panels have, so the second screen reads as the same program.
 /// </summary>
 public static class Sheet
 {

@@ -118,7 +118,7 @@ public static class Credentials
     /// </summary>
     /// <param name="client">The client about to connect.</param>
     /// <param name="connection">Where it is connecting.</param>
-    /// <returns>What to ask afterwards for the reason, when it refused.</returns>
+    /// <returns>What to ask afterward for the reason, when it refused.</returns>
     public static HostCheck Watch(BaseClient client, Connection connection)
     {
         ArgumentNullException.ThrowIfNull(client);

@@ -19,7 +19,7 @@ public sealed class HostCheck
     /// <summary>What to tell whoever asked, or an empty string when nothing was refused.</summary>
     public string Refusal { get; private set; } = "";
 
-    /// <summary>Records why the key was not accepted.</summary>
+    /// <summary>Records why the key was refused.</summary>
     /// <param name="verdict">What the file said.</param>
     /// <param name="host">The host that presented it.</param>
     /// <param name="kind">The key type.</param>
@@ -50,14 +50,14 @@ public enum HostVerdict
 }
 
 /// <summary>
-/// The <c>known_hosts</c> file OpenSSH keeps, read the way it writes it. It is the only thing between
-/// a connection and somebody sitting in the middle of it: a server proves it is itself by holding the
-/// private half of a key seen before, and nothing else about the exchange says who answered.
+/// The <c>known_hosts</c> file OpenSSH keeps, read the way it writes it. It is the only thing between a
+/// connection and somebody sitting in the middle of it. A server proves it is itself by holding the private
+/// half of a key seen before, and nothing else about the exchange says who answered.
 ///
-/// The file is one entry a line: the hosts it is about, the kind of key, and the key. A host may be a
-/// plain name, several separated by commas, <c>[name]:port</c> where the port is not 22, or a hash of
-/// the name — which OpenSSH writes by default on Debian and its like, and which is why matching one
-/// is worth the twenty lines it costs.
+/// The file is one entry a line: the hosts it is about, the kind of key, and the key. A host may be a plain
+/// name, several separated by commas, <c>[name]:port</c> where the port is not 22, or a hash of the name.
+/// OpenSSH writes that hash by default on Debian and its like, which is why matching one is worth the
+/// twenty lines it costs.
 /// </summary>
 public sealed class KnownHosts
 {
@@ -163,9 +163,9 @@ public sealed class KnownHosts
     private sealed record Entry(string[] Names, string Kind, byte[] Key, bool Revoked)
     {
         /// <summary>
-        /// Whether this entry holds that key. The bytes are compared rather than the text of them:
-        /// base64 has more than one spelling for the same bytes, so a file written by something other
-        /// than OpenSSH would not match its own key if the strings were compared instead.
+        /// Whether this entry holds that key. The bytes are compared rather than the text of them, because
+        /// base64 has more than one spelling for the same bytes. A file written by something other than
+        /// OpenSSH would not match its own key if the strings were compared instead.
         /// </summary>
         /// <param name="key">The key presented.</param>
         /// <returns><c>true</c> when they are the same key.</returns>

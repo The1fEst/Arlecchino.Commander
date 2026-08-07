@@ -9,21 +9,20 @@ using Arlecchino.Commander.Files.Sources;
 
 namespace Arlecchino.Commander.Files.Work;
 
-/// <summary>How much there is to do, counted before the work starts so a bar has a denominator.</summary>
+/// <summary>How much there is to do, counted before the work starts, so a bar has a denominator.</summary>
 /// <param name="Files">How many files the sources hold, at every depth.</param>
-/// <param name="Folders">How many folders, the sources themselves included.</param>
-/// <param name="Bytes">How much the files add up to.</param>
+/// <param name="Folders">The number of folders, the sources themselves included.</param>
+/// <param name="Bytes">What the files add up to.</param>
 public readonly record struct Tally(int Files, int Folders, long Bytes)
 {
-    /// <summary>Files and folders together, which is what a delete works through.</summary>
+    /// <summary>Files and folders together, which is what a deletion works through.</summary>
     public int Items => Files + Folders;
 }
 
 /// <summary>
-/// Copying, moving and deleting. Every one of these waits on something — a disk, a server — so every
-/// one of them is awaited rather than run, and the stop key is answered between blocks of a file
-/// rather than between files: a single large file used to have to finish before anyone could be told
-/// to stop.
+/// Copying, moving and deleting. Every one of these waits on something — a disk, a server — so every one of
+/// them is awaited rather than run. The stop key is answered between blocks of a file rather than between
+/// files: a single large file used to have to finish before anyone could be told to stop.
 /// </summary>
 public static class FileTasks
 {
@@ -31,7 +30,7 @@ public static class FileTasks
 
     /// <summary>
     /// Walks the sources without touching them, so the work that follows knows how far along it is. A
-    /// folder is counted along with everything under it, which is what makes a bar for a delete of a
+    /// folder is counted along with everything under it, which is what makes a bar for a deletion of a
     /// deep tree mean anything.
     /// </summary>
     /// <param name="source">Where the entries live.</param>
@@ -80,15 +79,15 @@ public static class FileTasks
     /// <summary>
     /// Whether the place a copy is going is the thing being copied, or somewhere inside it.
     ///
-    /// A folder copied into its own tree has no end: the copy walks what it is writing, so every child
-    /// it lays down is another child to copy. It does not even fail honestly — each level lists what is
-    /// there at the moment it looks, so how deep the nest gets depends on how fast the disk is, and the
-    /// same copy twice leaves two different messes.
+    /// A folder copied into its own tree has no end: the copy walks what it is writing, so every child it
+    /// lays down is another child to copy. It does not even fail honestly — each level lists what is there
+    /// as it looks, so how deep the nest gets depends on how fast the disk is, and the same copy twice
+    /// leaves two different messes.
     ///
-    /// A file onto itself is the shorter version of the same mistake. On a disk it is caught already —
-    /// the read holds the file in a way the write is refused — but that is the operating system saying
-    /// no, not this program, and a server keeps no such lock: there the write would open the file, empty
-    /// it, and only then would the read discover there is nothing left to copy.
+    /// A file onto itself is the shorter version of the same mistake. On a disk it is caught already, since
+    /// the read holds the file in a way that stops it being opened for writing. But that is the operating
+    /// system saying no, not this program, and a server keeps no such lock. There the writing end would open
+    /// the file, empty it, and only then would the read discover there is nothing left to copy.
     ///
     /// Both start the same way, with two panels showing one folder, which is nobody's mistake.
     /// </summary>
@@ -233,9 +232,9 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// Removes one entry. A folder goes in a single request when the source can do that — one
-    /// <c>rm -rf</c> on a server instead of a round trip per file — and is walked otherwise, several
-    /// children at a time, so the count and the stop key keep working.
+    /// Removes one entry. A folder goes in a single request when the source can do that: one <c>rm -rf</c> on
+    /// a server instead of a round trip per file. Otherwise, it is walked, several children at a time, so the
+    /// count and the stop key keep working.
     /// </summary>
     private static async Task DeleteOneAsync(
         IFileSource source,
@@ -476,10 +475,10 @@ public static class FileTasks
     /// narrower of the two over SFTP, where a server will take a third of what it will send.
     ///
     /// With neither end able to, the bytes go a block at a time. Reading the whole thing in one call
-    /// would be shorter to write and would take the stop key with it: the block is where the work looks
-    /// up. Counting per block is the other half of that — a bar that only moves as each file finishes
-    /// says nothing at all while a large one is going over, which is why the pipelined paths are counted
-    /// on the stream at the other end rather than left silent.
+    /// would be shorter to write and would take the stop key with it: the block is where the work looks up.
+    /// Counting per block is the other half of that. A bar that only moves as each file finishes says nothing
+    /// at all while a large one is going over, which is why the pipelined paths are counted on the stream at
+    /// the other end rather than left silent.
     /// </summary>
     /// <param name="from">Where the bytes are.</param>
     /// <param name="source">The file.</param>
@@ -535,7 +534,7 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// The bytes of one file, a block at a time, for the two ends that can do no better between them.
+    /// The bytes of one file, a block at a time, for the two ends that cannot do better between them.
     /// </summary>
     /// <param name="from">Where the bytes are.</param>
     /// <param name="source">The file.</param>

@@ -5,9 +5,9 @@ using System.IO;
 namespace Arlecchino.Commander.Files.Work;
 
 /// <summary>
-/// Permissions as a chmod writes them. The three sources keep them in three shapes — a
-/// <see cref="UnixFileMode"/> on a disk, nine flags over SFTP, a number over FTP — and all three are
-/// the same three octal digits to whoever is typing them.
+/// Permissions as chmod writes them. The three sources keep them in three shapes:
+/// a <see cref="UnixFileMode"/> on a disk, nine flags over SFTP, a number over FTP. All three are the same
+/// three octal digits to whoever is typing them.
 /// </summary>
 public static class Modes
 {

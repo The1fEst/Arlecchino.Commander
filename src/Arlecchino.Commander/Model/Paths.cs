@@ -5,9 +5,9 @@ using Arlecchino.Rendering.Text;
 namespace Arlecchino.Commander.Model;
 
 /// <summary>
-/// How a folder is written where there is not room for all of it. The panel and the command line both
-/// name the folder the panel is looking at, and they name it the same way — a path that reads one way
-/// above and another below is two folders as far as anybody reading quickly is concerned.
+/// How a folder is written where there is no room for all of it. The panel and the command line both name
+/// the folder the panel is looking at, and they name it the same way. A path that reads one way above and
+/// another below is two folders as far as anybody reading quickly is concerned.
 /// </summary>
 public static class Paths
 {

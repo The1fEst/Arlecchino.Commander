@@ -68,7 +68,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     /// <summary>Whether the search that runs while you type is on, in which case typing is its own.</summary>
     public bool IsSearching => _searching;
 
-    /// <summary>What has been typed into that search, which the foot of the panel shows.</summary>
+    /// <summary>Whatever has been typed into that search, which the foot of the panel shows.</summary>
     public string Typed => _typed;
 
     /// <summary>What the panel is showing, in the order it is shown.</summary>
@@ -306,7 +306,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     /// <summary>
     /// Draws the panel. What it looks like is <see cref="PanelPaint"/>; what is in it is this, and the
-    /// two meet here — the paint hands back the rows the files go in and the list fills them.
+    /// two meet here — the paint hands back the rows the files go in, and the list fills them.
     /// </summary>
     /// <param name="region">The whole panel, rule included.</param>
     /// <returns>An empty region: the panel uses every row it is handed.</returns>

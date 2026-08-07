@@ -110,10 +110,10 @@ public sealed class ViewerView : IArlecchinoView
     ];
 
     /// <summary>
-    /// Reads the file and decides what to show it with. A PNG is drawn as itself; anything else is
-    /// text or a hex dump, as it always was. A picture has to be read whole — a PNG is one deflate
-    /// stream from end to end, so the first half of one decodes to nothing — which is why the limit
-    /// is its own and larger than the one the text viewer reads under.
+    /// Reads the file and decides what to show it with. A PNG is drawn as itself; anything else is text or a
+    /// hex dump, as it always was. A picture has to be read whole, since a PNG is one deflate stream from end
+    /// to end and the first half of one decodes to nothing. That is why its limit is its own, and larger than
+    /// the one the text viewer reads under.
     /// </summary>
     /// <param name="source">Where the file lives.</param>
     /// <param name="path">Which file.</param>
@@ -166,9 +166,9 @@ public sealed class ViewerView : IArlecchinoView
         read < size ? Loc(LocString.ViewerFirst, kind, Sizes.Brief(read)) : kind;
 
     /// <summary>
-    /// The front of a file, as much of it as the viewer will show. The whole of a large file is never
-    /// read, so this waits on a few blocks rather than on the file — but it does wait, which is why the
-    /// view is built from what this hands back rather than around a stream it reads while drawing.
+    /// The front of a file, as much of it as the viewer will show. The whole of a large file is never read, so
+    /// this waits on a few blocks rather than on the file. But it does wait, which is why the view is built
+    /// from what this hands back rather than around a stream it reads while drawing.
     /// </summary>
     /// <param name="source">Where the file is.</param>
     /// <param name="path">The file.</param>

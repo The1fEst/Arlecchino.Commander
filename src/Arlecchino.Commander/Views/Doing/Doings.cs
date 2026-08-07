@@ -18,7 +18,6 @@ namespace Arlecchino.Commander.Views.Doing;
 /// </summary>
 public sealed class Doings
 {
-    private readonly Sessions _sessions;
     private readonly ArlecchinoState _state;
     private readonly Finder _finder;
     private readonly IArlecchinoTerminal _terminal;
@@ -27,8 +26,8 @@ public sealed class Doings
     /// <summary>Gathers everything the screen can do.</summary>
     /// <param name="dialogs">How anything is asked.</param>
     /// <param name="panels">The two panels on screen.</param>
-    /// <param name="sessions">Every tab, and which one is open.</param>
-    /// <param name="operations">What carries file work out.</param>
+    /// <param name="sessions">Every tab and which one is open.</param>
+    /// <param name="operations">What carries file work through.</param>
     /// <param name="runner">What runs commands.</param>
     /// <param name="finder">What walks a folder looking for something.</param>
     /// <param name="remote">Where the connection that was made is remembered.</param>
@@ -50,7 +49,7 @@ public sealed class Doings
         Dialogs = dialogs;
         Panels = panels;
 
-        _sessions = sessions;
+        Sessions = sessions;
         _state = state;
         _finder = finder;
         _terminal = terminal;
@@ -69,8 +68,8 @@ public sealed class Doings
     /// <summary>The two panels on screen.</summary>
     public Pair Panels { get; }
 
-    /// <summary>Every tab, and which one is open.</summary>
-    public Sessions Sessions => _sessions;
+    /// <summary>Every tab and which one is open.</summary>
+    public Sessions Sessions { get; }
 
     /// <summary>Where the screens of the application are reached, resolved late because it knows them all.</summary>
     public Navigator Navigation => _services.GetRequiredService<Navigator>();
@@ -151,9 +150,9 @@ public sealed class Doings
         var panel = Panels.Active;
 
         panel.State.Cursor = entry.Name;
-        _sessions.Viewing.Value = entry.Path;
-        _sessions.ViewingSource = panel.Source;
-        _sessions.ViewingSize = entry.Size;
+        Sessions.Viewing.Value = entry.Path;
+        Sessions.ViewingSource = panel.Source;
+        Sessions.ViewingSize = entry.Size;
 
         return ViewKind.Viewer;
     }
@@ -304,7 +303,7 @@ public sealed class Doings
     /// <param name="panel">The panel that would be connected.</param>
     public void Connect(FilePanel panel)
     {
-        _sessions.RightIsActive.Value = ReferenceEquals(panel, Panels.Right);
+        Sessions.RightIsActive.Value = ReferenceEquals(panel, Panels.Right);
 
         Navigation.Apply(ViewKind.Connect);
     }

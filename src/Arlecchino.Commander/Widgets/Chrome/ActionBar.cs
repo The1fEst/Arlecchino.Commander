@@ -35,9 +35,9 @@ public sealed class ActionBar
     public LocalAtom<int> Height { get; } = new(1);
 
     /// <summary>
-    ///     Draws it, wrapping onto another row whenever the next label would run past the edge. The rows it
-    ///     is given are the rows it asked for last time, so on the one frame after a terminal is made
-    ///     narrower the labels that wrapped fall outside the region and are dropped; putting the new count on
+    ///     Draws it, wrapping onto another row whenever the next label would run past the edge. The rows it is
+    ///     given are the rows it asked for last time. So on the one frame after a terminal is made narrower,
+    ///     the labels that wrapped fall outside the region and are dropped; putting the new count on
     ///     <see cref="Height" /> is what gets the room back for the frame after that.
     /// </summary>
     /// <param name="bar">The rows to draw on.</param>

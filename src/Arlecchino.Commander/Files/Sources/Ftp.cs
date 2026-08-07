@@ -279,10 +279,11 @@ public sealed class FtpConnection : IDisposable
     }
 
     /// <summary>
-    ///     Opens the second connection. <c>EPSV</c> is asked for first because it carries only a port and
-    ///     so says nothing about addresses the client cannot reach; <c>PASV</c> is the older spelling that
-    ///     every server has, and it answers with an address that is sometimes the one behind the router
-    ///     rather than the one in front of it — so the host already connected to is used instead.
+    ///     Opens the second connection. <c>EPSV</c> is asked for first because it carries only a port, and so
+    ///     says nothing about addresses the client cannot reach.
+    ///     <c>PASV</c> is the older spelling that every server has. It answers with an address that is
+    ///     sometimes the one behind the router rather than the one in front of it, so the host already
+    ///     connected to is used instead.
     /// </summary>
     /// <returns>The data connection.</returns>
     /// <exception cref="IOException">The server would not open one.</exception>
@@ -411,8 +412,8 @@ public sealed class FtpConnection : IDisposable
 ///     The bytes of one transfer, as a stream over the data connection.
 ///     Closing it is not the formality it is on a file. The socket closing is what tells the server the
 ///     transfer has ended, and the server answers that on the control connection — so the reply has to be
-///     read here and now. Left unread it would be handed to whatever asked next, which would then be
-///     reading the answer to somebody else's question for the rest of the session.
+///     read here and now. Left unread it would be handed to whatever asked next, and that caller would then
+///     be reading the answer to somebody else's question for the rest of the session.
 /// </summary>
 internal sealed class FtpStream : Stream
 {

@@ -37,10 +37,10 @@ public interface IFileSource : IDisposable
     bool WalksCheaply { get; }
 
     /// <summary>
-    /// Whether a deleted file can be put somewhere it could be fetched back from. Asked before the
-    /// work rather than during it, because it changes what the panel says it is about to do: a dialog
-    /// promising there is no undoing it is a lie when the file is going to the trash, and a comfort
-    /// nobody should take is worse than either.
+    /// Whether a deleted file can be put somewhere it could be fetched back from. It is asked before the
+    /// work rather than during it, because it changes what the panel says it is about to do. A dialog
+    /// promising there is no undoing it is a lie when the file is going to the trash, and a comfort nobody
+    /// should take is worse than either.
     /// </summary>
     bool HasTrash { get; }
 
@@ -86,9 +86,9 @@ public interface IFileSource : IDisposable
 
     /// <summary>
     /// Wraps a path so that the shell on this end reads it back as one word. A name with a space or an
-    /// apostrophe in it is ordinary and is not the user's problem to work around, so a path this
-    /// program puts into a command is escaped by the end that will read it — a disk under Windows and
-    /// a server answering with a POSIX shell do not agree on how.
+    /// apostrophe in it is ordinary and is not the user's problem to work around. So a path this program puts
+    /// into a command is escaped by the end that will read it: a disk under Windows and a server answering
+    /// with a POSIX shell do not agree on how.
     /// </summary>
     /// <param name="path">The path.</param>
     /// <returns>The path, ready to stand in a command line.</returns>
@@ -104,7 +104,7 @@ public interface IFileSource : IDisposable
 
     /// <summary>
     /// Whether a move from one path to the other stays on one volume, and so can be a rename rather
-    /// than a copy and a delete.
+    /// than a copy and a deletion.
     /// </summary>
     /// <param name="from">Where it is now.</param>
     /// <param name="target">Where it is going.</param>

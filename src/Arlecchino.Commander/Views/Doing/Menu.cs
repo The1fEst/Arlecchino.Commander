@@ -10,7 +10,7 @@ using Arlecchino.Navigation;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// The menu, and the palette that is the same menu without the filing.
+/// The menu and the palette, which is the same menu without the filing.
 ///
 /// Both are lists of the same entries. The menu asks which of five, then which of ten; the palette
 /// asks which of ninety and narrows as you type. Neither knows what any entry does — the entry
@@ -81,9 +81,9 @@ public static class Menu
     }
 
     /// <summary>
-    /// What is on each menu. The two panel menus are the same ten entries built twice, once against
-    /// each panel: what the left menu does to the left panel the right menu does to the right, and
-    /// writing that out twice is how the two would come to differ.
+    /// What is on each menu. The two panel menus are the same ten entries built twice, once against each
+    /// panel. What the left menu does to the left panel the right menu does to the right, and writing that
+    /// out twice is how the two would come to differ.
     /// </summary>
     /// <param name="doings">Everything the screen can do.</param>
     /// <returns>The menu.</returns>
@@ -152,7 +152,7 @@ public static class Menu
         new(LocString.MenuReloadBoth, doings.Reload),
     ];
 
-    /// <summary>What the options menu holds.</summary>
+    /// <summary>What the menu of options holds.</summary>
     /// <param name="doings">Everything the screen can do.</param>
     /// <returns>The entries.</returns>
     private static MenuItem[] ForOptions(Doings doings) =>

@@ -34,7 +34,7 @@ public class LayoutView : IArlecchinoLayout
     private PaneTree? _pane;
 
     /// <summary>Puts the band of tabs above whatever view is open.</summary>
-    /// <param name="sessions">Every tab, and which one is showing.</param>
+    /// <param name="sessions">Every tab and which one is showing.</param>
     /// <param name="state">What the band tells that a frame is owed, having been scrolled.</param>
     public LayoutView(Sessions sessions, ArlecchinoState state)
     {

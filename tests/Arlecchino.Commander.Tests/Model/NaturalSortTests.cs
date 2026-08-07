@@ -10,12 +10,12 @@ namespace Arlecchino.Commander.Tests.Model;
 /// Sorting names the way a person reads them. What is asserted here is mostly the order of whole lists
 /// rather than single pairs, because the order is the thing anybody actually sees.
 /// </summary>
-public sealed class NaturalTests
+public sealed class NaturalSortTests
 {
     private static IReadOnlyList<string> Sorted(params string[] names)
     {
         var sorted = names.ToList();
-        sorted.Sort(Natural.Compare);
+        sorted.Sort(NaturalSort.Compare);
 
         return sorted;
     }
@@ -61,7 +61,7 @@ public sealed class NaturalTests
     [Fact]
     public void ANameEqualsItself()
     {
-        Assert.Equal(0, Natural.Compare("report 12.txt", "report 12.txt"));
+        Assert.Equal(0, NaturalSort.Compare("report 12.txt", "report 12.txt"));
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public sealed class NaturalTests
         {
             foreach (var other in names)
             {
-                Assert.Equal(Math.Sign(Natural.Compare(one, other)), -Math.Sign(Natural.Compare(other, one)));
+                Assert.Equal(Math.Sign(NaturalSort.Compare(one, other)), -Math.Sign(NaturalSort.Compare(other, one)));
             }
         }
     }

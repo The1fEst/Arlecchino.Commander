@@ -8,10 +8,10 @@ using Arlecchino.Rendering.Colors;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The line under the panels. It never takes the focus: the panel keeps it and typing lands here, the
-/// way it does in Midnight Commander, which is why every key it claims is one the panel has no use
-/// for while there is something typed. An empty line claims almost nothing, so Space still marks and
-/// Backspace still leaves the folder.
+/// The line under the panels. It never takes the focus: the panel keeps it and typing lands here, the way it
+/// does in Midnight Commander. That is why every key it claims is a key the panel has no use for while there
+/// is something typed. An empty line claims almost nothing, so Space still marks and Backspace still leaves
+/// the folder.
 /// </summary>
 public sealed class CommandLine
 {
@@ -51,10 +51,10 @@ public sealed class CommandLine
     public bool IsEmpty => _text.Trim().Length == 0;
 
     /// <summary>
-    /// Offers a key to the line. Every key it recognizes is matched against the application's own
-    /// bindings rather than against a <see cref="ConsoleKey"/>, because a terminal that reports no
-    /// virtual key still sends the character — and a Backspace the line failed to recognize is a
-    /// Backspace the panel takes, which walks out of the folder mid-command.
+    /// Offers a key to the line. Every key it recognizes is matched against the application's own bindings
+    /// rather than against a <see cref="ConsoleKey"/>, because a terminal that reports no virtual key still
+    /// sends the character. And a Backspace the line failed to recognize is a Backspace the panel takes,
+    /// which walks out of the folder mid-command.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it and the panel should not see it.</returns>
