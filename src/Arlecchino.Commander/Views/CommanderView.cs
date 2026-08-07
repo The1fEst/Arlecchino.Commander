@@ -160,7 +160,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns>Where to go, which is nowhere for all of these.</returns>
-    public ViewRoute Handle(ConsoleKeyInfo key)
+    public ViewRoute Handle(KeyPress key)
     {
         if (_prefix)
         {
@@ -171,7 +171,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
             return ViewRoute.None;
         }
 
-        if (key is { Modifiers: ConsoleModifiers.Control, Key: ConsoleKey.X })
+        if (key is { Modifiers: KeyModifiers.Control, Key: ConsoleKey.X })
         {
             _prefix = true;
             _state.Output = Loc(LocString.PrefixHint);

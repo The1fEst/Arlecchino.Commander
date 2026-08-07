@@ -4,6 +4,7 @@ using System.Threading;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Views;
 using Arlecchino.Hosting;
+using Arlecchino.Input;
 using Arlecchino.Navigation;
 using Arlecchino.State;
 using Arlecchino.Testing;
@@ -112,15 +113,15 @@ public sealed class ScreenApp : IDisposable
 
     /// <summary>
     ///     Which row the command line landed on. It is the floor the panels stand on: everything below it
-    ///     belongs to the bar of keys, so a bar that grew a row shows up here as a prompt one row higher.
+    ///     belongs to the bar of keys, so a bar that grew a row moves the prompt one row up.
     /// </summary>
     /// <returns>The row, or <c>-1</c> when the screen is drawing something else entirely.</returns>
     public int CommandLineRow() => Array.FindIndex(FrameLines(), static line => line.Contains(Prompt, StringComparison.Ordinal));
 
     /// <summary>
     ///     The bar of actions along the bottom, however many rows it took. A narrow terminal makes the bar
-    ///     carry what did not fit onto another row, so a test that read one row would be reading half a bar
-    ///     the day the width changed; the rows are given back as one line, joined the way they read.
+    ///     carry what did not fit onto another row. A test that read one row would be reading half a bar the
+    ///     day the width changed, so the rows are given back as one line, joined the way they read.
     /// </summary>
     /// <returns>Everything the bar spells out.</returns>
     public string BarLine() => string.Join(' ', BarLines());
@@ -147,7 +148,11 @@ public sealed class ScreenApp : IDisposable
 
     public void Press(ConsoleKey key, bool shift = false, bool alt = false, bool control = false)
     {
-        _host.Press(key, shift, alt, control);
+        var modifiers = (shift ? KeyModifiers.Shift : KeyModifiers.None) |
+                        (alt ? KeyModifiers.Alt : KeyModifiers.None) |
+                        (control ? KeyModifiers.Control : KeyModifiers.None);
+
+        _host.Press(key, modifiers);
     }
 
     public void Type(string text)
@@ -207,7 +212,7 @@ public sealed class ScreenApp : IDisposable
         throw new TimeoutException("The panels never finished reading.");
     }
 
-    /// <summary>Draws frames until some text is on screen, for what arrives after a read.</summary>
+    /// <summary>Draws frames until the screen shows some text, for what arrives after a read.</summary>
     /// <param name="text">What to wait for.</param>
     /// <returns><c>true</c> when it appeared.</returns>
     public bool Shows(string text)
@@ -229,7 +234,7 @@ public sealed class ScreenApp : IDisposable
 
     /// <summary>The style in force where some text starts, wherever the view put it.</summary>
     /// <param name="text">What to look for.</param>
-    /// <returns>The escape sequence that cell carries, or an empty string when it is not on screen.</returns>
+    /// <returns>The escape sequence that cell carries, or an empty string when the text is not there.</returns>
     public string StyleOf(string text)
     {
         for (var row = 0; row < Screen.Height; row++)

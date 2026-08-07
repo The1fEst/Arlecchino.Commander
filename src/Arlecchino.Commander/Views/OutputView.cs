@@ -55,14 +55,14 @@ public sealed class OutputView : IArlecchinoView
 
     public void Draw() => _layout.Draw(_surface.Content);
 
-    public ViewRoute Handle(ConsoleKeyInfo key) => _focus.Handle(key);
+    public ViewRoute Handle(KeyPress key) => _focus.Handle(key);
 
     public ViewRoute HandleMouse(MouseEvent mouse) => _focus.HandleMouse(mouse);
 
     public IReadOnlyList<ViewCommand> Commands() =>
     [
         Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
-        Bind.To(new(ConsoleKey.K, ConsoleModifiers.Control), LocString.KeyClear, _runner.Clear),
+        Bind.To(new(ConsoleKey.K, KeyModifiers.Control), LocString.KeyClear, _runner.Clear),
     ];
 
     private void DrawHeader(SurfaceRegion header) =>

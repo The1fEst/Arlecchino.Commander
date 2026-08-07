@@ -1,5 +1,6 @@
 using System;
 using Arlecchino.Commander.Frames;
+using Arlecchino.Input;
 using Xunit;
 
 namespace Arlecchino.Commander.Tests.Screens;
@@ -40,10 +41,10 @@ public sealed class KeyScriptTests
     }
 
     [Theory]
-    [InlineData("Ctrl+r", ConsoleModifiers.Control)]
-    [InlineData("Alt+f1", ConsoleModifiers.Alt)]
-    [InlineData("Shift+f6", ConsoleModifiers.Shift)]
-    public void AModifierIsReadOffTheFront(string piece, ConsoleModifiers expected)
+    [InlineData("Ctrl+r", KeyModifiers.Control)]
+    [InlineData("Alt+f1", KeyModifiers.Alt)]
+    [InlineData("Shift+f6", KeyModifiers.Shift)]
+    public void AModifierIsReadOffTheFront(string piece, KeyModifiers expected)
     {
         Assert.Equal(expected, KeyScript.One(piece).Modifiers);
     }
@@ -54,14 +55,14 @@ public sealed class KeyScriptTests
         var key = KeyScript.One("Ctrl+Shift+f6");
 
         Assert.Equal(ConsoleKey.F6, key.Key);
-        Assert.Equal(ConsoleModifiers.Control | ConsoleModifiers.Shift, key.Modifiers);
+        Assert.Equal(KeyModifiers.Control | KeyModifiers.Shift, key.Modifiers);
     }
 
     [Fact]
     public void ModifiersAreReadWhateverTheyAreTypedIn()
     {
-        Assert.Equal(ConsoleModifiers.Control, KeyScript.One("CTRL+r").Modifiers);
-        Assert.Equal(ConsoleModifiers.Alt, KeyScript.One("alt+f1").Modifiers);
+        Assert.Equal(KeyModifiers.Control, KeyScript.One("CTRL+r").Modifiers);
+        Assert.Equal(KeyModifiers.Alt, KeyScript.One("alt+f1").Modifiers);
     }
 
     /// <summary>
@@ -71,10 +72,10 @@ public sealed class KeyScriptTests
     [Fact]
     public void ANamedKeyCarriesTheCharacterATerminalWouldSend()
     {
-        Assert.Equal(' ', KeyScript.One("space").KeyChar);
-        Assert.Equal('\r', KeyScript.One("enter").KeyChar);
-        Assert.Equal('\t', KeyScript.One("tab").KeyChar);
-        Assert.Equal('\e', KeyScript.One("esc").KeyChar);
+        Assert.Equal(' ', KeyScript.One("space").Character);
+        Assert.Equal('\r', KeyScript.One("enter").Character);
+        Assert.Equal('\t', KeyScript.One("tab").Character);
+        Assert.Equal('\e', KeyScript.One("esc").Character);
     }
 
     [Fact]
@@ -82,7 +83,7 @@ public sealed class KeyScriptTests
     {
         var key = KeyScript.One("a");
 
-        Assert.Equal('a', key.KeyChar);
+        Assert.Equal('a', key.Character);
         Assert.Equal(default, key.Modifiers);
     }
 
@@ -91,7 +92,7 @@ public sealed class KeyScriptTests
     {
         var key = KeyScript.One("Ctrl+x");
 
-        Assert.Equal('x', key.KeyChar);
-        Assert.Equal(ConsoleModifiers.Control, key.Modifiers);
+        Assert.Equal('x', key.Character);
+        Assert.Equal(KeyModifiers.Control, key.Modifiers);
     }
 }

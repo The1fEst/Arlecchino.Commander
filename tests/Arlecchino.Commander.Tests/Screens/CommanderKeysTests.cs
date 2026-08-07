@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Arlecchino.Commander.Files.Trash;
 using Arlecchino.Commander.Views;
+using Arlecchino.Input;
 using Xunit;
 using static Arlecchino.Commander.Localization;
 using Arlecchino.Commander.Tests.Support;
@@ -78,9 +79,9 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Nothing goes anywhere by the asking. What the dialog promises depends on where the file is
-    /// headed — a machine with a trash says it can be fetched back out of it, one without says it
-    /// cannot — because the one thing this dialog must not do is offer a comfort that is not there.
+    /// Nothing goes anywhere by the asking. What the dialog promises depends on where the file is headed: a
+    /// machine with a trash says it can be fetched back out of it, one without says it cannot. The one thing
+    /// this dialog must not do is offer a comfort that is not there.
     /// </summary>
     [Fact]
     public void DeletingAsksBeforeItDeletes()
@@ -100,7 +101,7 @@ public sealed class CommanderKeysTests : IDisposable
 
     /// <summary>
     /// Shift asks for the other one, which is final wherever it runs. Somebody who wants a thing gone
-    /// should not have to go and empty the trash afterwards.
+    /// should not have to go and empty the trash afterward.
     /// </summary>
     [Fact]
     public void DeletingForGoodSaysItCannotBeUndone()
@@ -422,7 +423,7 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Escape belongs to whatever is on screen: it ends the search that runs while you type, and it
+    /// Escape belongs to whatever the screen shows: it ends the search that runs while you type, and it
     /// leaves a filter, a dialog or a screen. Nothing on this screen claims it.
     /// </summary>
     [Fact]
@@ -449,6 +450,6 @@ public sealed class CommanderKeysTests : IDisposable
         var stop = _app.Navigator.CurrentCommands
             .Single(command => command.Label() == Loc(LocString.KeyStop));
 
-        Assert.Equal(new(ConsoleKey.Escape, ConsoleModifiers.Alt), stop.Binding);
+        Assert.Equal(new(ConsoleKey.Escape, KeyModifiers.Alt), stop.Binding);
     }
 }

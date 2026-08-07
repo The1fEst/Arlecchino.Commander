@@ -62,17 +62,17 @@ public static class Menu
     {
         var said = new StringBuilder();
 
-        if (binding.Modifiers.HasFlag(ConsoleModifiers.Control))
+        if (binding.Modifiers.HasFlag(KeyModifiers.Control))
         {
             said.Append("Ctrl+");
         }
 
-        if (binding.Modifiers.HasFlag(ConsoleModifiers.Alt))
+        if (binding.Modifiers.HasFlag(KeyModifiers.Alt))
         {
             said.Append("Alt+");
         }
 
-        if (binding.Modifiers.HasFlag(ConsoleModifiers.Shift))
+        if (binding.Modifiers.HasFlag(KeyModifiers.Shift))
         {
             said.Append("Shift+");
         }

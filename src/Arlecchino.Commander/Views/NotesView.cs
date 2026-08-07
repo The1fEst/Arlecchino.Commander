@@ -86,7 +86,7 @@ public sealed class NotesView : IArlecchinoView
     }
 
     /// <inheritdoc/>
-    public ViewRoute Handle(ConsoleKeyInfo key)
+    public ViewRoute Handle(KeyPress key)
     {
         if (_keymap.Cancel.Matches(key) || _keymap.Notifications.Matches(key))
         {

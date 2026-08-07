@@ -33,7 +33,7 @@ public sealed class OperationModal : Modal
     }
 
     /// <summary>What is being asked.</summary>
-    public Operation Asking { get; }
+    private Operation Asking { get; }
 
     /// <inheritdoc/>
     public override void Draw(ModalFrame frame)
@@ -43,7 +43,7 @@ public sealed class OperationModal : Modal
     }
 
     /// <inheritdoc/>
-    public override void Handle(ModalFrame frame, ConsoleKeyInfo key)
+    public override void Handle(ModalFrame frame, KeyPress key)
     {
         if (frame.Keymap.Cancel.Matches(key))
         {
@@ -133,19 +133,19 @@ public sealed class OperationModal : Modal
     /// key is the same because the intent is: get on with it without typing the rest.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
-    private void Reach(ConsoleKeyInfo key)
+    private void Reach(KeyPress key)
     {
-        if (Asking.Chosen < 0 && Asking.Over is not null && _completing is not null)
+        if (Asking is { Chosen: < 0, Over: not null } && _completing is not null)
         {
             _completing(Asking);
 
             return;
         }
 
-        Asking.Step(!key.Modifiers.HasFlag(ConsoleModifiers.Shift));
+        Asking.Step(!key.Modifiers.HasFlag(KeyModifiers.Shift));
     }
 
-    private void Switching(ModalFrame frame, ConsoleKeyInfo key)
+    private void Switching(ModalFrame frame, KeyPress key)
     {
         if (frame.Keys.Resolve(key) == ' ')
         {
@@ -153,7 +153,7 @@ public sealed class OperationModal : Modal
         }
     }
 
-    private void Typing(ModalFrame frame, ConsoleKeyInfo key)
+    private void Typing(ModalFrame frame, KeyPress key)
     {
         if (frame.Keymap.Erase.Matches(key))
         {

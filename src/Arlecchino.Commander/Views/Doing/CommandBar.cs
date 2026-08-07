@@ -7,6 +7,7 @@ using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Hosting;
+using Arlecchino.Input;
 using Arlecchino.Rendering;
 using Arlecchino.State;
 
@@ -62,7 +63,7 @@ public sealed class CommandBar
     /// <summary>Gives the key to the line, which takes it only when there is something typed.</summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it.</returns>
-    public bool Handle(ConsoleKeyInfo key)
+    public bool Handle(KeyPress key)
     {
         if (_line.IsEmpty || !_keymap.Confirm.Matches(key))
         {

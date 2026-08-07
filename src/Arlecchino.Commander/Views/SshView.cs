@@ -68,7 +68,7 @@ public sealed class SshView : IArlecchinoView
 
     public void Draw() => _layout.Draw(_surface.Content);
 
-    public ViewRoute Handle(ConsoleKeyInfo key) => _focus.Handle(key);
+    public ViewRoute Handle(KeyPress key) => _focus.Handle(key);
 
     public ViewRoute HandleMouse(MouseEvent mouse) => _focus.HandleMouse(mouse);
 
@@ -76,7 +76,7 @@ public sealed class SshView : IArlecchinoView
     [
         Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
         Bind.To(new(ConsoleKey.Enter), LocString.SshRun, Ask),
-        Bind.To(new(ConsoleKey.K, ConsoleModifiers.Control), LocString.KeyClear, _lines.Clear),
+        Bind.To(new(ConsoleKey.K, KeyModifiers.Control), LocString.KeyClear, _lines.Clear),
     ];
 
     private void DrawHeader(SurfaceRegion header)

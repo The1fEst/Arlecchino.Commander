@@ -28,7 +28,7 @@ public sealed class ChoiceListModal : Modal
     }
 
     /// <summary>What is being picked from.</summary>
-    public Choosing Picking { get; }
+    private Choosing Picking { get; }
 
     /// <inheritdoc/>
     public override void Draw(ModalFrame frame)
@@ -38,7 +38,7 @@ public sealed class ChoiceListModal : Modal
     }
 
     /// <inheritdoc/>
-    public override void Handle(ModalFrame frame, ConsoleKeyInfo key)
+    public override void Handle(ModalFrame frame, KeyPress key)
     {
         if (frame.Keymap.Cancel.Matches(key))
         {

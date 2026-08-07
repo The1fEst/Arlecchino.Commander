@@ -224,7 +224,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the search took it.</returns>
-    private bool Typing(ConsoleKeyInfo key)
+    private bool Typing(KeyPress key)
     {
         if (key.Key is ConsoleKey.Backspace && _typed.Length > 0)
         {
@@ -234,8 +234,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             return true;
         }
 
-        if (key.Modifiers.HasFlag(ConsoleModifiers.Control) ||
-            key.Modifiers.HasFlag(ConsoleModifiers.Alt) ||
+        if (key.Modifiers.HasFlag(KeyModifiers.Control) ||
+            key.Modifiers.HasFlag(KeyModifiers.Alt) ||
             _keys.Resolve(key) is not { } typed ||
             char.IsControl(typed))
         {
@@ -322,7 +322,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         return region.Rows(region.Height, 0);
     }
 
-    public FocusResult Handle(ConsoleKeyInfo key)
+    public FocusResult Handle(KeyPress key)
     {
         if (_searching && Typing(key))
         {

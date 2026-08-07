@@ -58,9 +58,9 @@ public sealed class CommandLine
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it and the panel should not see it.</returns>
-    public bool Handle(ConsoleKeyInfo key)
+    public bool Handle(KeyPress key)
     {
-        if (key.Modifiers.HasFlag(ConsoleModifiers.Alt))
+        if (key.Modifiers.HasFlag(KeyModifiers.Alt))
         {
             return key.Key switch
             {
@@ -79,7 +79,7 @@ public sealed class CommandLine
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it.</returns>
-    private bool Editing(ConsoleKeyInfo key)
+    private bool Editing(KeyPress key)
     {
         if (_keymap.Erase.Matches(key))
         {
@@ -136,7 +136,7 @@ public sealed class CommandLine
         }
     }
 
-    private bool Moving(ConsoleKeyInfo key)
+    private bool Moving(KeyPress key)
     {
         if (_keymap.MoveLeft.Matches(key))
         {
@@ -246,7 +246,7 @@ public sealed class CommandLine
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when it went into the line.</returns>
-    private bool Typed(ConsoleKeyInfo key) => _keys.Resolve(key) is { } typed && Put(typed);
+    private bool Typed(KeyPress key) => _keys.Resolve(key) is { } typed && Put(typed);
 
     private bool Put(char typed)
     {

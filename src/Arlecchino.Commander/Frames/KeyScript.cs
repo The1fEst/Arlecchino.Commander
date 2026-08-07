@@ -1,13 +1,14 @@
 using System;
 using System.Globalization;
+using Arlecchino.Input;
 
 namespace Arlecchino.Commander.Frames;
 
 public static class KeyScript
 {
-    public static ConsoleKeyInfo One(string piece)
+    public static KeyPress One(string piece)
     {
-        var modifiers = (ConsoleModifiers)0;
+        var modifiers = KeyModifiers.None;
         var name = piece;
 
         while (Prefix(name) is { } split)
@@ -16,13 +17,7 @@ public static class KeyScript
             name = split.Tail;
         }
 
-        return Named(name) is { } key
-            ? new(Character(key),
-                key,
-                modifiers.HasFlag(ConsoleModifiers.Shift),
-                modifiers.HasFlag(ConsoleModifiers.Alt),
-                modifiers.HasFlag(ConsoleModifiers.Control))
-            : Typed(name, modifiers);
+        return Named(name) is { } key ? new(key, modifiers, Character(key)) : Typed(name, modifiers);
     }
 
     /// <summary>
@@ -41,20 +36,25 @@ public static class KeyScript
         _ => (char)0,
     };
 
-    private static (ConsoleModifiers Modifier, string Tail)? Prefix(string name)
+    private static (KeyModifiers Modifier, string Tail)? Prefix(string name)
     {
         if (name.StartsWith("Ctrl+", StringComparison.OrdinalIgnoreCase))
         {
-            return (ConsoleModifiers.Control, name[5..]);
+            return (KeyModifiers.Control, name[5..]);
         }
 
         if (name.StartsWith("Alt+", StringComparison.OrdinalIgnoreCase))
         {
-            return (ConsoleModifiers.Alt, name[4..]);
+            return (KeyModifiers.Alt, name[4..]);
+        }
+
+        if (name.StartsWith("Cmd+", StringComparison.OrdinalIgnoreCase))
+        {
+            return (KeyModifiers.Super, name[4..]);
         }
 
         return name.StartsWith("Shift+", StringComparison.OrdinalIgnoreCase)
-            ? (ConsoleModifiers.Shift, name[6..])
+            ? (KeyModifiers.Shift, name[6..])
             : null;
     }
 
@@ -89,7 +89,7 @@ public static class KeyScript
         };
     }
 
-    private static ConsoleKeyInfo Typed(string name, ConsoleModifiers modifiers)
+    private static KeyPress Typed(string name, KeyModifiers modifiers)
     {
         var character = name.Length > 0 ? name[0] : ' ';
         var key = char.IsAsciiLetter(character)
@@ -98,10 +98,6 @@ public static class KeyScript
                 ? ConsoleKey.D0 + (character - '0')
                 : default;
 
-        return new(character,
-            key,
-            modifiers.HasFlag(ConsoleModifiers.Shift),
-            modifiers.HasFlag(ConsoleModifiers.Alt),
-            modifiers.HasFlag(ConsoleModifiers.Control));
+        return new(key, modifiers, character);
     }
 }

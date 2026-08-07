@@ -122,7 +122,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _watchingSaved.Dispose();
     }
 
-    public ViewRoute Handle(ConsoleKeyInfo key) => _focus.Handle(key);
+    public ViewRoute Handle(KeyPress key) => _focus.Handle(key);
 
     public ViewRoute HandleMouse(MouseEvent mouse) => _focus.HandleMouse(mouse);
 
