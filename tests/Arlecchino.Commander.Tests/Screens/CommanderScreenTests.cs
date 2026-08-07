@@ -19,10 +19,16 @@ namespace Arlecchino.Commander.Tests.Screens;
 public sealed class CommanderScreenTests : IDisposable
 {
     /// <summary>
-    ///     The narrowest terminal the application will draw in at all, which is where four tabs stop
-    ///     fitting even shortened and the strip has to scroll.
+    ///     Narrow enough that a fifth tab stops fitting even shortened and the strip has to scroll. Four
+    ///     still fit: the frame around the application spends a cell a side, so the band has the room.
     /// </summary>
     private const int Cramped = 125;
+
+    /// <summary>
+    ///     The narrowest terminal the application will draw in rather than ask for more room, which is
+    ///     narrow enough that the ten labels on the bar of keys no longer fit on one row.
+    /// </summary>
+    private const int Narrowest = 100;
 
     private readonly ScreenApp _app = new(ViewKind.Commander);
 
@@ -337,25 +343,34 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Contains('›', band);
         Assert.Equal(4, narrow.Sessions.Open.Value);
 
-        narrow.Click(LayoutView.Margin, band.IndexOf('●'));
+        narrow.Click(narrow.Inset, band.IndexOf('●'));
         narrow.Settled();
 
         Assert.Equal(5 - showing, narrow.Sessions.Open.Value);
     }
 
-    /// <summary>Clicking a marker scrolls to the tabs that did not fit.</summary>
+    /// <summary>
+    ///     Clicking a marker scrolls to the tabs that did not fit: a click steps the strip one tab, and the
+    ///     tab that was off the left edge is then a tab that can be clicked.
+    ///
+    ///     Five tabs and not four, and the marker asserted for before it is clicked: four fit at this width,
+    ///     so this test used to click a marker that was not on the band, which clicks nothing and proves
+    ///     nothing.
+    /// </summary>
     [Fact]
     public void ClickingTheMarkerScrollsToTheTabsBehindIt()
     {
-        using var narrow = Tabbed(Cramped, 4);
+        using var narrow = Tabbed(Cramped, 5);
 
-        narrow.Click(LayoutView.Margin, narrow.BandLine().IndexOf('‹'));
+        Assert.Contains('‹', narrow.BandLine());
+
+        narrow.Click(narrow.Inset, narrow.BandLine().IndexOf('‹'));
         narrow.Settled();
 
-        narrow.Click(LayoutView.Margin, narrow.BandLine().IndexOf('●'));
+        narrow.Click(narrow.Inset, narrow.BandLine().IndexOf('●'));
         narrow.Settled();
 
-        Assert.Equal(0, narrow.Sessions.Open.Value);
+        Assert.Equal(1, narrow.Sessions.Open.Value);
     }
 
     /// <summary>An application of a given width with a given number of tabs open, settled and drawn.</summary>
@@ -556,9 +571,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    ///     The bar along the bottom says what the keys of this moment do, in words. It is not a fixed row
-    ///     of ten: what is on it is what makes sense for what the cursor is on, spelled out rather than
-    ///     abbreviated to fit.
+    ///     The bar along the bottom says what the keys of this moment do, in words: spelled out rather than
+    ///     abbreviated to fit, since a bar of ten abbreviations answers nothing anybody was asking.
     /// </summary>
     [Fact]
     public void TheActionsAlongTheBottomAreSpelledOut()
@@ -569,6 +583,42 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Contains("View", bar, StringComparison.Ordinal);
         Assert.Contains("Copy", bar, StringComparison.Ordinal);
         Assert.Contains("Delete", bar, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     A terminal too narrow for ten spelled-out labels carries the rest onto another row rather than
+    ///     dropping them. The keys that would have gone are the last on the bar, and the last on the bar are
+    ///     the menu and the way out of the application.
+    /// </summary>
+    [Fact]
+    public void ANarrowBarWrapsRatherThanLosingTheLastKeys()
+    {
+        using var narrow = Tabbed(Narrowest, 1);
+
+        var bar = narrow.BarLine();
+
+        Assert.Equal(2, narrow.BarLines().Length);
+        Assert.Contains("F1", bar, StringComparison.Ordinal);
+        Assert.Contains("F9", bar, StringComparison.Ordinal);
+        Assert.Contains("F10", bar, StringComparison.Ordinal);
+        Assert.Contains("Quit", bar, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The row a wrapped bar takes is a row the panels gave up, not a row it drew over: the command line
+    ///     above it comes up by one, and it is the panels that end a line shorter. Nothing tells the screen
+    ///     how tall the bar is — it finds out by drawing — so this is the whole of what keeps the two in
+    ///     step.
+    /// </summary>
+    [Fact]
+    public void TheRowAWrappedBarTakesComesOffThePanels()
+    {
+        using var wide = Tabbed(150, 1);
+        using var narrow = Tabbed(Narrowest, 1);
+
+        Assert.Single(wide.BarLines());
+        Assert.Equal(2, narrow.BarLines().Length);
+        Assert.Equal(wide.CommandLineRow() - 1, narrow.CommandLineRow());
     }
 
     /// <summary>

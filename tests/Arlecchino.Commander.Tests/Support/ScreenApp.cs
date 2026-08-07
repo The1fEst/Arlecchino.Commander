@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Views;
+using Arlecchino.Hosting;
 using Arlecchino.Navigation;
 using Arlecchino.State;
 using Arlecchino.Testing;
@@ -19,6 +20,7 @@ namespace Arlecchino.Commander.Tests.Support;
 public sealed class ScreenApp : IDisposable
 {
     private const string Loading = "reading";
+    private const string Prompt = "❯";
     private const int Attempts = 200;
     private const int PollMilliseconds = 10;
 
@@ -96,15 +98,52 @@ public sealed class ScreenApp : IDisposable
         return _host.FrameLines();
     }
 
+    /// <summary>
+    ///     How many rows the top and the bottom of the terminal are given away before a screen of this
+    ///     application starts: the frame the framework puts round every view, and the margin the layout
+    ///     keeps inside it. Anything here that reads a row by number counts both, and reads them off the
+    ///     options the application was built with rather than repeating the numbers.
+    /// </summary>
+    public int Inset => _host.Services.GetRequiredService<ArlecchinoOptions>().VerticalPadding + LayoutView.Margin;
+
     /// <summary>The band of tabs as it reads.</summary>
     /// <returns>The row the tabs are drawn on.</returns>
-    public string BandLine() => FrameLines()[LayoutView.Margin];
+    public string BandLine() => FrameLines()[Inset];
 
     /// <summary>
-    ///     The bar of actions along the bottom, which the same margin lifts off the floor of the terminal.
+    ///     Which row the command line landed on. It is the floor the panels stand on: everything below it
+    ///     belongs to the bar of keys, so a bar that grew a row shows up here as a prompt one row higher.
     /// </summary>
-    /// <returns>The row the actions are spelled out on.</returns>
-    public string BarLine() => FrameLines()[^(LayoutView.Margin + 1)];
+    /// <returns>The row, or <c>-1</c> when the screen is drawing something else entirely.</returns>
+    public int CommandLineRow() => Array.FindIndex(FrameLines(), static line => line.Contains(Prompt, StringComparison.Ordinal));
+
+    /// <summary>
+    ///     The bar of actions along the bottom, however many rows it took. A narrow terminal makes the bar
+    ///     carry what did not fit onto another row, so a test that read one row would be reading half a bar
+    ///     the day the width changed; the rows are given back as one line, joined the way they read.
+    /// </summary>
+    /// <returns>Everything the bar spells out.</returns>
+    public string BarLine() => string.Join(' ', BarLines());
+
+    /// <summary>
+    ///     The rows the bar of actions is on, top one first. They are the last rows of the screen with
+    ///     anything on them apart from the command line above them, which is the one row that is always
+    ///     there and is told apart by the prompt it ends with.
+    /// </summary>
+    /// <returns>The rows.</returns>
+    public string[] BarLines()
+    {
+        var lines = FrameLines();
+        var last = lines.Length - 1 - Inset;
+        var first = last;
+
+        while (first > Inset && !lines[first - 1].Contains(Prompt, StringComparison.Ordinal))
+        {
+            first--;
+        }
+
+        return lines[first..(last + 1)];
+    }
 
     public void Press(ConsoleKey key, bool shift = false, bool alt = false, bool control = false)
     {
