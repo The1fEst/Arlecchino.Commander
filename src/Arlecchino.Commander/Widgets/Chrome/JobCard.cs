@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Diagnostics;
 using Arlecchino.Rendering;
@@ -22,6 +23,16 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 public sealed class JobCard
 {
     private const int CardWidth = 34;
+
+    /// <summary>
+    ///     How tall every card is, whatever it has to say. Cards used to be as tall as their contents, which
+    ///     meant a stack that changed shape under the cursor as one job finished and the next reported
+    ///     itself; one height for all of them keeps the panel underneath covered in the same place from the
+    ///     first card to the last. It is room for a wrapped title, the bar or the reason it went wrong, and
+    ///     the row that says which key reads it.
+    /// </summary>
+    private const int CardRows = 5;
+
     private const int BarCells = 22;
     private const int Least = 20;
     private const int MostCards = 3;
@@ -45,12 +56,16 @@ public sealed class JobCard
         _state = state;
     }
 
-    /// <summary>Draws the stack, or nothing at all when there is nothing to say.</summary>
+    /// <summary>
+    ///     Draws the stack, or nothing at all when there is nothing to say. The cards are laid from the
+    ///     bottom of the region upwards, so the newest one is always in the same corner and the older ones
+    ///     move away from it; a card that would reach the top of the panel is not drawn rather than drawn
+    ///     half.
+    /// </summary>
     /// <param name="over">Everything above the footer, which the cards place themselves in.</param>
     public void Draw(SurfaceRegion over)
     {
         var width = Math.Min(CardWidth, over.Width - 4);
-
         if (width < Least)
         {
             return;
@@ -63,16 +78,14 @@ public sealed class JobCard
 
         foreach (var entry in showing)
         {
-            var height = Height(entry);
-
-            if (bottom - height < 2)
+            if (bottom - CardRows < 2)
             {
                 return;
             }
 
-            bottom -= height;
+            bottom -= CardRows;
 
-            One(over.Rows(bottom, height).Inset(new Margin(over.Width - width - 2, 0, 2, 0)), entry);
+            DrawJob(over.Rows(bottom, CardRows).Inset(new Margin(over.Width - width - 2, 0, 2, 0)), entry);
 
             bottom -= Gap;
         }
@@ -131,15 +144,17 @@ public sealed class JobCard
         return end < 0 ? detail : detail[..end];
     }
 
-    /// <summary>How many rows a card takes: what it says, what it is doing, and the hint.</summary>
-    /// <param name="job">The card.</param>
-    /// <returns>The rows.</returns>
-    private static int Height(Job job) => job.Share is null && job.Detail.Length == 0 ? 2 : 3;
-
-    /// <summary>Draws one card.</summary>
+    /// <summary>
+    ///     Draws one card, filled from both ends. The row that names a key is the last one and the bar or the
+    ///     reason is the row above it, counted back from the foot so they stay where the eye left them
+    ///     whether the title above took one row or three.
+    ///     The title is wrapped and not cut: what a card is usually saying is a path, and the end of a path
+    ///     is the part that says which file this is. Three rows is where the wrapping stops, since a title
+    ///     longer than that would reach the rows the bar and the hint are holding.
+    /// </summary>
     /// <param name="card">Where it goes.</param>
     /// <param name="job">What it says.</param>
-    private void One(SurfaceRegion card, Job job)
+    private void DrawJob(SurfaceRegion card, Job job)
     {
         var coat = Skin.Overlay;
 
@@ -149,17 +164,22 @@ public sealed class JobCard
             .Fill(Skin.Paint(job.Rule, job.Rule));
 
         var inside = card.Inset(new Margin(2, 0, 1, 0));
+        var row = 0;
 
-        inside.Write(0, 0, TextWidth.Truncate(job.Title, inside.Width), Said(job, coat));
+        foreach (var text in TextWidth.Wrap(job.Title, inside.Width).TakeWhile(_ => row < 3))
+        {
+            inside.Write(row++, 0, text, Said(job, coat));
+        }
 
         if (job.Share is { } share)
         {
+            var margin = Math.Max(0, (inside.Width - BarCells) / 2);
             _bar.Value = (decimal)(share * 100);
-            _bar.Draw(inside.Rows(1, 1).Inset(new Margin(0, 0, Math.Max(0, inside.Width - BarCells), 0)));
+            _bar.Draw(inside.Rows(inside.Height - 2, 1).Inset(new Margin(margin, 0, Math.Max(0, inside.Width - margin - BarCells), 0)));
         }
         else if (job.Detail.Length > 0)
         {
-            inside.Write(1, 0, TextWidth.Truncate(job.Detail, inside.Width), coat.Meta);
+            inside.Write(inside.Height - 2, 0, TextWidth.Truncate(job.Detail, inside.Width), coat.Meta);
         }
 
         if (job.Running)
@@ -176,7 +196,7 @@ public sealed class JobCard
         }
     }
 
-    /// <summary>What colour the line at the top of a card is written in.</summary>
+    /// <summary>What color the line at the top of a card is written in.</summary>
     /// <param name="job">The card.</param>
     /// <param name="coat">The surface it is on.</param>
     /// <returns>The style.</returns>
@@ -190,11 +210,11 @@ public sealed class JobCard
         return job.Rule.Equals(Skin.AmberRule) ? coat.Warning : coat.Done;
     }
 
-    /// <summary>One card: what it says, how far along it is, and the colour of its rule.</summary>
+    /// <summary>One card: what it says, how far along it is, and the color of its rule.</summary>
     /// <param name="Title">The line at the top.</param>
     /// <param name="Detail">Why it went wrong, when it did.</param>
     /// <param name="Share">How full its bar is, or nothing when it has none.</param>
     /// <param name="Running">Whether the work is still going.</param>
-    /// <param name="Rule">The colour down its left edge.</param>
+    /// <param name="Rule">The color down its left edge.</param>
     private sealed record Job(string Title, string Detail, double? Share, bool Running, Rgb Rule);
 }
