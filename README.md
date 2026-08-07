@@ -105,9 +105,21 @@ gives the network time to answer.
 
 ## Building
 
+The framework is a submodule under `lib/Arlecchino`, and nothing compiles without it:
+
+```
+git clone --recurse-submodules https://github.com/The1fEst/Arlecchino.Commander.git
+```
+
+A clone that already exists picks it up with `git submodule update --init`. After that:
+
 ```
 dotnet build Arlecchino.Commander.slnx --configuration Release
 ```
+
+The framework builds from source with the application, so a change made in `lib/Arlecchino` is in the
+next build. Moving to a newer framework is `git -C lib/Arlecchino pull` and a commit of the new
+revision here.
 
 The screenshots in the framework's README are rendered by `tools/shots.cs`:
 

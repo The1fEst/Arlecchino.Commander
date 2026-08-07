@@ -1,0 +1,3 @@
+[submodule "lib/Arlecchino"]
+	path = lib/Arlecchino
+	url = https://github.com/The1fEst/Arlecchino.git

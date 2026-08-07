@@ -12,7 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arlecchino.Testing" Version="4.0.0" />
     <PackageReference Include="coverlet.collector" Version="10.0.1" PrivateAssets="all" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
@@ -21,5 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Arlecchino.Commander/Arlecchino.Commander.csproj" />
+    <ProjectReference Include="../../lib/Arlecchino/src/Arlecchino.Testing/Arlecchino.Testing.csproj" />
   </ItemGroup>
 </Project>

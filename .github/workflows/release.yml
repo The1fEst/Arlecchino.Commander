@@ -6,10 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # One native binary per platform, compiled ahead of time. Nothing is cross-published between
-  # operating systems here: a native build needs the linker of the system it is built for, so each
-  # one gets a runner of its own. The two macOS builds share a runner because Xcode holds both
-  # architectures, and only the ones that match their runner are run afterwards to prove they start.
   publish:
     strategy:
       fail-fast: false
@@ -26,13 +22,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: true
 
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
-      # Run against a branch and this builds all six and releases none of them, which is how the
-      # matrix itself is tested without a version anyone can download.
       - name: Read version from the tag
         id: version
         shell: bash
@@ -50,7 +46,6 @@ jobs:
           --configuration Release
           --runtime ${{ matrix.rid }}
           --output out
-          -p:PublishAot=true
           -p:Version=${{ steps.version.outputs.value }}
 
       - name: Run the frame it draws
