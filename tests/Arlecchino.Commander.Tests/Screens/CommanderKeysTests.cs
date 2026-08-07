@@ -440,21 +440,93 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Stopping the work is Escape held with a modifier. It was plain Escape, which meant one key stood for
+    /// Stopping the work is Escape behind the leader. It was plain Escape, which meant one key stood for
     /// "get out of this" most of the time and "stop the copy" whenever something was running — and you cannot
-    /// press a key you have to think about first.
-    ///
-    /// Which modifier depends on the machine: a Mac terminal keeps Option for the characters it types, so the
-    /// binding names Command there and Alt everywhere else, and answers to both either way.
+    /// press a key you have to think about first. It was held with Alt afterward, which a Mac terminal
+    /// never sends, so it now sits where the rest of the operations are.
     /// </summary>
     [Fact]
-    public void StoppingTheWorkIsEscapeHeldWithAModifier()
+    public void StoppingTheWorkIsEscapeBehindTheLeader()
     {
         var stop = _app.Navigator.CurrentCommands
             .Single(command => command.Label() == Loc(LocString.KeyStop));
 
-        Assert.Equal(KeyBinding.AltOrSuper(ConsoleKey.Escape), stop.Binding);
-        Assert.True(stop.Binding.Matches(new(ConsoleKey.Escape, KeyModifiers.Alt)));
-        Assert.True(stop.Binding.Matches(new(ConsoleKey.Escape, KeyModifiers.Super)));
+        Assert.True(stop.Binding.IsChord);
+        Assert.True(stop.Binding.Opens(new(ConsoleKey.X, KeyModifiers.Control)));
+        Assert.True(stop.Binding.Closes(new(ConsoleKey.Escape)));
+        Assert.False(stop.Binding.Matches(new(ConsoleKey.Escape)));
+    }
+
+    /// <summary>The pair opens what the letter behind it stands for, and neither half does it alone.</summary>
+    [Fact]
+    public void APairOpensWhatTheLetterBehindItStandsFor()
+    {
+        OnAlpha();
+
+        _app.Press(ConsoleKey.C);
+
+        Assert.DoesNotContain(Loc(LocString.Permissions), _app.Frame(), StringComparison.Ordinal);
+
+        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.C);
+
+        Assert.Contains(Loc(LocString.Permissions), _app.Frame(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A leader on its own puts what finishes it in the box in the corner. That is the whole reason the
+    /// keys are grouped behind one: the second key is read rather than remembered.
+    /// </summary>
+    [Fact]
+    public void ALeaderListsWhatFinishesIt()
+    {
+        _app.Press(ConsoleKey.X, control: true);
+
+        var frame = _app.Frame();
+
+        Assert.Contains(Loc(LocString.Permissions), frame, StringComparison.Ordinal);
+        Assert.Contains(Loc(LocString.MenuHardLink), frame, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A laptop has no <c>PgUp</c>, so going up a folder is spelled out behind the leader — and the
+    /// keyboard that does have the key keeps it, since the pair carries it as an alternative.
+    /// </summary>
+    [Fact]
+    public void GoingUpAnswersToTheLetterAndToTheKeyTheFullKeyboardHas()
+    {
+        var up = _app.Navigator.CurrentCommands
+            .Single(command => command.Label() == Loc(LocString.KeyFolderAbove));
+
+        Assert.Equal("Ctrl+G U", up.Binding.ToString());
+        Assert.True(up.Binding.Opens(new(ConsoleKey.G, KeyModifiers.Control)));
+        Assert.True(up.Binding.Closes(new(ConsoleKey.U)));
+        Assert.True(up.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Control)));
+    }
+
+    /// <summary>Nothing on the screen is reachable through a page key and nothing else.</summary>
+    [Fact]
+    public void NoKeyNeedsAPageKeyToBeReached()
+    {
+        var paged = _app.Navigator.CurrentCommands
+            .Where(command => command.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Control)) ||
+                              command.Binding.Matches(new(ConsoleKey.PageDown, KeyModifiers.Control)) ||
+                              command.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Alt)) ||
+                              command.Binding.Matches(new(ConsoleKey.PageDown, KeyModifiers.Alt)));
+
+        Assert.All(paged, command => Assert.True(command.Binding.IsChord));
+    }
+
+    /// <summary>
+    /// The key after a leader belongs to the pair and to nothing else. Were it let through, a letter
+    /// pressed after a mistyped leader would run whatever that letter means on its own.
+    /// </summary>
+    [Fact]
+    public void TheKeyAfterALeaderReachesNothingElse()
+    {
+        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.F9);
+
+        Assert.DoesNotContain(Loc(LocString.MenuMakeFolder), _app.Frame(), StringComparison.Ordinal);
     }
 }

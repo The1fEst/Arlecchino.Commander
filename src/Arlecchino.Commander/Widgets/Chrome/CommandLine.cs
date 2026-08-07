@@ -60,12 +60,12 @@ public sealed class CommandLine
     /// <returns><c>true</c> when the line took it and the panel should not see it.</returns>
     public bool Handle(KeyPress key)
     {
-        if (key.Modifiers.HasFlag(KeyModifiers.Alt) || key.Modifiers.HasFlag(KeyModifiers.Super))
+        if (key.Modifiers == KeyModifiers.Control)
         {
             return key.Key switch
             {
-                ConsoleKey.P => Recall(back: true),
-                ConsoleKey.N => Recall(back: false),
+                ConsoleKey.UpArrow => Recall(back: true),
+                ConsoleKey.DownArrow => Recall(back: false),
                 _ => false,
             };
         }

@@ -98,7 +98,8 @@ public sealed class CommanderScreenTests : IDisposable
 
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.DownArrow);
-        _app.Press(ConsoleKey.C, alt: true);
+        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.Y);
         _app.Frame();
 
         Assert.Equal(Path.Combine(_app.Folder, "alpha.txt"), _app.Copied);
@@ -117,7 +118,8 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.Spacebar);
         _app.Press(ConsoleKey.Spacebar);
-        _app.Press(ConsoleKey.C, alt: true);
+        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.Y);
         _app.Frame();
 
         Assert.Equal(
@@ -295,7 +297,7 @@ public sealed class CommanderScreenTests : IDisposable
     public void TheDotSaysWhichSideATabWasLeftIn()
     {
         _app.Press(ConsoleKey.Tab);
-        _app.Press(ConsoleKey.T, alt: true);
+        _app.Press(ConsoleKey.T, control: true);
         _app.Settled();
 
         var band = _app.BandLine();
@@ -408,13 +410,14 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void TabsAreWorkedFromTheKeyboard()
     {
-        _app.Press(ConsoleKey.T, alt: true);
+        _app.Press(ConsoleKey.T, control: true);
         _app.Settled();
 
         Assert.Equal(2, _app.Sessions.All.Count);
         Assert.Equal(1, _app.Sessions.Open.Value);
 
-        _app.Press(ConsoleKey.PageUp, alt: true);
+        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.P);
         _app.Frame();
 
         Assert.Equal(0, _app.Sessions.Open.Value);
@@ -424,7 +427,7 @@ public sealed class CommanderScreenTests : IDisposable
 
         Assert.Equal(1, _app.Sessions.Open.Value);
 
-        _app.Press(ConsoleKey.W, alt: true);
+        _app.Press(ConsoleKey.W, control: true);
         _app.Settled();
 
         Assert.Single(_app.Sessions.All);

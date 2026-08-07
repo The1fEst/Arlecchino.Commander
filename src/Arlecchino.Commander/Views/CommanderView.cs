@@ -55,7 +55,6 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     private FocusRing _focus;
     private PaneTree _layout;
     private int _moved;
-    private bool _prefix;
     private int _seen;
     private Session _showing;
 
@@ -107,7 +106,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _gutter = new(sessions, _panels);
         _actionBar = new(_panels);
         _card = new(runner, state);
-        _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _commandBar, state, lifetime);
+        _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _commandBar, lifetime);
 
         _actionBarHeight = _actionBar.Height.Subscribe(() => _layout = Lay());
         _layout = Lay();
@@ -155,30 +154,13 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Keys the screen itself takes before the panels see them: the second half of a <c>Ctrl+X</c>
-    ///     pair, and everything the command line claims while there is something typed on it.
+    ///     Keys the screen itself takes before the panels see them, which is everything the command line
+    ///     claims while there is something typed on it.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns>Where to go, which is nowhere for all of these.</returns>
     public ViewRoute Handle(KeyPress key)
     {
-        if (_prefix)
-        {
-            _prefix = false;
-
-            CommanderKeys.Prefixed(_doings, _commandBar, _state, key);
-
-            return ViewRoute.None;
-        }
-
-        if (key is { Modifiers: KeyModifiers.Control, Key: ConsoleKey.X })
-        {
-            _prefix = true;
-            _state.Output = Loc(LocString.PrefixHint);
-
-            return ViewRoute.None;
-        }
-
         if (!_panels.Active.IsSearching && _commandBar.Handle(key))
         {
             return ViewRoute.None;
