@@ -77,7 +77,7 @@ public static class TabFace
     /// <summary>
     /// The two sides of a tab, with the dot against whichever of them is being worked in. A tab holds
     /// two panels, so the dot is the only thing on it that can answer which of the two has the focus —
-    /// a dot that never moves answers nothing. A side on a server is named after it, in the colour
+    /// a dot that never moves answers nothing. A side on a server is named after it, in the color
     /// servers get, so a glance at the tab says what it is connected to.
     /// </summary>
     /// <param name="strip">Where to draw.</param>
@@ -147,7 +147,7 @@ public static class TabFace
     private static string Cut(string text, int room) =>
         text.Length <= room ? text : TextWidth.Truncate(text, room - 1) + "…";
 
-    /// <summary>What colour one side of a tab is written in.</summary>
+    /// <summary>What color one side of a tab is written in.</summary>
     /// <param name="state">The panel that side holds.</param>
     /// <param name="working">Whether it is the side being worked in.</param>
     /// <param name="lit">The surface of the tab.</param>

@@ -7,7 +7,7 @@ using Arlecchino.Commander.Widgets.Chrome;
 
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
-/// <summary>How loud an operation is, which decides the colour of everything it is asked about in.</summary>
+/// <summary>How loud an operation is, which decides the color of everything it is asked about in.</summary>
 public enum Weight
 {
     /// <summary>It moves data about: copying, moving.</summary>
@@ -125,7 +125,7 @@ public sealed class Operation
         return false;
     }
 
-    /// <summary>The colours this operation is asked about in.</summary>
+    /// <summary>The colors this operation is asked about in.</summary>
     /// <returns>The fill, the text on it, and the band a note sits on.</returns>
     public (Rgb Fill, Rgb Text, Rgb Band) Tone() => Weight switch
     {

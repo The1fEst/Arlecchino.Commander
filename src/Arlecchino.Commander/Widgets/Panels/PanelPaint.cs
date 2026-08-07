@@ -198,7 +198,7 @@ public sealed class PanelPaint
 
     /// <summary>
     ///     The foot: what the cursor is on, or what has been marked. Marking turns the whole band the
-    ///     colour of a mark, so the panel says it is holding something without anything having to be read.
+    ///     color of a mark, so the panel says it is holding something without anything having to be read.
     /// </summary>
     /// <param name="row">The row to draw on.</param>
     /// <param name="panel">The panel being drawn.</param>

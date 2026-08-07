@@ -7,7 +7,7 @@ namespace Arlecchino.Commander.Files.Trash;
 /// <summary>
 /// The trash on a Mac, which is not a folder anybody should be moving files into by hand. Finder keeps
 /// the record of where each thing came from beside the file itself, and only the system call writes it;
-/// a file moved into <c>~/.Trash</c> by hand lands there with no way back, and Put Back is greyed out.
+/// a file moved into <c>~/.Trash</c> by hand lands there with no way back, and Put Back is grayed out.
 /// So this asks the system, through the same call Finder makes.
 ///
 /// Asking it means the Objective-C runtime, since there is no other door to <c>NSFileManager</c>. Each

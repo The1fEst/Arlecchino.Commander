@@ -21,7 +21,7 @@ public static class Breadcrumb
     /// <param name="row">The row to draw on.</param>
     /// <param name="state">What the panel is showing.</param>
     /// <param name="coat">The surface underneath.</param>
-    /// <param name="beneath">The colour of that surface, for the pieces that set their own.</param>
+    /// <param name="beneath">The color of that surface, for the pieces that set their own.</param>
     /// <param name="right">What goes at the right, which the trail makes room for.</param>
     public static void Draw(SurfaceRegion row, PanelState state, Skin.Coat coat, Rgb beneath, string right)
     {
@@ -74,12 +74,12 @@ public static class Breadcrumb
     }
 
     /// <summary>
-    /// The pieces the trail is written from. A server is named first and in its own colour, since which
+    /// The pieces the trail is written from. A server is named first and in its own color, since which
     /// machine a path is on matters more than any folder in it.
     /// </summary>
     /// <param name="state">What the panel is showing.</param>
     /// <param name="coat">The surface underneath.</param>
-    /// <param name="beneath">The colour of that surface.</param>
+    /// <param name="beneath">The color of that surface.</param>
     /// <returns>The pieces, in the order they are written, in pairs of separator and name.</returns>
     private static List<(string Text, TermColor Style)> Trail(PanelState state, Skin.Coat coat, Rgb beneath)
     {

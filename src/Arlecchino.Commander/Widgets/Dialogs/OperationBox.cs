@@ -262,8 +262,8 @@ public static class OperationBox
     /// <param name="inside">Where to draw.</param>
     /// <param name="operation">What is being asked.</param>
     /// <param name="coat">The surface underneath.</param>
-    /// <param name="fill">The colour of the operation.</param>
-    /// <param name="on">What is written on that colour.</param>
+    /// <param name="fill">The color of the operation.</param>
+    /// <param name="on">What is written on that color.</param>
     /// <param name="row">Which row they go on.</param>
     /// <returns>The two buttons.</returns>
     private static (SurfaceRegion Confirm, SurfaceRegion Cancel) Buttons(

@@ -8,7 +8,7 @@ using Arlecchino.Commander.Widgets.Chrome;
 namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
-/// One file, as a row of a panel. Every span carries its own colour, and the row under the cursor
+/// One file, as a row of a panel. Every span carries its own color, and the row under the cursor
 /// lightens all of them at once: a filled row with a faint neutral still on it is the one thing this
 /// design cannot have.
 /// </summary>
@@ -71,7 +71,7 @@ public static class PanelRow
 
     /// <summary>What the surface under a row is, which the spans on it are mixed against.</summary>
     /// <param name="coat">The panel's surface.</param>
-    /// <returns>The colour.</returns>
+    /// <returns>The color.</returns>
     public static Rgb Under(Skin.Coat coat) => ReferenceEquals(coat, Skin.Lively) ? Skin.Lit : Skin.Unlit;
 
     private static TermColor Tag(Tone tone, bool cursor, bool chosen, bool marked, Skin.Coat coat)

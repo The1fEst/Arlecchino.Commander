@@ -6,12 +6,12 @@ using Arlecchino.Rendering.Colors;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The colours the redesign is drawn in: warm near-black neutrals, bone text, one crimson accent.
+/// The colors the redesign is drawn in: warm near-black neutrals, bone text, one crimson accent.
 ///
-/// Every colour here is paired with one of the terminal's own sixteen, so a terminal without 24-bit
+/// Every color here is paired with one of the terminal's own sixteen, so a terminal without 24-bit
 /// draws the nearest thing that was chosen rather than the nearest thing arithmetic found. The
 /// background steps that carry the structure are the one thing such a terminal loses — it has no
-/// colour for them, and a wrong one would read worse than the terminal's own background.
+/// color for them, and a wrong one would read worse than the terminal's own background.
 /// </summary>
 public static class Skin
 {
@@ -145,7 +145,7 @@ public static class Skin
 
     /// <summary>
     /// What closes the top and bottom of the panel being worked in. It is drawn with half blocks, so
-    /// the two colours are the two halves of the row: the surround above the line and the panel below
+    /// the two colors are the two halves of the row: the surround above the line and the panel below
     /// it, which lets a panel end halfway down a cell instead of a whole one short.
     /// </summary>
     public static TermColor BorderActiveColor => field ??= Paint(Unlit, Lit);
@@ -157,7 +157,7 @@ public static class Skin
     public static TermColor BorderInactiveColor => field ??= Paint(Unlit, Unlit);
 
     /// <summary>
-    /// A colour, remembered. Styles are compared by what they are made of rather than by reference, so
+    /// A color, remembered. Styles are compared by what they are made of rather than by reference, so
     /// a row that asks for the same pairing on every frame is handed the same object and its escape
     /// sequence is built once.
     /// </summary>
@@ -190,14 +190,14 @@ public static class Skin
     }
 
     /// <summary>
-    /// What a colour laid over another at part strength comes to. The design writes a marked row as
+    /// What a color laid over another at part strength comes to. The design writes a marked row as
     /// crimson at 13%, which a terminal cannot do — a cell has one background and nothing behind it —
     /// so the mixture is worked out here and the result is what gets drawn.
     /// </summary>
-    /// <param name="front">The colour on top.</param>
+    /// <param name="front">The color on top.</param>
     /// <param name="alpha">How much of it there is, from 0 to 1.</param>
-    /// <param name="back">The colour underneath.</param>
-    /// <returns>The one colour that looks like the two.</returns>
+    /// <param name="back">The color underneath.</param>
+    /// <returns>The one color that looks like the two.</returns>
     public static Rgb Blend(Rgb front, double alpha, Rgb back) => new(
         Mix(front.Red, alpha, back.Red),
         Mix(front.Green, alpha, back.Green),
@@ -211,7 +211,7 @@ public static class Skin
     /// differ by a few percent of lightness, which the sixteen have no way of saying, and picking
     /// different ones for them would invent a distinction the design never asked for.
     /// </summary>
-    /// <param name="colour">The exact colour.</param>
+    /// <param name="colour">The exact color.</param>
     /// <returns>The nearest one that was chosen.</returns>
     private static TerminalColor Nearest(Rgb colour) => colour switch
     {
@@ -236,7 +236,7 @@ public static class Skin
     /// <summary>
     /// One surface and the text on it. The design has four backgrounds and eight weights of neutral,
     /// and a span drawn against the wrong one leaves a hole in the fill — so the surface is chosen
-    /// once and every colour on it comes from here.
+    /// once and every color on it comes from here.
     /// </summary>
     /// <param name="under">The background this coat is worn over.</param>
     public sealed class Coat(Rgb under)

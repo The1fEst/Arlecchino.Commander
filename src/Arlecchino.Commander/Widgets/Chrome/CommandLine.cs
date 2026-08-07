@@ -51,9 +51,9 @@ public sealed class CommandLine
     public bool IsEmpty => _text.Trim().Length == 0;
 
     /// <summary>
-    /// Offers a key to the line. Every key it recognises is matched against the application's own
+    /// Offers a key to the line. Every key it recognizes is matched against the application's own
     /// bindings rather than against a <see cref="ConsoleKey"/>, because a terminal that reports no
-    /// virtual key still sends the character — and a Backspace the line failed to recognise is a
+    /// virtual key still sends the character — and a Backspace the line failed to recognize is a
     /// Backspace the panel takes, which walks out of the folder mid-command.
     /// </summary>
     /// <param name="key">The key that arrived.</param>

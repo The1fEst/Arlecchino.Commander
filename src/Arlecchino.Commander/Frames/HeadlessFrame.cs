@@ -24,7 +24,7 @@ public static class HeadlessFrame
 
     /// <summary>
     /// Draws one frame and returns, for a screenshot or a check that needs no terminal. A process
-    /// started without a console of its own is told there is no colour, which is right for a log and
+    /// started without a console of its own is told there is no color, which is right for a log and
     /// wrong for a picture, so <c>ARLECCHINO_COLOR</c> says what to emit regardless.
     /// </summary>
     /// <param name="size">Frame size as <c>columns x rows</c>.</param>

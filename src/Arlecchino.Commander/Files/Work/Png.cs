@@ -19,8 +19,8 @@ public sealed record Raster(Rgb[] Pixels, int Width, int Height);
 /// a PNG this can read comes back as <c>null</c> and is shown as bytes instead, which is what the
 /// viewer did with every binary before.
 ///
-/// Eight bits a channel and no interlacing, which is what all but a handful of PNGs are. Grey,
-/// palette, truecolour and either of those with alpha are all read; alpha itself is dropped, since a
+/// Eight bits a channel and no interlacing, which is what all but a handful of PNGs are. Gray,
+/// palette, truecolor and either of those with alpha are all read; alpha itself is dropped, since a
 /// terminal has nothing to show it against.
 /// </summary>
 public static class Png
@@ -134,7 +134,7 @@ public static class Png
     }
 
     /// <summary>How many bytes one pixel takes before the filtering is undone.</summary>
-    /// <param name="colour">The PNG colour type.</param>
+    /// <param name="colour">The PNG color type.</param>
     /// <returns>The count, or nought when the type is not one that is read.</returns>
     private static int Channels(int colour) => colour switch
     {
