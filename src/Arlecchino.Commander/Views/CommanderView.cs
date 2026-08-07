@@ -27,11 +27,14 @@ namespace Arlecchino.Commander.Views;
 ///     <see cref="Doings" />, which is handed the same pair of panels this screen is showing — so the
 ///     screen has no operation of its own to keep in step with the menu, and the menu has no idea which
 ///     screen it was opened from.
+///     The footer is not a fixed two rows any more. The bar of keys wraps when the terminal is narrow and
+///     only finds out how tall it is by drawing itself, so the screen subscribes to the height it reports
+///     and lays itself out again when it changes rather than guessing at a number that a resize would
+///     make wrong.
 /// </summary>
-public sealed class CommanderView : IArlecchinoView
+public sealed class CommanderView : IArlecchinoView, IDisposable
 {
-    private const int FooterRows = 2;
-    private readonly ActionBar _bar;
+    private readonly ActionBar _actionBar;
     private readonly JobCard _card;
     private readonly IReadOnlyList<ViewCommand> _commands;
     private readonly Doings _doings;
@@ -46,7 +49,9 @@ public sealed class CommanderView : IArlecchinoView
     private readonly ArlecchinoState _state;
 
     private readonly Surface _surface;
-    private readonly Typing _typing;
+    private readonly CommandBar _commandBar;
+
+    private readonly IDisposable _actionBarHeight;
 
     private FocusRing _focus;
     private PaneTree _layout;
@@ -95,22 +100,28 @@ public sealed class CommanderView : IArlecchinoView
         _showing = sessions.Current;
 
         var (left, right) = Panes(_showing);
-
         var dialogs = new Dialogs(state);
 
         _panels = new(left, right);
         _doings = new(dialogs, _panels, sessions, operations, runner, finder, remote, state, terminal, services);
-        _typing = new(new(runner.History, _keys, _keymap), runner, state, _keymap, _panels);
+        _commandBar = new(new(runner.History, _keys, _keymap), runner, state, _keymap, _panels);
         _gutter = new(sessions, _panels);
-        _bar = new(_panels);
+        _actionBar = new(_panels);
         _card = new(runner, state);
-        _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _typing, state, lifetime);
+        _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _commandBar, state, lifetime);
 
+        _actionBarHeight = _actionBar.Height.Subscribe(() => _layout = Lay());
         _layout = Lay();
         _focus = _layout.AsFocusRing(_keymap);
 
         _focus.Focus(sessions.RightIsActive.Value ? right : left);
     }
+
+    /// <summary>
+    ///     What the panels have to give up at the foot: the command line, which is always one row, and
+    ///     however many rows the bar of keys wrapped itself into.
+    /// </summary>
+    private int FooterRows => 1 + _actionBar.Height.Value;
 
     /// <summary>
     ///     Draws the screen, reloading the panels first when work that was running elsewhere has finished
@@ -156,7 +167,7 @@ public sealed class CommanderView : IArlecchinoView
         {
             _prefix = false;
 
-            CommanderKeys.Prefixed(_doings, _typing, _state, key);
+            CommanderKeys.Prefixed(_doings, _commandBar, _state, key);
 
             return ViewRoute.None;
         }
@@ -169,7 +180,7 @@ public sealed class CommanderView : IArlecchinoView
             return ViewRoute.None;
         }
 
-        if (!_panels.Active.IsSearching && _typing.Handle(key))
+        if (!_panels.Active.IsSearching && _commandBar.Handle(key))
         {
             return ViewRoute.None;
         }
@@ -224,6 +235,13 @@ public sealed class CommanderView : IArlecchinoView
         return made;
     }
 
+    /// <summary>
+    ///     Lays the screen out: the two panels side by side with the gutter between them, and the command
+    ///     line and the bar of keys under both. Both splits are measured from the end, so the footer keeps
+    ///     the rows it asked for and the panels take whatever is left over — which is the way round that
+    ///     survives a terminal being made shorter.
+    /// </summary>
+    /// <returns>The layout, which the focus ring is made from as well as drawn.</returns>
     private PaneTree Lay()
     {
         return Branch(
@@ -233,8 +251,16 @@ public sealed class CommanderView : IArlecchinoView
                 Columns,
                 PaneSize.Fraction(0.5),
                 Leaf(_panels.Left),
-                Branch(Columns, PaneSize.Cells(Gutter.Width), Leaf(_gutter.Draw), Leaf(_panels.Right))),
-            Branch(Rows, ActionBar.Height, Leaf(_typing.Draw), Leaf(_bar.Draw)));
+                Branch(
+                    Columns,
+                    PaneSize.Cells(Gutter.Width),
+                    Leaf(_gutter.Draw),
+                    Leaf(_panels.Right))),
+            Branch(
+                Rows,
+                PaneSize.CellsFromEnd(_actionBar.Height.Value),
+                Leaf(_commandBar.Draw),
+                Leaf(_actionBar.Draw)));
     }
 
     /// <summary>
@@ -268,5 +294,15 @@ public sealed class CommanderView : IArlecchinoView
         _sessions.RightIsActive.Value = _panels.Right.IsFocused;
 
         return route;
+    }
+
+    /// <summary>
+    ///     Gives up what watching the bar's height took out. The screen is built afresh every time it is
+    ///     navigated back to, and the viewer, the finder and the output screen all leave it. A subscription
+    ///     that outlived the screen would be one more per visit, each laying out a screen nobody is on.
+    /// </summary>
+    public void Dispose()
+    {
+        _actionBarHeight.Dispose();
     }
 }

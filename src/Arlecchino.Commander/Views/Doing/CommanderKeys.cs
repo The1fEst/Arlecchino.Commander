@@ -13,7 +13,7 @@ namespace Arlecchino.Commander.Views.Doing;
 /// Which key does which of the things the screen can do.
 ///
 /// It is a table and nothing else: no key here decides anything, works anything out, or holds a piece
-/// of the behaviour that the menu entry beside it does not get. Everything a key does is a call to
+/// of the behavior that the menu entry beside it does not get. Everything a key does is a call to
 /// <see cref="Doings"/>, which is what lets the palette list the keys and the menu in one list.
 /// </summary>
 public static class CommanderKeys
@@ -24,7 +24,7 @@ public static class CommanderKeys
     /// <param name="sessions">The tabs, which four of these keys open, close and step between.</param>
     /// <param name="operations">The file work, which Alt+Esc calls off.</param>
     /// <param name="runner">The commands, which Alt+Esc stops.</param>
-    /// <param name="typing">The command line, which Alt+Enter writes to.</param>
+    /// <param name="commandBar">The command line, which Alt+Enter writes to.</param>
     /// <param name="state">Where the dialog on top lives.</param>
     /// <param name="lifetime">How the application is quit.</param>
     /// <returns>Every key the screen answers to.</returns>
@@ -34,7 +34,7 @@ public static class CommanderKeys
         Sessions sessions,
         Operations operations,
         Runner runner,
-        Typing typing,
+        CommandBar commandBar,
         ArlecchinoState state,
         IHostApplicationLifetime lifetime)
     {
@@ -83,7 +83,7 @@ public static class CommanderKeys
             Bind.When(new(ConsoleKey.PageUp, ConsoleModifiers.Alt), LocString.TabsPrevious, Several(sessions), () => Stepped(sessions, forward: false)),
             Bind.To(new(ConsoleKey.F10), LocString.BarQuit, lifetime.StopApplication),
             Bind.Going(new(ConsoleKey.O, ConsoleModifiers.Control), LocString.MenuWhatCommandsSaid, static () => ViewKind.Output),
-            Bind.To(new(ConsoleKey.Enter, ConsoleModifiers.Alt), LocString.KeyNameOntoLine, () => Named(panels, typing)),
+            Bind.To(new(ConsoleKey.Enter, ConsoleModifiers.Alt), LocString.KeyNameOntoLine, () => Named(panels, commandBar)),
             Bind.When(new(ConsoleKey.Escape, ConsoleModifiers.Alt), LocString.KeyStop, () => operations.IsBusy || runner.IsRunning, () => Stop(operations, runner)),
         ];
     }
@@ -94,13 +94,13 @@ public static class CommanderKeys
     /// for the panels while still putting them a keystroke and a letter away.
     /// </summary>
     /// <param name="doings">Everything the screen can do.</param>
-    /// <param name="typing">The command line, which two of the pairs write to.</param>
+    /// <param name="commandBar">The command line, which two of the pairs write to.</param>
     /// <param name="state">Where the last word said is kept.</param>
     /// <param name="key">The letter that followed.</param>
-    public static void Prefixed(Doings doings, Typing typing, ArlecchinoState state, ConsoleKeyInfo key)
+    public static void Prefixed(Doings doings, CommandBar commandBar, ArlecchinoState state, ConsoleKeyInfo key)
     {
         ArgumentNullException.ThrowIfNull(doings);
-        ArgumentNullException.ThrowIfNull(typing);
+        ArgumentNullException.ThrowIfNull(commandBar);
         ArgumentNullException.ThrowIfNull(state);
 
         var panel = doings.Panels.Active;
@@ -123,12 +123,12 @@ public static class CommanderKeys
                 doings.Compare();
                 break;
             case 'p':
-                typing.Insert(panel.Folder);
+                commandBar.Insert(panel.Folder);
                 break;
             case 't':
                 foreach (var entry in panel.Targets())
                 {
-                    typing.Insert(entry.Name);
+                    commandBar.Insert(entry.Name);
                 }
 
                 break;
@@ -172,12 +172,12 @@ public static class CommanderKeys
 
     /// <summary>Puts the name under the cursor on the command line.</summary>
     /// <param name="panels">The two panels on screen.</param>
-    /// <param name="typing">The command line.</param>
-    private static void Named(Pair panels, Typing typing)
+    /// <param name="commandBar">The command line.</param>
+    private static void Named(Pair panels, CommandBar commandBar)
     {
         if (panels.Active.Current is { IsParent: false } current)
         {
-            typing.Insert(current.Name);
+            commandBar.Insert(current.Name);
         }
     }
 

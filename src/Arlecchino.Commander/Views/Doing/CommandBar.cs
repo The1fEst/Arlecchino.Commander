@@ -13,13 +13,14 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// The line a command is typed on, and what happens when it is entered.
+/// The line a command is typed on, and what happens when it is entered. It is the one row between the
+/// panels and the bar of keys, and it is always that one row however tall the bar below it has grown.
 ///
 /// The line takes a key only while there is something typed on it: an empty line leaves Space, Enter,
 /// Backspace and the marking keys to the panel, which is what makes a command line and a file list
 /// able to share one keyboard without a mode switch between them.
 /// </summary>
-public sealed class Typing
+public sealed class CommandBar
 {
     private const int PromptRoom = 28;
 
@@ -35,7 +36,7 @@ public sealed class Typing
     /// <param name="state">Where the last word said is kept.</param>
     /// <param name="keymap">Keys to obey.</param>
     /// <param name="panels">The two panels on screen.</param>
-    public Typing(CommandLine line, Runner runner, ArlecchinoState state, ArlecchinoKeymap keymap, Pair panels)
+    public CommandBar(CommandLine line, Runner runner, ArlecchinoState state, ArlecchinoKeymap keymap, Pair panels)
     {
         _line = line;
         _runner = runner;

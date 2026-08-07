@@ -8,7 +8,7 @@ using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Stores;
 
-public sealed class Sessions : IArlecchinoStore, IDisposable
+public sealed class Sessions : IArlecchinoStore
 {
     private readonly List<Session> _sessions =
     [
@@ -110,14 +110,6 @@ public sealed class Sessions : IArlecchinoStore, IDisposable
         Current.RightIsActive = RightIsActive.Value;
         Open.Value = index;
         RightIsActive.Value = Current.RightIsActive;
-    }
-
-    public void Dispose()
-    {
-        foreach (var session in _sessions)
-        {
-            session.Dispose();
-        }
     }
 
     public void Start(string left, string right)
