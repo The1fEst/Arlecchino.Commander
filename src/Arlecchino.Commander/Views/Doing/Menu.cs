@@ -76,9 +76,6 @@ public static class Menu
     private static MenuItem[] ForPanel(Doings doings, FilePanel panel) =>
     [
         new(LocString.MenuFindFile, () => doings.Navigation.Apply(doings.Find())),
-        new(LocString.MenuSortByName, () => panel.SortBy(Sorting.Name)),
-        new(LocString.MenuSortBySize, () => panel.SortBy(Sorting.Size)),
-        new(LocString.MenuSortByDate, () => panel.SortBy(Sorting.Modified)),
         new(LocString.MenuShowHidden, () => doings.ToggleHidden(panel)),
         new(LocString.MenuChooseDrive, () => doings.ChooseDrive(panel)),
         new(LocString.MenuOpenSavedHost, () => doings.Dialling.Saved(panel)),

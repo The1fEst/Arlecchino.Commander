@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commands;
@@ -99,15 +100,15 @@ public static class CommanderKeys
                 LocString.MenuWhatCommandsSaid,
                 static () => ViewKind.Output),
 
-            Bind.To(Go(ConsoleKey.I)
+            Bind.To(Go(ConsoleKey.K)
                     .AddAlternative(ConsoleKey.PageUp, KeyModifiers.Control),
                 LocString.KeyFolderAbove,
                 () => panels.Active.Ascend()),
-            Bind.To(Go(ConsoleKey.K)
+            Bind.To(Go(ConsoleKey.J)
                     .AddAlternative(ConsoleKey.PageDown, KeyModifiers.Control),
                 LocString.KeyOpenFolder,
                 () => panels.Active.Descend()),
-            Bind.To(Go(ConsoleKey.J),
+            Bind.To(Go(ConsoleKey.H),
                 LocString.KeyBack,
                 doings.Back),
             Bind.To(Go(ConsoleKey.L),
@@ -125,7 +126,7 @@ public static class CommanderKeys
             Bind.To(Go(ConsoleKey.P),
                 LocString.FoldersBeenIn,
                 () => doings.Places.History(panels.Active)),
-            Bind.To(Go(ConsoleKey.H),
+            Bind.To(Go(ConsoleKey.B),
                 LocString.MenuBothPanelsHere,
                 () => panels.Passive.GoTo(panels.Active.Folder)),
             Bind.To(Go(ConsoleKey.Y),
@@ -135,10 +136,10 @@ public static class CommanderKeys
                 LocString.MenuOpenSavedHost,
                 () => doings.Dialling.Saved(panels.Active)),
 
-            Bind.To(Tab(ConsoleKey.I),
+            Bind.To(Tab(ConsoleKey.K),
                 LocString.TabsNew,
                 sessions.Add),
-            Bind.When(Tab(ConsoleKey.K),
+            Bind.When(Tab(ConsoleKey.J),
                 LocString.TabsClose,
                 Several(sessions),
                 () => Closed(sessions)),
@@ -146,7 +147,7 @@ public static class CommanderKeys
                 LocString.TabsNext,
                 Several(sessions),
                 () => Stepped(sessions, forward: true)),
-            Bind.When(Tab(ConsoleKey.J),
+            Bind.When(Tab(ConsoleKey.H),
                 LocString.TabsPrevious,
                 Several(sessions),
                 () => Stepped(sessions, forward: false)),
@@ -154,6 +155,19 @@ public static class CommanderKeys
                     .AddAlternative(ConsoleKey.F2),
                 LocString.TabsTitle,
                 () => TabList.Open(doings)),
+
+            Bind.To(Sorted(ConsoleKey.H),
+                LocString.MenuSortByName,
+                () => panels.Active.SortBy(Sorting.Name)),
+            Bind.To(Sorted(ConsoleKey.J),
+                LocString.MenuSortBySize,
+                () => panels.Active.SortBy(Sorting.Size)),
+            Bind.To(Sorted(ConsoleKey.K),
+                LocString.MenuSortByDate,
+                () => panels.Active.SortBy(Sorting.Modified)),
+            Bind.To(Sorted(ConsoleKey.L),
+                LocString.MenuSortReversed,
+                () => panels.Active.Reverse()),
 
             Bind.To(Execute(ConsoleKey.C),
                 LocString.Permissions,
@@ -213,10 +227,22 @@ public static class CommanderKeys
     /// <summary>
     /// A key behind the <c>g</c> leader, which is the one that takes you somewhere: to a row, to a folder
     /// the panel has been in, to a host.
+    ///
+    /// The four in the middle read as they do in a text editor: <c>k</c> and <c>j</c> go up out of a folder
+    /// and down into one, <c>h</c> and <c>l</c> go back and forward through the folders the panel has been
+    /// in. Which way a key goes is where it sits rather than what it stands for.
     /// </summary>
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
     private static KeyBinding Go(ConsoleKey key) => new KeyBinding(ConsoleKey.G).ThenKey(key);
+
+    /// <summary>
+    /// A key behind the <c>s</c> leader, which is the one that puts the panel in order. Three keys for the
+    /// three columns and a fourth to turn the order around, all under the hand that is not reaching.
+    /// </summary>
+    /// <param name="key">The key that finishes it.</param>
+    /// <returns>The chord.</returns>
+    private static KeyBinding Sorted(ConsoleKey key) => new KeyBinding(ConsoleKey.S).ThenKey(key);
 
     /// <summary>
     /// A key behind the <c>x</c> leader, which is the one that does something to what the panel is

@@ -50,24 +50,26 @@ of time — one file, nothing to install, no .NET on the machine required. They 
 
 ## What it does
 
-- **Two panels.** `Tab` switches, `Enter` opens, `Space` marks, and the columns sort by name, size or
-  date. The panel that has the focus is the one the operations work from. `j` and `k` are the arrows,
-  `h` leaves the folder and `l` enters the one under the cursor — the arrows still do all of it, and
-  `←` `→` stay on switching panels.
+- **Two panels.** `Tab` switches, `Enter` opens, `Space` marks. The panel that has the focus is the one
+  the operations work from. `j` and `k` are the arrows, `h` leaves the folder and `l` enters the one under
+  the cursor — the arrows still do all of it, and `←` `→` stay on switching panels.
+- **Sorting, behind `s`.** `s h` `s j` `s k` order the panel by name, size or date, and `s l` turns the
+  order around whichever column it is on. A click on a column head does the same.
 - **The function keys.** `F2` tabs, `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename,
   `F7` make folder, `F8` delete, `F9` menu, `F10` quit — and `F1` opens the framework's own key screen.
 - **Tabs.** Each one holds two panels of its own, so a second pair of folders — or a server on one
-  side — is a tab away rather than a place you have to navigate back to. They live behind `t`: `t i` opens
-  one and `t k` closes it, `t j` and `t l` step between them, and `t o` lists them all. The band along the
+  side — is a tab away rather than a place you have to navigate back to. They live behind `t`: `t k` opens
+  one and `t j` closes it, `t h` and `t l` step between them, and `t o` lists them all. The band along the
   top shows what each one is connected to and takes a click on it, on its `×`, or on the `+` at the end. Too many tabs for the
   band shortens the names first and then scrolls, with `‹` and `›` for the ones off either side; going to
   a tab always brings it back into view. `F2` lists them too, and the palette finds a tab by name —
   typing the name of a server goes to the tab that is on it.
-- **Going somewhere, behind `g`.** A leader spends one key and gives back the alphabet: `g i` and `g k`
-  leave and enter a folder, `g j` and `g l` walk back and forward through the folders the panel has been
-  in with `g p` listing them, `g u` `g o` `g m` jump to the top, the middle and the bottom of the panel,
-  `g h` sends the other panel here and `g y` sends it into the folder under the cursor. Opposites face
-  each other, so which way a key goes is where it is rather than what it stands for. Once the leader is
+- **Going somewhere, behind `g`.** A leader spends one key and gives back the alphabet, laid out the way
+  a text editor lays it out: `g k` and `g j` go up out of a folder and down into one, `g h` and `g l` walk
+  back and forward through the folders the panel has been in, with `g p` listing them. `g u` `g o` `g m`
+  jump to the top, the middle and the bottom of the panel, `g b` sends the other panel here and `g y`
+  sends it into the folder under the cursor. Which way a key goes is where it sits rather than what it
+  stands for. Once the leader is
   pressed, the box in the corner lists what finishes it, so nothing here has to be remembered. Nothing
   needs a key a laptop does not have: where `Ctrl+PgUp` and `Ctrl+PgDn` read well they still work, but
   only as a second way in.
@@ -92,7 +94,7 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   `Ctrl+O` reads back everything the commands printed.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
-- **Hosts from `~/.ssh/config`.** `Ctrl+D N` lists the `Host` entries and opens one, reusing its
+- **Hosts from `~/.ssh/config`.** `g n` lists the `Host` entries and opens one, reusing its
   `HostName`, `User`, `Port` and `IdentityFile`, or the default keys in `~/.ssh` when it names none.
 - **Commands over SSH.** The `Command` menu runs one on the connected host and shows what it said.
 - **Work that does not freeze the screen.** Copy, move and delete run in the background with a bar,

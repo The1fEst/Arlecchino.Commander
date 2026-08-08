@@ -219,6 +219,17 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     }
 
     /// <summary>
+    /// Turns the order around without changing what it is ordered by. Asking for the same column again
+    /// does this too, but only from the column it is already on — this says it about whichever one that is.
+    /// </summary>
+    public void Reverse()
+    {
+        _state.Descending = !_state.Descending;
+
+        Sort();
+    }
+
+    /// <summary>
     /// Reads one key while the search is running. Anything that is not a letter to add or a rub-out
     /// ends the search and is left for the panel itself, so a cursor key still moves the cursor.
     /// </summary>

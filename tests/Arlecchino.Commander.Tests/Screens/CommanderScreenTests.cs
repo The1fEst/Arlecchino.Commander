@@ -298,7 +298,7 @@ public sealed class CommanderScreenTests : IDisposable
     {
         _app.Press(ConsoleKey.Tab);
         _app.Press(ConsoleKey.T);
-        _app.Press(ConsoleKey.I);
+        _app.Press(ConsoleKey.K);
         _app.Settled();
 
         var band = _app.BandLine();
@@ -412,14 +412,14 @@ public sealed class CommanderScreenTests : IDisposable
     public void TabsAreWorkedFromTheKeyboard()
     {
         _app.Press(ConsoleKey.T);
-        _app.Press(ConsoleKey.I);
+        _app.Press(ConsoleKey.K);
         _app.Settled();
 
         Assert.Equal(2, _app.Sessions.All.Count);
         Assert.Equal(1, _app.Sessions.Open.Value);
 
         _app.Press(ConsoleKey.T);
-        _app.Press(ConsoleKey.J);
+        _app.Press(ConsoleKey.H);
         _app.Frame();
 
         Assert.Equal(0, _app.Sessions.Open.Value);
@@ -431,7 +431,7 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Equal(1, _app.Sessions.Open.Value);
 
         _app.Press(ConsoleKey.T);
-        _app.Press(ConsoleKey.K);
+        _app.Press(ConsoleKey.J);
         _app.Settled();
 
         Assert.Single(_app.Sessions.All);

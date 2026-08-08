@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Arlecchino.Commander.Files.Trash;
+using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Views;
 using Arlecchino.Input;
 using Xunit;
@@ -587,6 +588,29 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Settled();
 
         Assert.Equal(where, _app.Sessions.Left.Folder);
+    }
+
+    /// <summary>
+    /// Three keys for the three columns and a fourth to turn the order around. Asking for the column it is
+    /// already on turns it around too — that is what a click on the column head has always done — but the
+    /// fourth says it about whichever column that is, without having to know which.
+    /// </summary>
+    [Fact]
+    public void SortingIsThreeColumnsAndAWayBack()
+    {
+        _app.Press(ConsoleKey.S);
+        _app.Press(ConsoleKey.J);
+        _app.Settled();
+
+        Assert.Equal(Sorting.Size, _app.Sessions.Left.Sorting);
+        Assert.False(_app.Sessions.Left.Descending);
+
+        _app.Press(ConsoleKey.S);
+        _app.Press(ConsoleKey.L);
+        _app.Settled();
+
+        Assert.Equal(Sorting.Size, _app.Sessions.Left.Sorting);
+        Assert.True(_app.Sessions.Left.Descending);
     }
 
     /// <summary>Nothing on the screen is reachable through a page key and nothing else.</summary>
