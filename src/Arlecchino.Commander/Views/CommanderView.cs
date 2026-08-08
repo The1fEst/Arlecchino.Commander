@@ -183,15 +183,20 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Every key the screen answers to — unless something is being typed, and then the letters among
-    ///     them are not keys at all. A command bound to a bare letter and a command line that takes letters
-    ///     cannot both have the keyboard, and while the line has been asked for it wins. What is left is
-    ///     what a letter cannot be: the function keys, and everything held with a modifier.
+    ///     Every key the screen answers to — unless something is being typed into, and then the letters
+    ///     among them are not keys at all. A command bound to a bare letter and something taking letters
+    ///     cannot both have the keyboard, and whatever was asked for wins: the command line opened with a
+    ///     colon, or the search running on the panel. What is left is what a letter cannot be — the
+    ///     function keys, and everything held with a modifier.
+    ///
+    ///     One rule in one place rather than a condition on each key. Written per command it is written
+    ///     thirty times, and the one that gets forgotten is a leader swallowing a letter somebody was
+    ///     spelling a file name with.
     /// </summary>
     /// <returns>The commands to match this key against.</returns>
     public IReadOnlyList<ViewCommand> Commands()
     {
-        return _commandBar.IsTyping ? _typed : _commands;
+        return _commandBar.IsTyping || _panels.Active.IsSearching ? _typed : _commands;
     }
 
     /// <summary>

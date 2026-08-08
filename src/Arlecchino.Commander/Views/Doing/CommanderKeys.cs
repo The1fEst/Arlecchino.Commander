@@ -100,14 +100,12 @@ public static class CommanderKeys
                 LocString.MenuWhatCommandsSaid,
                 static () => ViewKind.Output),
 
-            Bind.When(Leaving(),
+            Bind.To(Leaving(),
                 LocString.KeyFolderAbove,
-                Steering(panels),
-                () => Above(panels)),
-            Bind.When(Entering(),
+                () => panels.Active.Ascend()),
+            Bind.To(Entering(),
                 LocString.KeyOpenFolder,
-                Steering(panels),
-                () => Into(panels)),
+                () => panels.Active.Descend()),
             Bind.To(Go(ConsoleKey.H),
                 LocString.KeyBack,
                 doings.Back),
@@ -262,33 +260,6 @@ public static class CommanderKeys
             .AddAlternative(ConsoleKey.RightArrow)
             .AddAlternative(ConsoleKey.PageDown, KeyModifiers.Control);
 
-    /// <summary>
-    /// Whether the panel is being steered rather than typed into. A search running on the panel is taking
-    /// the letters, and a letter that steers while somebody is spelling a name is a letter lost.
-    /// </summary>
-    /// <param name="panels">The two panels on screen.</param>
-    /// <returns>Whether those keys are available.</returns>
-    private static Func<bool> Steering(Pair panels) => () => !panels.Active.IsSearching;
-
-    /// <summary>Leaves for the folder above.</summary>
-    /// <param name="panels">The two panels on screen.</param>
-    /// <returns>Nowhere: the panel moves, the screen does not.</returns>
-    private static ViewRoute Above(Pair panels)
-    {
-        panels.Active.Ascend();
-
-        return ViewRoute.None;
-    }
-
-    /// <summary>Opens the folder under the cursor.</summary>
-    /// <param name="panels">The two panels on screen.</param>
-    /// <returns>Nowhere.</returns>
-    private static ViewRoute Into(Pair panels)
-    {
-        panels.Active.Descend();
-
-        return ViewRoute.None;
-    }
 
     /// <summary>
     /// A key behind the <c>x</c> leader, which is the one that does something to what the panel is

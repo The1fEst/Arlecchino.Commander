@@ -230,8 +230,12 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     }
 
     /// <summary>
-    /// Reads one key while the search is running. Anything that is not a letter to add or a rub-out
-    /// ends the search and is left for the panel itself, so a cursor key still moves the cursor.
+    /// Reads one key while the search is running. Anything that is not a letter to add or a rub-out ends
+    /// the search and is left for the panel itself. So a cursor key still moves the cursor, and Enter opens
+    /// what was found: the search is over by then, and the key means what it always means.
+    ///
+    /// Escape is the one that is kept. It says nothing beyond "stop", and a panel that also acted on it
+    /// would leave the screen the moment somebody thought better of a search.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the search took it.</returns>
@@ -253,7 +257,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         {
             _searching = false;
 
-            return key.Key is ConsoleKey.Escape or ConsoleKey.Enter;
+            return key.Key is ConsoleKey.Escape;
         }
 
         _typed += typed;

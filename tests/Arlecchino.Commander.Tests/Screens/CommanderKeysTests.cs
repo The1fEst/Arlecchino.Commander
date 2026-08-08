@@ -614,6 +614,43 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.True(_app.Sessions.Left.Descending);
     }
 
+    /// <summary>
+    /// A search running on the panel has the letters, leaders and all. Every leader is a letter somebody
+    /// spells file names with, so a search that lets them through is a search that cannot find a file
+    /// beginning with any of them.
+    /// </summary>
+    [Fact]
+    public void ASearchKeepsTheLettersTheLeadersAreOn()
+    {
+        _app.Press(ConsoleKey.Oem2);
+        _app.Type("gsxt");
+
+        var screen = _app.Frame();
+
+        Assert.Contains("gsxt", screen, StringComparison.Ordinal);
+        Assert.DoesNotContain(Loc(LocString.MenuSortByName), screen, StringComparison.Ordinal);
+        Assert.DoesNotContain(Loc(LocString.TabsNew), screen, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Enter ends the search and then opens what it found, in the one press. Swallowing it would mean
+    /// pressing Enter twice for a thing already under the cursor, which is the answer to a question
+    /// nobody asked. Escape is the one key the search keeps: it says stop and nothing else.
+    /// </summary>
+    [Fact]
+    public void EnterEndsTheSearchAndOpensWhatItFound()
+    {
+        var where = _app.Sessions.Left.Folder;
+
+        _app.Press(ConsoleKey.Oem2);
+        _app.Type("nes");
+        _app.Press(ConsoleKey.Enter);
+        _app.Settled();
+
+        Assert.Equal(Path.Combine(where, "nested"), _app.Sessions.Left.Folder);
+        Assert.DoesNotContain("jump to", _app.Frame(), StringComparison.Ordinal);
+    }
+
     /// <summary>Nothing on the screen is reachable through a page key and nothing else.</summary>
     [Fact]
     public void NoKeyNeedsAPageKeyToBeReached()
