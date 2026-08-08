@@ -19,10 +19,12 @@ SFTP server or an FTP one.
 dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
 ```
 
-![Two panels over a local disk](assets/screenshots/panels.png)
+![Folders marked, a copy running with its progress opened in full, and the keys screen](assets/demo.png)
 
 <details>
-<summary><b>More screens</b> — marks, the menu, operations, servers, SSH, notifications</summary>
+<summary><b>More screens</b> — panels, marks, the menu, operations, servers, SSH, notifications</summary>
+
+![Two panels over a local disk](assets/screenshots/panels.png)
 
 ![Three files marked, counted at the foot of the panel](assets/screenshots/marks.png)
 
@@ -135,6 +137,27 @@ The screenshots in the framework's README are rendered by `tools/shots.cs`:
 
 ```
 dotnet run tools/shots.cs
+```
+
+`show` walks the same scenes in this terminal instead, one key apart, so a frame can be read as the
+terminal draws it. `shoot` walks them on its own and has macOS photograph the window each frame is
+drawn in — the real font and the shadow the system puts under a window — into `assets/screenshots`;
+`q` between two pictures stops it. It wants kitty with remote control on, since that is what names the
+window to capture, and the first run asks for permission to record the screen:
+
+```
+dotnet run tools/shots.cs shoot
+```
+
+`tape` records the animation this README opens with, and it is photographed the same way:
+one run of the application plays the whole script and hands back every frame with the milliseconds it
+is to be held for, then each frame is written to this window and captured. ffmpeg binds them into an
+APNG — every color the terminal drew and the shadow under the window, neither of which fits in a GIF's
+256 — and a frame wider than 1400 pixels is scaled down to that, so the file stays the size a README
+can carry. It wants ffmpeg on the path, and a window around 120 columns reads best:
+
+```
+dotnet run tools/shots.cs tape
 ```
 
 ## License

@@ -3,9 +3,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using SkiaSharp;
 
 // Columns by rows, not pixels. A hundred rows is a screenshot nobody can read at a glance.
@@ -31,7 +34,13 @@ if (args is ["tape", ..])
 
 if (args is ["show", ..])
 {
-    Show();
+    Show(false);
+    return;
+}
+
+if (args is ["shoot", ..])
+{
+    Show(true);
     return;
 }
 
@@ -45,7 +54,7 @@ Shots();
     [
         ("panels", size, "", "", false, "", "two panels over a local disk"),
         ("marks", size, "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
-        ("sorted", size, "Tab,F9,Down,Down,Down,Down,Enter,Down,Enter", "", false, "", "the right panel sorted by size"),
+        ("sorted", size, "Tab,s,j", "", false, "", "the right panel sorted by size"),
         ("menu", size, "F9", "", false, "", "the menu, opened by F9"),
         ("file-menu", size, "F9,Down,Enter", "", false, "", "what can be done to what is marked"),
         ("copy", size, "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
@@ -55,14 +64,14 @@ Shots();
         ("palette", size, "Ctrl+K", "", false, "", "everything the application can do, by name"),
         ("hosts", size, "g,n", "", false, "", "hosts read from ~/.ssh/config"),
         ("find", size, "Ctrl+F7,Enter,Enter", "600", false, "", "a walk of the folder, filling in as it goes"),
-        ("output", size, "Ctrl+O", "", false, "", "everything the commands printed"),
+        ("output", size, ":,l,s,Enter,Ctrl+O", "900", false, "", "everything the commands printed"),
         ("connect", size, "Ctrl+K,c,o,n,n,e,c,t,Enter", "", false, "", "a connection asked for in full"),
         ("help", size, "F1", "", false, "", "the keys screen, which comes with the framework"),
         ("server", size, "", "", false, host, "a panel browsing a server over SFTP"),
         ("ssh", size, "Ctrl+K,s,s,h,Enter,l,s,Enter", "3000", false, host, "a command run on that server"),
-        ("progress", size, "Down,Down,Down,F5,Enter", "120", true, "", "a copy running in the background, with a bar and Esc to stop"),
-        ("notification", size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "120", true, "", "the same copy opened in full, with Stop offered"),
-        ("done", size, "Down,Down,Down,F5,Enter,Ctrl+N,Enter", "6000", true, "", "the same entry once the copy is over"),
+        ("progress", size, "Down,Down,F5,Enter", "150", true, "", "a copy running in the background, with a bar and a key to stop"),
+        ("notification", size, "Down,Down,F5,Enter,Ctrl+N,Enter", "150", true, "", "the same copy opened in full, with Stop offered"),
+        ("done", size, "Down,Down,F5,Enter,Ctrl+N,wait4000", "600", true, "", "the same entry once the copy is over"),
     ];
 
 void Shots()
@@ -123,7 +132,7 @@ void Shots()
 // gets every row: the newline the frame ends with is taken off rather than given a row of its own,
 // the cursor is put away, and wrapping is turned off so writing the last cell cannot scroll the top
 // row off the screen. What is on screen is the application and nothing else.
-void Show()
+void Show(bool shoot)
 {
     if (Console.IsInputRedirected || Console.IsOutputRedirected)
     {
@@ -132,12 +141,28 @@ void Show()
         return;
     }
 
+    var window = shoot ? Shot.Window() : 0;
+
+    if (shoot && window == 0)
+    {
+        Console.Error.WriteLine("shoot takes a picture of this window, and only kitty on macOS will say which window that is.");
+
+        return;
+    }
+
     var columns = Math.Max(40, Console.WindowWidth);
     var rows = Math.Max(10, Console.WindowHeight);
     var size = $"{columns}x{rows}";
     var scenes = Scenes(size);
+    var taken = new List<string>();
 
     Fixture.Lay(fixture, scratchLeft, scratchRight);
+
+    if (shoot)
+    {
+        Directory.CreateDirectory(output);
+        Console.Write("\e]2;arlecchino.commander\a");
+    }
 
     Console.Write("\e[?1049h\e[?25l\e[?7l");
 
@@ -164,8 +189,18 @@ void Show()
 
             Console.Write("\e[2J\e[H");
             Console.Write(ansi.Length == 0 ? $"{scene.Name}: nothing came back" : ansi.TrimEnd('\r', '\n'));
+            Console.Out.Flush();
 
-            if (Stop())
+            if (shoot && ansi.Length > 0)
+            {
+                var picture = Path.Combine(output, $"{scene.Name}.png");
+
+                taken.Add(Shot.Take(window, picture, shadow: true)
+                    ? $"{scene.Name}: {size} → {picture}"
+                    : $"{scene.Name}: screencapture would not take it");
+            }
+
+            if (shoot ? Stopped() : Stop())
             {
                 return;
             }
@@ -174,6 +209,11 @@ void Show()
     finally
     {
         Console.Write("\e[?7h\e[?25h\e[?1049l");
+
+        foreach (var line in taken)
+        {
+            Console.WriteLine(line);
+        }
     }
 }
 
@@ -186,13 +226,10 @@ static bool Stop()
     return key.Key is ConsoleKey.Q or ConsoleKey.Escape;
 }
 
-// Records the animation the framework's readme opens with. One run of the application plays the whole
-// script and draws a frame wherever the script says `shot`, so the bar that fills and the entry that
-// finishes are caught while they happen rather than staged one process at a time.
+static bool Stopped() => Console.KeyAvailable && Stop();
+
 void Tape()
 {
-    const string Caption = "arlecchino.commander";
-
     // How long each frame is held is how long a hand would have waited there: a moment to see where
     // the cursor is, a longer one over a dialog that has to be read, and no two presses exactly alike.
     // A step with no key of its own is the recording watching work that is already running.
@@ -225,45 +262,88 @@ void Tape()
 
     var script = string.Join(',', steps);
 
-    Playground.Lay();
-
-    var ansi = Capture("--tape", Size, script, "", Playground.Left, Playground.Right, "");
-    var (columns, rows) = Measure(Size);
-    using var paper = new Paper(15f);
-    var frames = new List<(SKBitmap Image, int Hold)>();
-
-    foreach (var (hold, text) in Reel(ansi))
+    if (Console.IsInputRedirected || Console.IsOutputRedirected)
     {
-        var grid = Terminal.Parse(text);
+        Console.Error.WriteLine("tape needs a terminal of its own: run it without a pipe.");
 
-        if (grid.Count == 0)
-        {
-            continue;
-        }
-
-        frames.Add((paper.Draw(Fit(grid, columns, rows), Caption), hold));
-    }
-
-    if (frames.Count == 0)
-    {
-        Console.WriteLine("tape: nothing came back");
         return;
     }
 
-    var target = Path.Combine(Directory.Exists(framework) ? framework : repository, "assets", "demo.gif");
-    var shape = $"{frames[0].Image.Width}x{frames[0].Image.Height}";
+    var window = Shot.Window();
 
-    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-    Gif.Write(target, frames, 128);
-
-    foreach (var (image, _) in frames)
+    if (window == 0)
     {
-        image.Dispose();
+        Console.Error.WriteLine("tape is a recording of this window, and only kitty on macOS will say which window that is.");
+
+        return;
     }
 
-    var written = new FileInfo(target).Length;
+    var size = $"{Math.Max(40, Console.WindowWidth)}x{Math.Max(10, Console.WindowHeight)}";
 
-    Console.WriteLine($"tape: {frames.Count} frames, {shape}, {written / 1024d / 1024d:0.0} MB → {target}");
+    Console.WriteLine($"tape: laying the tree and playing the script at {size}…");
+
+    Playground.Lay();
+
+    var ansi = Capture("--tape", size, script, "", Playground.Left, Playground.Right, "");
+    var reel = Path.Combine(Path.GetTempPath(), "arlecchino-tape");
+    var frames = new List<(string Path, int Hold)>();
+
+    if (Directory.Exists(reel))
+    {
+        Directory.Delete(reel, true);
+    }
+
+    Directory.CreateDirectory(reel);
+    Console.Write("\e]2;arlecchino.commander\a");
+    Console.Write("\e[?1049h\e[?25l\e[?7l");
+
+    try
+    {
+        foreach (var (hold, text) in Reel(ansi))
+        {
+            if (text.Trim().Length == 0)
+            {
+                continue;
+            }
+
+            Console.Write("\e[2J\e[H");
+            Console.Write(text.TrimEnd('\r', '\n'));
+            Console.Out.Flush();
+
+            var frame = Path.Combine(reel, $"frame{frames.Count:000}.png");
+
+            if (Shot.Take(window, frame, shadow: true))
+            {
+                frames.Add((frame, hold));
+            }
+        }
+    }
+    finally
+    {
+        Console.Write("\e[?7h\e[?25h\e[?1049l");
+    }
+
+    try
+    {
+        if (frames.Count == 0)
+        {
+            Console.WriteLine("tape: nothing came back");
+
+            return;
+        }
+
+        var target = Path.Combine(repository, "assets", "demo.png");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+
+        Console.WriteLine(Film.Weave(frames, target)
+            ? $"tape: {frames.Count} frames, {new FileInfo(target).Length / 1024d / 1024d:0.0} MB → {target}"
+            : "tape: ffmpeg would not weave the frames");
+    }
+    finally
+    {
+        Directory.Delete(reel, true);
+    }
 }
 
 // Splits a recording into its frames. Each is announced by a record separator and the milliseconds it
@@ -672,6 +752,10 @@ static class Fixture
 
     private static readonly string[] Folders = [".github", "assets", "docs", "src", "tests"];
 
+    private const int Pages = 3_000;
+
+    private const int PageSize = 24_000;
+
     public static void Lay(string root, string left, string right)
     {
         if (Directory.Exists(root))
@@ -693,10 +777,11 @@ static class Fixture
         }
 
         var heavy = Directory.CreateDirectory(Path.Combine(left, "docs", "manual"));
+        var page = new string('x', PageSize);
 
-        for (var index = 0; index < 220; index++)
+        for (var index = 0; index < Pages; index++)
         {
-            File.WriteAllText(Path.Combine(heavy.FullName, $"page{index:000}.md"), new string('x', 40_000));
+            File.WriteAllText(Path.Combine(heavy.FullName, $"page{index:0000}.md"), page);
         }
 
         foreach (var (name, size) in Files)
@@ -723,6 +808,210 @@ static class Fixture
             }
 
             found.Delete();
+        }
+    }
+}
+
+/// <summary>
+/// Binds the captured frames into one animation, which FFmpeg does as an APNG. A GIF has 256 colors
+/// and one of them has to stand for transparency, so neither the shades a terminal draws text in nor
+/// the shadow under the window survive it; an APNG carries both. Every frame is held for as long as
+/// the recording says it was held, to the nearest fortieth of a second.
+/// </summary>
+static class Film
+{
+    private const int Widest = 1400;
+
+    /// <summary>Weaves the frames, in order, into one file.</summary>
+    /// <param name="frames">Each picture and how long it is to be held, in milliseconds.</param>
+    /// <param name="target">Where the animation goes.</param>
+    /// <returns>Whether FFmpeg wrote it.</returns>
+    public static bool Weave(IReadOnlyList<(string Path, int Hold)> frames, string target)
+    {
+        ArgumentNullException.ThrowIfNull(frames);
+
+        var folder = Path.GetDirectoryName(frames[0].Path)!;
+        var reel = Path.Combine(folder, "reel.txt");
+        var lines = new List<string> { "ffconcat version 1.0" };
+
+        foreach (var (path, hold) in frames)
+        {
+            lines.Add($"file '{Path.GetFileName(path)}'");
+            lines.Add($"duration {hold / 1000d:0.000}");
+        }
+
+        File.WriteAllLines(reel, lines);
+
+        var start = new ProcessStartInfo("ffmpeg")
+        {
+            ArgumentList =
+            {
+                "-y", "-hide_banner", "-loglevel", "error",
+                "-f", "concat", "-safe", "0", "-i", reel,
+                "-vf", $"scale='min({Widest},iw)':-1:flags=lanczos,format=rgba",
+                "-plays", "0",
+                "-final_delay", $"{frames[^1].Hold / 1000d:0.000}",
+                "-f", "apng", target
+            },
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        try
+        {
+            using var process = Process.Start(start)!;
+            var complaint = process.StandardError.ReadToEnd();
+
+            process.WaitForExit();
+
+            if (process.ExitCode == 0)
+            {
+                return true;
+            }
+
+            Console.Error.WriteLine(complaint.Trim());
+
+            return false;
+        }
+        catch (Win32Exception)
+        {
+            Console.Error.WriteLine("tape needs ffmpeg on the path to weave the frames.");
+
+            return false;
+        }
+    }
+}
+
+/// <summary>
+/// The terminal window as macOS sees it. A frame drawn by kitty is the real font, the real glyph
+/// widths and the real colors, and the system hands the window back with the shadow it draws under it,
+/// which is the picture a README wants.
+/// </summary>
+static class Shot
+{
+    private static readonly TimeSpan Drawn = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>Asks kitty which window this program is running in.</summary>
+    /// <returns>The number macOS knows that window by, or zero when nothing can be asked.</returns>
+    public static int Window()
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            return 0;
+        }
+
+        var listing = Ask("kitten", "@ ls");
+
+        if (listing.Length == 0)
+        {
+            return 0;
+        }
+
+        try
+        {
+            using var reply = JsonDocument.Parse(listing);
+
+            foreach (var window in reply.RootElement.EnumerateArray())
+            {
+                if (Ours(window) && window.TryGetProperty("platform_window_id", out var id))
+                {
+                    return id.GetInt32();
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return 0;
+        }
+
+        return 0;
+    }
+
+    /// <summary>Photographs one window.</summary>
+    /// <param name="window">The number the system knows the window by.</param>
+    /// <param name="path">Where the picture goes.</param>
+    /// <param name="shadow">
+    /// Whether to keep the shadow the system draws under a window. A still picture wants it; a frame
+    /// bound for an animation does not, because what the shadow is drawn on is transparency and a GIF
+    /// has no such color to give it.
+    /// </param>
+    /// <returns>Whether a file was written.</returns>
+    public static bool Take(int window, string path, bool shadow)
+    {
+        Thread.Sleep(Drawn);
+
+        var start = new ProcessStartInfo("screencapture")
+        {
+            ArgumentList = { "-x", "-t", "png", "-l", window.ToString() },
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        if (!shadow)
+        {
+            start.ArgumentList.Add("-o");
+        }
+
+        start.ArgumentList.Add(path);
+
+        try
+        {
+            using var process = Process.Start(start)!;
+
+            process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            return process.ExitCode == 0 && File.Exists(path);
+        }
+        catch (Win32Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool Ours(JsonElement window)
+    {
+        if (!window.TryGetProperty("tabs", out var tabs))
+        {
+            return false;
+        }
+
+        foreach (var tab in tabs.EnumerateArray())
+        {
+            foreach (var pane in tab.GetProperty("windows").EnumerateArray())
+            {
+                if (pane.TryGetProperty("is_self", out var self) && self.GetBoolean())
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static string Ask(string program, string arguments)
+    {
+        var start = new ProcessStartInfo(program, arguments)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        try
+        {
+            using var process = Process.Start(start)!;
+            var text = process.StandardOutput.ReadToEnd();
+
+            process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            return process.ExitCode == 0 ? text : string.Empty;
+        }
+        catch (Win32Exception)
+        {
+            return string.Empty;
         }
     }
 }
@@ -997,493 +1286,5 @@ static class Terminal
         i += 2;
 
         return entry < Ansi.Length ? Ansi[entry] : Foreground;
-    }
-}
-
-/// <summary>
-/// Writes an animation as a GIF. The pictures share one color table, chosen from what the frames
-/// actually hold. Every frame after the first carries only the rectangle that changed — a terminal
-/// mostly stands still, so that is what keeps the file small enough for a README.
-/// </summary>
-static class Gif
-{
-    private const int MaximumCodes = 4096;
-
-    /// <summary>Encodes the frames and writes them out.</summary>
-    /// <param name="path">Where the file goes.</param>
-    /// <param name="frames">The pictures and how long each is held, in milliseconds.</param>
-    /// <param name="colors">How many entries the color table may hold, up to 256.</param>
-    public static void Write(string path, IReadOnlyList<(SKBitmap Image, int Hold)> frames, int colors)
-    {
-        ArgumentNullException.ThrowIfNull(frames);
-
-        var width = frames[0].Image.Width;
-        var height = frames[0].Image.Height;
-        var palette = Palette.Choose(frames, colors);
-        var bits = Bits(palette.Count);
-
-        using var file = File.Create(path);
-        using var writer = new BinaryWriter(file);
-
-        Header(writer, width, height, bits, palette);
-
-        byte[]? previous = null;
-        var pending = 0;
-
-        for (var index = 0; index < frames.Count; index++)
-        {
-            var (image, hold) = frames[index];
-            var current = palette.Map(image);
-            var box = Changed(previous, current, width, height);
-
-            if (box is null)
-            {
-                pending += hold;
-                continue;
-            }
-
-            Frame(writer, current, width, box.Value, hold + pending, bits);
-
-            pending = 0;
-            previous = current;
-        }
-
-        writer.Write((byte)0x3B);
-    }
-
-    private static int Bits(int count)
-    {
-        var bits = 1;
-
-        while (1 << bits < count)
-        {
-            bits++;
-        }
-
-        return Math.Min(8, bits);
-    }
-
-    private static void Header(BinaryWriter writer, int width, int height, int bits, Palette palette)
-    {
-        writer.Write("GIF89a"u8);
-        writer.Write((ushort)width);
-        writer.Write((ushort)height);
-        writer.Write((byte)(0xF0 | (bits - 1)));
-        writer.Write((byte)0);
-        writer.Write((byte)0);
-
-        for (var index = 0; index < 1 << bits; index++)
-        {
-            var color = index < palette.Count ? palette[index] : SKColors.Black;
-
-            writer.Write(color.Red);
-            writer.Write(color.Green);
-            writer.Write(color.Blue);
-        }
-
-        writer.Write((byte)0x21);
-        writer.Write((byte)0xFF);
-        writer.Write((byte)0x0B);
-        writer.Write("NETSCAPE2.0"u8);
-        writer.Write((byte)0x03);
-        writer.Write((byte)0x01);
-        writer.Write((ushort)0);
-        writer.Write((byte)0);
-    }
-
-    private static void Frame(
-        BinaryWriter writer,
-        byte[] indices,
-        int width,
-        (int Left, int Top, int Width, int Height) box,
-        int hold,
-        int bits)
-    {
-        writer.Write((byte)0x21);
-        writer.Write((byte)0xF9);
-        writer.Write((byte)0x04);
-        writer.Write((byte)0x04);
-        writer.Write((ushort)Math.Max(2, hold / 10));
-        writer.Write((byte)0);
-        writer.Write((byte)0);
-
-        writer.Write((byte)0x2C);
-        writer.Write((ushort)box.Left);
-        writer.Write((ushort)box.Top);
-        writer.Write((ushort)box.Width);
-        writer.Write((ushort)box.Height);
-        writer.Write((byte)0);
-
-        var cut = new byte[box.Width * box.Height];
-
-        for (var row = 0; row < box.Height; row++)
-        {
-            Array.Copy(indices, ((box.Top + row) * width) + box.Left, cut, row * box.Width, box.Width);
-        }
-
-        var minimum = Math.Max(2, bits);
-
-        writer.Write((byte)minimum);
-        Blocks(writer, Lzw(cut, minimum));
-        writer.Write((byte)0);
-    }
-
-    /// <summary>
-    /// The rectangle two frames differ in, or nothing when they are the same picture. Rewriting only
-    /// what moved is what a screen of unchanging text costs almost nothing to animate.
-    /// </summary>
-    private static (int Left, int Top, int Width, int Height)? Changed(byte[]? previous, byte[] current, int width, int height)
-    {
-        if (previous is null)
-        {
-            return (0, 0, width, height);
-        }
-
-        var left = width;
-        var right = -1;
-        var top = height;
-        var bottom = -1;
-
-        for (var row = 0; row < height; row++)
-        {
-            var start = row * width;
-
-            for (var column = 0; column < width; column++)
-            {
-                if (previous[start + column] == current[start + column])
-                {
-                    continue;
-                }
-
-                left = Math.Min(left, column);
-                right = Math.Max(right, column);
-                top = Math.Min(top, row);
-                bottom = Math.Max(bottom, row);
-            }
-        }
-
-        return right < 0 ? null : (left, top, right - left + 1, bottom - top + 1);
-    }
-
-    private static void Blocks(BinaryWriter writer, byte[] data)
-    {
-        var offset = 0;
-
-        while (offset < data.Length)
-        {
-            var length = Math.Min(255, data.Length - offset);
-
-            writer.Write((byte)length);
-            writer.Write(data, offset, length);
-
-            offset += length;
-        }
-    }
-
-    private static byte[] Lzw(byte[] indices, int minimum)
-    {
-        var clear = 1 << minimum;
-        var end = clear + 1;
-        var next = end + 1;
-        var size = minimum + 1;
-
-        var dictionary = new Dictionary<int, int>();
-        var bits = new BitWriter();
-
-        bits.Write(clear, size);
-
-        var prefix = -1;
-
-        foreach (var symbol in indices)
-        {
-            if (prefix < 0)
-            {
-                prefix = symbol;
-                continue;
-            }
-
-            var key = (prefix << 8) | symbol;
-
-            if (dictionary.TryGetValue(key, out var known))
-            {
-                prefix = known;
-                continue;
-            }
-
-            bits.Write(prefix, size);
-            dictionary[key] = next++;
-
-            if (next > MaximumCodes)
-            {
-                bits.Write(clear, size);
-                dictionary.Clear();
-                next = end + 1;
-                size = minimum + 1;
-            }
-            else if (next - 1 == 1 << size && size < 12)
-            {
-                size++;
-            }
-
-            prefix = symbol;
-        }
-
-        if (prefix >= 0)
-        {
-            bits.Write(prefix, size);
-        }
-
-        bits.Write(end, size);
-
-        return bits.Drain();
-    }
-
-    private sealed class BitWriter
-    {
-        private readonly List<byte> _bytes = [];
-        private int _bits;
-        private int _count;
-
-        public void Write(int code, int size)
-        {
-            _bits |= code << _count;
-            _count += size;
-
-            while (_count >= 8)
-            {
-                _bytes.Add((byte)(_bits & 0xFF));
-                _bits >>= 8;
-                _count -= 8;
-            }
-        }
-
-        public byte[] Drain()
-        {
-            if (_count <= 0)
-            {
-                return [.. _bytes];
-            }
-
-            _bytes.Add((byte)(_bits & 0xFF));
-            _bits = 0;
-            _count = 0;
-
-            return [.. _bytes];
-        }
-    }
-
-    /// <summary>
-    /// The colors the animation is drawn with, cut out of what the frames hold. Text drawn with
-    /// smoothed edges carries far more shades than a table can name, so the shades are counted, the
-    /// crowd is split until there are as many boxes as entries, and each box gives up its average.
-    /// </summary>
-    private sealed class Palette
-    {
-        private readonly SKColor[] _entries;
-        private readonly Dictionary<int, byte> _known = [];
-
-        private Palette(SKColor[] entries) => _entries = entries;
-
-        public int Count => _entries.Length;
-
-        public SKColor this[int index] => _entries[index];
-
-        public static Palette Choose(IReadOnlyList<(SKBitmap Image, int Hold)> frames, int wanted)
-        {
-            var counts = new Dictionary<int, int>();
-
-            foreach (var (image, _) in frames)
-            {
-                foreach (var pixel in image.Pixels)
-                {
-                    var key = Key(pixel);
-                    counts[key] = counts.TryGetValue(key, out var seen) ? seen + 1 : 1;
-                }
-            }
-
-            List<List<KeyValuePair<int, int>>> boxes = [[.. counts]];
-
-            while (boxes.Count < wanted)
-            {
-                var widest = -1;
-                var spread = -1;
-                var channel = 0;
-
-                for (var index = 0; index < boxes.Count; index++)
-                {
-                    if (boxes[index].Count < 2)
-                    {
-                        continue;
-                    }
-
-                    var (found, range) = Widest(boxes[index]);
-
-                    if (range <= spread)
-                    {
-                        continue;
-                    }
-
-                    spread = range;
-                    widest = index;
-                    channel = found;
-                }
-
-                if (widest < 0)
-                {
-                    break;
-                }
-
-                var box = boxes[widest];
-                box.Sort((left, right) => Channel(left.Key, channel).CompareTo(Channel(right.Key, channel)));
-
-                var half = Half(box);
-
-                boxes[widest] = box[..half];
-                boxes.Add(box[half..]);
-            }
-
-            var entries = new SKColor[boxes.Count];
-
-            for (var index = 0; index < boxes.Count; index++)
-            {
-                entries[index] = Average(boxes[index]);
-            }
-
-            return new(entries);
-        }
-
-        /// <summary>Turns a picture into one index per pixel.</summary>
-        /// <param name="image">The picture.</param>
-        /// <returns>The indices, row by row.</returns>
-        public byte[] Map(SKBitmap image)
-        {
-            var pixels = image.Pixels;
-            var indices = new byte[pixels.Length];
-
-            for (var index = 0; index < pixels.Length; index++)
-            {
-                var key = Key(pixels[index]);
-
-                if (!_known.TryGetValue(key, out var entry))
-                {
-                    entry = Nearest(pixels[index]);
-                    _known[key] = entry;
-                }
-
-                indices[index] = entry;
-            }
-
-            return indices;
-        }
-
-        private byte Nearest(SKColor color)
-        {
-            var best = 0;
-            var closest = int.MaxValue;
-
-            for (var index = 0; index < _entries.Length; index++)
-            {
-                var red = color.Red - _entries[index].Red;
-                var green = color.Green - _entries[index].Green;
-                var blue = color.Blue - _entries[index].Blue;
-                var distance = (red * red * 3) + (green * green * 6) + (blue * blue);
-
-                if (distance >= closest)
-                {
-                    continue;
-                }
-
-                closest = distance;
-                best = index;
-            }
-
-            return (byte)best;
-        }
-
-        private static int Key(SKColor color) =>
-            ((color.Red >> 3) << 10) | ((color.Green >> 3) << 5) | (color.Blue >> 3);
-
-        private static int Channel(int key, int channel) => channel switch
-        {
-            0 => (key >> 10) & 0x1F,
-            1 => (key >> 5) & 0x1F,
-            _ => key & 0x1F,
-        };
-
-        private static (int Channel, int Range) Widest(List<KeyValuePair<int, int>> box)
-        {
-            var found = 0;
-            var widest = -1;
-
-            for (var channel = 0; channel < 3; channel++)
-            {
-                var low = 0x1F;
-                var high = 0;
-
-                foreach (var entry in box)
-                {
-                    var value = Channel(entry.Key, channel);
-
-                    low = Math.Min(low, value);
-                    high = Math.Max(high, value);
-                }
-
-                if (high - low <= widest)
-                {
-                    continue;
-                }
-
-                widest = high - low;
-                found = channel;
-            }
-
-            return (found, widest);
-        }
-
-        /// <summary>Where a box splits: the point half its pixels lie on either side of.</summary>
-        private static int Half(List<KeyValuePair<int, int>> box)
-        {
-            var total = 0L;
-
-            foreach (var entry in box)
-            {
-                total += entry.Value;
-            }
-
-            var walked = 0L;
-
-            for (var index = 0; index < box.Count - 1; index++)
-            {
-                walked += box[index].Value;
-
-                if (walked * 2 >= total)
-                {
-                    return index + 1;
-                }
-            }
-
-            return box.Count / 2;
-        }
-
-        private static SKColor Average(List<KeyValuePair<int, int>> box)
-        {
-            long red = 0, green = 0, blue = 0, total = 0;
-
-            foreach (var entry in box)
-            {
-                var weight = entry.Value;
-
-                red += (long)((Channel(entry.Key, 0) << 3) + 4) * weight;
-                green += (long)((Channel(entry.Key, 1) << 3) + 4) * weight;
-                blue += (long)((Channel(entry.Key, 2) << 3) + 4) * weight;
-                total += weight;
-            }
-
-            return total == 0
-                ? SKColors.Black
-                : new((byte)Math.Min(255, red / total),
-                    (byte)Math.Min(255, green / total),
-                    (byte)Math.Min(255, blue / total));
-        }
     }
 }
