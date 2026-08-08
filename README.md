@@ -50,9 +50,10 @@ of time — one file, nothing to install, no .NET on the machine required. They 
 
 ## What it does
 
-- **Two panels.** `Tab` switches, `Enter` opens, `Space` marks. The panel that has the focus is the one
-  the operations work from. `j` and `k` are the arrows, `h` leaves the folder and `l` enters the one under
-  the cursor — the arrows still do all of it, and `←` `→` stay on switching panels.
+- **Two panels.** `Tab` switches between them, `Enter` opens, `Space` marks. The panel that has the focus
+  is the one the operations work from. The cursor moves on `j` and `k` as well as the arrows, and `h` and
+  `l` — `←` and `→` too — leave the folder and enter the one under the cursor, which is where those keys
+  are worth more than on swapping panels.
 - **Sorting, behind `s`.** `s h` `s j` `s k` order the panel by name, size or date, and `s l` turns the
   order around whichever column it is on. A click on a column head does the same.
 - **The function keys.** `F2` tabs, `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename,
@@ -64,15 +65,13 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   band shortens the names first and then scrolls, with `‹` and `›` for the ones off either side; going to
   a tab always brings it back into view. `F2` lists them too, and the palette finds a tab by name —
   typing the name of a server goes to the tab that is on it.
-- **Going somewhere, behind `g`.** A leader spends one key and gives back the alphabet, laid out the way
-  a text editor lays it out: `g k` and `g j` go up out of a folder and down into one, `g h` and `g l` walk
-  back and forward through the folders the panel has been in, with `g p` listing them. `g u` `g o` `g m`
-  jump to the top, the middle and the bottom of the panel, `g b` sends the other panel here and `g y`
-  sends it into the folder under the cursor. Which way a key goes is where it sits rather than what it
-  stands for. Once the leader is
-  pressed, the box in the corner lists what finishes it, so nothing here has to be remembered. Nothing
-  needs a key a laptop does not have: where `Ctrl+PgUp` and `Ctrl+PgDn` read well they still work, but
-  only as a second way in.
+- **Going somewhere, behind `g`.** A leader spends one key and gives back the alphabet: `g h` and `g l`
+  walk back and forward through the folders the panel has been in, with `g p` listing them. `g u` `g o`
+  `g m` jump to the top, the middle and the bottom of the panel, `g b` sends the other panel here and
+  `g y` sends it into the folder under the cursor. Which way a key goes is where it sits rather than what
+  it stands for. Once the leader is pressed, the box in the corner lists what finishes it, so nothing here
+  has to be remembered. Nothing needs a key a laptop does not have: where `Ctrl+PgUp` and `Ctrl+PgDn` read
+  well they still leave and enter a folder, but only as a second way in.
 - **Getting around the way Midnight Commander does.** `/` searches as you type, `+` and `-` mark and
   unmark by shell pattern, `*` inverts the marks, and `Ctrl+B` keeps a hotlist.
 - **Find file.** `Ctrl+F7` walks down from the panel — over SFTP as readily as over a disk — matching

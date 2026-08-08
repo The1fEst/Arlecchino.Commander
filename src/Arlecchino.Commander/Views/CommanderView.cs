@@ -107,7 +107,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _actionBar = new(_panels);
         _card = new(runner, state);
         _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _commandBar, lifetime);
-        _typed = [.. _commands.Where(command => !IsLetter(command.Binding))];
+        _typed = [.. _commands.Where(command => !WantedByTheLine(command.Binding))];
 
         _actionBarHeight = _actionBar.Height.Subscribe(() => _layout = Lay());
         _layout = Lay();
@@ -194,11 +194,15 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         return _commandBar.IsTyping ? _typed : _commands;
     }
 
-    /// <summary>Whether a binding is a bare letter, which is to say a key the command line would rather have.</summary>
+    /// <summary>
+    ///     Whether the command line would rather have this key. Anything pressed on its own it would: the
+    ///     letters it types, and the arrows and the rub-outs it edits with. What is left to the screen is
+    ///     the function keys and everything held with a modifier, which a line of text has no use for.
+    /// </summary>
     /// <param name="binding">The binding to judge.</param>
-    /// <returns><c>true</c> when nothing is held with it and the key types something.</returns>
-    private static bool IsLetter(KeyBinding binding) =>
-        binding is { Modifiers: KeyModifiers.None, Key: >= ConsoleKey.A and <= ConsoleKey.Z };
+    /// <returns><c>true</c> when the line should be given the key instead.</returns>
+    private static bool WantedByTheLine(KeyBinding binding) =>
+        binding is { Modifiers: KeyModifiers.None, Key: < ConsoleKey.F1 or > ConsoleKey.F24 };
 
     /// <summary>
     ///     The two panels of a session, made once and kept. A tab that is come back to shows what it showed

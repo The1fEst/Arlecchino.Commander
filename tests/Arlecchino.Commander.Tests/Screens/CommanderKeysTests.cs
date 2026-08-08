@@ -493,19 +493,20 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// A laptop has no <c>PgUp</c>, so going up a folder is spelled out behind the leader — and the
-    /// keyboard that does have the key keeps it, since the pair carries it as an alternative.
+    /// Going up a folder answers to all three: the letter an editor puts it on, the arrow that points that
+    /// way, and the pair a laptop cannot press but a full keyboard can. The binding is named after the
+    /// letter, since that is the one every keyboard has.
     /// </summary>
     [Fact]
-    public void GoingUpAnswersToTheLetterAndToTheKeyTheFullKeyboardHas()
+    public void GoingUpAnswersToTheLetterTheArrowAndTheKeyTheFullKeyboardHas()
     {
         var up = _app.Navigator.CurrentCommands
             .Single(command => command.Label() == Loc(LocString.KeyFolderAbove));
 
-        Assert.True(up.Binding.IsChord);
-        Assert.True(up.Binding.Opens(new(ConsoleKey.G)));
+        Assert.True(up.Binding.Matches(new(ConsoleKey.H)));
+        Assert.True(up.Binding.Matches(new(ConsoleKey.LeftArrow)));
         Assert.True(up.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Control)));
-        Assert.StartsWith("G ", up.Binding.ToString(), StringComparison.Ordinal);
+        Assert.Equal("H", up.Binding.ToString());
     }
 
     /// <summary>
@@ -623,7 +624,9 @@ public sealed class CommanderKeysTests : IDisposable
                               command.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Alt)) ||
                               command.Binding.Matches(new(ConsoleKey.PageDown, KeyModifiers.Alt)));
 
-        Assert.All(paged, command => Assert.True(command.Binding.IsChord));
+        Assert.All(
+            paged,
+            command => Assert.True(command.Binding.IsChord || command.Binding.First.Key is >= ConsoleKey.A and <= ConsoleKey.Z));
     }
 
     /// <summary>
