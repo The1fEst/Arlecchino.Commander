@@ -160,6 +160,16 @@ public sealed class ScreenApp : IDisposable
         _host.Type(text);
     }
 
+    /// <summary>
+    ///     Feeds the bytes a terminal really sends, escapes and all, through the reader that recognizes
+    ///     them. Pressing a key names it; this is the way to ask what a named key arrives as.
+    /// </summary>
+    /// <param name="sequence">The characters as the terminal would send them.</param>
+    public void ReadFromTerminal(string sequence)
+    {
+        _host.ReadFromTerminal(sequence);
+    }
+
     public void Click(int row, int column)
     {
         _host.Click(row, column);

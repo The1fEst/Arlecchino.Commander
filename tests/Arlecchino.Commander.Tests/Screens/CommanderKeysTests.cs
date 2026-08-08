@@ -531,6 +531,23 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.All(tabs, command => Assert.True(command.Binding.Opens(new(ConsoleKey.T))));
     }
 
+    /// <summary>
+    /// The function keys as a terminal speaking the keyboard protocol really sends them. These bytes were
+    /// read off kitty rather than written from the specification: with the protocol on, the first four
+    /// arrive as <c>CSI P Q S</c> and — because <c>CSI R</c> is how a terminal answers where its cursor
+    /// is — F3 arrives as <c>CSI 13~</c> instead.
+    /// </summary>
+    [Theory]
+    [InlineData("\e[P", "Keys")]
+    [InlineData("\e[Q", "Tabs")]
+    [InlineData("\e[S", "Filter")]
+    public void TheFunctionKeysArriveAsTheProtocolSendsThem(string sequence, string expected)
+    {
+        _app.ReadFromTerminal(sequence);
+
+        Assert.Contains(expected, _app.Frame(), StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>Nothing on the screen is reachable through a page key and nothing else.</summary>
     [Fact]
     public void NoKeyNeedsAPageKeyToBeReached()
