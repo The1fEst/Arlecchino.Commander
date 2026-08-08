@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
@@ -22,9 +23,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     private readonly ListBox<FileEntry> _table;
     private readonly List<FileEntry> _entries = [];
     private readonly PanelPaint _paint = new();
-
-    private string _typed = "";
-    private bool _searching;
+    private readonly SearchLine _searchLine;
 
     /// <summary>Creates a panel over one side's state.</summary>
     /// <param name="state">What that side is showing.</param>
@@ -38,6 +37,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         _state = state;
         _keymap = keymap;
         _keys = keys;
+        _searchLine = new(keys, Nearest);
 
         _table = new(keymap)
         {
@@ -66,10 +66,10 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     public FileEntry? Current => _table.SelectedItem;
 
     /// <summary>Whether the search that runs while you type is on, in which case typing is its own.</summary>
-    public bool IsSearching => _searching;
+    public bool IsSearching => _searchLine.IsRunning;
 
     /// <summary>Whatever has been typed into that search, which the foot of the panel shows.</summary>
-    public string Typed => _typed;
+    public string Typed => _searchLine.Typed;
 
     /// <summary>What the panel is showing, in the order it is shown.</summary>
     public IReadOnlyList<FileEntry> Entries => _entries;
@@ -154,31 +154,12 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     /// Starts the search that runs while you type, which moves the cursor to the first name that
     /// begins with what has been typed so far. Escape, Enter or any other key ends it.
     /// </summary>
-    public void Search()
-    {
-        _searching = true;
-        _typed = "";
-    }
+    public void Search() => _searchLine.Start();
 
-    /// <summary>
-    /// Adds pasted text to the search that runs while you type. It is taken only while that search has the
-    /// keyboard: with the panel itself listening, letters are keys rather than text, and what was on the
-    /// clipboard was meant for the command line instead.
-    /// </summary>
+    /// <summary>Adds pasted text to that search, when there is one running to add it to.</summary>
     /// <param name="text">What was pasted.</param>
     /// <returns><c>true</c> when the search took it.</returns>
-    public bool Paste(string text)
-    {
-        if (!_searching)
-        {
-            return false;
-        }
-
-        _typed += Pasted.OneLine(text);
-        Nearest();
-
-        return true;
-    }
+    public bool Paste(string text) => _searchLine.Paste(text);
 
     /// <summary>Marks, or unmarks, every file whose name fits a shell pattern.</summary>
     /// <param name="pattern">The pattern, as <c>*.cs</c> or <c>a*,b*</c>.</param>
@@ -249,49 +230,13 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         Sort();
     }
 
-    /// <summary>
-    /// Reads one key while the search is running. Anything that is not a letter to add or a rub-out ends
-    /// the search and is left for the panel itself. So a cursor key still moves the cursor, and Enter opens
-    /// what was found: the search is over by then, and the key means what it always means.
-    ///
-    /// Escape is the one that is kept. It says nothing beyond "stop", and a panel that also acted on it
-    /// would leave the screen the moment somebody thought better of a search.
-    /// </summary>
-    /// <param name="key">The key that arrived.</param>
-    /// <returns><c>true</c> when the search took it.</returns>
-    private bool Typing(KeyPress key)
-    {
-        if (key.Key is ConsoleKey.Backspace && _typed.Length > 0)
-        {
-            _typed = _typed[..^1];
-            Nearest();
-
-            return true;
-        }
-
-        if (key.Modifiers.HasFlag(KeyModifiers.Control) ||
-            key.Modifiers.HasFlag(KeyModifiers.Alt) ||
-            key.Modifiers.HasFlag(KeyModifiers.Super) ||
-            _keys.Resolve(key) is not { } typed ||
-            char.IsControl(typed))
-        {
-            _searching = false;
-
-            return key.Key is ConsoleKey.Escape;
-        }
-
-        _typed += typed;
-        Nearest();
-
-        return true;
-    }
-
     /// <summary>Moves the cursor to the first name the typed letters begin, keeping it where it is otherwise.</summary>
-    private void Nearest()
+    /// <param name="typed">The letters spelled so far.</param>
+    private void Nearest(string typed)
     {
         for (var index = 0; index < _entries.Count; index++)
         {
-            if (!_entries[index].Name.StartsWith(_typed, StringComparison.OrdinalIgnoreCase))
+            if (!_entries[index].Name.StartsWith(typed, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -360,7 +305,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     public FocusResult Handle(KeyPress key)
     {
-        if (_searching && Typing(key))
+        if (_searchLine.Handle(key))
         {
             return FocusResult.Handled;
         }
