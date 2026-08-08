@@ -17,9 +17,9 @@ namespace Arlecchino.Commander.Views.Doing;
 /// The line a command is typed on, and what happens when it is entered. It is the one row between the
 /// panels and the bar of keys, and it is always that one row however tall the bar below it has grown.
 ///
-/// The line takes a key only while there is something typed on it. An empty line leaves Space, Enter,
-/// Backspace and the marking keys to the panel, which is what makes a command line and a file list able to
-/// share one keyboard without a mode switch between them.
+/// The line takes a key only while it has been asked for. The colon asks, Escape gives it back, and
+/// everything in between belongs to whoever is typing. Until then the panel keeps the whole alphabet, which
+/// is what leaves room for a key to be a key rather than a letter held with something.
 /// </summary>
 public sealed class CommandBar
 {
@@ -60,12 +60,25 @@ public sealed class CommandBar
         _line.Draw(line, panel.Source.IsRemote ? $"{panel.Source.Label}:{where}" : where);
     }
 
-    /// <summary>Gives the key to the line, which takes it only when there is something typed.</summary>
+    /// <summary>Whether the line has the keyboard, which is what the panel asks before reading a letter.</summary>
+    public bool IsTyping => _line.IsTyping;
+
+    /// <summary>
+    /// Gives the key to the line, which takes it only once it has been asked for. The key that asks is
+    /// taken too, so the colon that opened the line does not also land on it.
+    /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it.</returns>
     public bool Handle(KeyPress key)
     {
-        if (_line.IsEmpty || !_keymap.Confirm.Matches(key))
+        if (_line.Opens(key))
+        {
+            _line.Open();
+
+            return true;
+        }
+
+        if (!_line.IsTyping || _line.IsEmpty || !_keymap.Confirm.Matches(key))
         {
             return _line.Handle(key);
         }

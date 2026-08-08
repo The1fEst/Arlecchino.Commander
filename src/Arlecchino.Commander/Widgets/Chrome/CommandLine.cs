@@ -8,10 +8,13 @@ using Arlecchino.Rendering.Colors;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The line under the panels. It never takes the focus: the panel keeps it and typing lands here, the way it
-/// does in Midnight Commander. That is why every key it claims is a key the panel has no use for while there
-/// is something typed. An empty line claims almost nothing, so Space still marks and Backspace still leaves
-/// the folder.
+/// The line under the panels. It is asked for rather than fallen into: the colon opens it, Escape closes it,
+/// and until then every letter belongs to the panel.
+///
+/// Typing used to land here straight away, the way it does in Midnight Commander, and that spent the whole
+/// alphabet on one thing. Every key the panel wanted then had to be held with a modifier, and a modifier is
+/// what a window manager, a terminal and the ASCII control codes each take a bite out of first. A key that
+/// asks for the line back is the cheaper end of that trade.
 /// </summary>
 public sealed class CommandLine
 {
@@ -45,21 +48,47 @@ public sealed class CommandLine
 
     /// <summary>
     /// Whether there is a command being typed. A line holding nothing but spaces counts as empty: it
-    /// looks empty, and a stray space left on it would otherwise quietly take every Space after it away
-    /// from the panel, which reads as marking having stopped working.
+    /// looks empty, and running it would start a shell for nothing.
     /// </summary>
     public bool IsEmpty => _text.Trim().Length == 0;
 
+    /// <summary>Whether the line has the keyboard, which is what tells a typed letter from a pressed key.</summary>
+    public bool IsTyping { get; private set; }
+
     /// <summary>
-    /// Offers a key to the line. Every key it recognizes is matched against the application's own bindings
-    /// rather than against a <see cref="ConsoleKey"/>, because a terminal that reports no virtual key still
-    /// sends the character. And a Backspace the line failed to recognize is a Backspace the panel takes,
-    /// which walks out of the folder mid-command.
+    /// Whether a key press is the one that asks for the line. It is read as the character it types rather
+    /// than as a key, so a layout that puts the colon somewhere else still opens it.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns><c>true</c> when the line should be opened.</returns>
+    public bool Opens(KeyPress key) =>
+        !IsTyping && key.Modifiers == default && _keys.Resolve(key) is ':';
+
+    /// <summary>Hands the line the keyboard.</summary>
+    public void Open() => IsTyping = true;
+
+    /// <summary>Gives the keyboard back to the panel, and forgets what was half typed.</summary>
+    public void Close()
+    {
+        IsTyping = false;
+
+        Clear();
+    }
+
+    /// <summary>
+    /// Offers a key to the line, which takes everything while it has the keyboard. Every key it recognizes
+    /// is matched against the application's own bindings rather than against a <see cref="ConsoleKey"/>,
+    /// because a terminal that reports no virtual key still sends the character.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it and the panel should not see it.</returns>
     public bool Handle(KeyPress key)
     {
+        if (!IsTyping)
+        {
+            return false;
+        }
+
         if (key.Modifiers == KeyModifiers.Control)
         {
             return key.Key switch
@@ -70,12 +99,13 @@ public sealed class CommandLine
             };
         }
 
-        return IsEmpty ? Typed(key) : Editing(key);
+        return Editing(key);
     }
 
     /// <summary>
-    /// A key offered to a line that already has something on it, where the line claims everything it
-    /// knows what to do with.
+    /// A key offered to the line while it has the keyboard, where it claims everything it knows what to do
+    /// with. Escape gives the keyboard back rather than only wiping what is on the line — the line was
+    /// asked for, so there is something to leave.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it.</returns>
@@ -112,7 +142,7 @@ public sealed class CommandLine
             return Moving(key) || Typed(key);
         }
 
-        Clear();
+        Close();
 
         return true;
     }
@@ -172,12 +202,16 @@ public sealed class CommandLine
     {
         var command = _text.Trim();
 
-        Clear();
+        Close();
 
         return command;
     }
 
-    /// <summary>Puts a name or a path where the cursor is, with a space after it.</summary>
+    /// <summary>
+    /// Puts a name or a path where the cursor is, with a space after it. The line takes the keyboard on
+    /// the way: something was just written on it, and leaving the next letter to the panel would be a
+    /// surprise nobody asked for.
+    /// </summary>
     /// <param name="piece">What to put in.</param>
     public void Insert(string piece)
     {
@@ -187,6 +221,8 @@ public sealed class CommandLine
 
         _text = _text.Insert(_cursor, quoted + " ");
         _cursor += quoted.Length + 1;
+
+        Open();
     }
 
     private void Clear()
@@ -251,11 +287,6 @@ public sealed class CommandLine
     private bool Put(char typed)
     {
         if (char.IsControl(typed))
-        {
-            return false;
-        }
-
-        if (IsEmpty && typed is ' ' or '+' or '-' or '*')
         {
             return false;
         }

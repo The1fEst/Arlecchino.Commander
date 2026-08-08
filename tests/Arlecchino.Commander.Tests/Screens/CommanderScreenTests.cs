@@ -98,7 +98,7 @@ public sealed class CommanderScreenTests : IDisposable
 
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.DownArrow);
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.Y);
         _app.Frame();
 
@@ -118,7 +118,7 @@ public sealed class CommanderScreenTests : IDisposable
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.Spacebar);
         _app.Press(ConsoleKey.Spacebar);
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.Y);
         _app.Frame();
 
@@ -297,7 +297,7 @@ public sealed class CommanderScreenTests : IDisposable
     public void TheDotSaysWhichSideATabWasLeftIn()
     {
         _app.Press(ConsoleKey.Tab);
-        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.T);
         _app.Press(ConsoleKey.I);
         _app.Settled();
 
@@ -411,26 +411,26 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void TabsAreWorkedFromTheKeyboard()
     {
-        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.T);
         _app.Press(ConsoleKey.I);
         _app.Settled();
 
         Assert.Equal(2, _app.Sessions.All.Count);
         Assert.Equal(1, _app.Sessions.Open.Value);
 
-        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.T);
         _app.Press(ConsoleKey.J);
         _app.Frame();
 
         Assert.Equal(0, _app.Sessions.Open.Value);
 
-        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.T);
         _app.Press(ConsoleKey.L);
         _app.Frame();
 
         Assert.Equal(1, _app.Sessions.Open.Value);
 
-        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.T);
         _app.Press(ConsoleKey.K);
         _app.Settled();
 
@@ -559,7 +559,7 @@ public sealed class CommanderScreenTests : IDisposable
     public void WhatIsTypedOnThePromptIsShownThere()
     {
         _app.Frame();
-        _app.Type("echo hello");
+        _app.Type(":echo hello");
 
         Assert.Contains("echo hello", _app.Frame(), StringComparison.Ordinal);
     }
@@ -568,7 +568,7 @@ public sealed class CommanderScreenTests : IDisposable
     public void RubbingOutTakesTheLastLetterOffThePrompt()
     {
         _app.Frame();
-        _app.Type("echo hello");
+        _app.Type(":echo hello");
         _app.Press(ConsoleKey.Backspace);
 
         var screen = _app.Frame();

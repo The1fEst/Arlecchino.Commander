@@ -325,11 +325,11 @@ public sealed class CommanderKeysTests : IDisposable
     {
         Assert.DoesNotContain(".hidden", _app.Frame(), StringComparison.Ordinal);
 
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.I);
         Assert.Contains(".hidden", _app.Frame(), StringComparison.Ordinal);
 
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.I);
         Assert.DoesNotContain(".hidden", _app.Frame(), StringComparison.Ordinal);
     }
@@ -358,7 +358,7 @@ public sealed class CommanderKeysTests : IDisposable
         var where = _app.Sessions.Left.Folder;
 
         _app.Write("appeared.txt", "three");
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.R);
 
         var screen = _app.Frame();
@@ -397,7 +397,7 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Sessions.Moved();
         _app.Settled();
 
-        _app.Type("ls x");
+        _app.Type(":ls x");
         _app.Press(ConsoleKey.Backspace);
 
         Assert.Equal(nested, _app.Sessions.Left.Folder);
@@ -455,7 +455,7 @@ public sealed class CommanderKeysTests : IDisposable
             .Single(command => command.Label() == Loc(LocString.KeyStop));
 
         Assert.True(stop.Binding.IsChord);
-        Assert.True(stop.Binding.Opens(new(ConsoleKey.X, KeyModifiers.Control)));
+        Assert.True(stop.Binding.Opens(new(ConsoleKey.X)));
         Assert.True(stop.Binding.Closes(new(ConsoleKey.Escape)));
         Assert.False(stop.Binding.Matches(new(ConsoleKey.Escape)));
     }
@@ -470,7 +470,7 @@ public sealed class CommanderKeysTests : IDisposable
 
         Assert.DoesNotContain(Loc(LocString.Permissions), _app.Frame(), StringComparison.Ordinal);
 
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.C);
 
         Assert.Contains(Loc(LocString.Permissions), _app.Frame(), StringComparison.Ordinal);
@@ -483,7 +483,7 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void ALeaderListsWhatFinishesIt()
     {
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
 
         var frame = _app.Frame();
 
@@ -502,9 +502,9 @@ public sealed class CommanderKeysTests : IDisposable
             .Single(command => command.Label() == Loc(LocString.KeyFolderAbove));
 
         Assert.True(up.Binding.IsChord);
-        Assert.True(up.Binding.Opens(new(ConsoleKey.D, KeyModifiers.Control)));
+        Assert.True(up.Binding.Opens(new(ConsoleKey.G)));
         Assert.True(up.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Control)));
-        Assert.StartsWith("Ctrl+D ", up.Binding.ToString(), StringComparison.Ordinal);
+        Assert.StartsWith("G ", up.Binding.ToString(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -528,7 +528,7 @@ public sealed class CommanderKeysTests : IDisposable
             .ToList();
 
         Assert.Equal(labels.Length, tabs.Count);
-        Assert.All(tabs, command => Assert.True(command.Binding.Opens(new(ConsoleKey.G, KeyModifiers.Control))));
+        Assert.All(tabs, command => Assert.True(command.Binding.Opens(new(ConsoleKey.T))));
     }
 
     /// <summary>Nothing on the screen is reachable through a page key and nothing else.</summary>
@@ -551,7 +551,7 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void TheKeyAfterALeaderReachesNothingElse()
     {
-        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.F9);
 
         Assert.DoesNotContain(Loc(LocString.MenuMakeFolder), _app.Frame(), StringComparison.Ordinal);

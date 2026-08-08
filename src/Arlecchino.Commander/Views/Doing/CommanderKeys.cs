@@ -202,35 +202,41 @@ public static class CommanderKeys
     }
 
     /// <summary>
-    /// A key behind the <c>Ctrl+V</c> leader, which is the one the tabs live behind. They were spread
-    /// between the function keys, a pair of Control letters and the leader that takes you somewhere,
-    /// which is three places to look for five keys that belong together.
+    /// A key behind the <c>t</c> leader, which is the one the tabs live behind. They were spread between
+    /// the function keys, a pair of Control letters and the leader that takes you somewhere, which is
+    /// three places to look for five keys that belong together.
     /// </summary>
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
-    private static KeyBinding Tab(ConsoleKey key) => new KeyBinding(ConsoleKey.G, KeyModifiers.Control).ThenKey(key);
+    private static KeyBinding Tab(ConsoleKey key) => new KeyBinding(ConsoleKey.T).ThenKey(key);
 
     /// <summary>
-    /// A key behind the <c>Ctrl+F</c> leader, which is the one that takes you somewhere: to a row, to a
-    /// folder the panel has been in, to a host.
+    /// A key behind the <c>g</c> leader, which is the one that takes you somewhere: to a row, to a folder
+    /// the panel has been in, to a host.
     /// </summary>
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
-    private static KeyBinding Go(ConsoleKey key) => new KeyBinding(ConsoleKey.D, KeyModifiers.Control).ThenKey(key);
+    private static KeyBinding Go(ConsoleKey key) => new KeyBinding(ConsoleKey.G).ThenKey(key);
 
     /// <summary>
-    /// A key behind the <c>Ctrl+X</c> leader, which is the one that does something to what the panel is
+    /// A key behind the <c>x</c> leader, which is the one that does something to what the panel is
     /// showing. These are the operations wanted often enough to have a key and seldom enough not to have
-    /// one of their own, and they are the letters Midnight Commander puts there.
+    /// one of their own, and they are the letters Midnight Commander puts behind its own <c>Ctrl+X</c>.
     /// </summary>
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
-    private static KeyBinding Execute(ConsoleKey key) => new KeyBinding(ConsoleKey.X, KeyModifiers.Control).ThenKey(key);
+    private static KeyBinding Execute(ConsoleKey key) => new KeyBinding(ConsoleKey.X).ThenKey(key);
 
-    /// <summary>Search as you type, which answers to Alt as well for the terminals that send it.</summary>
+    /// <summary>
+    /// Search as you type. The slash is what asks for it, since the letters that follow are the search
+    /// and not the keys — the same trade the colon makes for the command line. Control and Alt still
+    /// answer for the hands that learned them on Midnight Commander.
+    /// </summary>
     /// <returns>The binding.</returns>
     private static KeyBinding Searching() =>
-        new KeyBinding(ConsoleKey.S, KeyModifiers.Control).AddAlternative(ConsoleKey.S, KeyModifiers.Alt);
+        new KeyBinding(ConsoleKey.Oem2)
+            .AddAlternative(ConsoleKey.S, KeyModifiers.Control)
+            .AddAlternative(ConsoleKey.S, KeyModifiers.Alt);
 
     /// <summary>The hotlist, which answers to the backslash beside it as Midnight Commander does.</summary>
     /// <returns>The binding.</returns>

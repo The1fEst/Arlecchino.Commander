@@ -53,7 +53,7 @@ Shots();
         ("viewer", size, "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
         ("filter", size, "F4,s,r", "", false, "", "the panel filtered by name"),
         ("palette", size, "Ctrl+K", "", false, "", "everything the application can do, by name"),
-        ("hosts", size, "Ctrl+D,N", "", false, "", "hosts read from ~/.ssh/config"),
+        ("hosts", size, "g,n", "", false, "", "hosts read from ~/.ssh/config"),
         ("find", size, "Ctrl+F7,Enter,Enter", "600", false, "", "a walk of the folder, filling in as it goes"),
         ("output", size, "Ctrl+O", "", false, "", "everything the commands printed"),
         ("connect", size, "Ctrl+K,c,o,n,n,e,c,t,Enter", "", false, "", "a connection asked for in full"),

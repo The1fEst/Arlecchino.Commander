@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Views.Doing;
@@ -36,6 +37,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     private readonly ActionBar _actionBar;
     private readonly JobCard _card;
     private readonly IReadOnlyList<ViewCommand> _commands;
+    private readonly IReadOnlyList<ViewCommand> _typed;
     private readonly Doings _doings;
     private readonly Gutter _gutter;
     private readonly ArlecchinoKeymap _keymap;
@@ -105,6 +107,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _actionBar = new(_panels);
         _card = new(runner, state);
         _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _commandBar, lifetime);
+        _typed = [.. _commands.Where(command => !IsLetter(command.Binding))];
 
         _actionBarHeight = _actionBar.Height.Subscribe(() => _layout = Lay());
         _layout = Lay();
@@ -179,11 +182,23 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         return Routed(_focus.HandleMouse(mouse));
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    ///     Every key the screen answers to — unless something is being typed, and then the letters among
+    ///     them are not keys at all. A command bound to a bare letter and a command line that takes letters
+    ///     cannot both have the keyboard, and while the line has been asked for it wins. What is left is
+    ///     what a letter cannot be: the function keys, and everything held with a modifier.
+    /// </summary>
+    /// <returns>The commands to match this key against.</returns>
     public IReadOnlyList<ViewCommand> Commands()
     {
-        return _commands;
+        return _commandBar.IsTyping ? _typed : _commands;
     }
+
+    /// <summary>Whether a binding is a bare letter, which is to say a key the command line would rather have.</summary>
+    /// <param name="binding">The binding to judge.</param>
+    /// <returns><c>true</c> when nothing is held with it and the key types something.</returns>
+    private static bool IsLetter(KeyBinding binding) =>
+        binding is { Modifiers: KeyModifiers.None, Key: >= ConsoleKey.A and <= ConsoleKey.Z };
 
     /// <summary>
     ///     The two panels of a session, made once and kept. A tab that is come back to shows what it showed
