@@ -86,7 +86,7 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   them, which is what leaves a key free to be a key. `Enter` runs what was typed where the panel is
   looking — on the server itself when that panel is connected — `Escape` gives the keyboard back, `cd`
   moves the panel instead of a shell that would forget it, `Ctrl+P` and `Ctrl+Y` walk the history,
-  `Ctrl+Enter` puts the name under the cursor on the line, `x p` the folder, `x t` the marked names, and
+  `x n` puts the name under the cursor on the line, `x p` the folder, `x t` the marked names, and
   `Ctrl+O` reads back everything the commands printed.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.

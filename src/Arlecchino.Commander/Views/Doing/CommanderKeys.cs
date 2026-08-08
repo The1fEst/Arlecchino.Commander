@@ -98,9 +98,6 @@ public static class CommanderKeys
             Bind.Going(new(ConsoleKey.O, KeyModifiers.Control),
                 LocString.MenuWhatCommandsSaid,
                 static () => ViewKind.Output),
-            Bind.To(new(ConsoleKey.Enter, KeyModifiers.Control),
-                LocString.KeyNameOntoLine,
-                () => Named(panels, commandBar)),
 
             Bind.To(Go(ConsoleKey.I)
                     .AddAlternative(ConsoleKey.PageUp, KeyModifiers.Control),
@@ -173,6 +170,9 @@ public static class CommanderKeys
             Bind.To(Execute(ConsoleKey.D),
                 LocString.MenuCompareDirectories,
                 doings.Compare),
+            Bind.To(Execute(ConsoleKey.N),
+                LocString.KeyNameOntoLine,
+                () => Named(panels, commandBar)),
             Bind.To(Execute(ConsoleKey.P),
                 LocString.KeyFolderOntoLine,
                 () => commandBar.Insert(panels.Active.Folder)),
