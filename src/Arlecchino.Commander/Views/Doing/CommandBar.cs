@@ -93,6 +93,13 @@ public sealed class CommandBar
     public void Insert(string text) => _line.Insert(text);
 
     /// <summary>
+    /// Puts pasted text on the line, which wakes for it the way it does for the Ctrl+X pairs. It is not
+    /// run: a paste ends where the clipboard ends, and Enter is still the key that says go.
+    /// </summary>
+    /// <param name="text">What was pasted.</param>
+    public void Paste(string text) => _line.Paste(text);
+
+    /// <summary>
     /// Runs what is on the line where the panel is looking. A <c>cd</c> is not run at all: it moves
     /// the panel, because a shell started for one command would forget it the moment it ended.
     ///

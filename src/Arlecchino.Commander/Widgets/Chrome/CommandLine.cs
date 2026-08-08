@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Commander.Model;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
 using Arlecchino.Rendering;
@@ -228,6 +229,30 @@ public sealed class CommandLine
         _cursor += quoted.Length + 1;
 
         Open();
+    }
+
+    /// <summary>
+    /// Puts pasted text where the cursor is, taking the keyboard on the way as <see cref="Insert"/> does.
+    /// A terminal delivers a paste as a block of its own rather than as the keys that would have typed it.
+    /// A line that reads keys alone never sees one, and text that goes nowhere is what reads as a paste
+    /// that does not work.
+    ///
+    /// Only the first line of it lands here, since this is one row and one command.
+    /// </summary>
+    /// <param name="text">What was pasted, with the terminal's markers already stripped.</param>
+    public void Paste(string text)
+    {
+        var piece = Pasted.OneLine(text);
+
+        Open();
+
+        if (piece.Length == 0)
+        {
+            return;
+        }
+
+        _text = _text.Insert(_cursor, piece);
+        _cursor += piece.Length;
     }
 
     private void Clear()

@@ -160,6 +160,26 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         _typed = "";
     }
 
+    /// <summary>
+    /// Adds pasted text to the search that runs while you type. It is taken only while that search has the
+    /// keyboard: with the panel itself listening, letters are keys rather than text, and what was on the
+    /// clipboard was meant for the command line instead.
+    /// </summary>
+    /// <param name="text">What was pasted.</param>
+    /// <returns><c>true</c> when the search took it.</returns>
+    public bool Paste(string text)
+    {
+        if (!_searching)
+        {
+            return false;
+        }
+
+        _typed += Pasted.OneLine(text);
+        Nearest();
+
+        return true;
+    }
+
     /// <summary>Marks, or unmarks, every file whose name fits a shell pattern.</summary>
     /// <param name="pattern">The pattern, as <c>*.cs</c> or <c>a*,b*</c>.</param>
     /// <param name="marking"><c>true</c> to mark what fits, <c>false</c> to unmark it.</param>

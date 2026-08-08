@@ -171,6 +171,24 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
+    ///     Text pasted into the terminal, which goes where typing goes: the search running on the panel when
+    ///     there is one, and the command line otherwise. A paste arrives as a block of its own rather than as
+    ///     the keys that would have typed it. A screen that answers keys alone drops it on the floor, and
+    ///     text that lands nowhere is what a broken paste looks like from the other side.
+    /// </summary>
+    /// <param name="text">What was pasted, with the terminal's markers already stripped.</param>
+    /// <returns>Where to go, which is nowhere.</returns>
+    public ViewRoute HandlePaste(string text)
+    {
+        if (!_panels.Active.Paste(text))
+        {
+            _commandBar.Paste(text);
+        }
+
+        return ViewRoute.None;
+    }
+
+    /// <summary>
     ///     Clicks, which go to whichever panel was clicked in. The band along the top is no longer here — it
     ///     belongs to the layout, and the layout is asked before the view is — so everything that reaches
     ///     this has landed below it.
