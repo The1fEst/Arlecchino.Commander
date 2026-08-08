@@ -11,9 +11,9 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-EDE6D9?labelColor=141317" alt="MIT"></a>
 </p>
 
-A Midnight Commander for the terminal, written on [Arlecchino](https://github.com/The1fEst/Arlecchino):
-two panels, the function keys where they have always been, and the same panel over a local disk, an
-SFTP server or an FTP one.
+A file manager for the terminal, written on [Arlecchino](https://github.com/The1fEst/Arlecchino): two
+panels over a local disk, an SFTP server or an FTP one, with tabs, leader keys and a command line of
+its own. The function keys stay where they have always been, but little else stops there.
 
 ```
 dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
