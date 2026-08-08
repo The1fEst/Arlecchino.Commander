@@ -194,6 +194,7 @@ GutterIdle = "TAB"
 GutterMarked = "{0} MARKED"
 
 CommandLineTail = "Ctrl+O — everything the commands printed"
+CommandLineAsleep = ": — type a command here"
 
 OperationWhat = "what"
 OperationGoingAway = "going away"

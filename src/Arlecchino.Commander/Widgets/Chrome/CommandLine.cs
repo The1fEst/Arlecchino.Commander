@@ -19,7 +19,12 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 public sealed class CommandLine
 {
     private const int SideRoom = 2;
-    private static string Tail => Loc(LocString.CommandLineTail);
+
+    /// <summary>
+    /// What the far end of the row says. A line nobody is typing on spends it on the key that wakes it,
+    /// since a row that does nothing and explains nothing is a row that reads as broken.
+    /// </summary>
+    private string Tail => Loc(IsTyping ? LocString.CommandLineTail : LocString.CommandLineAsleep);
 
     private readonly List<string> _history;
     private readonly KeyText _keys;
@@ -233,9 +238,14 @@ public sealed class CommandLine
     }
 
     /// <summary>
-    /// Where the command would run, then the prompt, then what has been typed. The caret is a block in
-    /// the accent rather than the terminal's own: the line is never the focused widget, so the terminal
-    /// would put its cursor somewhere else entirely.
+    /// Where the command would run, then the prompt, then what has been typed.
+    ///
+    /// A line nobody is typing on says so. The chevron goes out, the path dims to a trace, and the caret
+    /// is not drawn at all. A caret on a line that is not listening is the screen telling a lie, and it
+    /// leaves the keyboard somewhere the eye cannot find it.
+    ///
+    /// The caret is a block in the accent rather than the terminal's own, since the line is not a focused
+    /// widget and the terminal would put its cursor somewhere else entirely.
     /// </summary>
     /// <param name="region">The row to draw on.</param>
     /// <param name="prompt">Where the command would run.</param>
@@ -246,11 +256,15 @@ public sealed class CommandLine
         var coat = Skin.Quiet;
 
         region.Fill(coat.Text);
-        region.Write(0, SideRoom, prompt, coat.Faded);
+        region.Write(0, SideRoom, prompt, IsTyping ? coat.Faded : coat.Sleeping);
 
         var mark = SideRoom + prompt.Length + 1;
 
-        region.Write(0, mark, "❯", Skin.Paint(Skin.Crimson, Skin.Unlit, TextStyle.Bold));
+        region.Write(
+            0,
+            mark,
+            "❯",
+            IsTyping ? Skin.Paint(Skin.Crimson, Skin.Unlit, TextStyle.Bold) : coat.Sleeping);
 
         var at = mark + 2;
         var room = region.Width - at - Tail.Length - SideRoom - 2;
@@ -264,11 +278,15 @@ public sealed class CommandLine
         var shown = _text[offset..Math.Min(_text.Length, offset + room)];
 
         region.Write(0, at, shown, coat.Text);
-        region.Write(
-            0,
-            at + (_cursor - offset),
-            _cursor < _text.Length ? _text[_cursor].ToString() : " ",
-            Skin.Paint(Skin.Ink, Skin.Crimson));
+
+        if (IsTyping)
+        {
+            region.Write(
+                0,
+                at + (_cursor - offset),
+                _cursor < _text.Length ? _text[_cursor].ToString() : " ",
+                Skin.Paint(Skin.Ink, Skin.Crimson));
+        }
 
         if (region.Width > at + room + Tail.Length)
         {

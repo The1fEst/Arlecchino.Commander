@@ -564,6 +564,26 @@ public sealed class CommanderScreenTests : IDisposable
         Assert.Contains("echo hello", _app.Frame(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     The row says whether it has the keyboard. It used to take letters whenever they were typed, so
+    ///     there was nothing to say; now that it is asked for, a row that looks the same either way leaves
+    ///     the keyboard somewhere the eye cannot find it. Asleep it names the key that wakes it instead.
+    /// </summary>
+    [Fact]
+    public void ThePromptSaysWhetherItHasTheKeyboard()
+    {
+        var asleep = _app.FrameLines()[_app.CommandLineRow()];
+
+        Assert.Contains("type a command here", asleep, StringComparison.Ordinal);
+
+        _app.Type(":");
+
+        var awake = _app.FrameLines()[_app.CommandLineRow()];
+
+        Assert.DoesNotContain("type a command here", awake, StringComparison.Ordinal);
+        Assert.Contains("everything the commands printed", awake, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void RubbingOutTakesTheLastLetterOffThePrompt()
     {
