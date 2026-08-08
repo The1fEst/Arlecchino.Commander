@@ -64,8 +64,8 @@ public sealed class CommandLine
         {
             return key.Key switch
             {
-                ConsoleKey.UpArrow => Recall(back: true),
-                ConsoleKey.DownArrow => Recall(back: false),
+                ConsoleKey.P => Recall(back: true),
+                ConsoleKey.Y => Recall(back: false),
                 _ => false,
             };
         }

@@ -55,19 +55,22 @@ of time — one file, nothing to install, no .NET on the machine required. They 
 - **The function keys.** `F2` tabs, `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename,
   `F7` make folder, `F8` delete, `F9` menu, `F10` quit — and `F1` opens the framework's own key screen.
 - **Tabs.** Each one holds two panels of its own, so a second pair of folders — or a server on one
-  side — is a tab away rather than a place you have to navigate back to. `Ctrl+T` opens one, `Ctrl+W`
-  closes it, `Ctrl+G N` and `Ctrl+G P` step between them, and the band along the top shows what each
-  one is connected to and takes a click on it, on its `×`, or on the `+` at the end. Too many tabs for
-  the band shortens the names first and then scrolls, with `‹` and `›` for the ones off either side;
-  going to a tab always brings it back into view. `F2` lists them all, and the palette finds one by
-  name — typing the name of a server goes to the tab that is on it.
-- **Going somewhere, behind `Ctrl+G`.** The leader spends one key and gives back the alphabet: `Ctrl+G U`
-  and `Ctrl+G D` leave and enter a folder, `Ctrl+G T` `Ctrl+G M` `Ctrl+G E` jump to the top, the middle
-  and the end of the panel, `Ctrl+G H` lists the folders it has been in with `Ctrl+G ←` and `Ctrl+G →`
-  stepping through them, `Ctrl+G I` sends the other panel here and `Ctrl+G O` sends it into the folder
-  under the cursor. Once the leader is pressed, the box in the corner lists what finishes it, so nothing
-  here has to be remembered. Nothing needs a key a laptop does not have: where `Ctrl+PgUp` and `Ctrl+PgDn`
-  read well they still work, but only as a second way in.
+  side — is a tab away rather than a place you have to navigate back to. They live behind `Ctrl+G`, laid
+  out under the hand that is not holding Control: `Ctrl+G I` opens one and `Ctrl+G K` closes it,
+  `Ctrl+G J` and `Ctrl+G L` step between them, and `Ctrl+G O` lists them all. The band along the top
+  shows what each one is connected to and takes a click on it, on its `×`, or on the `+` at the end. Too many tabs for the
+  band shortens the names first and then scrolls, with `‹` and `›` for the ones off either side; going to
+  a tab always brings it back into view. `F2` lists them too, and the palette finds a tab by name —
+  typing the name of a server goes to the tab that is on it.
+- **Going somewhere, behind `Ctrl+D`.** A leader spends one key and gives back the alphabet, laid out
+  under the hand that is not holding Control: `Ctrl+D I` and `Ctrl+D K` leave and enter a folder,
+  `Ctrl+D J` and `Ctrl+D L` walk back and forward through the folders the panel has been in with
+  `Ctrl+D P` listing them, `Ctrl+D U` `Ctrl+D O` `Ctrl+D M` jump to the top, the middle and the bottom
+  of the panel, `Ctrl+D H` sends the other panel here and `Ctrl+D Y` sends it into the folder under the
+  cursor. Opposites face each other, so which way a key goes is where it is rather than what it stands
+  for. Once the leader is pressed, the box in the corner lists what finishes it, so nothing here has to
+  be remembered. Nothing needs a key a laptop does not have: where `Ctrl+PgUp` and `Ctrl+PgDn` read well
+  they still work, but only as a second way in.
 - **Getting around the way Midnight Commander does.** `Ctrl+S` searches as you type, `+` and `-` mark
   and unmark by shell pattern, `*` inverts the marks, and `Ctrl+B` keeps a hotlist.
 - **Find file.** `Ctrl+F7` walks down from the panel — over SFTP as readily as over a disk — matching
@@ -80,15 +83,15 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   SFTP's own request, FTP's `SITE CHMOD`, or the file mode on a Unix disk — `Ctrl+X O` hands a `chown`
   to the shell where the panel is looking, `Ctrl+X S` and `Ctrl+X L` make a symbolic or a hard link
   into the other panel, `Ctrl+X D` marks in both panels every file the other one does not have the
-  same of, and `Ctrl+X Y` puts the marked paths on the clipboard.
+  same of, `Ctrl+X Y` puts the marked paths on the clipboard, and `Ctrl+X R` reads both panels again.
 - **A command line under the panels.** Typing goes to it while the panel keeps the cursor, `Enter`
   runs it where the panel is looking — on the server itself when that panel is connected — `cd` moves
-  the panel instead of a shell that would forget it, `Ctrl+↑` and `Ctrl+↓` walk the history,
+  the panel instead of a shell that would forget it, `Ctrl+P` and `Ctrl+Y` walk the history,
   `Ctrl+Enter` puts the name under the cursor on the line, `Ctrl+X P` the folder, `Ctrl+X T` the
   marked names, and `Ctrl+O` reads back everything the commands printed.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
-- **Hosts from `~/.ssh/config`.** `Ctrl+G K` lists the `Host` entries and opens one, reusing its
+- **Hosts from `~/.ssh/config`.** `Ctrl+D N` lists the `Host` entries and opens one, reusing its
   `HostName`, `User`, `Port` and `IdentityFile`, or the default keys in `~/.ssh` when it names none.
 - **Commands over SSH.** The `Command` menu runs one on the connected host and shows what it said.
 - **Work that does not freeze the screen.** Copy, move and delete run in the background with a bar,

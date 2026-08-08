@@ -19,7 +19,7 @@ namespace Arlecchino.Commander.Tests.Screens;
 public sealed class CommanderScreenTests : IDisposable
 {
     /// <summary>
-    ///     Narrow enough that a fifth tab stops fitting even shortened and the strip has to scroll. Four
+    ///     Narrow enough that a fifth tab stops fitting even shortened, and the strip has to scroll. Four
     ///     still fit: the frame around the application spends a cell a side, so the band has the room.
     /// </summary>
     private const int Cramped = 125;
@@ -61,7 +61,7 @@ public sealed class CommanderScreenTests : IDisposable
 
     /// <summary>
     ///     The one thing a frame read as text cannot answer. A folder and a file read the same; what tells
-    ///     them apart is the colour, and the colour is on the screen rather than in the words.
+    ///     them apart is the color, and the color is on the screen rather than in the words.
     /// </summary>
     [Fact]
     public void AFolderIsDrawnInTheColourFoldersGet()
@@ -297,7 +297,8 @@ public sealed class CommanderScreenTests : IDisposable
     public void TheDotSaysWhichSideATabWasLeftIn()
     {
         _app.Press(ConsoleKey.Tab);
-        _app.Press(ConsoleKey.T, control: true);
+        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.I);
         _app.Settled();
 
         var band = _app.BandLine();
@@ -330,7 +331,7 @@ public sealed class CommanderScreenTests : IDisposable
     ///     panels on screen says nothing about where the work is.
     ///
     ///     Five tabs at the narrowest width rather than four: the frame around the application spends a
-    ///     cell a side, not two, so four now fit shortened and it takes a fifth to make the strip scroll.
+    ///     cell a side, not two, so four now fit shortened, and it takes a fifth to make the strip scroll.
     /// </summary>
     [Fact]
     public void PastShorteningTheStripScrollsAndKeepsTheOpenTabInView()
@@ -377,7 +378,7 @@ public sealed class CommanderScreenTests : IDisposable
 
     /// <summary>An application of a given width with a given number of tabs open, settled and drawn.</summary>
     /// <param name="width">How wide the terminal is.</param>
-    /// <param name="tabs">How many tabs to have open.</param>
+    /// <param name="tabs">How many tabs to open.</param>
     /// <returns>The application, for the test to dispose.</returns>
     private static ScreenApp Tabbed(int width, int tabs)
     {
@@ -410,24 +411,27 @@ public sealed class CommanderScreenTests : IDisposable
     [Fact]
     public void TabsAreWorkedFromTheKeyboard()
     {
-        _app.Press(ConsoleKey.T, control: true);
+        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.I);
         _app.Settled();
 
         Assert.Equal(2, _app.Sessions.All.Count);
         Assert.Equal(1, _app.Sessions.Open.Value);
 
         _app.Press(ConsoleKey.G, control: true);
-        _app.Press(ConsoleKey.P);
+        _app.Press(ConsoleKey.J);
         _app.Frame();
 
         Assert.Equal(0, _app.Sessions.Open.Value);
 
-        _app.Press(ConsoleKey.PageDown, alt: true);
+        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.L);
         _app.Frame();
 
         Assert.Equal(1, _app.Sessions.Open.Value);
 
-        _app.Press(ConsoleKey.W, control: true);
+        _app.Press(ConsoleKey.G, control: true);
+        _app.Press(ConsoleKey.K);
         _app.Settled();
 
         Assert.Single(_app.Sessions.All);
@@ -670,8 +674,8 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    ///     A folder that cannot be read is an exception on the way up from the disk. What has to reach the
-    ///     screen is a sentence, not a stack trace and not an empty panel that looks like an empty folder.
+    ///     A folder that cannot be read is an exception on the way up from the disk. The screen has to be
+    ///     given a sentence: not a stack trace, and not an empty panel that reads as an empty folder.
     /// </summary>
     [Fact]
     public void AFolderThatCannotBeReadIsSaidOnThePanel()
@@ -702,7 +706,7 @@ public sealed class CommanderScreenTests : IDisposable
     }
 
     /// <summary>
-    ///     The card in the corner is the whole of the reporting: what a job came to is its colour, and
+    ///     The card in the corner is the whole of the reporting: what a job came to is its color, and
     ///     what it says is the words the output row used to hold on its own.
     /// </summary>
     [Fact]

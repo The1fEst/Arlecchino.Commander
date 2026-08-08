@@ -356,7 +356,8 @@ public sealed class CommanderKeysTests : IDisposable
         var where = _app.Sessions.Left.Folder;
 
         _app.Write("appeared.txt", "three");
-        _app.Press(ConsoleKey.R, control: true);
+        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.R);
 
         var screen = _app.Frame();
 
@@ -498,10 +499,34 @@ public sealed class CommanderKeysTests : IDisposable
         var up = _app.Navigator.CurrentCommands
             .Single(command => command.Label() == Loc(LocString.KeyFolderAbove));
 
-        Assert.Equal("Ctrl+G U", up.Binding.ToString());
-        Assert.True(up.Binding.Opens(new(ConsoleKey.G, KeyModifiers.Control)));
-        Assert.True(up.Binding.Closes(new(ConsoleKey.U)));
+        Assert.True(up.Binding.IsChord);
+        Assert.True(up.Binding.Opens(new(ConsoleKey.D, KeyModifiers.Control)));
         Assert.True(up.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Control)));
+        Assert.StartsWith("Ctrl+D ", up.Binding.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Every tab key is behind the one leader, so there is a single place to look for the five of them.
+    /// They were spread between a function key, two Control letters and the leader that goes places.
+    /// </summary>
+    [Fact]
+    public void TheTabKeysAreAllBehindTheirOwnLeader()
+    {
+        var labels = new[]
+        {
+            LocString.TabsNew,
+            LocString.TabsClose,
+            LocString.TabsNext,
+            LocString.TabsPrevious,
+            LocString.TabsTitle,
+        };
+
+        var tabs = _app.Navigator.CurrentCommands
+            .Where(command => labels.Any(label => command.Label() == Loc(label)))
+            .ToList();
+
+        Assert.Equal(labels.Length, tabs.Count);
+        Assert.All(tabs, command => Assert.True(command.Binding.Opens(new(ConsoleKey.G, KeyModifiers.Control))));
     }
 
     /// <summary>Nothing on the screen is reachable through a page key and nothing else.</summary>

@@ -1,4 +1,11 @@
 <Solution>
+  <Folder Name="/Repository/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitmodules" />
+    <File Path="Directory.Build.props" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="src/Arlecchino.Commander/Arlecchino.Commander.csproj" />
   <Project Path="tests/Arlecchino.Commander.Tests/Arlecchino.Commander.Tests.csproj" />
   <Folder Name="/Arlecchino/">

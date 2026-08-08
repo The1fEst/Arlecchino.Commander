@@ -53,7 +53,7 @@ Shots();
         ("viewer", size, "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
         ("filter", size, "F4,s,r", "", false, "", "the panel filtered by name"),
         ("palette", size, "Ctrl+K", "", false, "", "everything the application can do, by name"),
-        ("hosts", size, "Ctrl+G,K", "", false, "", "hosts read from ~/.ssh/config"),
+        ("hosts", size, "Ctrl+D,N", "", false, "", "hosts read from ~/.ssh/config"),
         ("find", size, "Ctrl+F7,Enter,Enter", "600", false, "", "a walk of the folder, filling in as it goes"),
         ("output", size, "Ctrl+O", "", false, "", "everything the commands printed"),
         ("connect", size, "Ctrl+K,c,o,n,n,e,c,t,Enter", "", false, "", "a connection asked for in full"),
@@ -482,7 +482,7 @@ sealed class Paper : IDisposable
         return bitmap;
     }
 
-    /// <summary>Lets go of the type, fallbacks included.</summary>
+    /// <summary>Releases the type, fallbacks included.</summary>
     public void Dispose()
     {
         _font.Dispose();
@@ -658,8 +658,8 @@ static class Playground
 
 /// <summary>
 /// The folders the screenshots are taken of. Shooting the repository itself would put whatever the
-/// working copy happens to hold into the pictures, so the panels are pointed at a small tree that is
-/// laid out the same way every time and rebuilt between scenes the copies would otherwise change.
+/// working copy happens to hold into the pictures, so the panels are pointed at a small tree instead.
+/// It is laid out the same way every time, and rebuilt between the scenes whose copies would change it.
 /// </summary>
 static class Fixture
 {
@@ -1001,9 +1001,9 @@ static class Terminal
 }
 
 /// <summary>
-/// Writes an animation as a GIF. The pictures share one colour table, chosen from what the frames
-/// actually hold, and every frame after the first carries only the rectangle that changed — a terminal
-/// mostly stands still, so that is what keeps the file small enough for a readme.
+/// Writes an animation as a GIF. The pictures share one color table, chosen from what the frames
+/// actually hold. Every frame after the first carries only the rectangle that changed — a terminal
+/// mostly stands still, so that is what keeps the file small enough for a README.
 /// </summary>
 static class Gif
 {
@@ -1012,7 +1012,7 @@ static class Gif
     /// <summary>Encodes the frames and writes them out.</summary>
     /// <param name="path">Where the file goes.</param>
     /// <param name="frames">The pictures and how long each is held, in milliseconds.</param>
-    /// <param name="colors">How many entries the colour table may hold, up to 256.</param>
+    /// <param name="colors">How many entries the color table may hold, up to 256.</param>
     public static void Write(string path, IReadOnlyList<(SKBitmap Image, int Hold)> frames, int colors)
     {
         ArgumentNullException.ThrowIfNull(frames);
@@ -1273,7 +1273,7 @@ static class Gif
     }
 
     /// <summary>
-    /// The colours the animation is drawn with, cut out of what the frames hold. Text drawn with
+    /// The colors the animation is drawn with, cut out of what the frames hold. Text drawn with
     /// smoothed edges carries far more shades than a table can name, so the shades are counted, the
     /// crowd is split until there are as many boxes as entries, and each box gives up its average.
     /// </summary>
