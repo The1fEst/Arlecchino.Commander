@@ -325,10 +325,12 @@ public sealed class CommanderKeysTests : IDisposable
     {
         Assert.DoesNotContain(".hidden", _app.Frame(), StringComparison.Ordinal);
 
-        _app.Press(ConsoleKey.H, control: true);
+        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.I);
         Assert.Contains(".hidden", _app.Frame(), StringComparison.Ordinal);
 
-        _app.Press(ConsoleKey.H, control: true);
+        _app.Press(ConsoleKey.X, control: true);
+        _app.Press(ConsoleKey.I);
         Assert.DoesNotContain(".hidden", _app.Frame(), StringComparison.Ordinal);
     }
 

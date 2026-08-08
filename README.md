@@ -83,7 +83,8 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   SFTP's own request, FTP's `SITE CHMOD`, or the file mode on a Unix disk — `Ctrl+X O` hands a `chown`
   to the shell where the panel is looking, `Ctrl+X S` and `Ctrl+X L` make a symbolic or a hard link
   into the other panel, `Ctrl+X D` marks in both panels every file the other one does not have the
-  same of, `Ctrl+X Y` puts the marked paths on the clipboard, and `Ctrl+X R` reads both panels again.
+  same of, `Ctrl+X Y` puts the marked paths on the clipboard, `Ctrl+X I` shows the invisible files, and
+  `Ctrl+X R` reads both panels again.
 - **A command line under the panels.** Typing goes to it while the panel keeps the cursor, `Enter`
   runs it where the panel is looking — on the server itself when that panel is connected — `cd` moves
   the panel instead of a shell that would forget it, `Ctrl+P` and `Ctrl+Y` walk the history,
