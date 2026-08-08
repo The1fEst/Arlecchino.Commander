@@ -50,8 +50,10 @@ of time — one file, nothing to install, no .NET on the machine required. They 
 
 ## What it does
 
-- **Two panels.** `Tab` switches, `Enter` opens, `Backspace` goes up, `Space` marks, and the columns
-  sort by name, size or date. The panel that has the focus is the one the operations work from.
+- **Two panels.** `Tab` switches, `Enter` opens, `Space` marks, and the columns sort by name, size or
+  date. The panel that has the focus is the one the operations work from. `j` and `k` are the arrows,
+  `h` leaves the folder and `l` enters the one under the cursor — the arrows still do all of it, and
+  `←` `→` stay on switching panels.
 - **The function keys.** `F2` tabs, `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename,
   `F7` make folder, `F8` delete, `F9` menu, `F10` quit — and `F1` opens the framework's own key screen.
 - **Tabs.** Each one holds two panels of its own, so a second pair of folders — or a server on one

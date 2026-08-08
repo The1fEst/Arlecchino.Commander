@@ -343,7 +343,44 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             return FocusResult.Handled;
         }
 
-        return _table.Handle(key);
+        return Steered(key) ?? _table.Handle(key);
+    }
+
+    /// <summary>
+    /// The four letters under the right hand, for the hands that reach for them before the arrows.
+    /// <c>j</c> and <c>k</c> are the arrows exactly: they are handed on as arrows, so paging and wrapping
+    /// stay the list's business rather than being written a second time here.
+    ///
+    /// <c>h</c> and <c>l</c> are not. Left and right already switch panels, and a letter for that is worth
+    /// less than one for the folder above and the folder under the cursor — which is what every file
+    /// manager built on these keys means by them.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns>What became of it, or nothing when the key was none of the four.</returns>
+    private FocusResult? Steered(KeyPress key)
+    {
+        if (key.Modifiers != 0 || _keys.Resolve(key) is not { } typed)
+        {
+            return null;
+        }
+
+        switch (char.ToLowerInvariant(typed))
+        {
+            case 'j':
+                return _table.Handle(new(ConsoleKey.DownArrow));
+            case 'k':
+                return _table.Handle(new(ConsoleKey.UpArrow));
+            case 'h':
+                Up();
+
+                return FocusResult.Handled;
+            case 'l':
+                Descend();
+
+                return FocusResult.Handled;
+            default:
+                return null;
+        }
     }
 
     /// <summary>

@@ -548,6 +548,47 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.Contains(expected, _app.Frame(), StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The letters under the right hand move the cursor exactly as the arrows do. They are handed on as
+    /// arrows rather than moving the cursor themselves, so there is only one place where paging and
+    /// wrapping are decided.
+    /// </summary>
+    [Fact]
+    public void TheLettersUnderTheRightHandMoveLikeTheArrows()
+    {
+        _app.Press(ConsoleKey.J);
+        _app.Press(ConsoleKey.J);
+
+        var lettered = _app.Frame();
+
+        _app.Press(ConsoleKey.K);
+        _app.Press(ConsoleKey.K);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
+
+        Assert.Equal(lettered, _app.Frame());
+    }
+
+    /// <summary>
+    /// Out of a folder and into one, which is what a file manager built on these keys means by them —
+    /// left and right already switch panels, so the letters are worth more spent this way.
+    /// </summary>
+    [Fact]
+    public void TheOuterLettersLeaveAndEnterAFolder()
+    {
+        var where = _app.Sessions.Left.Folder;
+
+        _app.Press(ConsoleKey.H);
+        _app.Settled();
+
+        Assert.NotEqual(where, _app.Sessions.Left.Folder);
+
+        _app.Press(ConsoleKey.L);
+        _app.Settled();
+
+        Assert.Equal(where, _app.Sessions.Left.Folder);
+    }
+
     /// <summary>Nothing on the screen is reachable through a page key and nothing else.</summary>
     [Fact]
     public void NoKeyNeedsAPageKeyToBeReached()
