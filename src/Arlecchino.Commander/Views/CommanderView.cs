@@ -45,7 +45,6 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     private readonly Pair _panels;
     private readonly Dictionary<Session, (FilePanel Left, FilePanel Right)> _panes = [];
     private readonly Sessions _sessions;
-    private readonly ArlecchinoState _state;
 
     private readonly Surface _surface;
     private readonly CommandBar _commandBar;
@@ -88,7 +87,6 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
         _surface = surface;
         _sessions = sessions;
-        _state = state;
         _operations = operations;
         _keymap = options.Keymap;
         _keys = KeyText.For(options.TextInput);
