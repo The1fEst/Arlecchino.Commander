@@ -148,8 +148,8 @@ public sealed class Operations : IArlecchinoStore
         _cancelling = cancelling;
         _reporting = _state.Notifications.Raise(new(DateTimeOffset.Now, NotificationLevel.Information, busy)
         {
-            Progress = Progress,
-            Share = () => outcome.IsMeasured ? outcome.Share : null,
+            ProgressText = Progress,
+            Progress = () => outcome.IsMeasured ? outcome.Share : null,
             Detail = Progress,
             Actions = [new(static () => Loc(LocString.WorkStop), Cancel)],
         });

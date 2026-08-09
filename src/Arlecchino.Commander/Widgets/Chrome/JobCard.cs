@@ -21,17 +21,8 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 /// </summary>
 public sealed class JobCard
 {
+    private const int CardMinHeight = 3;
     private const int CardWidth = 34;
-
-    /// <summary>
-    ///     How tall every card is, whatever it has to say. Cards used to be as tall as their contents, which
-    ///     meant a stack that changed shape under the cursor as one job finished and the next reported itself.
-    ///     One height for all of them keeps the panel underneath covered in the same place from the first card
-    ///     to the last. It is room for a wrapped title, the bar or the reason it went wrong, and the row that
-    ///     says which key reads it.
-    /// </summary>
-    private const int CardRows = 5;
-
     private const int BarCells = 22;
     private const int Least = 20;
     private const int MostCards = 3;
@@ -76,16 +67,16 @@ public sealed class JobCard
 
         foreach (var entry in showing)
         {
-            if (bottom - CardRows < 2)
+            var card = Measure(entry, width);
+
+            if (bottom - card.Height < 2)
             {
                 return;
             }
 
-            bottom -= CardRows;
+            DrawJob(over.Inset(new Margin(over.Width - width - 2, 0, 2, over.Height - bottom)), entry, card);
 
-            DrawJob(over.Rows(bottom, CardRows).Inset(new Margin(over.Width - width - 2, 0, 2, 0)), entry);
-
-            bottom -= Gap;
+            bottom -= card.Height + Gap;
         }
     }
 
@@ -121,7 +112,7 @@ public sealed class JobCard
     /// <returns>The card.</returns>
     private static Job Of(Notification entry)
     {
-        var failed = entry.Loudness is NotificationLevel.Failure or NotificationLevel.Warning;
+        var failed = entry.Level is NotificationLevel.Failure or NotificationLevel.Warning;
         var detail = entry.IsRunning || !failed ? "" : entry.Whole();
 
         return new(
@@ -148,50 +139,86 @@ public sealed class JobCard
     ///     them whether the title above took one row or three.
     ///     The title is wrapped and not cut: what a card is usually saying is a path, and the end of a path
     ///     is the part that says which file this is. Three rows is where the wrapping stops, since a title
-    ///     longer than that would reach the rows the bar and the hint are holding.
+    ///     longer than that would reach the rows the bar and the hint are holding. <see cref="Measure"/> did
+    ///     that wrapping already, since the height it settles on is what the stack needs before any of this.
     /// </summary>
-    /// <param name="card">Where it goes.</param>
+    /// <param name="cardsRegion">Where it goes.</param>
     /// <param name="job">What it says.</param>
-    private void DrawJob(SurfaceRegion card, Job job)
+    /// <param name="card">How tall it is and how its title sits, worked out beforehand.</param>
+    private void DrawJob(SurfaceRegion cardsRegion, Job job, Card card)
     {
         var coat = Skin.Overlay;
+        var (height, alignCenter, message) = card;
 
-        card.Fill(coat.Text);
-        card.Rows(0, card.Height)
-            .Inset(new Margin(0, 0, card.Width - 1, 0))
-            .Fill(Skin.Paint(job.Rule, job.Rule));
+        var region = cardsRegion.Rows(cardsRegion.Height - height, height);
+        var cardContent = region.Inset(new Margin(2, 0, 1, 0));
 
-        var inside = card.Inset(new Margin(2, 0, 1, 0));
-        var row = 0;
+        region.Fill(coat.Text);
+        region.Inset(new Margin(0, 0, region.Width - 1, 0)).Fill(Skin.Paint(job.Rule, job.Rule));
 
-        foreach (var text in TextWidth.Wrap(job.Title, inside.Width).TakeWhile(_ => row < 3))
+        for (var i = 0; i < message.Length; i++)
         {
-            inside.Write(row++, 0, text, Said(job, coat));
-        }
-
-        if (job.Share is { } share)
-        {
-            var margin = Math.Max(0, (inside.Width - BarCells) / 2);
-            _bar.Value = (decimal)(share * 100);
-            _bar.Draw(inside.Rows(inside.Height - 2, 1).Inset(new Margin(margin, 0, Math.Max(0, inside.Width - margin - BarCells), 0)));
-        }
-        else if (job.Detail.Length > 0)
-        {
-            inside.Write(inside.Height - 2, 0, TextWidth.Truncate(job.Detail, inside.Width), coat.Meta);
-        }
-
-        if (job.Running)
-        {
-            inside.Write(inside.Height - 1, 0, _spinner.Current, coat.Accent);
-            inside.WriteLine(inside.Height - 1, Loc(LocString.SaidStops), coat.Label, Align.Right);
-
-            return;
+            var row = alignCenter ? i + 1 : i;
+            cardContent.Write(row, 0, message[i], Said(job, coat));
         }
 
         if (job.Detail.Length > 0)
         {
-            inside.WriteLine(inside.Height - 1, Loc(LocString.SaidToRead), coat.Label, Align.Right);
+            cardContent.Write(height - 3, 0, TextWidth.Truncate(job.Detail, cardContent.Width), coat.Meta);
         }
+
+        if (job.Progress is { } progress)
+        {
+            var margin = Math.Max(0, (cardContent.Width - BarCells) / 2);
+            _bar.Value = (decimal)(progress * 100);
+            _bar.Draw(cardContent.Rows(height - 2, 1)
+                .Inset(new Margin(margin, 0, Math.Max(0, cardContent.Width - margin - BarCells), 0)));
+        }
+
+        if (job.Running)
+        {
+            cardContent.Write(height - 1, 0, _spinner.Current, coat.Accent);
+            cardContent.WriteLine(height - 1, Loc(LocString.SaidStops), coat.Label, Align.Right);
+        }
+        else if (job.Detail.Length > 0)
+        {
+            cardContent.WriteLine(height - 1, Loc(LocString.SaidToRead), coat.Label, Align.Right);
+        }
+    }
+
+    /// <summary>
+    ///     Works out how tall a card is before any of it is drawn, which is what lets the stack stop rather
+    ///     than lay a card over the top of the panel. A card that has nothing to report beyond its title is
+    ///     as tall as that title with a row of air above and below it, and stands centered. Everything else —
+    ///     a reason, a bar, the row that names a key — is a row counted back from the foot, so those rows
+    ///     stay where the eye left them and the title starts at the top.
+    /// </summary>
+    /// <param name="job">What the card says.</param>
+    /// <param name="width">How wide the card is, which is what the title wraps to.</param>
+    /// <returns>The height, whether the title is centered, and the title as its wrapped rows.</returns>
+    private static Card Measure(Job job, int width)
+    {
+        var message = TextWidth.Wrap(job.Title, width - 4).Take(CardMinHeight).ToArray();
+        var rows = 0;
+
+        if (job.Detail.Length > 0)
+        {
+            rows++;
+        }
+
+        if (job.Progress != null)
+        {
+            rows++;
+        }
+
+        if (job.Running)
+        {
+            rows++;
+        }
+
+        return rows == 0
+            ? new(message.Length + 2, true, message)
+            : new(rows + CardMinHeight, false, message);
     }
 
     /// <summary>What color the line at the top of a card is written in.</summary>
@@ -211,8 +238,14 @@ public sealed class JobCard
     /// <summary>One card: what it says, how far along it is, and the color of its rule.</summary>
     /// <param name="Title">The line at the top.</param>
     /// <param name="Detail">Why it went wrong, when it did.</param>
-    /// <param name="Share">How full its bar is, or nothing when it has none.</param>
+    /// <param name="Progress">How full its bar is, or nothing when it has none.</param>
     /// <param name="Running">Whether the work is still going.</param>
     /// <param name="Rule">The color down its left edge.</param>
-    private sealed record Job(string Title, string Detail, double? Share, bool Running, Rgb Rule);
+    private sealed record Job(string Title, string Detail, double? Progress, bool Running, Rgb Rule);
+
+    /// <summary>How much room one card takes, and how its title sits in it.</summary>
+    /// <param name="Height">How many rows it is.</param>
+    /// <param name="AlignCenter">Whether the title stands in the middle rather than starting at the top.</param>
+    /// <param name="Message">The title, wrapped to the rows it is drawn on.</param>
+    private sealed record Card(int Height, bool AlignCenter, string[] Message);
 }

@@ -58,7 +58,7 @@ public sealed class NotesView : IArlecchinoView
         {
             Render = Describe,
             OnActivate = Open,
-            ItemStyle = static entry => entry.Loudness switch
+            ItemStyle = static entry => entry.Level switch
             {
                 NotificationLevel.Failure => Skin.Terminal.Warning,
                 NotificationLevel.Warning => Skin.Terminal.Warning,
@@ -162,7 +162,7 @@ public sealed class NotesView : IArlecchinoView
     /// <returns>Nowhere: reading a message does not leave the screen.</returns>
     private ViewRoute Open(Notification entry)
     {
-        var wrong = entry.Loudness is NotificationLevel.Failure or NotificationLevel.Warning;
+        var wrong = entry.Level is NotificationLevel.Failure or NotificationLevel.Warning;
 
         _dialogs.Say(Loc(LocString.NotesTitle), entry.Whole(), wrong);
 
@@ -180,7 +180,7 @@ public sealed class NotesView : IArlecchinoView
     /// <returns>The row.</returns>
     private static string Describe(Notification entry)
     {
-        var stamp = entry.Time.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        var stamp = entry.Since.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
         if (entry.Filled() is not { } share)
         {
