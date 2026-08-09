@@ -96,7 +96,6 @@ resharper_enforce_while_statement_braces_highlighting = warning
 resharper_foreach_can_be_converted_to_query_using_another_get_enumerator_highlighting = none
 resharper_inconsistent_naming_highlighting = none
 resharper_inline_temporary_variable_highlighting = warning
-resharper_invert_if_highlighting = warning
 resharper_loop_can_be_converted_to_query_highlighting = none
 resharper_member_can_be_made_static_global_highlighting = warning
 resharper_mvc_action_not_resolved_highlighting = warning
@@ -139,33 +138,14 @@ dotnet_diagnostic.ca1822.severity = warning
 dotnet_diagnostic.ide0290.severity = none
 dotnet_diagnostic.ide1006.severity = none
 
-# The atoms that hold a queue and a stack are named after what they are, since that is the word
-# anyone looks for. Every other reserved suffix — Collection, Dictionary, Exception, EventArgs —
-# still fails the build.
 dotnet_code_quality.ca1711.allowed_suffixes = Queue|Stack
 
-resharper_object_creation_when_type_not_evident = target_typed
-resharper_braces_for_ifelse = required
-resharper_braces_for_for = required
-resharper_braces_for_foreach = required
-resharper_braces_for_while = required
 resharper_braces_for_dowhile = required
 resharper_braces_for_lock = required
 resharper_braces_for_using = required
 resharper_braces_for_fixed = required
 
-resharper_arrange_object_creation_when_type_not_evident_highlighting = warning
 resharper_redundant_using_directive_highlighting = warning
-resharper_enforce_if_statement_braces_highlighting = warning
-resharper_enforce_for_statement_braces_highlighting = warning
-resharper_enforce_foreach_statement_braces_highlighting = warning
-resharper_enforce_while_statement_braces_highlighting = warning
-resharper_enforce_do_while_statement_braces_highlighting = warning
-resharper_enforce_lock_statement_braces_highlighting = warning
-resharper_enforce_using_statement_braces_highlighting = warning
-resharper_enforce_fixed_statement_braces_highlighting = warning
-resharper_invert_if_highlighting = warning
-resharper_member_can_be_made_static_global_highlighting = warning
 resharper_replace_async_with_task_return_highlighting = warning
 resharper_async_void_method_highlighting = warning
 resharper_method_supports_cancellation_highlighting = warning
@@ -174,12 +154,6 @@ resharper_struct_can_be_made_read_only_highlighting = warning
 resharper_use_await_using_highlighting = warning
 resharper_use_array_empty_method_highlighting = warning
 resharper_prefer_concrete_value_over_default_highlighting = warning
-
-resharper_convert_to_primary_constructor_highlighting = none
-resharper_inconsistent_naming_highlighting = none
-resharper_loop_can_be_converted_to_query_highlighting = none
-resharper_foreach_can_be_converted_to_query_using_another_get_enumerator_highlighting = none
-resharper_empty_general_catch_clause_highlighting = none
 
 resharper_unused_auto_property_accessor_global_highlighting = none
 resharper_auto_property_can_be_made_get_only_global_highlighting = none
