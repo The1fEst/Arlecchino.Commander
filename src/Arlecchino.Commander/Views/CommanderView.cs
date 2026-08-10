@@ -50,6 +50,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
     private readonly Surface _surface;
     private readonly CommandBar _commandBar;
+    private readonly SettingBar _settingBar;
 
     private readonly IDisposable _actionBarHeight;
 
@@ -71,6 +72,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// <param name="terminal">What reaches the clipboard of the machine the user is sitting at.</param>
     /// <param name="services">Where the navigator is found, which is built after this screen is.</param>
     /// <param name="lifetime">How the application is quit.</param>
+    /// <param name="settings">What is kept between runs, which the settings line changes.</param>
     public CommanderView(
         Surface surface,
         Sessions sessions,
@@ -82,7 +84,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         ArlecchinoOptions options,
         IArlecchinoTerminal terminal,
         IServiceProvider services,
-        IHostApplicationLifetime lifetime)
+        IHostApplicationLifetime lifetime,
+        Settings settings)
     {
         ArgumentNullException.ThrowIfNull(sessions);
         ArgumentNullException.ThrowIfNull(options);
@@ -101,12 +104,33 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         var dialogs = new Dialogs(state);
 
         _panels = new(left, right);
-        _doings = new(dialogs, _panels, sessions, operations, runner, finder, remote, state, terminal, services);
-        _commandBar = new(new(runner.History, _keys, _keymap), runner, state, _keymap, _panels);
+        _settingBar = new(settings, state, _keymap, _keys);
+        _doings = new(
+            dialogs,
+            _panels,
+            sessions,
+            operations,
+            runner,
+            finder,
+            remote,
+            state,
+            terminal,
+            services,
+            settings,
+            _settingBar);
+        _commandBar = new(new(runner.History, _keys, _keymap, ':'), runner, state, _keymap, _panels);
         _gutter = new(sessions, _panels);
         _actionBar = new(_panels);
         _card = new(runner, state);
-        _commands = CommanderKeys.For(_doings, _panels, sessions, operations, runner, _commandBar, lifetime);
+        _commands = CommanderKeys.For(
+            _doings,
+            _panels,
+            sessions,
+            operations,
+            runner,
+            _commandBar,
+            _settingBar,
+            lifetime);
         _typed = [.. _commands.Where(command => !WantedByTheLine(command.Binding))];
 
         _actionBarHeight = _actionBar.Height.Subscribe(() => _layout = Lay());
@@ -149,9 +173,29 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         }
 
         var screen = _surface.Content;
+        var above = screen.Rows(0, Math.Max(0, screen.Height - FooterRows));
 
         _layout.Draw(screen);
-        _card.Draw(screen.Rows(0, Math.Max(0, screen.Height - FooterRows)));
+        _card.Draw(above);
+        _settingBar.DrawHints(above);
+    }
+
+    /// <summary>
+    ///     The one row under the panels, which belongs to whichever line has been asked for. Two lines
+    ///     cannot both have it, and they never want it at once: the settings line is opened from a screen
+    ///     where nothing is being typed, and it gives the row back the moment it is closed.
+    /// </summary>
+    /// <param name="row">The row to draw on.</param>
+    private void Line(SurfaceRegion row)
+    {
+        if (_settingBar.IsTyping)
+        {
+            _settingBar.Draw(row);
+
+            return;
+        }
+
+        _commandBar.Draw(row);
     }
 
     /// <summary>
@@ -162,12 +206,30 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// <returns>Where to go, which is nowhere for all of these.</returns>
     public ViewRoute Handle(KeyPress key)
     {
-        if (!_panels.Active.IsSearching && _commandBar.Handle(key))
+        if (!_panels.Active.IsSearching && Typed(key))
         {
             return ViewRoute.None;
         }
 
         return Routed(_focus.Handle(key));
+    }
+
+    /// <summary>
+    ///     Offers the key to the two lines under the panels. Whichever of them has the keyboard is asked
+    ///     first and is asked alone — the exclamation mark is a character like any other while a command is
+    ///     being typed, and the colon is one while a setting is. With neither of them open the key is
+    ///     offered to both, and each takes only the character that asks for it.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns><c>true</c> when a line took it.</returns>
+    private bool Typed(KeyPress key)
+    {
+        if (_commandBar.IsTyping)
+        {
+            return _commandBar.Handle(key);
+        }
+
+        return _settingBar.IsTyping ? _settingBar.Handle(key) : _settingBar.Handle(key) || _commandBar.Handle(key);
     }
 
     /// <summary>
@@ -180,7 +242,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// <returns>Where to go, which is nowhere.</returns>
     public ViewRoute HandlePaste(string text)
     {
-        if (!_panels.Active.Paste(text))
+        if (!_panels.Active.Paste(text) && !_settingBar.Paste(text))
         {
             _commandBar.Paste(text);
         }
@@ -214,7 +276,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// <returns>The commands to match this key against.</returns>
     public IReadOnlyList<ViewCommand> Commands()
     {
-        return _commandBar.IsTyping || _panels.Active.IsSearching ? _typed : _commands;
+        return _commandBar.IsTyping || _settingBar.IsTyping || _panels.Active.IsSearching ? _typed : _commands;
     }
 
     /// <summary>
@@ -280,7 +342,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
             Branch(
                 Rows,
                 PaneSize.CellsFromEnd(_actionBar.Height.Value),
-                Leaf(_commandBar.Draw),
+                Leaf(Line),
                 Leaf(_actionBar.Draw)));
     }
 

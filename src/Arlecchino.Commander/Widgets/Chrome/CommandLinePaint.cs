@@ -24,10 +24,10 @@ internal static class CommandLinePaint
     /// <param name="text">What is written on the line and where the caret is.</param>
     /// <param name="typing">Whether the line has the keyboard.</param>
     /// <param name="prompt">Where the command would run.</param>
-    public static void Draw(SurfaceRegion region, CommandLineText text, bool typing, string prompt)
+    /// <param name="tail">What the far end of the row says.</param>
+    public static void Draw(SurfaceRegion region, CommandLineText text, bool typing, string prompt, string tail)
     {
         var coat = Skin.Quiet;
-        var tail = Tail(typing);
 
         region.Fill(coat.Text);
         region.Write(0, SideRoom, prompt, typing ? coat.Faded : coat.Sleeping);
@@ -66,12 +66,4 @@ internal static class CommandLinePaint
             region.Write(0, region.Width - tail.Length - SideRoom, tail, coat.Ghost);
         }
     }
-
-    /// <summary>
-    /// What the far end of the row says. A line nobody is typing on spends it on the key that wakes it,
-    /// since a row that does nothing and explains nothing is a row that reads as broken.
-    /// </summary>
-    /// <param name="typing">Whether the line has the keyboard.</param>
-    /// <returns>The words for the far end.</returns>
-    private static string Tail(bool typing) => Loc(typing ? LocString.CommandLineTail : LocString.CommandLineAsleep);
 }

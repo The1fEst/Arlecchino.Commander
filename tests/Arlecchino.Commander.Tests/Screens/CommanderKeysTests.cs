@@ -312,13 +312,32 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.Equal(1, offered);
     }
 
+    /// <summary>
+    ///     Filtering moved off <c>F4</c> when that key came to mean editing, which is what it means in
+    ///     every other file manager. It sits behind the leader that does something to what the panel is
+    ///     showing, which is where the rest of the once-in-a-while operations are.
+    /// </summary>
     [Fact]
     public void FilteringAsksForThePattern()
     {
-        _app.Press(ConsoleKey.F4);
+        _app.Press(ConsoleKey.X);
+        _app.Press(ConsoleKey.F);
         _app.Frame();
 
         Assert.NotNull(_app.State.Modal);
+    }
+
+    /// <summary>
+    ///     Editing is the editor the settings name, so a screen that has been told of none says so rather
+    ///     than opening something of its own. There is no editor of our own to open.
+    /// </summary>
+    [Fact]
+    public void EditingWithNoEditorSetSaysSo()
+    {
+        OnAlpha();
+        _app.Press(ConsoleKey.F4);
+
+        Assert.Contains("No editor set", _app.Frame(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -542,9 +561,10 @@ public sealed class CommanderKeysTests : IDisposable
     [Theory]
     [InlineData("\e[P", "Keys")]
     [InlineData("\e[Q", "Tabs")]
-    [InlineData("\e[S", "Filter")]
+    [InlineData("\e[S", "No editor set")]
     public void TheFunctionKeysArriveAsTheProtocolSendsThem(string sequence, string expected)
     {
+        OnAlpha();
         _app.ReadFromTerminal(sequence);
 
         Assert.Contains(expected, _app.Frame(), StringComparison.OrdinalIgnoreCase);

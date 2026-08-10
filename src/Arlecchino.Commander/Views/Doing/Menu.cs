@@ -90,6 +90,7 @@ public static class Menu
     private static MenuItem[] ForFile(Doings doings) =>
     [
         new(LocString.View, () => doings.Navigation.Apply(doings.Read())),
+        new(LocString.Edit, doings.Editing.Edit),
         new(LocString.Copy, doings.Files.Copy),
         new(LocString.Move, doings.Files.Move),
         new(LocString.Rename, doings.Files.Rename),
@@ -127,6 +128,7 @@ public static class Menu
     /// <returns>The entries.</returns>
     private static MenuItem[] ForOptions(Doings doings) =>
     [
+        new(LocString.MenuSettings, doings.OpenSettings),
         new(LocString.MenuHiddenHere, () => doings.ToggleHidden(doings.Panels.Left)),
         new(LocString.MenuHiddenThere, () => doings.ToggleHidden(doings.Panels.Right)),
         new(LocString.MenuNotifications, () => doings.Navigation.Apply(Routes.Notifications)),

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Arlecchino.Commander.Stores;
@@ -26,11 +27,17 @@ public sealed class ScreenApp : IDisposable
     private const int PollMilliseconds = 10;
 
     private readonly ArlecchinoTestHost _host;
+    private readonly Dictionary<string, string?> _environmentWas = [];
 
     public ScreenApp(ViewRoute start, int width = 130, int height = 30)
     {
         Width = width;
         Folder = Directory.CreateTempSubdirectory("commander-screen").FullName;
+        Config = Path.Combine(Folder, "config");
+
+        Swap("XDG_CONFIG_HOME", Config);
+        Swap("VISUAL", null);
+        Swap("EDITOR", null);
 
         _host = new(width,
             height,
@@ -55,6 +62,13 @@ public sealed class ScreenApp : IDisposable
     public string Folder { get; }
 
     /// <summary>
+    ///     Where this application keeps its settings, which is inside the test's own folder. The real one
+    ///     lives in the home folder of whoever is running the tests, and a test that wrote a setting there
+    ///     would change how their file manager behaves afterward.
+    /// </summary>
+    public string Config { get; }
+
+    /// <summary>
     ///     How wide the terminal is. A test that asks whether anything spilled over the edge has to
     ///     compare against this rather than against a number typed into it, or it stops meaning anything
     ///     the day the default changes.
@@ -64,6 +78,8 @@ public sealed class ScreenApp : IDisposable
     private ScreenGrid Screen => _host.Screen;
 
     public Sessions Sessions => _host.Services.GetRequiredService<Sessions>();
+
+    public Settings Settings => _host.Services.GetRequiredService<Settings>();
 
     public Runner Runner => _host.Services.GetRequiredService<Runner>();
 
@@ -86,7 +102,27 @@ public sealed class ScreenApp : IDisposable
     public void Dispose()
     {
         _host.Dispose();
+
+        foreach (var (name, value) in _environmentWas)
+        {
+            Environment.SetEnvironmentVariable(name, value);
+        }
+
         Directory.Delete(Folder, true);
+    }
+
+    /// <summary>
+    ///     Puts an environment variable somewhere the test can predict, remembering what it was. The
+    ///     settings folder is redirected into the test's own, so nothing is written to the home folder of
+    ///     whoever is running them. The editor variables are cleared as well, so the settings a test
+    ///     reads are the settings it set rather than whatever this machine prefers.
+    /// </summary>
+    /// <param name="name">Which variable.</param>
+    /// <param name="value">What it should be for as long as the test runs.</param>
+    private void Swap(string name, string? value)
+    {
+        _environmentWas[name] = Environment.GetEnvironmentVariable(name);
+        Environment.SetEnvironmentVariable(name, value);
     }
 
     public string Frame()

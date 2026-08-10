@@ -91,7 +91,7 @@ public sealed class ActionBar
             ("F1", Loc(LocString.BarHelp)),
             ("F2", Loc(LocString.TabsTitle)),
             ("F3", Loc(LocString.View)),
-            ("F4", Loc(LocString.Filter)),
+            ("F4", Loc(LocString.Edit)),
             ("F5", Loc(LocString.Copy) + many),
             ("F6", Loc(LocString.Move) + many),
             ("F7", Loc(LocString.NewFolder)),

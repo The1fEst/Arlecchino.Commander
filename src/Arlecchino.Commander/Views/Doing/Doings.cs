@@ -3,6 +3,7 @@ using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
+using Arlecchino.Hosting;
 using Arlecchino.Navigation;
 using Arlecchino.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ public sealed class Doings
     private readonly Finder _finder;
     private readonly IArlecchinoTerminal _terminal;
     private readonly IServiceProvider _services;
+    private readonly SettingBar _setting;
 
     /// <summary>Gathers everything the screen can do.</summary>
     /// <param name="dialogs">How anything is asked.</param>
@@ -34,6 +36,8 @@ public sealed class Doings
     /// <param name="state">Where the last word said is kept.</param>
     /// <param name="terminal">What reaches the clipboard of the machine the user is sitting at.</param>
     /// <param name="services">Where the navigator is found, which is built after this screen is.</param>
+    /// <param name="settings">What is kept between runs, which the editor is named in.</param>
+    /// <param name="setting">The line settings are typed on, which one menu entry opens.</param>
     public Doings(
         Dialogs dialogs,
         Pair panels,
@@ -44,8 +48,12 @@ public sealed class Doings
         Remote remote,
         ArlecchinoState state,
         IArlecchinoTerminal terminal,
-        IServiceProvider services)
+        IServiceProvider services,
+        Settings settings,
+        SettingBar setting)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         Dialogs = dialogs;
         Panels = panels;
 
@@ -54,12 +62,14 @@ public sealed class Doings
         _finder = finder;
         _terminal = terminal;
         _services = services;
+        _setting = setting;
 
         Files = new(dialogs, operations, state, panels);
         Rights = new(dialogs, runner, state, panels);
         Linking = new(dialogs, state, panels);
         Places = new(dialogs, sessions, state);
         Dialling = new(dialogs, remote, state);
+        Editing = new(services.GetRequiredService<Handover>(), settings, state, panels);
     }
 
     /// <summary>How anything is asked.</summary>
@@ -88,6 +98,15 @@ public sealed class Doings
 
     /// <summary>Getting onto a server and off it.</summary>
     public Dialling Dialling { get; }
+
+    /// <summary>Opening a file in a real editor, with the terminal lent to it while it runs.</summary>
+    public Editing Editing { get; }
+
+    /// <summary>
+    /// Asks for the settings line. It is a key of its own — the exclamation mark — and this is the same
+    /// thing for the hand that came through the menu instead.
+    /// </summary>
+    public void OpenSettings() => _setting.Open();
 
     /// <summary>Reads what is under the cursor.</summary>
     /// <returns>The reading screen, or nowhere when there is nothing under it.</returns>

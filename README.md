@@ -58,7 +58,7 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   are worth more than on swapping panels.
 - **Sorting, behind `s`.** `s h` `s j` `s k` order the panel by name, size or date, and `s l` turns the
   order around whichever column it is on. A click on a column head does the same.
-- **The function keys.** `F2` tabs, `F3` view, `F4` filter, `F5` copy, `F6` move, `Shift+F6` rename,
+- **The function keys.** `F2` tabs, `F3` view, `F4` edit, `F5` copy, `F6` move, `Shift+F6` rename,
   `F7` make folder, `F8` delete, `F9` menu, `F10` quit — and `F1` opens the framework's own key screen.
 - **Tabs.** Each one holds two panels of its own, so a second pair of folders — or a server on one
   side — is a tab away rather than a place you have to navigate back to. They live behind `t`: `t k` opens
@@ -86,7 +86,18 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   request, FTP's `SITE CHMOD`, or the file mode on a Unix disk — `x o` hands a `chown` to the shell where
   the panel is looking, `x s` and `x l` make a symbolic or a hard link into the other panel, `x d` marks
   in both panels every file the other one does not have the same of, `x y` puts the marked paths on the
-  clipboard, `x i` shows the invisible files, and `x r` reads both panels again.
+  clipboard, `x i` shows the invisible files, `x f` shows only the names matching a pattern, and `x r`
+  reads both panels again.
+- **A real editor on `F4`.** There is no editor of our own: the terminal is handed to the one the
+  settings name — the screen steps aside, the editor gets the keyboard and the screen to itself, and the
+  panel is read again when it exits. Files on this machine only; a panel showing a server says so.
+- **Settings, behind `!`.** The same row the command line uses, opened by an exclamation mark, with a box
+  above it listing what can be set, what each of them is now and what it is for — narrowing as you type,
+  `Tab` finishing the word, and a name on its own filling in its current value so it can be edited rather
+  than retyped. `editor vim` keeps the editor. What is kept lives in
+  `~/.config/arlecchino.commander/settings.toml` (or under `XDG_CONFIG_HOME`), written the moment
+  something changes rather than on the way out — a file manager is quit by closing the terminal as often
+  as by pressing the key for it. With nothing set, `$VISUAL` and `$EDITOR` are what the editor already is.
 - **A command line under the panels, behind `:`.** The panel keeps the letters until the colon asks for
   them, which is what leaves a key free to be a key. `Enter` runs what was typed where the panel is
   looking — on the server itself when that panel is connected — `Escape` gives the keyboard back, `cd`

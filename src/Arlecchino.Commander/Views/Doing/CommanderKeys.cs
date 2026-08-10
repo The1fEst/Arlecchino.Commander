@@ -25,7 +25,8 @@ public static class CommanderKeys
     /// <param name="sessions">The tabs, which four of these keys open, close and step between.</param>
     /// <param name="operations">The file work, which the stop key calls off.</param>
     /// <param name="runner">The commands, which the stop key stops.</param>
-    /// <param name="commandBar">The command line, which three of these keys write to.</param>
+    /// <param name="commandBar">The command line, which four of these keys write to or open.</param>
+    /// <param name="setting">The settings line, which one of these keys opens.</param>
     /// <param name="lifetime">How the application is quit.</param>
     /// <returns>Every key the screen answers to.</returns>
     public static IReadOnlyList<ViewCommand> For(
@@ -35,6 +36,7 @@ public static class CommanderKeys
         Operations operations,
         Runner runner,
         CommandBar commandBar,
+        SettingBar setting,
         IHostApplicationLifetime lifetime)
     {
         ArgumentNullException.ThrowIfNull(doings);
@@ -54,8 +56,8 @@ public static class CommanderKeys
                 LocString.View,
                 doings.Read),
             Bind.To(new(ConsoleKey.F4),
-                LocString.Filter,
-                () => doings.Filter(panels.Active)),
+                LocString.Edit,
+                doings.Editing.Edit),
             Bind.To(new(ConsoleKey.F5),
                 LocString.Copy,
                 doings.Files.Copy),
@@ -90,6 +92,12 @@ public static class CommanderKeys
             Bind.To(Searching(),
                 LocString.KeySearch,
                 () => panels.Active.Search()),
+            Bind.To(new(':'),
+                LocString.KeyCommandLine,
+                commandBar.Open),
+            Bind.To(new('!'),
+                LocString.KeySettingsLine,
+                setting.Open),
             Bind.To(Hotlisting(),
                 LocString.Hotlist,
                 () => doings.Places.Hotlist(panels.Active)),
@@ -206,6 +214,9 @@ public static class CommanderKeys
             Bind.To(Execute(ConsoleKey.I),
                 LocString.MenuShowHidden,
                 () => doings.ToggleHidden(panels.Active)),
+            Bind.To(Execute(ConsoleKey.F),
+                LocString.Filter,
+                () => doings.Filter(panels.Active)),
             Bind.When(Execute(ConsoleKey.Escape),
                 LocString.KeyStop,
                 () => operations.IsBusy || runner.IsRunning,
@@ -277,14 +288,15 @@ public static class CommanderKeys
     /// </summary>
     /// <returns>The binding.</returns>
     private static KeyBinding Searching() =>
-        new KeyBinding(ConsoleKey.Oem2)
+        new KeyBinding('/')
             .AddAlternative(ConsoleKey.S, KeyModifiers.Control)
             .AddAlternative(ConsoleKey.S, KeyModifiers.Alt);
 
     /// <summary>The hotlist, which answers to the backslash beside it as Midnight Commander does.</summary>
     /// <returns>The binding.</returns>
     private static KeyBinding Hotlisting() =>
-        new KeyBinding(ConsoleKey.B, KeyModifiers.Control).AddAlternative(ConsoleKey.Oem5, KeyModifiers.Control);
+        new KeyBinding(ConsoleKey.B, KeyModifiers.Control)
+            .AddAlternative(ConsoleKey.Oem5, KeyModifiers.Control);
 
     /// <summary>Whether there is more than one tab, which is what the three tab keys wait for.</summary>
     /// <param name="sessions">The tabs.</param>

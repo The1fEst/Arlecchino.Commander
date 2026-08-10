@@ -57,11 +57,20 @@ public sealed class CommandBar
         var panel = _panels.Active;
         var where = Paths.Shortened(panel.Source, panel.Folder, PromptRoom);
 
-        _line.Draw(line, panel.Source.IsRemote ? $"{panel.Source.Label}:{where}" : where);
+        _line.Draw(
+            line,
+            panel.Source.IsRemote ? $"{panel.Source.Label}:{where}" : where,
+            Loc(_line.IsTyping ? LocString.CommandLineTail : LocString.CommandLineAsleep));
     }
 
     /// <summary>Whether the line has the keyboard, which is what the panel asks before reading a letter.</summary>
     public bool IsTyping => _line.IsTyping;
+
+    /// <summary>
+    /// Asks for the line. The colon does this by itself, and so does the key of that name on the key
+    /// screen: a character key that is nowhere on that screen is one nobody finds out about.
+    /// </summary>
+    public void Open() => _line.Open();
 
     /// <summary>
     /// Gives the key to the line, which takes it only once it has been asked for. The key that asks is

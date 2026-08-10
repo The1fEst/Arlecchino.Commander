@@ -7,8 +7,13 @@ using Arlecchino.Rendering;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The line under the panels. It is asked for rather than fallen into: the colon opens it, Escape closes it,
-/// and until then every letter belongs to the panel.
+/// The line under the panels. It is asked for rather than fallen into: a character opens it, Escape closes
+/// it, and until then every letter belongs to the panel.
+///
+/// Which character that is comes from whoever built the line, because there is more than one line: the colon
+/// opens the one commands are typed on, and the exclamation mark opens the one settings are typed on. They
+/// are the same row and the same editing, and what tells them apart is that character and the words at
+/// either end of the row.
 ///
 /// Typing used to land here straight away, the way it does in Midnight Commander, and that spent the whole
 /// alphabet on one thing. Every key the panel wanted then had to be held with a modifier, and a modifier is
@@ -34,12 +39,13 @@ public sealed class CommandLine
     /// character is what lets a command be typed with a Cyrillic layout left switched on.
     /// </param>
     /// <param name="keymap">The keys the application obeys, which the line edits by.</param>
-    public CommandLine(List<string> history, KeyText keys, ArlecchinoKeymap keymap)
+    /// <param name="opens">The character that asks for the line.</param>
+    public CommandLine(List<string> history, KeyText keys, ArlecchinoKeymap keymap, char opens)
     {
         ArgumentNullException.ThrowIfNull(history);
 
         _history = history;
-        _keys = new(keymap, keys);
+        _keys = new(keymap, keys, opens);
         _place = history.Count;
     }
 
@@ -51,6 +57,12 @@ public sealed class CommandLine
 
     /// <summary>Whether the line has the keyboard, which is what tells a typed letter from a pressed key.</summary>
     public bool IsTyping { get; private set; }
+
+    /// <summary>
+    /// What is on the line as it stands, for whoever has to answer while it is still being typed — hints
+    /// that narrow with every letter, and the completion behind Tab.
+    /// </summary>
+    public string Typed => _text.Text;
 
     /// <summary>
     /// Whether a key press is the one that asks for the line. It is read as the character it types rather
@@ -151,14 +163,27 @@ public sealed class CommandLine
         Open();
     }
 
-    /// <summary>Draws the line, prompted with where a command would run.</summary>
+    /// <summary>
+    /// Puts a whole line there, with the caret after it. What completing a half-typed word comes to, and
+    /// what filling in the value a setting already has comes to.
+    /// </summary>
+    /// <param name="text">What the line should say.</param>
+    public void Set(string text)
+    {
+        _text.Set(text);
+
+        Open();
+    }
+
+    /// <summary>Draws the line, prompted with where what is typed would land.</summary>
     /// <param name="region">The row to draw on.</param>
-    /// <param name="prompt">Where the command would run.</param>
-    public void Draw(SurfaceRegion region, string prompt)
+    /// <param name="prompt">Where it would land.</param>
+    /// <param name="tail">What the far end of the row says.</param>
+    public void Draw(SurfaceRegion region, string prompt, string tail)
     {
         ArgumentNullException.ThrowIfNull(prompt);
 
-        CommandLinePaint.Draw(region, _text, IsTyping, prompt);
+        CommandLinePaint.Draw(region, _text, IsTyping, prompt, tail);
     }
 
     /// <summary>
