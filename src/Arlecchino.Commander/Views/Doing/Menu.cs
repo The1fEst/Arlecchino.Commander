@@ -8,12 +8,8 @@ using Arlecchino.Navigation;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// The menu and the palette, which is the same menu without the filing.
-///
-/// Both are lists of the same entries. The menu asks which of five, then which of ten; the palette
-/// asks which of ninety and narrows as you type. Neither knows what any entry does — the entry
-/// carries that — so an entry cannot be listed in one and left out of the other, and neither can be
-/// the place where a name and the thing it names came apart.
+/// The menu and the palette, which are two lists of the same entries. The menu asks which of five and
+/// then which of ten; the palette lists them all and narrows as you type.
 /// </summary>
 public static class Menu
 {
@@ -37,9 +33,8 @@ public static class Menu
     }
 
     /// <summary>
-    /// Everything the application can do, in one narrowing list. The bar along the bottom shows the
-    /// ten keys that make sense right now; this is the other ninety — every menu entry and every key
-    /// the screen knows — so nothing has to be found by remembering where it was filed.
+    /// Everything the application can do, in one narrowing list. Where the bar along the bottom shows the
+    /// ten keys that make sense right now, this holds every menu entry and every key the screen knows.
     /// </summary>
     /// <param name="doings">Everything the screen can do.</param>
     public static void Palette(Doings doings)
@@ -55,8 +50,7 @@ public static class Menu
 
     /// <summary>
     /// What is on each menu. The two panel menus are the same ten entries built twice, once against each
-    /// panel. What the left menu does to the left panel the right menu does to the right, and writing that
-    /// out twice is how the two would come to differ.
+    /// panel.
     /// </summary>
     /// <param name="doings">Everything the screen can do.</param>
     /// <returns>The menu.</returns>
@@ -151,13 +145,8 @@ public static class Menu
     }
 
     /// <summary>
-    /// What goes in the palette: every menu entry, every tab, and every key the screen answers to. A
-    /// menu entry says which menu it came from, so two entries called the same are told apart by where
-    /// they live rather than by guessing.
-    ///
-    /// The tabs are here and not on a menu because a menu entry is one name known at compile time and
-    /// a tab is whatever it happens to be called right now. Typing the name of a server is how you get
-    /// back to the tab that is on it.
+    /// What goes in the palette: every menu entry, every tab, and every key the screen answers to. A menu
+    /// entry says which menu it came from, so two entries called the same are told apart by where they live.
     /// </summary>
     /// <param name="doings">Everything the screen can do.</param>
     /// <returns>The rows.</returns>

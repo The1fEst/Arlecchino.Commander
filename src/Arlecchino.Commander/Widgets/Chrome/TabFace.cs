@@ -7,12 +7,8 @@ using Arlecchino.Rendering.Text;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// What one tab looks like, and how wide that comes out.
-///
-/// The measuring and the drawing are the same knowledge — where the cross sits follows from how long
-/// the name was allowed to be — so they are answered in one place. A strip that worked out widths of
-/// its own would be a second copy of this arithmetic, and the two would agree until the day one of
-/// them was changed.
+/// What one tab looks like, and how wide that comes out. The measuring and the drawing answer the same
+/// question, so they are kept together rather than worked out twice.
 /// </summary>
 public static class TabFace
 {
@@ -26,9 +22,8 @@ public static class TabFace
     public const int Whole = -1;
 
     /// <summary>
-    /// The narrowest a name is shortened to: four cells a side, which is three letters and an
-    /// ellipsis. Below this a tab stops naming what it is on, and a strip that scrolls past tabs
-    /// nobody can identify is worse than one that scrolls past tabs they can.
+    /// The narrowest a name is shortened to: four cells a side, which is three letters and an ellipsis.
+    /// Below this a tab stops naming what it is on, and the strip scrolls instead.
     /// </summary>
     public const int Least = 11;
 
@@ -75,10 +70,8 @@ public static class TabFace
     }
 
     /// <summary>
-    /// The two sides of a tab, with the dot against whichever of them is being worked in. A tab holds two
-    /// panels, so the dot is the only thing on it that can answer which of the two has the focus, and a dot
-    /// that never moves is no answer at all. A side on a server is named after it, in the color servers get,
-    /// so a glance at the tab says what it is connected to.
+    /// The two sides of a tab, with the dot against whichever of them is being worked in. A side on a
+    /// server is named after it, in the color servers get.
     /// </summary>
     /// <param name="strip">Where to draw.</param>
     /// <param name="column">Where the tab's text starts.</param>
@@ -105,7 +98,7 @@ public static class TabFace
             at += 2;
         }
 
-        strip.Write(Row, at, near, Named(session.Left, look.Live && !look.Right, lit));
+        strip.Write(Row, at, near, Named(session.Left, look is { Live: true, Right: false }, lit));
         at += near.Length + 1;
 
         strip.Write(Row, at, "⇄", lit.Trace);
@@ -117,13 +110,12 @@ public static class TabFace
             at += 2;
         }
 
-        strip.Write(Row, at, far, Named(session.Right, look.Live && look.Right, lit));
+        strip.Write(Row, at, far, Named(session.Right, look is { Live: true, Right: true }, lit));
     }
 
     /// <summary>
-    /// The two sides of a tab as they are to be written, each cut to half of what the name may take.
-    /// Both sides are cut rather than one, since a tab says what it is by naming both of them and a
-    /// full name beside a stub reads as though only one side went anywhere.
+    /// The two sides of a tab as they are to be written, each cut to half of what the name may take. Both
+    /// sides are cut rather than one, since a tab says what it is by naming both.
     /// </summary>
     /// <param name="session">The tab.</param>
     /// <param name="most">The widest the whole name may be.</param>

@@ -6,16 +6,8 @@ using Arlecchino.Commander.Model;
 namespace Arlecchino.Commander.Stores;
 
 /// <summary>
-/// What is kept between runs, read once as the application starts and written back the moment
-/// something is changed.
-///
-/// Writing on every change rather than on the way out is deliberate. A file manager is quit by killing
-/// the terminal it is in as often as by pressing the key for it, and a setting that only survives a
-/// polite exit is a setting nobody trusts.
-///
-/// Values are held by name rather than as fields, so the settings line can offer, read and change any
-/// of them without a switch that has to grow a case each time one is added. What each name means to the
-/// rest of the application is a property here, and that is the only place a name is spelled twice.
+/// What is kept between runs, read once as the application starts and written back the moment something
+/// is changed. Values are held by name, so the settings line can offer, read and change any of them.
 /// </summary>
 public sealed class Settings : IArlecchinoStore
 {
@@ -76,9 +68,8 @@ public sealed class Settings : IArlecchinoStore
     }
 
     /// <summary>
-    /// Changes a setting and writes the file. The change is in force whether the file could be written
-    /// or not — a read-only home folder is a reason to say so, not a reason to refuse the setting for
-    /// the rest of the session.
+    /// Changes a setting and writes the file. The change is in force whether the file could be written or
+    /// not, so a read-only home folder is reported rather than refused.
     /// </summary>
     /// <param name="name">Which setting.</param>
     /// <param name="value">What it should be.</param>
@@ -91,9 +82,8 @@ public sealed class Settings : IArlecchinoStore
     }
 
     /// <summary>
-    /// What the environment says an editor is, which is what every other terminal program would open.
-    /// It is taken as the value rather than as a fallback behind one, so the settings line shows what is
-    /// really in force instead of the word "unset" beside an editor that works.
+    /// What the environment says an editor is, which is what every other terminal program would open. It
+    /// is taken as the value rather than as a fallback, so the settings line shows what is in force.
     /// </summary>
     /// <returns>The program, or an empty string when neither variable is set.</returns>
     private static string FromEnvironment() =>

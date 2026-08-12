@@ -71,8 +71,7 @@ public sealed class KnownHostsTests
 
     /// <summary>
     /// These two lines were written by <c>ssh-keygen -H</c> itself, not by an idea of what it writes.
-    /// Hashing the names is the default on Debian and its like, and Midnight Commander skips such
-    /// lines entirely — which on those systems means it verifies nothing at all.
+    /// Hashing the names is the default on Debian and its like.
     /// </summary>
     [Fact]
     public void AHashedNameIsMatchedRatherThanSkipped()

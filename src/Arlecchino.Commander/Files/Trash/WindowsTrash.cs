@@ -6,23 +6,8 @@ using System.Runtime.Versioning;
 namespace Arlecchino.Commander.Files.Trash;
 
 /// <summary>
-/// The Recycle Bin, asked for through the shell rather than written to. What makes a deleted file
-/// restorable on Windows is the record the shell keeps beside it. A file moved into the bin folder by hand
-/// is a file in a folder with a strange name, and Restore will not offer it.
-///
-/// The old file operation is used rather than the newer interface, because it wants nothing but a struct.
-/// The newer one is COM, and COM from a program published ahead of time means keeping the type
-/// registrations alive through the trimmer for no gain here.
-///
-/// Three shapes of this call catch people out. The path list is double-null-terminated: one terminator ends
-/// the path and one ends the list. The operation then reports refusal two ways — a non-zero result, and a
-/// flag saying the user or the shell called it off while the result stayed zero. Both are failures, and
-/// checking only the first is how a deletion that never happened gets reported as done.
-///
-/// The third is the struct itself, and it is the one that crashes rather than lies. The header packs it to a
-/// byte only when the process is 32-bit, so a 64-bit process must lay the same fields out at their natural
-/// alignment. Get that wrong and the shell reads the path pointer out of the middle of two other fields and
-/// walks off into memory that is not a path. Hence, two of them, one per bitness.
+/// The Recycle Bin, asked for through the old shell file operation, which keeps the record Restore needs and
+/// wants nothing but a struct. That struct is laid out twice, one per bitness.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class WindowsTrash : Trash
@@ -100,7 +85,7 @@ public sealed class WindowsTrash : Trash
 
     /// <summary>
     /// What the shell is asked with in a 64-bit process. The fields are in the order the call reads them
-    /// and none may be left out, which is why the ones this never uses are here at all.
+    /// and none may be left out, so the ones this never uses stand here too.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     private struct Operation

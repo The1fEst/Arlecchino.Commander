@@ -8,9 +8,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// The folders worth going back to: the ones a panel has been in, kept by the panel, and the ones
-/// worth keeping, kept by hand. Both are the same question asked of two different lists, so both are
-/// asked through the same list dialog.
+/// The folders worth going back to: those a panel has been in, and those kept by hand. Both are the same
+/// question asked of two lists, so both go through the same list dialog.
 /// </summary>
 public sealed class Places
 {

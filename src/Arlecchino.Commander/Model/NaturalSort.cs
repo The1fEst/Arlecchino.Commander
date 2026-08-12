@@ -3,14 +3,8 @@ using System;
 namespace Arlecchino.Commander.Model;
 
 /// <summary>
-/// Comparing names the way somebody reading them would. Compared letter by letter, <c>file10</c> comes
-/// before <c>file2</c>, because <c>1</c> comes before <c>2</c> — which is correct about the characters
-/// and wrong about the folder, where the tenth thing belongs after the second. A run of digits is
-/// therefore read as the number it is rather than as the characters it is made of.
-///
-/// Leading zeroes are the one place where that reading has to stop. <c>08</c> and <c>8</c> are the same
-/// number under a different name, and a folder of <c>007</c>, <c>08</c>, <c>9</c> is padded on purpose;
-/// so a run that begins with a zero is compared digit by digit, where the shorter padding sorts first.
+/// Comparing names with each run of digits read as the number it is, so that <c>file2</c> comes before
+/// <c>file10</c>. A run beginning with a zero is compared digit by digit, the shorter padding first.
 /// </summary>
 public static class NaturalSort
 {

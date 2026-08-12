@@ -6,11 +6,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// The Recycle Bin, which is a call into the shell and so can only be held to account on the machine
-/// that has one. There is nothing to assert about where the file went — the shell keeps that — so what
-/// is asserted is that it left, and that asking about a file that was never there is answered rather
-/// than crashed through. The struct the call is handed has to be laid out to the byte, and getting that
-/// wrong does not return an error: it takes the process down with it.
+/// The Recycle Bin, which is a shell call and so can only be tested on the machine that has one. What is
+/// asserted is that the file left, and that a file never there is answered rather than thrown for.
 /// </summary>
 public sealed class WindowsTrashTests
 {

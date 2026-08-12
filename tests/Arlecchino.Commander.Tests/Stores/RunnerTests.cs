@@ -7,8 +7,8 @@ using Arlecchino.Commander.Tests.Support;
 namespace Arlecchino.Commander.Tests.Stores;
 
 /// <summary>
-/// Running a command and keeping what it said. A real shell is started here: what a shell prints is
-/// the whole point, and a stub of one would only report what the stub was told to say.
+/// Running a command and keeping what it said. A real shell is started here, since what a shell prints
+/// is the whole point and a stub would only report what it was told to say.
 /// </summary>
 public sealed class RunnerTests : IDisposable
 {

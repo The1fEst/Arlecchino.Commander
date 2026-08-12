@@ -10,9 +10,8 @@ namespace Arlecchino.Commander.Model;
 public static class Listing
 {
     /// <summary>
-    /// Reads a folder off whatever it is on, and says what went wrong instead of throwing. A panel
-    /// that cannot read a folder shows the reason where the names would have been; there is nothing
-    /// for it to do with an exception, and a folder it may not read is not a fault in the program.
+    /// Reads a folder off whatever it is on, and says what went wrong instead of throwing. A panel that
+    /// cannot read a folder shows the reason where the names would have been.
     /// </summary>
     /// <param name="source">Who to ask.</param>
     /// <param name="folder">Which folder.</param>

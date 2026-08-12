@@ -85,11 +85,8 @@ public sealed class OperationModal : Modal
     }
 
     /// <summary>
-    /// Clicks. The two buttons do what their words say, and a switch is turned by clicking its row —
-    /// which is the same as reaching it with Tab and pressing Space, and rather more obvious.
-    ///
-    /// A button is a single click and not two, unlike a row of a list: it says on it what it is going
-    /// to do, and having read that there is nothing a second click would confirm.
+    /// Clicks. The two buttons do what their words say on a single click, and a switch is turned by
+    /// clicking its row.
     /// </summary>
     /// <param name="frame">How to close, once an answer is given.</param>
     /// <param name="mouse">The event that arrived.</param>

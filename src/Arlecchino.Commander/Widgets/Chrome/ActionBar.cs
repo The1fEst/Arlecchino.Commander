@@ -6,11 +6,8 @@ using Arlecchino.Rendering;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-///     The bar along the bottom, which says in words what the keys of this moment do.
-///     It says all ten of them however narrow the terminal is: a label that would not fit is carried onto
-///     the next row rather than dropped, because a key nobody is told about is a key nobody presses. So
-///     the only thing the width of the terminal decides here is how tall the bar is, which is what
-///     <see cref="Height" /> is for.
+///     The bar along the bottom, which says in words what the keys of this moment do. All ten are shown
+///     however narrow the terminal is, a label that would not fit being carried onto the next row.
 /// </summary>
 public sealed class ActionBar
 {
@@ -27,18 +24,14 @@ public sealed class ActionBar
     }
 
     /// <summary>
-    ///     How many rows the bar takes. It is worked out while drawing and not before: the count follows
-    ///     from the width the bar was given and from the labels of the moment, and a label grows when files
-    ///     are marked. An atom rather than a number, so the screen that has to leave room for the bar can
-    ///     watch it and lay itself out again on the frame after it changed.
+    ///     How many rows the bar takes, worked out while drawing rather than before. An atom, so the screen
+    ///     that leaves room for the bar can lay itself out again on the frame after it changed.
     /// </summary>
     public LocalAtom<int> Height { get; } = new(1);
 
     /// <summary>
-    ///     Draws it, wrapping onto another row whenever the next label would run past the edge. The rows it is
-    ///     given are the rows it asked for last time. So on the one frame after a terminal is made narrower,
-    ///     the labels that wrapped fall outside the region and are dropped; putting the new count on
-    ///     <see cref="Height" /> is what gets the room back for the frame after that.
+    ///     Draws it, wrapping onto another row whenever the next label would run past the edge. The rows it
+    ///     is given are the rows it asked for last time, and the new count goes on <see cref="Height" />.
     /// </summary>
     /// <param name="bar">The rows to draw on.</param>
     public void Draw(SurfaceRegion bar)
@@ -71,9 +64,7 @@ public sealed class ActionBar
 
     /// <summary>
     ///     The ten function keys, in the order everyone who has used a file manager knows them by. What
-    ///     changes is not which keys are on the bar but what they are said to do: with three files marked,
-    ///     <c>F5</c> is no longer "copy" but "copy 3 items", and the bar has answered the question before
-    ///     it was asked.
+    ///     changes is not which keys are on the bar but what they are said to do.
     /// </summary>
     /// <returns>The key and what pressing it would do now.</returns>
     private List<(string Key, string Label)> Actions()

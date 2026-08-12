@@ -6,12 +6,8 @@ using Arlecchino.Rendering.Colors;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The colors the redesign is drawn in: warm near-black neutrals, bone text, one crimson accent.
-///
-/// Every color here is paired with one of the terminal's own sixteen, so a terminal without 24-bit
-/// draws the nearest thing that was chosen rather than the nearest thing arithmetic found. The
-/// background steps that carry the structure are the one thing such a terminal loses — it has no
-/// color for them, and a wrong one would read worse than the terminal's own background.
+/// The colors the redesign is drawn in: warm near-black neutrals, bone text, one crimson accent. Each is
+/// paired with one of the terminal's own sixteen, for a terminal that cannot draw 24-bit color.
 /// </summary>
 public static class Skin
 {
@@ -90,12 +86,8 @@ public static class Skin
     public static Coat Inlaid { get; } = new(Chip);
 
     /// <summary>
-    /// This design said in the framework's own terms, so that everything the framework draws for
-    /// itself — a form, a status bar, the keys screen, the file picker — comes out in it too.
-    ///
-    /// The panels and the dialogs of this application are painted from the coats above and answer to
-    /// nothing here. Everything else is the framework's to draw, and a second screen that looks like a
-    /// different program is the one thing a palette exists to prevent.
+    /// This design said in the framework's own terms, so that a form, a status bar, the keys screen and the
+    /// file picker come out in it too. The panels and the dialogs are painted from the coats above instead.
     /// </summary>
     public static ThemePalette Palette { get; } = new()
     {
@@ -144,9 +136,8 @@ public static class Skin
     public static TermColor CrimsonFill => field ??= Paint(Crimson, Crimson);
 
     /// <summary>
-    /// What closes the top and bottom of the panel being worked in. It is drawn with half blocks, so the two
-    /// colors are the two halves of the row: the surround above the line and the panel below it. That lets a
-    /// panel end halfway down a cell instead of a whole one short.
+    /// What closes the top and bottom of the panel being worked in. It is drawn with half blocks, so the
+    /// two colors are the surround above the line and the panel below it.
     /// </summary>
     public static TermColor BorderActiveColor => field ??= Paint(Unlit, Lit);
 
@@ -190,9 +181,8 @@ public static class Skin
     }
 
     /// <summary>
-    /// What a color laid over another at part strength comes to. The design writes a marked row as
-    /// crimson at 13%, which a terminal cannot do — a cell has one background and nothing behind it —
-    /// so the mixture is worked out here and the result is what gets drawn.
+    /// What a color laid over another at part strength comes to. A cell has one background and nothing
+    /// behind it, so the mixture is worked out here and the result is what gets drawn.
     /// </summary>
     /// <param name="front">The color on top.</param>
     /// <param name="alpha">How much of it there is, from 0 to 1.</param>
@@ -207,9 +197,8 @@ public static class Skin
         (byte)Math.Clamp(Math.Round((front * alpha) + (back * (1 - alpha))), 0, 255);
 
     /// <summary>
-    /// The one of the terminal's sixteen to fall back on. Every neutral goes to bright black: they
-    /// differ by a few percent of lightness, which the sixteen have no way of saying, and picking
-    /// different ones for them would invent a distinction the design never asked for.
+    /// The one of the terminal's sixteen to fall back on. Every neutral goes to bright black, since they
+    /// differ by a few percent of lightness and the sixteen have no way of saying that.
     /// </summary>
     /// <param name="colour">The exact color.</param>
     /// <returns>The nearest one that was chosen.</returns>
@@ -234,9 +223,8 @@ public static class Skin
     };
 
     /// <summary>
-    /// One surface and the text on it. The design has four backgrounds and eight weights of neutral,
-    /// and a span drawn against the wrong one leaves a hole in the fill — so the surface is chosen
-    /// once and every color on it comes from here.
+    /// One surface and the text on it. A span drawn against the wrong background leaves a hole in the
+    /// fill, so the surface is chosen once and every color on it comes from here.
     /// </summary>
     /// <param name="under">The background this coat is worn over.</param>
     public sealed class Coat(Rgb under)
@@ -262,7 +250,7 @@ public static class Skin
         /// <summary>A date, or a count on the panel that is not being worked in.</summary>
         public TermColor Trace => Paint(TraceInk, under);
 
-        /// <summary>Line numbers, the tag of a file worth ignoring, a hint nobody needs yet.</summary>
+        /// <summary>Line numbers, the tag of a file worth ignoring, a hint not needed yet.</summary>
         public TermColor Ghost => Paint(GhostInk, under);
 
         /// <summary>The gutter at rest.</summary>

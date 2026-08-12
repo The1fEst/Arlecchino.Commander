@@ -5,7 +5,7 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
 /// What is written on the command line and where the caret sits in it. Every way a character gets in or
-/// out is here and nowhere else, so nothing that reads a key has to know how a string is cut about.
+/// out is here, so nothing that reads a key has to know how a string is cut about.
 /// </summary>
 internal sealed class CommandLineText
 {
@@ -50,8 +50,8 @@ internal sealed class CommandLineText
     }
 
     /// <summary>
-    /// One typed character. The control codes are refused: a terminal sends them for keys that mean
-    /// something else entirely, and a line is no place for a character nobody can see.
+    /// One typed character. The control codes are refused, since a terminal sends them for keys that mean
+    /// something else entirely.
     /// </summary>
     /// <param name="typed">The character the key types.</param>
     /// <returns><c>true</c> when it went in.</returns>

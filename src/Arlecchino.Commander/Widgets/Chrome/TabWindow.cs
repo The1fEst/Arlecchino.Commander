@@ -4,11 +4,8 @@ using System.Collections.Generic;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// Which of the tabs are showing, when there is no room for all of them.
-///
-/// It holds the one piece of state the band has: how far it has been scrolled. That is why it is a
-/// thing of its own rather than a calculation done while drawing — a scroll position worked out afresh
-/// every frame is not a scroll position, it is wherever the arithmetic happens to land.
+/// Which of the tabs are showing, when there is no room for all of them. It holds the one piece of state
+/// the band has, which is how far it has been scrolled.
 /// </summary>
 public sealed class TabWindow
 {
@@ -27,13 +24,8 @@ public sealed class TabWindow
     public void Scroll(int by, int count) => _first = Math.Clamp(_first + by, 0, Math.Max(0, count - 1));
 
     /// <summary>
-    /// Works out what is showing. Going to a tab brings it into view, however far the strip had been
-    /// scrolled — a strip that has scrolled away from the panels being worked in says nothing about
-    /// where the work is.
-    ///
-    /// Only going to one, though. Scrolling with the markers is allowed to leave the open tab behind, which is
-    /// the point of the markers. They are there to look at the tabs the band is not showing, and a strip that
-    /// snapped back to the open tab every frame could not be scrolled at all.
+    /// Works out what is showing. Going to a tab brings it into view however far the strip had been
+    /// scrolled, while scrolling with the markers is allowed to leave the open tab behind.
     /// </summary>
     /// <param name="widths">How wide each tab comes out.</param>
     /// <param name="room">The cells the tabs have, markers already taken off.</param>

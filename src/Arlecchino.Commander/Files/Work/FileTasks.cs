@@ -20,18 +20,16 @@ public readonly record struct Tally(int Files, int Folders, long Bytes)
 }
 
 /// <summary>
-/// Copying, moving and deleting. Every one of these waits on something — a disk, a server — so every one of
-/// them is awaited rather than run. The stop key is answered between blocks of a file rather than between
-/// files: a single large file used to have to finish before anyone could be told to stop.
+/// Copying, moving and deleting, all of it awaited rather than run, since all of it waits on a disk or a
+/// server. The stop key is answered between blocks of a file rather than between files.
 /// </summary>
 public static class FileTasks
 {
     private const int Block = 128 * 1024;
 
     /// <summary>
-    /// Walks the sources without touching them, so the work that follows knows how far along it is. A
-    /// folder is counted along with everything under it, which is what makes a bar for a deletion of a
-    /// deep tree mean anything.
+    /// Walks the sources without touching them, so the work that follows knows how far along it is. A folder
+    /// is counted along with everything under it.
     /// </summary>
     /// <param name="source">Where the entries live.</param>
     /// <param name="entries">What is about to be worked on.</param>
@@ -77,19 +75,8 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// Whether the place a copy is going is the thing being copied, or somewhere inside it.
-    ///
-    /// A folder copied into its own tree has no end: the copy walks what it is writing, so every child it
-    /// lays down is another child to copy. It does not even fail honestly — each level lists what is there
-    /// as it looks, so how deep the nest gets depends on how fast the disk is, and the same copy twice
-    /// leaves two different messes.
-    ///
-    /// A file onto itself is the shorter version of the same mistake. On a disk it is caught already, since
-    /// the read holds the file in a way that stops it being opened for writing. But that is the operating
-    /// system saying no, not this program, and a server keeps no such lock. There the writing end would open
-    /// the file, empty it, and only then would the read discover there is nothing left to copy.
-    ///
-    /// Both start the same way, with two panels showing one folder, which is nobody's mistake.
+    /// Whether the place a copy is going is the thing being copied, or somewhere inside it. A folder copied
+    /// into its own tree never ends, and a file copied onto itself is emptied before it is read.
     /// </summary>
     /// <param name="source">The end both paths belong to.</param>
     /// <param name="outer">What is being copied.</param>
@@ -109,9 +96,13 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// What is inside a folder, without the entry that leads back out of it. A folder that cannot be
-    /// read counts as empty here — the work itself will report why when it gets there.
+    /// What is inside a folder, without the entry that leads back out of it. A folder that cannot be read
+    /// counts as empty, and the work itself reports why when it gets there.
     /// </summary>
+    /// <param name="source">Where the folder lives.</param>
+    /// <param name="folder">The folder to look inside.</param>
+    /// <param name="token">Canceled when the work is stopped.</param>
+    /// <returns>What is inside it.</returns>
     private static async Task<List<FileEntry>> ChildrenAsync(
         IFileSource source,
         FileEntry folder,
@@ -232,10 +223,14 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// Removes one entry. A folder goes in a single request when the source can do that: one <c>rm -rf</c> on
-    /// a server instead of a round trip per file. Otherwise, it is walked, several children at a time, so the
-    /// count and the stop key keep working.
+    /// Removes one entry. A folder goes in a single request where the source can do that, and is otherwise
+    /// walked several children at a time, so the count and the stop key keep working.
     /// </summary>
+    /// <param name="source">Where the entry lives.</param>
+    /// <param name="entry">What to remove.</param>
+    /// <param name="toTrash">Whether it goes where it can be fetched back from.</param>
+    /// <param name="outcome">What the work reports to.</param>
+    /// <param name="token">Canceled when the work is stopped.</param>
     private static async Task DeleteOneAsync(
         IFileSource source,
         FileEntry entry,
@@ -312,10 +307,13 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// Runs the same work over every entry, as many at a time as the source is willing to answer. A
-    /// local disk keeps to one, so nothing changes for it; a server gets its latency hidden behind
-    /// requests that overlap — and now they overlap on one thread rather than on as many.
+    /// Runs the same work over every entry, as many at a time as the source is willing to answer. A local
+    /// disk keeps to one, and a server hides its latency behind requests that overlap on one thread.
     /// </summary>
+    /// <param name="source">Where the entries live.</param>
+    /// <param name="entries">What to work through.</param>
+    /// <param name="work">What to do to each of them.</param>
+    /// <param name="token">Canceled when the work is stopped.</param>
     private static async Task SpreadAsync(
         IFileSource source,
         IReadOnlyList<FileEntry> entries,
@@ -468,17 +466,8 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// Moves the bytes of one file.
-    ///
-    /// An end that can move a whole file itself is asked to, because it can keep several requests in
-    /// flight where a stream can only send one and wait. The destination is asked first: writing is the
-    /// narrower of the two over SFTP, where a server will take a third of what it will send.
-    ///
-    /// With neither end able to, the bytes go a block at a time. Reading the whole thing in one call
-    /// would be shorter to write and would take the stop key with it: the block is where the work looks up.
-    /// Counting per block is the other half of that. A bar that only moves as each file finishes says nothing
-    /// at all while a large one is going over, which is why the pipelined paths are counted on the stream at
-    /// the other end rather than left silent.
+    /// Moves the bytes of one file, asking an end that can move a whole file itself to do it and the
+    /// destination first. With neither able to, the bytes go a block at a time and are counted per block.
     /// </summary>
     /// <param name="from">Where the bytes are.</param>
     /// <param name="source">The file.</param>
@@ -578,8 +567,8 @@ public static class FileTasks
     }
 
     /// <summary>
-    /// Throws away what was written of a file that was stopped part way. Left behind, it is a file of
-    /// the right name and the wrong length — the one shape of failure nobody notices until later.
+    /// Throws away what was written of a file that was stopped part way, since what is left behind would
+    /// carry the right name and the wrong length.
     /// </summary>
     /// <param name="to">Where it was being written.</param>
     /// <param name="target">The half of a file.</param>

@@ -27,12 +27,8 @@ public enum TabPart
 public readonly record struct TabHit(TabPart Part, int Index);
 
 /// <summary>
-/// The tabs along the top, in whatever room the band can spare them.
-///
-/// Two things are done about there being more tabs than room, and the order matters. Names are
-/// shortened first, but only down to where a name still says something; past that the strip scrolls.
-/// Shortening alone ends in a row of <c>l… ⇄ l…</c> that names nothing, and scrolling alone hides
-/// three tabs out of five on a narrow terminal when shortening two letters would have shown them all.
+/// The tabs along the top, in whatever room the band can spare them. More tabs than room shortens the
+/// names first, down to where one still says something, and past that the strip scrolls.
 /// </summary>
 public sealed class TabStrip
 {
@@ -126,9 +122,8 @@ public sealed class TabStrip
     public void Scroll(int by) => _window.Scroll(by, _sessions.All.Count);
 
     /// <summary>
-    /// How wide a name may be, given how many tabs there are and how much strip there is. Tabs share
-    /// what there is rather than the first few taking what they like, so a tab opened does not push
-    /// one already open off the end.
+    /// How wide a name may be, given how many tabs there are and how much strip there is. Tabs share what
+    /// there is equally, so a tab opened does not push one already open off the end.
     /// </summary>
     /// <param name="room">The cells the tabs have between them.</param>
     /// <param name="closable">Whether tabs wear a cross.</param>

@@ -4,8 +4,7 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// The pattern a filter or a search is given. It is what stands between "delete *.tmp" and deleting
-/// something else, so the edges matter more than the ordinary cases.
+/// The pattern a filter or a search is given, where the edges matter more than the ordinary cases.
 /// </summary>
 public sealed class GlobTests
 {

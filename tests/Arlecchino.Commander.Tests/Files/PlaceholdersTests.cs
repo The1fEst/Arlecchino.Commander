@@ -9,9 +9,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// What the command line makes of <c>%s</c> and its fellows. The escaping is the point of most of
-/// these: a marked file with an apostrophe in its name is ordinary, and a command that breaks on one
-/// is a command that will one day run on the wrong thing.
+/// What the command line makes of <c>%s</c> and its fellows. The escaping is the point of most of these,
+/// since a marked file with an apostrophe in its name is ordinary.
 /// </summary>
 public sealed class PlaceholdersTests : IDisposable
 {
@@ -89,8 +88,8 @@ public sealed class PlaceholdersTests : IDisposable
     }
 
     /// <summary>
-    /// A command line is full of percents nobody meant for us — a Windows variable, a format string, a
-    /// URL. What is not one of the words is left standing, percent and all.
+    /// A command line is full of percents meant for something else: a Windows variable, a format string,
+    /// a URL. What is not one of the words is left standing, percent and all.
     /// </summary>
     [Fact]
     public void APercentThatIsNotOneOfTheWordsIsLeftStanding()

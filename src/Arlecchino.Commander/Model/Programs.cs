@@ -6,13 +6,8 @@ using System.IO;
 namespace Arlecchino.Commander.Model;
 
 /// <summary>
-/// Whether a program is on this machine, answered the way a shell answers it: by walking <c>PATH</c>
-/// and, on Windows, trying each of the extensions <c>PATHEXT</c> names.
-///
-/// Offering a list of editors that includes three this machine has never had is worse than offering
-/// none — every one of them looks like it would work. So the suggestions are the programs that are
-/// really there, and the answer for a given name is worked out once and kept. The hints are rebuilt on
-/// every key press, and walking the path on each of them would be a folder listing per letter typed.
+/// Whether a program is on this machine, answered the way a shell answers it: by walking <c>PATH</c> and,
+/// on Windows, trying each of the extensions <c>PATHEXT</c> names. The answer for a name is kept.
 /// </summary>
 public static class Programs
 {

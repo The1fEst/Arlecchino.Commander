@@ -8,12 +8,8 @@ using Arlecchino.Rendering.Text;
 namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
-///     What a panel looks like: the rule down its edge, the trail along the top, the column heads, and
-///     the band along the bottom that says what the cursor is on.
-///     There is no box around any of it — the panel is told from the one beside it by the step in the
-///     background and by the accent rule, which only the panel being worked in has. Everything here reads
-///     the panel and writes nothing back to it, apart from the three words it is told to say while a
-///     folder is being read.
+///     What a panel looks like: the rule down its edge, the trail along the top, the column heads, and the
+///     band saying what the cursor is on. Everything here reads the panel and writes nothing back.
 /// </summary>
 public sealed class PanelPaint
 {

@@ -11,11 +11,8 @@ using Microsoft.Extensions.Hosting;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// Which key does which of the things the screen can do.
-///
-/// It is a table and nothing else: no key here decides anything, works anything out, or holds a piece
-/// of the behavior that the menu entry beside it does not get. Everything a key does is a call to
-/// <see cref="Doings"/>, which is what lets the palette list the keys and the menu in one list.
+/// Which key does which of the things the screen can do. It is a table and nothing else: every key is a
+/// call to <see cref="Doings"/>, which is what lets the palette list the keys and the menu together.
 /// </summary>
 public static class CommanderKeys
 {
@@ -224,11 +221,7 @@ public static class CommanderKeys
         ];
     }
 
-    /// <summary>
-    /// A key behind the <c>t</c> leader, which is the one the tabs live behind. They were spread between
-    /// the function keys, a pair of Control letters and the leader that takes you somewhere, which is
-    /// three places to look for five keys that belong together.
-    /// </summary>
+    /// <summary>A key behind the <c>t</c> leader, which is the one the tabs live behind.</summary>
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
     private static KeyBinding Tab(ConsoleKey key) => new KeyBinding(ConsoleKey.T).ThenKey(key);
@@ -236,10 +229,6 @@ public static class CommanderKeys
     /// <summary>
     /// A key behind the <c>g</c> leader, which is the one that takes you somewhere: to a row, to a folder
     /// the panel has been in, to a host.
-    ///
-    /// The four in the middle read as they do in a text editor: <c>k</c> and <c>j</c> go up out of a folder
-    /// and down into one, <c>h</c> and <c>l</c> go back and forward through the folders the panel has been
-    /// in. Which way a key goes is where it sits rather than what it stands for.
     /// </summary>
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
@@ -255,8 +244,7 @@ public static class CommanderKeys
 
     /// <summary>
     /// Out of the folder: the letter an editor puts it on, the arrow that points that way, and the pair
-    /// Midnight Commander taught the hands. Left and right no longer swap the panels — <c>Tab</c> does
-    /// that, and an arrow is worth more spent on the folder tree, which is where the cursor already is.
+    /// Midnight Commander taught the hands.
     /// </summary>
     /// <returns>The binding.</returns>
     private static KeyBinding Leaving() =>
@@ -274,17 +262,15 @@ public static class CommanderKeys
 
     /// <summary>
     /// A key behind the <c>x</c> leader, which is the one that does something to what the panel is
-    /// showing. These are the operations wanted often enough to have a key and seldom enough not to have
-    /// one of their own, and they are the letters Midnight Commander puts behind its own <c>Ctrl+X</c>.
+    /// showing. These are the letters Midnight Commander puts behind its own <c>Ctrl+X</c>.
     /// </summary>
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
     private static KeyBinding Execute(ConsoleKey key) => new KeyBinding(ConsoleKey.X).ThenKey(key);
 
     /// <summary>
-    /// Search as you type. The slash is what asks for it, since the letters that follow are the search
-    /// and not the keys — the same trade the colon makes for the command line. Control and Alt still
-    /// answer for the hands that learned them on Midnight Commander.
+    /// Search as you type, asked for by the slash so that the letters after it are the search and not
+    /// the keys. Control and Alt answer as well, as they do on Midnight Commander.
     /// </summary>
     /// <returns>The binding.</returns>
     private static KeyBinding Searching() =>
@@ -347,13 +333,8 @@ public static class CommanderKeys
     }
 
     /// <summary>
-    /// Calls off whatever is running: a command first, then the file work. A dialog is not here — the
+    /// Calls off whatever is running: a command first, then the file work. A dialog is not here, since the
     /// framework hands every key to the dialog on top before this screen sees any of them.
-    ///
-    /// It is a chord and not <c>Esc</c> because plain Escape is already the way out of half a dozen
-    /// things: a search being typed, a filter, a dialog, the screen you are on. A key that means "get out of
-    /// this" some of the time and "stop the copy" the rest of the time is one you hesitate over, and stopping
-    /// work that is running deserves a key nothing else is asking for.
     /// </summary>
     /// <param name="operations">The file work.</param>
     /// <param name="runner">The commands.</param>

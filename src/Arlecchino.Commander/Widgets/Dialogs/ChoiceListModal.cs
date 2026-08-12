@@ -6,9 +6,8 @@ using Arlecchino.Modals;
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
 /// <summary>
-/// A list to pick from, in the slot the framework keeps for whatever is on top. Typing narrows it
-/// rather than jumping to a letter: a list of two hundred hosts is not one anybody wants to arrow
-/// through, and narrowing is the same gesture wherever a list appears.
+/// A list to pick from, in the slot the framework keeps for whatever is on top. Typing narrows it rather
+/// than jumping to a letter, which is the same gesture wherever a list appears.
 /// </summary>
 public sealed class ChoiceListModal : Modal
 {
@@ -96,12 +95,8 @@ public sealed class ChoiceListModal : Modal
     }
 
     /// <summary>
-    /// Clicks. A click on a row selects it, and a second click on the row already selected picks it, which is
-    /// the rule everywhere else a list is clicked. A single click that runs something makes the list a place
-    /// where a slip does the wrong thing rather than the next thing.
-    ///
-    /// A click outside the box changes nothing. A list is not dismissed by clicking away, because a
-    /// stray click should not discard what has been typed into it.
+    /// Clicks. A click on a row selects it and a second click on the row already selected picks it, while a
+    /// click outside the box changes nothing.
     /// </summary>
     /// <param name="frame">How to close, once something is picked.</param>
     /// <param name="mouse">The event that arrived.</param>

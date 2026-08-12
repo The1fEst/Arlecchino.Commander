@@ -5,16 +5,8 @@ using System.Threading.Tasks;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// A source that can move a whole file itself, rather than have one read out of it a block at a time.
-///
-/// It is here for the one thing a stream cannot do over a network: keep several requests in flight. A
-/// stream sends one request and waits for the answer before sending the next, so a file crosses at one
-/// request per round trip however large the requests are. Over a link a tenth of a second wide that is a
-/// fixed ceiling no buffer size can lift. A source moving the whole file has the next request already gone
-/// when the last one answers, and on such a link that is the whole difference.
-///
-/// The work is handed a stream rather than a path on purpose: the other end is then anything at all —
-/// a disk, another server — and only the end that can pipeline has to know how.
+/// A source that can move a whole file itself, keeping several requests in flight where a stream sends one
+/// and waits. It is handed a stream rather than a path, so the other end can be anything.
 /// </summary>
 public interface IMovesWholeFiles
 {

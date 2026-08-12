@@ -6,11 +6,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
 /// <summary>
-/// Every way the application has of asking something, in one place.
-///
-/// There are two questions worth telling apart — which of these, and what shall it be called — and so
-/// there are two dialogs and no more. Everything that wants an answer comes through here, which is why
-/// a screen never has a dialog of its own to draw, to close, or to forget to close.
+/// Every way the application has of asking something, in one place. There are two questions worth telling
+/// apart, which of these and what shall it be called, and so there are two dialogs and no more.
 /// </summary>
 public sealed class Dialogs
 {
@@ -47,18 +44,16 @@ public sealed class Dialogs
             });
 
     /// <summary>
-    /// Opens the one dialog every operation is asked through. It goes in the slot the framework keeps
-    /// for whatever is on top, so no screen holds a dialog of its own — the drawing, the keys and the
-    /// closing are all the framework's, and only what is asked is ours.
+    /// Opens the one dialog every operation is asked through. It goes in the slot the framework keeps for
+    /// whatever is on top, so the drawing, the keys and the closing are all the framework's.
     /// </summary>
     /// <param name="operation">What to ask.</param>
     public void Ask(Operation operation) =>
         _state.Modal = new OperationModal(operation, Completion.Finish);
 
     /// <summary>
-    /// Asks for one thing in words, through the same dialog everything else is asked through. The small
-    /// questions — a pattern, an owner, a filter — get the shape the large ones get, because a second
-    /// shape for small questions is a second thing to learn.
+    /// Asks for one thing in words, through the same dialog everything else is asked through. A pattern, an
+    /// owner or a filter gets the shape the large questions get.
     /// </summary>
     /// <param name="title">What the question is called.</param>
     /// <param name="label">What the field is for.</param>
@@ -93,9 +88,8 @@ public sealed class Dialogs
     }
 
     /// <summary>
-    /// Says something that needs no answer, in the same shape as everything that does. Whether it is
-    /// a warning is the caller's to say: a mark beside every message teaches people to stop reading
-    /// the mark, and the one time it means something is the time they will miss it.
+    /// Says something that needs no answer, in the same shape as everything that does. Whether it is a
+    /// warning is the caller's to say, since a mark beside every message means nothing.
     /// </summary>
     /// <param name="title">What happened.</param>
     /// <param name="message">The detail of it.</param>

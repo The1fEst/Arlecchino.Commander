@@ -44,7 +44,7 @@ public sealed class PngTests
     [Fact]
     public void AGreyPictureIsTheSameValueInAllThree()
     {
-        var raster = Png.Read(Written(1, 1, colour: 0, [[0, 90]]));
+        var raster = Png.Read(Written(1, 1, colour: 0, ["\0Z"u8.ToArray()]));
 
         Assert.NotNull(raster);
         Assert.Equal(90, raster.Pixels[0].Red);
@@ -92,9 +92,10 @@ public sealed class PngTests
     }
 
     /// <summary>
-    /// A file manager opens whatever it is pointed at, so nothing here may throw — what cannot be
-    /// read comes back as nothing and is shown as bytes instead.
+    /// A file manager opens whatever it is pointed at, so nothing here may throw. What cannot be read
+    /// comes back as nothing and is shown as bytes instead.
     /// </summary>
+    /// <param name="bytes">What is being opened.</param>
     [Theory]
     [InlineData(new byte[0])]
     [InlineData(new byte[] { 1, 2, 3 })]
@@ -139,9 +140,9 @@ public sealed class PngTests
     /// </summary>
     /// <param name="width">How wide.</param>
     /// <param name="height">How tall.</param>
-    /// <param name="colour">The PNG colour type.</param>
+    /// <param name="colour">The PNG color type.</param>
     /// <param name="rows">Each row, filter byte first.</param>
-    /// <param name="palette">The palette, when the colour type wants one.</param>
+    /// <param name="palette">The palette, when the color type wants one.</param>
     /// <param name="depth">Bits a channel.</param>
     /// <param name="interlaced">Whether it claims to be interlaced.</param>
     /// <returns>The file.</returns>
@@ -202,7 +203,7 @@ public sealed class PngTests
         file.Write(length);
         file.Write(Encoding.ASCII.GetBytes(kind));
         file.Write(body);
-        file.Write([0, 0, 0, 0]);
+        file.Write("\0\0\0\0"u8);
     }
 
     private static void BigEndian(IList<byte> into, int at, int value)

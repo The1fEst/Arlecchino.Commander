@@ -5,8 +5,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// A connection typed as one line. Everything a session needs is in it, including the password when
-/// somebody put one there, so what is read out of the pieces has to be exactly what was written.
+/// A connection typed as one line. Everything a session needs is in it, the password included, so what is
+/// read out of the pieces has to be exactly what was written.
 /// </summary>
 public sealed class LinksTests
 {

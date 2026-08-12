@@ -6,9 +6,8 @@ using Arlecchino.Commander.Tests.Support;
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-/// The form that asks where to connect, drawn without connecting to anything. Nothing here reaches a
-/// network: what is being asked is that the fields are on screen, that typing lands in them, and that
-/// a failure is shown rather than swallowed.
+/// The form that asks where to connect, drawn without reaching a network. What is asked is that the
+/// fields are drawn, that typing lands in them, and that a failure is shown rather than swallowed.
 /// </summary>
 public sealed class ConnectScreenTests : IDisposable
 {

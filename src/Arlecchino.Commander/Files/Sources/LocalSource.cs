@@ -10,10 +10,8 @@ using Arlecchino.Commander.Files.Work;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// The disk this machine has. Reading and writing bytes is asked for rather than done, so a copy of
-/// something large leaves the thread that started it free and can be called off between one block and
-/// the next. The rest — asking a folder what is in it, renaming, changing permissions — has no waiting
-/// form the runtime offers and no waiting to speak of either: it is one call into the kernel.
+/// The disk this machine has. Reading and writing bytes is asked for rather than done, and the rest is one
+/// call into the kernel with no waiting form to ask for.
 /// </summary>
 public sealed class LocalSource : IFileSource
 {
@@ -161,9 +159,8 @@ public sealed class LocalSource : IFileSource
         Task.FromResult(Listing.Read(folder, showHidden));
 
     /// <summary>
-    /// Opens a file for reading, asking the operating system for the handle a waiting read needs. Given
-    /// an ordinary handle every <c>ReadAsync</c> on it finishes on the spot, having blocked a thread to
-    /// do it, and the whole arrangement is a costlier way of doing it synchronously.
+    /// Opens a file for reading, asking the operating system for the handle a waiting read needs. On an
+    /// ordinary handle every <c>ReadAsync</c> blocks a thread and finishes on the spot.
     /// </summary>
     /// <param name="path">The file.</param>
     /// <param name="token">Unused: opening does not wait.</param>

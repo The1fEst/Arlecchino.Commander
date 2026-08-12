@@ -13,9 +13,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Stores;
 
 /// <summary>
-/// The copy, move and delete that are running, kept outside any one screen. Work started from the
-/// panels outlives them — opening the notifications and coming back builds the commander again — so a
-/// store holds it, and the screen reads what is running rather than owning it.
+/// The copy, move and delete that are running, kept outside any one screen. Work started from the panels
+/// outlives them, so a store holds it and the screen reads what is running rather than owning it.
 /// </summary>
 public sealed class Operations : IArlecchinoStore
 {
@@ -111,8 +110,7 @@ public sealed class Operations : IArlecchinoStore
 
     /// <summary>
     /// The counting pass, or nothing when counting would cost more than the work. Walking a tree on a
-    /// server is a request per folder, and a deletion there is one command anyway, so the bar is worth
-    /// less than the wait it would add.
+    /// server is a request per folder, so the bar is worth less than the wait it would add.
     /// </summary>
     /// <param name="source">Where the entries live.</param>
     /// <param name="entries">What is about to be worked on.</param>
@@ -123,10 +121,8 @@ public sealed class Operations : IArlecchinoStore
         source.WalksCheaply ? token => FileTasks.MeasureAsync(source, entries, token) : null;
 
     /// <summary>
-    /// Runs the work away from the drawing thread, even on a local disk, where a folder deep enough would
-    /// otherwise freeze the frame. It reports itself as a notification that counts up while it goes and
-    /// turns into what came of it at the end. Nothing is occupied while the disk or the server is thinking;
-    /// what comes back is posted to the frame, the only thread allowed to change the screen.
+    /// Runs the work away from the drawing thread, even on a local disk. It reports itself as a
+    /// notification that counts up while it goes and turns into what came of it at the end.
     /// </summary>
     private void Start(
         Func<Outcome, CancellationToken, Task> work,

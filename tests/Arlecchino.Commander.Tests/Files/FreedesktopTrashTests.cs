@@ -7,10 +7,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// The trash the Linux desktops share, which is the one of the three that is a file format rather than
-/// a system call — and so the one that can be held to account here whatever machine the tests run on.
-/// What is asserted is the sidecar, because the sidecar is the whole of how a desktop later offers to
-/// put the file back; a file that moved without one is a file that is merely lost somewhere tidier.
+/// The trash the Linux desktops share, which is a file format rather than a system call and so can be
+/// held to account on any machine. What is asserted is the sidecar a desktop reads to put a file back.
 /// </summary>
 public sealed class FreedesktopTrashTests : IDisposable
 {
@@ -50,8 +48,8 @@ public sealed class FreedesktopTrashTests : IDisposable
     }
 
     /// <summary>
-    /// The sidecar has to say where the file came from, or nothing can put it back. The header is fixed
-    /// and the date has no zone on it, which is what every desktop reading this expects.
+    /// The sidecar has to say where the file came from, or nothing can put it back. The header is fixed,
+    /// and the date has no zone on it.
     /// </summary>
     [Fact]
     public void TheSidecarSaysWhereTheFileCameFrom()

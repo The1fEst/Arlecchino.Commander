@@ -35,12 +35,8 @@ public sealed record Choice(string Label, bool On)
 }
 
 /// <summary>
-/// Everything the application ever asks before doing something to a file, in one shape.
-///
-/// Copying, moving, deleting, renaming, making a folder and changing a mode differ in what they act
-/// on and what they need told; they do not differ in what the question looks like. One shell for all
-/// six means a seventh is a row in a table rather than a dialog somebody has to design — and it means
-/// none of them can quietly forget to say, in words, what is about to happen.
+/// Everything the application ever asks before doing something to a file, in one shape. Copying, moving,
+/// deleting, renaming, making a folder and changing a mode all put the same question differently filled in.
 /// </summary>
 public sealed class Operation
 {
@@ -64,9 +60,7 @@ public sealed class Operation
 
     /// <summary>
     /// What will actually happen, for the operations where the verb does not say it. It is worked out from
-    /// what has been typed rather than fixed when the dialog opened, so a name that turns out to be taken
-    /// says so while it is being typed. Nothing where the verb is answer enough: a band that restates the
-    /// button teaches people to stop reading the band.
+    /// what has been typed, so a name that turns out to be taken says so while it is being typed.
     /// </summary>
     public Func<Operation, Remark?>? Note { get; init; }
 
@@ -98,8 +92,7 @@ public sealed class Operation
     public IReadOnlyList<Choice> Options { get; init; } = [];
 
     /// <summary>
-    /// Where the field's answer lives, when the answer is a path. Tab completes against it: typing a
-    /// destination in full is the slowest thing this dialog ever asks anybody to do.
+    /// Where the field's answer lives, when the answer is a path. Tab completes against it.
     /// </summary>
     public IFileSource? Over { get; init; }
 
@@ -151,18 +144,15 @@ public sealed class Operation
         Chosen = ((at % stops) + stops) % stops + first;
     }
 
-    /// <summary>Turns the switch under the cursor over.</summary>
-    /// <returns><c>true</c> when there was one to turn.</returns>
-    public bool Toggle()
+    /// <summary>Turns the switch under the cursor over, or does nothing when the cursor is off them.</summary>
+    public void Toggle()
     {
         if (Chosen < 0 || Chosen >= Options.Count)
         {
-            return false;
+            return;
         }
 
         Options[Chosen].On = !Options[Chosen].On;
-
-        return true;
     }
 
     /// <summary>Puts a character into the field.</summary>

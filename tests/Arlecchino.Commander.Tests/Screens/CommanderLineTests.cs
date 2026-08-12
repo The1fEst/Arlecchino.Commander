@@ -5,8 +5,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-///     The command line under the panels: what typing puts on it, what it says when nobody is typing, and
-///     what becomes of text the terminal hands over in a block rather than key by key.
+///     The command line under the panels: what typing puts on it, what it says while it is closed, and what
+///     becomes of text the terminal hands over in a block rather than key by key.
 /// </summary>
 public sealed class CommanderLineTests : IDisposable
 {
@@ -27,9 +27,7 @@ public sealed class CommanderLineTests : IDisposable
     }
 
     /// <summary>
-    ///     The row says whether it has the keyboard. It used to take letters whenever they were typed, so
-    ///     there was nothing to say; now that it is asked for, a row that looks the same either way leaves
-    ///     the keyboard somewhere the eye cannot find it. Asleep it names the key that wakes it instead.
+    ///     The row says whether it has the keyboard. Closed, it names the key that opens it instead.
     /// </summary>
     [Fact]
     public void ThePromptSaysWhetherItHasTheKeyboard()
@@ -60,9 +58,8 @@ public sealed class CommanderLineTests : IDisposable
     }
 
     /// <summary>
-    ///     A paste is not a run of key presses — the terminal hands it over as a block of its own — so a
-    ///     screen that only answers keys loses it. What was pasted goes on the line at the cursor, the same
-    ///     place typing would have put it.
+    ///     A paste is not a run of key presses: the terminal hands it over as a block of its own. What was
+    ///     pasted goes on the line at the cursor, where typing would have put it.
     /// </summary>
     [Fact]
     public void PastedTextLandsOnThePrompt()
@@ -75,9 +72,8 @@ public sealed class CommanderLineTests : IDisposable
     }
 
     /// <summary>
-    ///     A paste while the panel has the keyboard wakes the line and lands there. There is nowhere else on
-    ///     this screen for text to go, and a paste that vanishes is the one thing worse than a paste that
-    ///     asked first.
+    ///     A paste while the panel has the keyboard opens the line and lands there, since there is nowhere
+    ///     else on this screen for text to go.
     /// </summary>
     [Fact]
     public void APasteWakesThePromptAndLandsOnIt()
@@ -93,7 +89,7 @@ public sealed class CommanderLineTests : IDisposable
 
     /// <summary>
     ///     Only the first line of a paste reaches the row, and none of it is run. A clipboard carrying a
-    ///     newline would otherwise press Enter on a command nobody has read yet.
+    ///     newline would otherwise press Enter on a command that has not been read yet.
     /// </summary>
     [Fact]
     public void OnlyTheFirstLineOfAPasteReachesThePrompt()

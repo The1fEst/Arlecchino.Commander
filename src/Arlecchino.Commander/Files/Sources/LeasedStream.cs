@@ -3,9 +3,8 @@ using System.IO;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// A stream that holds an SFTP session for as long as it is open and gives it back when it closes. A
-/// transfer occupies its session from the first byte to the last, so the session cannot go back to
-/// the pool when the call that opened the stream returns.
+/// A stream that holds an SFTP session for as long as it is open and gives it back when it closes, since a
+/// transfer occupies its session from the first byte to the last.
 /// </summary>
 public sealed class LeasedStream : Stream
 {

@@ -8,9 +8,8 @@ using Arlecchino.Commander.Widgets.Chrome;
 namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
-/// One file, as a row of a panel. Every span carries its own color, and the row under the cursor
-/// lightens all of them at once: a filled row with a faint neutral still on it is the one thing this
-/// design cannot have.
+/// One file, as a row of a panel. Every span carries its own color, and the row under the cursor lightens
+/// all of them at once rather than leaving a faint neutral on a filled row.
 /// </summary>
 public static class PanelRow
 {

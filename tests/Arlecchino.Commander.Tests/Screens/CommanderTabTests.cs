@@ -124,9 +124,8 @@ public sealed class CommanderTabTests : IDisposable
     }
 
     /// <summary>
-    ///     The cross belongs to itself and not to the tab it sits on. The two hit areas touch, so a cross
-    ///     that grew a cell or a tab that did would leave one of them unreachable — which is exactly what
-    ///     used to be wrong with the plus at the end.
+    ///     The cross belongs to itself and not to the tab it sits on. The two hit areas touch, so either
+    ///     one growing a cell would leave the other unreachable.
     /// </summary>
     [Fact]
     public void ClickingATabBesideItsCrossStillShowsIt()
@@ -146,9 +145,8 @@ public sealed class CommanderTabTests : IDisposable
     }
 
     /// <summary>
-    ///     The dot says which panel a tab was left in, and it says it for the tabs not on screen too. The
-    ///     store holds that side only for the tab being worked in, so reading the store for all of them
-    ///     put the dot on the left of every tab in the band whatever side it was really left on.
+    ///     The dot says which panel a tab was left in, for the tabs not being worked in as well. The store
+    ///     holds that side only for the open tab, so the others answer for themselves.
     /// </summary>
     [Fact]
     public void TheDotSaysWhichSideATabWasLeftIn()
@@ -166,8 +164,7 @@ public sealed class CommanderTabTests : IDisposable
 
     /// <summary>
     ///     Too many tabs for the band shortens their names rather than dropping the ones that no longer
-    ///     fit. A tab that is not drawn cannot be clicked, and the one that would go is not the one anybody
-    ///     would have chosen.
+    ///     fit, since a tab that is not drawn cannot be clicked.
     /// </summary>
     [Fact]
     public void TooManyTabsShortenTheirNamesRatherThanDisappear()
@@ -184,11 +181,7 @@ public sealed class CommanderTabTests : IDisposable
 
     /// <summary>
     ///     Past the point where shortening leaves a name saying anything, the strip scrolls instead. The
-    ///     tab being worked in is the one that must stay in view — a strip that has scrolled away from the
-    ///     panels on screen says nothing about where the work is.
-    ///
-    ///     Five tabs at the narrowest width rather than four: the frame around the application spends a
-    ///     cell a side, not two, so four now fit shortened, and it takes a fifth to make the strip scroll.
+    ///     tab being worked in is the one that must stay in view.
     /// </summary>
     [Fact]
     public void PastShorteningTheStripScrollsAndKeepsTheOpenTabInView()
@@ -210,12 +203,8 @@ public sealed class CommanderTabTests : IDisposable
     }
 
     /// <summary>
-    ///     Clicking a marker scrolls to the tabs that did not fit: a click steps the strip one tab, and the
-    ///     tab that was off the left edge is then a tab that can be clicked.
-    ///
-    ///     Five tabs and not four, and the marker asserted for before it is clicked: four fit at this width,
-    ///     so this test used to click a marker that was not on the band, which clicks nothing and proves
-    ///     nothing.
+    ///     Clicking a marker scrolls to the tabs that did not fit. A click steps the strip one tab, and the
+    ///     tab that was off the left edge becomes one that can be clicked.
     /// </summary>
     [Fact]
     public void ClickingTheMarkerScrollsToTheTabsBehindIt()

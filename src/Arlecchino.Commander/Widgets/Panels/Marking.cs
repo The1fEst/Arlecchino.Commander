@@ -5,12 +5,8 @@ using Arlecchino.Commander.Model;
 namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
-/// What a panel has been told to act on. A mark is kept by name rather than by row, so a folder read
-/// again keeps its marks, and a file that has gone away takes its mark with it.
-///
-/// Folders are never marked by pattern or by inversion. Copying a folder is a walk of its own and one
-/// nobody means to start by typing <c>*</c>; the one way to act on a folder is to put the cursor on it
-/// and say so.
+/// What a panel has been told to act on, kept by name rather than by row so that a folder read again keeps
+/// its marks. Folders are never marked by pattern or by inversion, only by the cursor.
 /// </summary>
 public static class Marking
 {

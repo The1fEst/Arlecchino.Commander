@@ -6,15 +6,8 @@ using System.Threading.Tasks;
 namespace Arlecchino.Commander.Files.Work;
 
 /// <summary>
-/// A stream that says how much has gone through it, and passes everything else straight on.
-///
-/// A source moving a whole file reports nothing while it does so, and a bar that moves only as each
-/// file finishes says nothing at all while a large one is going over. What can still be watched is the
-/// stream at the other end: every byte of the file is read out of it or written into it exactly once,
-/// so counting there counts the transfer.
-///
-/// It does not close what it wraps. The stream was opened by whoever asked for the transfer and is
-/// closed by them.
+/// A stream that says how much has gone through it and passes everything else straight on, so a transfer
+/// reporting nothing itself is counted at the other end. It does not close what it wraps.
 /// </summary>
 public sealed class CountedStream : Stream
 {

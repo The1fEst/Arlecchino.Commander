@@ -13,9 +13,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// Copying, moving and deleting, against a folder of its own. This is the code that can lose somebody's
-/// work, so what is asserted is not only that the destination appeared but that the source is where it
-/// should be afterwards — gone for a move, still there for a copy, and still there when it failed.
+/// Copying, moving and deleting, against a folder of its own. Each asserts where the source ended up as
+/// well as the destination: gone for a move, still there for a copy, and still there when it failed.
 /// </summary>
 public sealed class FileTasksTests : IDisposable
 {
@@ -77,9 +76,8 @@ public sealed class FileTasksTests : IDisposable
     }
 
     /// <summary>
-    ///     An end that can carry a whole file is asked to, instead of having one read out of it a block
-    ///     at a time. It is the destination that is asked when both could: writing is the narrower way
-    ///     over SFTP, where a server takes a third of what it will send.
+    ///     An end that can carry a whole file is asked to, instead of having one read out of it a block at
+    ///     a time. The destination is asked when both could, since writing is the narrower way over SFTP.
     /// </summary>
     [Fact]
     public async Task TheDestinationCarriesTheFileWhenItCan()
@@ -283,10 +281,8 @@ public sealed class FileTasksTests : IDisposable
     }
 
     /// <summary>
-    /// Copying a file into the folder it is already in. Both panels showing one folder is an ordinary
-    /// thing to have happen, and the copy that follows names the file as both what is read and what is
-    /// written. Whatever comes of it, the one outcome that must not be is a file left shorter than it
-    /// was — the work is copying, and copying has never been a way to lose anything.
+    /// Copying a file into the folder it is already in, which names it as both what is read and what is
+    /// written. Whatever comes of it, the file must not be left shorter than it was.
     /// </summary>
     [Fact]
     public async Task CopyingAFileOntoItselfDoesNotDestroyIt()
@@ -302,9 +298,8 @@ public sealed class FileTasksTests : IDisposable
     }
 
     /// <summary>
-    /// Copying a folder into a folder inside it. The copy has to walk what it is writing into, so every
-    /// child it lays down is another child to copy, and the only thing that ends it is the disk. Bounded
-    /// here by the clock, because a test that proves this by running out of room is not a test.
+    /// Copying a folder into a folder inside it, where every child laid down is another child to copy.
+    /// Bounded here by the clock rather than by the disk running out.
     /// </summary>
     [Fact]
     public async Task CopyingAFolderIntoItselfEnds()

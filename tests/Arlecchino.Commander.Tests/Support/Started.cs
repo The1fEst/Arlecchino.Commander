@@ -4,9 +4,8 @@ using Arlecchino.Commander.Views;
 namespace Arlecchino.Commander.Tests.Support;
 
 /// <summary>
-/// The applications the screen tests start from. Every one of them wants the same two files and the same
-/// folder to look at. A test that spells that out again is a test with four lines of scenery in front of
-/// the one line it is about.
+/// The applications the screen tests start from, since every one of them wants the same two files and the
+/// same folder to look at.
 /// </summary>
 internal static class Started
 {

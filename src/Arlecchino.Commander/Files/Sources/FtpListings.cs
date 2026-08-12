@@ -5,9 +5,8 @@ using System.Globalization;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-///     Reads what a server said. Everything here is a pure reading of text, which is where the whole of the
-///     guesswork in FTP lives. A listing has two shapes and a half, and the two ways of asking for a data
-///     connection answer with the port buried differently.
+/// Reads what a server said, which is where the guesswork in FTP lives. A listing has two shapes and a half,
+/// and the two ways of asking for a data connection bury the port differently.
 /// </summary>
 public static class FtpListings
 {
@@ -85,9 +84,8 @@ public static class FtpListings
     }
 
     /// <summary>
-    ///     Reads a <c>LIST</c> listing, which is whatever the server felt like printing. Two shapes cover
-    ///     nearly everything: the Unix one that <c>ls -l</c> writes, and the one old Windows servers write.
-    ///     Anything else is skipped rather than guessed at.
+    /// Reads a <c>LIST</c> listing in either of the two shapes that cover nearly everything: what
+    /// <c>ls -l</c> writes and what old Windows servers write. Anything else is skipped.
     /// </summary>
     /// <param name="text">What came over the data connection.</param>
     /// <returns>The entries it could read.</returns>
@@ -198,9 +196,8 @@ public static class FtpListings
     }
 
     /// <summary>
-    ///     Reads the date <c>ls -l</c> writes, which is three words and a decision. Something changed
-    ///     within the last half year is written with the time and no year at all — so the year is the one
-    ///     that puts it in the past, since a listing cannot hold tomorrow.
+    /// Reads the date <c>ls -l</c> writes. Anything changed within the last half year carries a time and no
+    /// year, so the year taken is the one that puts it in the past.
     /// </summary>
     /// <param name="month">The month, as three letters.</param>
     /// <param name="day">The day.</param>

@@ -7,23 +7,12 @@ using Arlecchino.Rendering;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The line under the panels. It is asked for rather than fallen into: a character opens it, Escape closes
-/// it, and until then every letter belongs to the panel.
-///
-/// Which character that is comes from whoever built the line, because there is more than one line: the colon
-/// opens the one commands are typed on, and the exclamation mark opens the one settings are typed on. They
-/// are the same row and the same editing, and what tells them apart is that character and the words at
-/// either end of the row.
-///
-/// Typing used to land here straight away, the way it does in Midnight Commander, and that spent the whole
-/// alphabet on one thing. Every key the panel wanted then had to be held with a modifier, and a modifier is
-/// what a window manager, a terminal and the ASCII control codes each take a bite out of first. A key that
-/// asks for the line back is the cheaper end of that trade.
-///
-/// What is written on the line is <see cref="CommandLineText"/>, which key does what to it is <see cref="CommandLineKeys"/>,
-/// and the row it all ends up on is <see cref="CommandLinePaint"/>. What is left here is who has the keyboard and
-/// which command was typed before this one.
+/// The line under the panels, which is asked for by a character its owner names and closed by Escape. What
+/// is kept here is who has the keyboard and which command was typed before this one.
 /// </summary>
+/// <seealso cref="CommandLineText"/>
+/// <seealso cref="CommandLineKeys"/>
+/// <seealso cref="CommandLinePaint"/>
 public sealed class CommandLine
 {
     private readonly List<string> _history;
@@ -85,10 +74,8 @@ public sealed class CommandLine
     }
 
     /// <summary>
-    /// Offers a key to the line, which takes everything while it has the keyboard.
-    ///
-    /// Escape gives the keyboard back rather than only wiping what is on the line — the line was asked
-    /// for, so there is something to leave.
+    /// Offers a key to the line, which takes everything while it has the keyboard. Escape gives the
+    /// keyboard back rather than only wiping what is on the line.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it and the panel should not see it.</returns>
@@ -132,8 +119,7 @@ public sealed class CommandLine
 
     /// <summary>
     /// Puts a name or a path where the cursor is, with a space after it. The line takes the keyboard on
-    /// the way: something was just written on it, and leaving the next letter to the panel would be a
-    /// surprise nobody asked for.
+    /// the way, so the next letter typed lands on it rather than on the panel.
     /// </summary>
     /// <param name="piece">What to put in.</param>
     public void Insert(string piece)
@@ -149,10 +135,6 @@ public sealed class CommandLine
 
     /// <summary>
     /// Puts pasted text where the cursor is, taking the keyboard on the way as <see cref="Insert"/> does.
-    /// A terminal delivers a paste as a block of its own rather than as the keys that would have typed it.
-    /// A line that reads keys alone never sees one, and text that goes nowhere is what reads as a paste
-    /// that does not work.
-    ///
     /// Only the first line of it lands here, since this is one row and one command.
     /// </summary>
     /// <param name="text">What was pasted, with the terminal's markers already stripped.</param>

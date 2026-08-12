@@ -5,9 +5,8 @@ using Arlecchino.Commander.Widgets.Panels;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// What one panel holds that the other does not hold the same of. The answer is given as marks rather
-/// than as a report: what is left unmarked is what matches, and what is marked is already selected for
-/// whichever of copy, move or delete the answer calls for.
+/// What one panel holds that the other does not hold the same of. The answer is given as marks: what is
+/// left unmarked matches, and what is marked is already selected for copy, move or delete.
 /// </summary>
 public static class Difference
 {
@@ -68,8 +67,8 @@ public static class Difference
     }
 
     /// <summary>
-    /// Whether two files are the same file. Two seconds of slack: a FAT volume keeps times to two
-    /// seconds, and without the slack every file copied onto one would come back as differing.
+    /// Whether two files are the same file. Two seconds of slack, since a FAT volume keeps times to two
+    /// seconds and every file copied onto such a volume comes back as differing.
     /// </summary>
     /// <param name="entry">One file.</param>
     /// <param name="other">The other, or nothing when there is none.</param>

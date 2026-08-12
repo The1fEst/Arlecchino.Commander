@@ -18,9 +18,8 @@ namespace Arlecchino.Commander.Stores;
 public sealed record Hit(string Folder, FileEntry Entry);
 
 /// <summary>
-/// The search behind <c>Find file</c>: it walks down from where the panel is looking, on a disk or on
-/// a server, matching names against a shell pattern and, when asked, the text inside them. It runs
-/// off the drawing thread and can be stopped, because a search over a server is a long walk.
+/// The search behind <c>Find file</c>, which walks down from where the panel is looking, matching names
+/// against a shell pattern and, when asked, the text inside them. It runs off the drawing thread.
 /// </summary>
 public sealed class Finder : IArlecchinoStore
 {

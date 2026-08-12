@@ -9,10 +9,8 @@ using Arlecchino.Commander.Files.Ssh;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// Where files come from: a disk, or a server. Everything that touches one waits — on a platter, on a
-/// round trip — so everything that touches one is asked for rather than done, and the thread that asked
-/// is free until the answer arrives. What stays synchronous here is what never waits: the shape of a
-/// path, and what the source knows about itself.
+/// Where files come from: a disk, or a server. Everything that waits is asked for rather than done, and what
+/// stays synchronous is the shape of a path and what the source knows about itself.
 /// </summary>
 public interface IFileSource : IDisposable
 {
@@ -21,26 +19,22 @@ public interface IFileSource : IDisposable
     bool IsRemote { get; }
 
     /// <summary>
-    /// How many requests may be in flight at once. A local disk answers immediately and wants one; a
-    /// server spends the whole time waiting for the network, where asking for the next thing before
-    /// the last one has answered is the difference between a minute and a few seconds.
+    /// How many requests may be in flight at once. A local disk wants one, and a server wants several, since
+    /// it spends the whole time waiting for the network.
     /// </summary>
     int Concurrency { get; }
 
     string Home { get; }
 
     /// <summary>
-    /// Whether walking a tree costs little enough to do it before the work rather than during it.
-    /// A local disk answers a folder at once; a server spends a round trip on each one, which is the
-    /// difference between a progress bar and a wait for one.
+    /// Whether walking a tree costs little enough to do it before the work rather than during it. A local
+    /// disk answers a folder at once, where a server spends a round trip on each.
     /// </summary>
     bool WalksCheaply { get; }
 
     /// <summary>
     /// Whether a deleted file can be put somewhere it could be fetched back from. It is asked before the
-    /// work rather than during it, because it changes what the panel says it is about to do. A dialog
-    /// promising there is no undoing it is a lie when the file is going to the trash, and a comfort nobody
-    /// should take is worse than either.
+    /// work, since it changes what the dialog promises.
     /// </summary>
     bool HasTrash { get; }
 
@@ -85,10 +79,8 @@ public interface IFileSource : IDisposable
     Task<bool> TryLinkAsync(string path, string target, bool hard, CancellationToken token);
 
     /// <summary>
-    /// Wraps a path so that the shell on this end reads it back as one word. A name with a space or an
-    /// apostrophe in it is ordinary and is not the user's problem to work around. So a path this program puts
-    /// into a command is escaped by the end that will read it: a disk under Windows and a server answering
-    /// with a POSIX shell do not agree on how.
+    /// Wraps a path so that the shell on this end reads it back as one word. Windows and a POSIX shell do not
+    /// agree on how, so the end that will read it does the escaping.
     /// </summary>
     /// <param name="path">The path.</param>
     /// <returns>The path, ready to stand in a command line.</returns>

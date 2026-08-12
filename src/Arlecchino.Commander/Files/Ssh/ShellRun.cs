@@ -10,13 +10,12 @@ using Arlecchino.Commander.Files.Sources;
 namespace Arlecchino.Commander.Files.Ssh;
 
 /// <summary>
-/// A command that was started and has not been read to its end. The two sources that can run one
-/// differ in what they hand back and there is no pretending otherwise: a process on this machine can
-/// be killed halfway through, a command already sent to a server cannot.
+/// A command that was started and has not been read to its end. A process on this machine can be killed
+/// halfway through, where a command already sent to a server cannot.
 /// </summary>
 public interface IShellRun : IDisposable
 {
-    /// <summary>Reads it to its end, waiting on it rather than occupying anybody with the wait.</summary>
+    /// <summary>Reads it to its end, waiting on it rather than holding a thread through the wait.</summary>
     /// <param name="token">Gives up the wait; what was already printed is kept.</param>
     /// <returns>Everything it printed, with how it ended as the last line.</returns>
     Task<List<string>> CollectAsync(CancellationToken token);

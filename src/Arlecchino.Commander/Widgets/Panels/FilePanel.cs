@@ -176,10 +176,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     }
 
     /// <summary>
-    /// Reads the folder and lands on it. Every source is read the same way, the disk included: a
-    /// folder of a hundred thousand names takes as long as it takes, and the frame that asked for it
-    /// carries on drawing meanwhile, saying that it is loading. The alternative — a quick path that
-    /// reads a local folder in the middle of composing a frame — is the one that freezes.
+    /// Reads the folder and lands on it. Every source is read the same way, the disk included, and the
+    /// frame that asked for it carries on drawing meanwhile, saying that it is loading.
     /// </summary>
     public void Reload()
     {
@@ -327,12 +325,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     }
 
     /// <summary>
-    /// The two letters an editor moves a cursor with, for the hands that reach for them before the arrows.
-    /// They are handed on as arrows, so paging and wrapping stay the list's business rather than being
-    /// written a second time here.
-    ///
-    /// Their neighbours <c>h</c> and <c>l</c> are not here: leaving and entering a folder is something the
-    /// screen declares as a command, so that the palette and the key screen can name it.
+    /// The two letters an editor moves a cursor with, handed on as arrows so that paging and wrapping stay
+    /// the list's business. Their neighbors <c>h</c> and <c>l</c> are commands the screen declares instead.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns>What became of it, or nothing when the key was neither.</returns>
@@ -352,9 +346,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     }
 
     /// <summary>
-    /// Clicks and the wheel. A click on the column heads sorts by the one that was hit, which is where
-    /// anybody who has used a file manager with a mouse will click first; anything lower belongs to the
-    /// list.
+    /// Clicks and the wheel. A click on the column heads sorts by the one that was hit, and anything lower
+    /// belongs to the list.
     /// </summary>
     /// <param name="mouse">The event that arrived.</param>
     /// <returns>What became of it.</returns>

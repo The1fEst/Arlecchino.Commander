@@ -10,12 +10,8 @@ using System.Threading.Tasks;
 namespace Arlecchino.Commander.Files.Ssh;
 
 /// <summary>
-/// Runs what was typed on the command line through the shell of the machine this is running on, and
-/// hands back what it said. Nothing is interactive here: a command that asks a question gets no
-/// answer, so it is sent with its input closed and whatever it printed is collected.
-///
-/// Which shell that is, and how a command line reaches it unchanged, belongs to <see cref="Shell"/> —
-/// the same dialects that answer over SSH.
+/// Runs what was typed on the command line through the shell of this machine and hands back what it said.
+/// Nothing is interactive: a command goes with its input closed, and <see cref="Shell"/> spells it.
 /// </summary>
 public static class Shells
 {
@@ -49,9 +45,8 @@ public static class Shells
     }
 
     /// <summary>
-    /// Reads a started process to its end without holding a thread while it thinks. A command that
-    /// prints nothing for a minute is a minute of waiting, and waiting is the one thing worth not
-    /// occupying anybody with.
+    /// Reads a started process to its end without holding a thread while it thinks, since a command that
+    /// prints nothing for a minute is a minute of waiting.
     /// </summary>
     /// <param name="running">The process.</param>
     /// <param name="token">Gives up the wait; the process is left to finish on its own.</param>

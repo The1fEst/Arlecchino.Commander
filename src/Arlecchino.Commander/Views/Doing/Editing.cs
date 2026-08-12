@@ -10,16 +10,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// Opening the file under the cursor in a real editor.
-///
-/// There is no editor of our own and there is not going to be one. The editor people want is the one
-/// they have already spent years in, and the only thing it needs from a file manager is the terminal and
-/// the path. So the screen steps aside for as long as the editor runs and comes back when it exits, and
-/// which editor that is comes off the settings line.
-///
-/// Only files on this machine. Editing one on a server would mean fetching it, watching for the editor
-/// to write it, and putting it back — three things that can each fail halfway, and none of which the
-/// editor knows it is part of. A panel showing a server says so instead.
+/// Opens the file under the cursor in the editor the settings name, stepping the screen aside until it
+/// exits. Only files on this machine: a panel showing a server says so instead.
 /// </summary>
 public sealed class Editing
 {
@@ -76,9 +68,8 @@ public sealed class Editing
     }
 
     /// <summary>
-    /// Hands the terminal over and runs it. Everything that can go wrong here is something to say on the
-    /// screen rather than something to fall over for: an editor that is not installed, one the system
-    /// refuses to start, one that exits complaining.
+    /// Hands the terminal over and runs it. An editor that is missing, that will not start or that exits
+    /// complaining is reported on the screen rather than thrown.
     /// </summary>
     /// <param name="editor">What was set, which may carry arguments of its own.</param>
     /// <param name="file">The file to open.</param>

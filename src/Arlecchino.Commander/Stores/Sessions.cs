@@ -51,9 +51,8 @@ public sealed class Sessions : IArlecchinoStore
     public void Moved() => Revision.Value++;
 
     /// <summary>
-    /// Opens another tab, with two panels of its own on the folders this one is showing. Connecting
-    /// does not do this — a connection lands in the panel that asked for it — so a tab is opened only
-    /// when somebody wants a second pair of panels to work in.
+    /// Opens another tab, with two panels of its own on the folders this one is showing. Connecting does
+    /// not do this, since a connection lands in the panel that asked for it.
     /// </summary>
     public void Add()
     {

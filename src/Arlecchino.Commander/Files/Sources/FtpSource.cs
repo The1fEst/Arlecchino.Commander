@@ -12,10 +12,8 @@ using Arlecchino.Commander.Files.Work;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// A server reached over FTP. One control connection answers one request at a time and in the order it
-/// was asked, so every request waits its turn — but it waits by yielding rather than by holding a thread.
-/// That is why the turnstile here is a semaphore and not a lock: a lock cannot be held across the wait for
-/// a reply.
+/// A server reached over FTP, whose one control connection answers a request at a time. Every request waits
+/// its turn on a semaphore, since a lock cannot be held across the wait for a reply.
 /// </summary>
 public sealed class FtpSource : IFileSource
 {
@@ -235,8 +233,8 @@ public sealed class FtpSource : IFileSource
     }
 
     /// <summary>
-    /// Opens a file to read. The turn is given back before the bytes are: a transfer runs on its own
-    /// connection, and holding the control connection for the whole of it would stop everything else.
+    /// Opens a file to read, giving the turn back before the bytes. A transfer runs on its own connection,
+    /// and holding the control connection through it would stop everything else.
     /// </summary>
     /// <param name="path">Which file.</param>
     /// <param name="token">Gives up the wait.</param>

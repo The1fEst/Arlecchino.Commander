@@ -9,9 +9,8 @@ using Arlecchino.Commander.Widgets.Chrome;
 namespace Arlecchino.Commander.Widgets.Panels;
 
 /// <summary>
-/// Where a panel is looking, written as a trail rather than as a path: the separators recede, the
-/// folder you are in is the one in bone. A path too long for the room loses its head, since the end
-/// of it is the part that says where you are.
+/// Where a panel is looking, written as a trail rather than as a path: the separators recede and the
+/// folder you are in is the one in bone. A path too long for the room loses its head.
 /// </summary>
 public static class Breadcrumb
 {

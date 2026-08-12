@@ -7,9 +7,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-///     A file as the viewer shows it. Which file it is goes in before the first frame is asked for, but
-///     the bytes arrive after it: the view is built with an empty body and fills in when the read is
-///     answered, so what is on screen is waited for rather than assumed.
+///     A file as the viewer shows it. The view is built with an empty body and fills in when the read is
+///     answered, so every frame here is waited for rather than assumed.
 /// </summary>
 public sealed class ViewerScreenTests : IDisposable
 {

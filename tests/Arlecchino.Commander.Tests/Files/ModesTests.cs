@@ -36,9 +36,11 @@ public sealed class ModesTests
     }
 
     /// <summary>
-    /// What goes over SFTP and FTP is the digits themselves, spelled out again on the far side — so
-    /// <c>644</c> travels as six hundred and forty-four, not as the four hundred and twenty it means.
+    /// What goes over SFTP and FTP is the digits themselves, spelled out again on the far side, so
+    /// <c>644</c> travels as six hundred and forty-four.
     /// </summary>
+    /// <param name="mode">The digits as typed.</param>
+    /// <param name="expected">What they should travel as.</param>
     [Theory]
     [InlineData("644", 644)]
     [InlineData("755", 755)]

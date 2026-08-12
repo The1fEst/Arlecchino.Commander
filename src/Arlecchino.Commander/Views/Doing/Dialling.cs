@@ -10,11 +10,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// Getting a panel onto a server and off it again.
-///
-/// A connection lands in the panel that asked for it. It does not open a tab: half the screen is
-/// where the work is being done, and moving it somewhere else to make room for a server is a decision
-/// nobody asked to have made for them.
+/// Getting a panel onto a server and off it again. A connection lands in the panel that asked for it
+/// rather than in a tab of its own.
 /// </summary>
 public sealed class Dialling
 {
@@ -111,9 +108,8 @@ public sealed class Dialling
     }
 
     /// <summary>
-    /// Asks for the password the server asked for. A refusal with a password already tried is not
-    /// asked again — that is a wrong password rather than a missing one, and asking twice for the same
-    /// thing is how a dialog loops.
+    /// Asks for the password the server asked for. A refusal with a password already tried is not asked
+    /// again, since that is a wrong password rather than a missing one.
     /// </summary>
     /// <param name="panel">Where the connection would land.</param>
     /// <param name="host">The host.</param>

@@ -7,8 +7,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Model;
 
 /// <summary>
-/// Sorting names the way a person reads them. What is asserted here is mostly the order of whole lists
-/// rather than single pairs, because the order is the thing anybody actually sees.
+/// Sorting names the way a person reads them. What is asserted is mostly the order of whole lists rather
+/// than single pairs, since the order is what a panel shows.
 /// </summary>
 public sealed class NaturalSortTests
 {
@@ -37,8 +37,8 @@ public sealed class NaturalSortTests
     }
 
     /// <summary>
-    /// Padding is deliberate when somebody types it, so the padded names keep the order the padding was
-    /// for, and the shorter padding sorts first.
+    /// Padding is deliberate where it was typed, so the padded names keep the order it was for and the
+    /// shorter padding sorts first.
     /// </summary>
     [Fact]
     public void PaddedNumbersKeepTheirPadding()

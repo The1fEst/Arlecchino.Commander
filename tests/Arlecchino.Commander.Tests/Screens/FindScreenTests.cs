@@ -8,9 +8,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Screens;
 
 /// <summary>
-///     What a search turned up, as it reaches the screen. The hits are put there by hand: whether a disk
-///     can be walked is the finder's business and is tested elsewhere, and what is asked here is what the
-///     list looks like and where Enter takes it.
+///     What a search turned up, as it reaches the screen. The hits are put there by hand, and what is
+///     asked is what the list looks like and where Enter takes it.
 /// </summary>
 public sealed class FindScreenTests : IDisposable
 {

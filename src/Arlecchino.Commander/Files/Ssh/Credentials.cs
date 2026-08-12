@@ -37,15 +37,8 @@ public static class Credentials
     }
 
     /// <summary>
-    /// Leaves only what a server worth connecting to still offers. What goes is not obscure: single
-    /// DES in three passes, every cipher in CBC mode, key exchange and signatures over SHA-1, and the
-    /// Diffie-Hellman groups small enough to have been broken in public. A library offers them so
-    /// that something from 2005 still answers; a file manager holding somebody's password does not
-    /// have to take that trade.
-    ///
-    /// It costs nothing in reach. Everything left is what OpenSSH has offered by default for years,
-    /// and the list keeps the NIST curves behind the modern ones so that a server without them still
-    /// has something to agree on.
+    /// Leaves only what a server worth connecting to still offers, dropping triple DES, the CBC ciphers,
+    /// SHA-1 and the small Diffie-Hellman groups. What is left is what OpenSSH has offered for years.
     /// </summary>
     /// <param name="info">The connection to narrow.</param>
     private static void Narrow(ConnectionInfo info)
@@ -107,14 +100,8 @@ public static class Credentials
     }
 
     /// <summary>
-    /// Holds the server to the key it showed before. Nothing else in the exchange says who answered:
-    /// the encryption is agreed with whoever is on the other end, so without this a machine sitting
-    /// in the middle gets the password and everything after it.
-    ///
-    /// A server is trusted when <c>~/.ssh/known_hosts</c> already says that key is its. Anything else
-    /// is refused rather than asked about — a question here would arrive while the panel is loading,
-    /// and the honest answer to "should I trust this?" is not one to guess at. The first connection
-    /// to a server is made with <c>ssh</c>, which asks properly and writes the file.
+    /// Holds the server to the key <c>~/.ssh/known_hosts</c> already says is its, since nothing else in the
+    /// exchange says who answered. Anything else is refused rather than asked about.
     /// </summary>
     /// <param name="client">The client about to connect.</param>
     /// <param name="connection">Where it is connecting.</param>

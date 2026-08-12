@@ -6,19 +6,8 @@ using System.Text;
 namespace Arlecchino.Commander.Files.Trash;
 
 /// <summary>
-/// The trash the Linux desktops share, which is a pair of folders and a plain-text sidecar rather than
-/// anything the system provides: the file itself moves to <c>files/</c>, and a <c>.trashinfo</c> beside
-/// it in <c>info/</c> records where it came from and when. That sidecar is the whole of how a file
-/// manager later offers to put it back, so writing it is not bookkeeping — it is the feature.
-///
-/// The sidecar is written first and with the demand that it did not already exist. That is what claims
-/// the name: two programs emptying an armful into the trash at once would otherwise agree on a name and
-/// one would land on top of the other. Only once the name is ours does the file move.
-///
-/// Only the trash in the user's home is used. The specification also allows one per mounted volume, and a
-/// file on another disk belongs there. But a move to the home trash across a disk boundary stops being a
-/// rename and becomes a copy of everything, which is not what somebody pressing delete asked for. So that
-/// case is refused rather than served slowly and wrongly.
+/// The trash the Linux desktops share: the file moves to <c>files/</c> and a <c>.trashinfo</c> in
+/// <c>info/</c> records where it came from. Only the trash in the home folder is used.
 /// </summary>
 public sealed class FreedesktopTrash : Trash
 {
@@ -81,9 +70,8 @@ public sealed class FreedesktopTrash : Trash
     }
 
     /// <summary>
-    /// Moves the thing in, and takes the claim back when the move fails. A sidecar describing a file
-    /// that is not there is worse than no sidecar: the trash would show an entry that cannot be
-    /// restored and cannot be got rid of.
+    /// Moves the thing in, and takes the claim back when the move fails. A sidecar describing a file that is
+    /// not there shows in the trash as an entry that can be neither restored nor removed.
     /// </summary>
     /// <param name="from">Where it is.</param>
     /// <param name="backing">Where it is going.</param>
@@ -113,8 +101,8 @@ public sealed class FreedesktopTrash : Trash
     }
 
     /// <summary>
-    /// Writes the sidecar under a name nobody else has, trying a numbered suffix when the plain name is
-    /// taken. Creating it is the claim, so it is created new or not at all.
+    /// Writes the sidecar under an unclaimed name, trying a numbered suffix when the plain one is taken.
+    /// Creating it is the claim, so it is created new or not at all.
     /// </summary>
     /// <param name="root">The trash folder.</param>
     /// <param name="name">What the thing is called.</param>

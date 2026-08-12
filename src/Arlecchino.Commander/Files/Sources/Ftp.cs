@@ -27,23 +27,16 @@ public readonly record struct FtpReply(int Code, string Text)
 public readonly record struct FtpEntry(string Name, bool IsFolder, long Size, DateTime Modified, int Mode);
 
 /// <summary>
-///     The part of FTP a file manager needs, and no more of it. The protocol is old and plain: commands
-///     go over one connection as lines of text, and anything longer than a reply — a listing, a file —
-///     goes over a second connection opened for that alone.
-///     This exists rather than a library because what is wanted here is a dozen commands, and the
-///     libraries that speak the whole of FTP bring a megabyte and their own trim warnings to do it.
-///     Not thread-safe, and cannot be: a control connection answers one request at a time and the reply
-///     belongs to whoever asked. <see cref="FtpSource" /> holds the lock.
+/// The dozen FTP commands a file manager needs: they go over one connection as lines of text, and anything
+/// longer goes over a second. It is not thread-safe, and <see cref="FtpSource"/> holds the lock.
 /// </summary>
 public sealed class FtpConnection : IDisposable
 {
     private const int Chunk = 81920;
 
     /// <summary>
-    ///     The encoding commands go out in. It has to be one built here rather than
-    ///     <see cref="Encoding.UTF8" />, which writes a byte order mark before the first thing written —
-    ///     and a server reading a command line finds three bytes in front of <c>USER</c> and does not
-    ///     know the command.
+    /// The encoding commands go out in, built here rather than taken from <see cref="Encoding.UTF8"/>, which
+    /// would write a byte order mark in front of the first command.
     /// </summary>
     private static readonly UTF8Encoding Plain = new(false);
 
@@ -279,12 +272,10 @@ public sealed class FtpConnection : IDisposable
     }
 
     /// <summary>
-    ///     Opens the second connection. <c>EPSV</c> is asked for first because it carries only a port, and so
-    ///     says nothing about addresses the client cannot reach.
-    ///     <c>PASV</c> is the older spelling that every server has. It answers with an address that is
-    ///     sometimes the one behind the router rather than the one in front of it, so the host already
-    ///     connected to is used instead.
+    /// Opens the second connection, asking <c>EPSV</c> first because it carries only a port. The older
+    /// <c>PASV</c> answers with an address that may be unreachable, so the host already in hand is used.
     /// </summary>
+    /// <param name="token">Canceled when the work is stopped.</param>
     /// <returns>The data connection.</returns>
     /// <exception cref="IOException">The server would not open one.</exception>
     private async Task<TcpClient> OpenDataAsync(CancellationToken token)
@@ -338,9 +329,10 @@ public sealed class FtpConnection : IDisposable
     }
 
     /// <summary>
-    ///     Reads one reply. A reply is one line, unless the code is followed by a dash — then it runs
-    ///     until a line begins with the same code and a space, which is the only way to know it has ended.
+    /// Reads one reply, which is one line unless the code is followed by a dash. Then it runs until a line
+    /// begins with the same code and a space.
     /// </summary>
+    /// <param name="token">Canceled when the work is stopped.</param>
     /// <returns>The code and the text.</returns>
     /// <exception cref="IOException">The connection went away mid-reply.</exception>
     private async Task<FtpReply> ReadAsync(CancellationToken token)
@@ -409,11 +401,8 @@ public sealed class FtpConnection : IDisposable
 }
 
 /// <summary>
-///     The bytes of one transfer, as a stream over the data connection.
-///     Closing it is not the formality it is on a file. The socket closing is what tells the server the
-///     transfer has ended, and the server answers that on the control connection — so the reply has to be
-///     read here and now. Left unread it would be handed to whatever asked next, and that caller would then
-///     be reading the answer to somebody else's question for the rest of the session.
+/// The bytes of one transfer, as a stream over the data connection. Closing it is what tells the server the
+/// transfer ended, and the reply to that has to be read before anything else asks a question.
 /// </summary>
 internal sealed class FtpStream : Stream
 {
@@ -515,9 +504,8 @@ internal sealed class FtpStream : Stream
     }
 
     /// <summary>
-    ///     Closes the transfer and waits for the server to say it is over. A transfer ends with a reply on
-    ///     the control connection, which is a round trip: closing a file is one more thing not worth
-    ///     holding a thread through.
+    /// Closes the transfer and waits for the server to say it is over, which is a round trip on the control
+    /// connection rather than the formality closing a file is.
     /// </summary>
     /// <returns>A task that finishes once the server has answered.</returns>
     public override async ValueTask DisposeAsync()

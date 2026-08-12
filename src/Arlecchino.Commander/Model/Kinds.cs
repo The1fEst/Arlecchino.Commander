@@ -23,12 +23,8 @@ public enum Tone
 }
 
 /// <summary>
-/// What a file is, in three letters and a tone. The design has no icon column: a patched font is not
-/// something a terminal can be assumed to have, so the kind is written out — <c>cfg</c>, <c>key</c>,
-/// <c>log</c> — where an icon would be, in a column of its own.
-///
-/// The tags are a closed set. A kind that is not one of them is a file like any other, which is what
-/// <c>txt</c> says, and inventing a tag per extension would fill the column with noise nobody reads.
+/// What a file is, in three letters and a tone, written in a column of its own where an icon would be.
+/// The tags are a closed set, and a kind that is not one of them reads as <c>txt</c>.
 /// </summary>
 public static class Kinds
 {

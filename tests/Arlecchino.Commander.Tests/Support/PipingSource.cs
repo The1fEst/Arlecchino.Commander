@@ -9,13 +9,8 @@ using Arlecchino.Commander.Model;
 namespace Arlecchino.Commander.Tests.Support;
 
 /// <summary>
-/// A local disk that also claims it can move a whole file itself, which is what an SFTP server is from
-/// the point of view of the work. It exists so the pipelined path can be tested at all: the real one is
-/// SSH.NET talking to a server, and there is no server in a test run.
-///
-/// It counts the two calls rather than only doing them, because what is being asserted is which of the
-/// two ends was asked to carry the file — the answer is a choice made in <c>FileTasks</c> and nothing
-/// about the resulting file would show it was made wrongly.
+/// A local disk that also claims it can move a whole file itself, as an SFTP server does. It counts the
+/// two calls, since what is asserted is which end was asked to carry the file.
 /// </summary>
 public sealed class PipingSource : IFileSource, IMovesWholeFiles
 {

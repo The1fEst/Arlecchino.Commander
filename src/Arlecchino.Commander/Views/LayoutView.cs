@@ -13,11 +13,8 @@ namespace Arlecchino.Commander.Views;
 
 /// <summary>
 /// The frame every screen of this application is drawn inside: the band of tabs along the top, and
-/// whichever view is open filling what is left.
-///
-/// It is here rather than in each view because the tabs outlive them. A view that drew its own band
-/// would have to know about the tabs to draw them and forget about them to navigate away, and every
-/// screen would carry that twice.
+/// whichever view is open filling what is left. It is here rather than in each view since the tabs outlive
+/// them.
 /// </summary>
 public class LayoutView : IArlecchinoLayout
 {

@@ -10,17 +10,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// The line settings are typed on, and the box of what could be typed next that stands over it.
-///
-/// It is the command line's row and the command line's editing, opened by an exclamation mark instead of
-/// a colon. A dialog was the other way to ask, and it is the wrong shape for this: a dialog asks one
-/// question, and setting something is a name and a value and often a second thought about the value. The
-/// row narrows as it is typed into and says what each name means while you are still deciding, which is
-/// the difference between remembering what a setting is called and finding out.
-///
-/// Nothing here knows what any setting does. The names, what they are for and what is worth suggesting
-/// all come from <see cref="Settings"/>, so a setting added there is on this line without a word being
-/// written here.
+/// The line settings are typed on, opened by an exclamation mark, with a box of what could be typed next
+/// standing over it. The names and the suggestions all come from <see cref="Settings"/>.
 /// </summary>
 public sealed class SettingBar
 {
@@ -59,7 +50,7 @@ public sealed class SettingBar
     public void Draw(SurfaceRegion row) =>
         _line.Draw(row, Loc(LocString.MenuSettings), Loc(LocString.SettingsTail));
 
-    /// <summary>Draws the box of what could be typed next, or nothing when nobody is typing.</summary>
+    /// <summary>Draws the box of what could be typed next, or nothing while the line is closed.</summary>
     /// <param name="over">Everything above the line.</param>
     public void DrawHints(SurfaceRegion over)
     {
@@ -122,12 +113,8 @@ public sealed class SettingBar
     }
 
     /// <summary>
-    /// Keeps what was typed. A name on its own fills in what that setting is now and leaves the line
-    /// open. It is the way to see a value before changing it, and it is what the eye expects from a row
-    /// that has been narrowing towards one name. A name and a value together is the change itself.
-    ///
-    /// A name nothing answers to leaves the line as it was. What was typed is a word away from being
-    /// right, and closing the row would mean typing all of it again.
+    /// Keeps what was typed, where a name and a value together make the change and a name on its own fills
+    /// in what that setting is now. A name nothing answers to leaves the line open and as it was.
     /// </summary>
     private void Enter()
     {
@@ -174,8 +161,7 @@ public sealed class SettingBar
 
     /// <summary>
     /// What the box is offering. Before a space it is the settings whose names begin with what has been
-    /// typed; after one it is what the named setting is worth being set to, narrowed the same way. So the
-    /// same gesture — keep typing — narrows first the name and then the value.
+    /// typed; after one it is what the named setting is worth being set to, narrowed the same way.
     /// </summary>
     /// <returns>The rows, or nothing when what is typed can go nowhere.</returns>
     private List<SettingHint> Hints()

@@ -8,10 +8,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// The count a progress bar is drawn from while a whole file is being carried by one end of a transfer.
-/// Every way of reading and writing a stream has to be counted, because which one is used is decided by
-/// somebody else's library — a copy that goes through spans rather than arrays would otherwise leave the
-/// bar at nought and nothing would look broken until a file was large enough to notice.
+/// The count a progress bar is drawn from while a whole file is carried by one end of a transfer. Every
+/// way of reading and writing a stream is counted, since the library decides which one it uses.
 /// </summary>
 public sealed class CountedStreamTests
 {

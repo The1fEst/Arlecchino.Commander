@@ -8,9 +8,8 @@ using Arlecchino.Commander.Model;
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
 /// <summary>
-/// Finishing a half-typed path from what is really on the far side. The listing is a round trip on a
-/// server, so the key press never waits on it — the field fills in when the answer arrives, and only
-/// if nothing has been typed in the meantime.
+/// Finishing a half-typed path from what is really on the far side. The key press never waits on the
+/// listing: the field fills in when the answer arrives, and only if nothing was typed meanwhile.
 /// </summary>
 public static class Completion
 {
@@ -46,8 +45,7 @@ public static class Completion
 
     /// <summary>
     /// The one name a half-typed one can only mean, or as much of it as every candidate agrees on.
-    /// Completing to the longest shared beginning is what a shell does, and it is what stops the field
-    /// from guessing wrong when two folders start alike.
+    /// Completing to the longest shared beginning is what a shell does.
     /// </summary>
     /// <param name="source">Where to look.</param>
     /// <param name="folder">The folder that was typed out in full.</param>

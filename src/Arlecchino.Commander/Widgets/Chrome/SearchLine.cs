@@ -5,9 +5,8 @@ using Arlecchino.Input;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The search that runs while you type, which moves the cursor to the first name that begins with what
-/// has been spelled so far. It keeps the letters and hands everything else back, so the panel it runs on
-/// is the one deciding what a cursor key or the Enter key means.
+/// The search that runs while you type, which moves the cursor to the first name beginning with what has
+/// been spelled so far. It keeps the letters and hands everything else back to the panel.
 /// </summary>
 internal sealed class SearchLine
 {
@@ -62,12 +61,8 @@ internal sealed class SearchLine
     }
 
     /// <summary>
-    /// Reads one key. Anything that is not a letter to add or a rub-out ends the search and is left for
-    /// the panel itself. So a cursor key still moves the cursor, and Enter opens what was found: the
-    /// search is over by then, and the key means what it always means.
-    ///
-    /// Escape is the one that is kept. It says nothing beyond "stop", and a panel that also acted on it
-    /// would leave the screen the moment somebody thought better of a search.
+    /// Reads one key. Anything that is not a letter or a rub-out ends the search and is left for the panel,
+    /// apart from Escape, which is kept so calling a search off does not also leave the screen.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the search took it.</returns>

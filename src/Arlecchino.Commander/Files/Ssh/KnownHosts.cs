@@ -50,14 +50,8 @@ public enum HostVerdict
 }
 
 /// <summary>
-/// The <c>known_hosts</c> file OpenSSH keeps, read the way it writes it. It is the only thing between a
-/// connection and somebody sitting in the middle of it. A server proves it is itself by holding the private
-/// half of a key seen before, and nothing else about the exchange says who answered.
-///
-/// The file is one entry a line: the hosts it is about, the kind of key, and the key. A host may be a plain
-/// name, several separated by commas, <c>[name]:port</c> where the port is not 22, or a hash of the name.
-/// OpenSSH writes that hash by default on Debian and its like, which is why matching one is worth the
-/// twenty lines it costs.
+/// The <c>known_hosts</c> file OpenSSH keeps, read the way it writes it: one entry a line, naming the hosts,
+/// the kind of key and the key. A host may be plain, comma-separated, <c>[name]:port</c>, or hashed.
 /// </summary>
 public sealed class KnownHosts
 {
@@ -142,9 +136,8 @@ public sealed class KnownHosts
     }
 
     /// <summary>
-    /// The line that would be added for a host, written the way OpenSSH writes it. The name is left
-    /// in the clear: hashing it hides which servers somebody uses from whoever reads the file, and
-    /// that is a choice belonging to the person whose file it is, not to us.
+    /// The line that would be added for a host, written the way OpenSSH writes it. The name is left in the
+    /// clear, since hashing it is the file owner's choice to make.
     /// </summary>
     /// <param name="host">The host as it was connected to.</param>
     /// <param name="port">The port it was connected on.</param>
@@ -163,9 +156,8 @@ public sealed class KnownHosts
     private sealed record Entry(string[] Names, string Kind, byte[] Key, bool Revoked)
     {
         /// <summary>
-        /// Whether this entry holds that key. The bytes are compared rather than the text of them, because
-        /// base64 has more than one spelling for the same bytes. A file written by something other than
-        /// OpenSSH would not match its own key if the strings were compared instead.
+        /// Whether this entry holds that key. The bytes are compared rather than the text, since base64 has
+        /// more than one spelling for the same bytes.
         /// </summary>
         /// <param name="key">The key presented.</param>
         /// <returns><c>true</c> when they are the same key.</returns>
@@ -235,9 +227,8 @@ public sealed class KnownHosts
         }
 
         /// <summary>
-        /// Whether a hashed name is this host. OpenSSH writes <c>|1|salt|hash</c>, both in base64,
-        /// where the hash is the name under HMAC-SHA1 keyed by the salt — so the only way to match one
-        /// is to hash the name being looked for and compare.
+        /// Whether a hashed name is this host. OpenSSH writes <c>|1|salt|hash</c>, where the hash is the name
+        /// under HMAC-SHA1 keyed by the salt, so matching one means hashing the name looked for.
         /// </summary>
         /// <param name="name">The name as the file writes it.</param>
         /// <param name="host">The host being looked for.</param>

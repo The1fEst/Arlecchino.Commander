@@ -16,8 +16,7 @@ namespace Arlecchino.Commander.Tests.Support;
 
 /// <summary>
 ///     The application wired up the way it wires itself, drawing into a terminal in memory. The options
-///     matter as much as the services: given the framework's defaults instead of Commander's, the hints box
-///     lands over the right panel and the test reads a screen the application never shows anyone.
+///     matter as much as the services, since the framework's defaults lay a screen out differently.
 /// </summary>
 public sealed class ScreenApp : IDisposable
 {
@@ -63,8 +62,7 @@ public sealed class ScreenApp : IDisposable
 
     /// <summary>
     ///     Where this application keeps its settings, which is inside the test's own folder. The real one
-    ///     lives in the home folder of whoever is running the tests, and a test that wrote a setting there
-    ///     would change how their file manager behaves afterward.
+    ///     lives in a home folder, and writing a setting there would outlast the test.
     /// </summary>
     public string Config { get; }
 
@@ -113,9 +111,7 @@ public sealed class ScreenApp : IDisposable
 
     /// <summary>
     ///     Puts an environment variable somewhere the test can predict, remembering what it was. The
-    ///     settings folder is redirected into the test's own, so nothing is written to the home folder of
-    ///     whoever is running them. The editor variables are cleared as well, so the settings a test
-    ///     reads are the settings it set rather than whatever this machine prefers.
+    ///     settings folder is redirected into the test's own, and the editor variables are cleared.
     /// </summary>
     /// <param name="name">Which variable.</param>
     /// <param name="value">What it should be for as long as the test runs.</param>
@@ -136,10 +132,8 @@ public sealed class ScreenApp : IDisposable
     }
 
     /// <summary>
-    ///     How many rows the top and the bottom of the terminal are given away before a screen of this
-    ///     application starts: the frame the framework puts round every view, and the margin the layout
-    ///     keeps inside it. Anything here that reads a row by number counts both, and reads them off the
-    ///     options the application was built with rather than repeating the numbers.
+    ///     How many rows the top and the bottom are given away before a screen of this application starts:
+    ///     the framework's frame, and the margin the layout keeps inside it.
     /// </summary>
     public int Inset => _host.Services.GetRequiredService<ArlecchinoOptions>().VerticalPadding + LayoutView.Margin;
 
@@ -155,17 +149,15 @@ public sealed class ScreenApp : IDisposable
     public int CommandLineRow() => Array.FindIndex(FrameLines(), static line => line.Contains(Prompt, StringComparison.Ordinal));
 
     /// <summary>
-    ///     The bar of actions along the bottom, however many rows it took. A narrow terminal makes the bar
-    ///     carry what did not fit onto another row. A test that read one row would be reading half a bar the
-    ///     day the width changed, so the rows are given back as one line, joined the way they read.
+    ///     The bar of actions along the bottom, however many rows it took. A narrow terminal carries what
+    ///     did not fit onto another row, so the rows are joined into one line the way they read.
     /// </summary>
     /// <returns>Everything the bar spells out.</returns>
     public string BarLine() => string.Join(' ', BarLines());
 
     /// <summary>
-    ///     The rows the bar of actions is on, top one first. They are the last rows of the screen with
-    ///     anything on them apart from the command line above them, which is the one row that is always
-    ///     there and is told apart by the prompt it ends with.
+    ///     The rows the bar of actions is on, top one first. They are the last rows with anything on them,
+    ///     the command line above being told apart by the prompt it ends with.
     /// </summary>
     /// <returns>The rows.</returns>
     public string[] BarLines()
@@ -239,8 +231,7 @@ public sealed class ScreenApp : IDisposable
 
     /// <summary>
     ///     Draws frames until no panel is still reading. A folder is read off the drawing thread, so the
-    ///     first frame of a fresh application says <c>loading…</c> where the files will be — a test that
-    ///     reads that frame is looking at the screen from before the disk answered.
+    ///     first frame of a fresh application says <c>loading…</c> where the files will be.
     /// </summary>
     /// <exception cref="TimeoutException">The reading never finished.</exception>
     public void Settled()

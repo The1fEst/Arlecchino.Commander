@@ -14,14 +14,8 @@ namespace Arlecchino.Commander.Files.Work;
 public sealed record Raster(Rgb[] Pixels, int Width, int Height);
 
 /// <summary>
-/// Reads a PNG into pixels. Arlecchino draws pixels rather than files, so somebody has to do this,
-/// and a file manager opens whatever it is pointed at — so nothing here throws. Anything that is not
-/// a PNG this can read comes back as <c>null</c> and is shown as bytes instead, which is what the
-/// viewer did with every binary before.
-///
-/// Eight bits a channel and no interlacing, which is what all but a handful of PNGs are. Gray,
-/// palette, truecolor and either of those with alpha are all read; alpha itself is dropped, since a
-/// terminal has nothing to show it against.
+/// Reads a PNG into pixels, at eight bits a channel and without interlacing, dropping the alpha a terminal
+/// has nothing to show against. Nothing here throws, and what it cannot read comes back as <c>null</c>.
 /// </summary>
 public static class Png
 {
@@ -29,7 +23,7 @@ public static class Png
 
     /// <summary>Whether the bytes begin the way a PNG does.</summary>
     /// <param name="bytes">The head of a file.</param>
-    /// <returns><c>true</c> when it is worth trying to read.</returns>
+    /// <returns><c>true</c> when the file is worth trying to read.</returns>
     public static bool Starts(ReadOnlySpan<byte> bytes)
     {
         if (bytes.Length < Signature.Length)

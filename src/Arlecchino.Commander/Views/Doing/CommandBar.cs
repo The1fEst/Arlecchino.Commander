@@ -14,12 +14,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// The line a command is typed on, and what happens when it is entered. It is the one row between the
-/// panels and the bar of keys, and it is always that one row however tall the bar below it has grown.
-///
-/// The line takes a key only while it has been asked for. The colon asks, Escape gives it back, and
-/// everything in between belongs to whoever is typing. Until then the panel keeps the whole alphabet, which
-/// is what leaves room for a key to be a key rather than a letter held with something.
+/// The one row between the panels and the bar of keys, where a command is typed and from where it is run.
+/// It takes a key only once the colon has asked, and Escape gives the keyboard back.
 /// </summary>
 public sealed class CommandBar
 {
@@ -47,9 +43,8 @@ public sealed class CommandBar
     }
 
     /// <summary>
-    /// Draws it, prompted with where a command would run. The path is shortened the way the panel
-    /// above shortens it — the home folder as a tilde, and a head too long for the room cut off — so
-    /// the two say the same thing about the same folder.
+    /// Draws it, prompted with where a command would run. The path is shortened the way the panel above
+    /// shortens it, so the two say the same thing about the same folder.
     /// </summary>
     /// <param name="line">The row to draw on.</param>
     public void Draw(SurfaceRegion line)
@@ -66,10 +61,7 @@ public sealed class CommandBar
     /// <summary>Whether the line has the keyboard, which is what the panel asks before reading a letter.</summary>
     public bool IsTyping => _line.IsTyping;
 
-    /// <summary>
-    /// Asks for the line. The colon does this by itself, and so does the key of that name on the key
-    /// screen: a character key that is nowhere on that screen is one nobody finds out about.
-    /// </summary>
+    /// <summary>Asks for the line, as the colon does by itself and as the key of that name does.</summary>
     public void Open() => _line.Open();
 
     /// <summary>
@@ -109,13 +101,8 @@ public sealed class CommandBar
     public void Paste(string text) => _line.Paste(text);
 
     /// <summary>
-    /// Runs what is on the line where the panel is looking. A <c>cd</c> is not run at all: it moves
-    /// the panel, because a shell started for one command would forget it the moment it ended.
-    ///
-    /// What the panel is showing is filled in first, so <c>%s</c> and its fellows name the marked files
-    /// rather than reaching the shell as themselves. The <c>cd</c> is decided on what was typed, not on
-    /// what it expanded to — the point is to spot the word, and expanding first would only put paths in
-    /// front of it.
+    /// Runs what is on the line where the panel is looking, with <c>%s</c> and its fellows filled in first.
+    /// A <c>cd</c> is decided on what was typed and moves the panel rather than reaching a shell.
     /// </summary>
     private void Enter()
     {

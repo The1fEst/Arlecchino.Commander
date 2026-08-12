@@ -6,9 +6,8 @@ using Arlecchino.Commander.Widgets.Chrome;
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
 /// <summary>
-/// Where a list ended up on screen, so a click can be told what it landed on. Drawing is the only
-/// thing that knows this — the box places itself from the size of the terminal and the length of the
-/// list — so it is answered by drawing rather than worked out a second time.
+/// Where a list ended up on screen, so a click can be told what it landed on. The box places itself while
+/// drawing, so drawing is what answers this rather than a second pass over the same arithmetic.
 /// </summary>
 /// <param name="Box">The whole box, for telling a click on it from a click outside.</param>
 /// <param name="Rows">The rows that are showing.</param>
@@ -28,18 +27,13 @@ public static class ChoiceBox
 
     /// <summary>
     /// What the box costs besides its rows: the rule, the title, the query, and a blank row above the
-    /// footer and below it. The blank above the footer is what keeps the keys from reading as one more
-    /// thing in the list.
+    /// footer and below it. The blank above the footer keeps the keys out of the list.
     /// </summary>
     private const int Chrome = 8;
 
     /// <summary>
-    /// How much of a row the name may take before what qualifies it starts. Fixed rather than measured,
-    /// so the hints of a hundred rows line up instead of stepping about with the longest name on screen.
-    ///
-    /// It only applies to a row that has something to line up with. A list whose rows are names and nothing
-    /// else — the saved hosts, the folders been in — gives the whole row to the name. A column reserved for
-    /// hints that are not there is a path cut off for no reason.
+    /// How much of a row the name may take before what qualifies it starts, fixed rather than measured so
+    /// that the hints line up. A list whose rows are names alone gives the whole row to the name.
     /// </summary>
     private const int Naming = 24;
 
@@ -88,8 +82,8 @@ public static class ChoiceBox
         : Loc(LocString.ChoosingCount, choosing.Matching.Count, choosing.Items.Count);
 
     /// <summary>
-    /// The line what is typed lands on. It is drawn whether anything has been typed or not, so nobody has
-    /// to discover that the list narrows — the prompt is there saying it does.
+    /// The line what is typed lands on. It is drawn whether anything has been typed or not, so the prompt
+    /// itself says that the list narrows.
     /// </summary>
     /// <param name="inside">Where to draw.</param>
     /// <param name="choosing">What is being picked from.</param>

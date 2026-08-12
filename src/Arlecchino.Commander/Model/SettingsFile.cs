@@ -6,16 +6,8 @@ using System.Text;
 namespace Arlecchino.Commander.Model;
 
 /// <summary>
-/// Where what is kept between runs lives, and how it is written down.
-///
-/// One file of <c>name = "value"</c> lines under the folder the desktop convention puts a program's
-/// settings in — <c>XDG_CONFIG_HOME</c> when the environment names one, and <c>~/.config</c> when it
-/// does not. The same rule everywhere, Windows included: a file manager is run from a terminal, and a
-/// terminal is where that convention is understood.
-///
-/// A name nothing here knows about is kept as it was found and written back out again. Settings are
-/// added between one version and the next, and a file edited by hand should not lose what an older
-/// build had no name for.
+/// One file of <c>name = "value"</c> lines under <c>XDG_CONFIG_HOME</c>, or under <c>~/.config</c> when
+/// the environment names none. A name nothing here knows about is kept as found and written back out.
 /// </summary>
 public static class SettingsFile
 {
@@ -28,9 +20,8 @@ public static class SettingsFile
     public static string Place() => Path.Combine(Home(), Folder, Name);
 
     /// <summary>
-    /// Reads what is in it. A file that is not there, or that cannot be read, is the same as one holding
-    /// nothing: settings are what somebody asked for on top of the defaults, so there is nothing to
-    /// report and nothing to fail.
+    /// Reads what is in it. A file that is not there, or that cannot be read, counts as one holding
+    /// nothing, since the defaults stand under whatever it would have said.
     /// </summary>
     /// <param name="path">The file to read.</param>
     /// <returns>Every name it names, and what it says each of them is.</returns>
@@ -60,8 +51,7 @@ public static class SettingsFile
 
     /// <summary>
     /// Writes them all back, the folder made first if it was never there. Whether it worked is answered
-    /// rather than thrown: a setting that could not be written is still in force for this run, and that
-    /// is worth saying on the output row rather than taking the application down for.
+    /// rather than thrown, since a setting that could not be written is still in force for this run.
     /// </summary>
     /// <param name="path">The file to write.</param>
     /// <param name="values">What to put in it.</param>

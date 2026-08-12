@@ -12,10 +12,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// The client against a server that answers the way the specification says. It proves the shape of
-/// the conversation rather than that any real server agrees — for that the client was run against
-/// vsftpd by hand, which is how the two bugs a server of our own could never have shown were found:
-/// a byte order mark in front of the first command, and a server with no <c>MLSD</c> at all.
+/// The client against a server that answers the way the specification says. It proves the shape of the
+/// conversation rather than that any real server agrees.
 /// </summary>
 public sealed class FtpConversationTests : IDisposable
 {
@@ -62,8 +60,8 @@ public sealed class FtpConversationTests : IDisposable
     }
 
     /// <summary>
-    /// Not every server has <c>MLSD</c> — vsftpd answers <c>500</c> — so the older command has to be
-    /// tried, and only once: asking again on every listing would double every round trip.
+    /// Not every server has <c>MLSD</c>, so the older command has to be tried. It is tried once, since
+    /// asking again on every listing would double every round trip.
     /// </summary>
     [Fact]
     public async Task AServerWithoutTheMachineListingIsAskedTheOldWayInstead()

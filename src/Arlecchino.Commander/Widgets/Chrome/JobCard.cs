@@ -12,12 +12,8 @@ using Arlecchino.Widgets.Readouts;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// What is running, as a stack of cards in the corner rather than a band across the screen.
-///
-/// Work must never block the panels, and a card says so by sitting beside them: it covers a few rows of the
-/// panel it is over and nothing else. Two copies at once are two cards, and a card that has finished stays
-/// for as long as the message would have stayed on the output row and then goes. The rule down its left edge
-/// is the whole of the report: red while it runs, green when it worked, amber when something did not.
+/// What is running, as a stack of cards in the corner of the panel they are over. The rule down a card's
+/// left edge is the report: red while it runs, green when it worked, amber when not.
 /// </summary>
 public sealed class JobCard
 {
@@ -47,9 +43,8 @@ public sealed class JobCard
     }
 
     /// <summary>
-    ///     Draws the stack, or nothing at all when there is nothing to say. The cards are laid from the bottom
-    ///     of the region upwards, so the newest one is always in the same corner and the older ones move away
-    ///     from it. A card that would reach the top of the panel is not drawn rather than drawn half.
+    ///     Draws the stack, or nothing at all when there is nothing to say. The cards are laid from the
+    ///     bottom of the region upwards, and one that would reach the top is left out rather than cut.
     /// </summary>
     /// <param name="over">Everything above the footer, which the cards place themselves in.</param>
     public void Draw(SurfaceRegion over)
@@ -134,13 +129,8 @@ public sealed class JobCard
     }
 
     /// <summary>
-    ///     Draws one card, filled from both ends. The row that names a key is the last one, and the bar or the
-    ///     reason is the row above it. Both are counted back from the foot, so they stay where the eye left
-    ///     them whether the title above took one row or three.
-    ///     The title is wrapped and not cut: what a card is usually saying is a path, and the end of a path
-    ///     is the part that says which file this is. Three rows is where the wrapping stops, since a title
-    ///     longer than that would reach the rows the bar and the hint are holding. <see cref="Measure"/> did
-    ///     that wrapping already, since the height it settles on is what the stack needs before any of this.
+    ///     Draws one card, filled from both ends. The row naming a key is the last, the bar or the reason is
+    ///     the row above it, and the title is written from the top in the rows <see cref="Measure"/> wrapped.
     /// </summary>
     /// <param name="cardsRegion">Where it goes.</param>
     /// <param name="job">What it says.</param>
@@ -188,10 +178,7 @@ public sealed class JobCard
 
     /// <summary>
     ///     Works out how tall a card is before any of it is drawn, which is what lets the stack stop rather
-    ///     than lay a card over the top of the panel. A card that has nothing to report beyond its title is
-    ///     as tall as that title with a row of air above and below it, and stands centered. Everything else —
-    ///     a reason, a bar, the row that names a key — is a row counted back from the foot, so those rows
-    ///     stay where the eye left them and the title starts at the top.
+    ///     than lay a card over the top of the panel. A card saying nothing beyond its title is centered.
     /// </summary>
     /// <param name="job">What the card says.</param>
     /// <param name="width">How wide the card is, which is what the title wraps to.</param>

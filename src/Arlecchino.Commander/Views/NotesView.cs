@@ -18,12 +18,8 @@ using static Arlecchino.Layout.PaneTree;
 namespace Arlecchino.Commander.Views;
 
 /// <summary>
-/// What the application has said lately, newest first, in this application's own frame.
-///
-/// The framework brings a screen of its own for this, and it is good; it is drawn in boxes,
-/// which is the one thing this design does not have. So the route is taken over rather than the
-/// framework changed — an application that wants a look of its own should be able to have it without
-/// every other application built on the framework having to agree.
+/// What the application has said lately, newest first, in this application's own frame. The framework
+/// brings a screen of its own for this, and the route is taken over rather than the framework changed.
 /// </summary>
 public sealed class NotesView : IArlecchinoView
 {
@@ -140,9 +136,8 @@ public sealed class NotesView : IArlecchinoView
     }
 
     /// <summary>
-    /// Hands the list what is held right now. Keys are answered whether a frame has been drawn since the
-    /// entry arrived or not, so this runs before drawing and before reading input rather than only on the
-    /// way to the screen.
+    /// Hands the list what is held right now. It runs before drawing and before reading input, so keys are
+    /// answered whether a frame has been drawn since the entry arrived or not.
     /// </summary>
     /// <returns>What the list is showing.</returns>
     private IReadOnlyList<Notification> Listed()

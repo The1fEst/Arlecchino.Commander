@@ -9,9 +9,8 @@ using Arlecchino.Commander.Widgets.Chrome;
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
 /// <summary>
-/// Where a question ended up on screen, so a click can be told what it landed on. The box is as tall
-/// as what is written in it and sits a third of the way down whatever the terminal is, so only the
-/// drawing knows where its parts went.
+/// Where a question ended up on screen, so a click can be told what it landed on. The box is as tall as
+/// what is written in it and sits a third of the way down.
 /// </summary>
 /// <param name="Box">The whole box, for telling a click on it from a click outside.</param>
 /// <param name="Confirm">The button that goes ahead.</param>

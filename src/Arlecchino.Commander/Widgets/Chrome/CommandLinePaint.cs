@@ -6,14 +6,7 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
 /// The one row the command line is drawn on: where the command would run, then the prompt, then what has
-/// been typed.
-///
-/// A line nobody is typing on says so. The chevron goes out, the path dims to a trace, and the caret is
-/// not drawn at all. A caret on a line that is not listening is the screen telling a lie, and it leaves
-/// the keyboard somewhere the eye cannot find it.
-///
-/// The caret is a block in the accent rather than the terminal's own, since the line is not a focused
-/// widget and the terminal would put its cursor somewhere else entirely.
+/// been typed. A closed line dims the path and drops the chevron and the caret.
 /// </summary>
 internal static class CommandLinePaint
 {

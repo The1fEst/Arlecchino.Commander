@@ -11,11 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// Everything the file manager can be asked to do, in one place and under one name each.
-///
-/// It is asked three ways — a key, a menu entry, a row of the palette — and all three name the same
-/// thing here. That is the whole point of gathering them: a key and a menu entry that did the same
-/// thing used to be two pieces of code that were only alike as long as somebody kept them alike.
+/// Everything the file manager can be asked to do, in one place and under one name each. A key, a menu
+/// entry and a row of the palette all name the same thing here.
 /// </summary>
 public sealed class Doings
 {
@@ -126,12 +123,7 @@ public sealed class Doings
 
     /// <summary>
     /// Puts the full path of everything marked on the clipboard, one to a line, or the path under the
-    /// cursor when nothing is marked.
-    ///
-    /// It goes through the terminal rather than through this machine, so a path copied while the panel
-    /// is showing a server still lands on the clipboard of the computer the user is sitting at. A
-    /// terminal with that switched off says nothing and drops it, which is why the count is reported
-    /// here: it is the only sign the key did anything at all.
+    /// cursor when nothing is marked. It goes through the terminal, and reports how many were copied.
     /// </summary>
     public void CopyPaths()
     {

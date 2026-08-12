@@ -5,14 +5,8 @@ using System.Threading.Tasks;
 namespace Arlecchino.Commander.Files.Ssh;
 
 /// <summary>
-/// One shell dialect, and everything that follows from it: how a folder is removed, how a command is
-/// run somewhere in particular, and how a command line is handed over at all. The three disagree
-/// about all of it — the spelling of a path, the escaping of a quote, the name of the command — so
-/// each one writes its own and none of them knows the others exist.
-///
-/// Which side of a connection it is on makes no difference. The machine this runs on has a shell and
-/// so does the far end of an SSH session; they are told apart differently — <see cref="Shells.Local"/>
-/// against <see cref="AskAsync"/> — and after that they are the same thing.
+/// One shell dialect: how a folder is removed, how a command is run somewhere in particular, and how a
+/// command line is handed over. The shell at either end of a connection is the same thing here.
 /// </summary>
 public abstract class Shell
 {
@@ -159,22 +153,8 @@ public sealed class WindowsCommandShell : WindowsShell
     public static readonly WindowsCommandShell Instance = new();
 
     /// <summary>
-    /// Answers that there is no one-line way, so the tree is walked instead. Two things are wrong
-    /// with the command that would have done it, and either alone would be enough.
-    ///
-    /// It takes what nobody asked it to take. <c>rmdir /s</c> removes a read-only file along with the
-    /// rest, and <c>cmd.exe</c> has no switch that stops it — the flag to leave off is not
-    /// <c>/q</c>, which only answers the question the command would ask. <c>del</c> without
-    /// <c>/f</c> does respect the attribute, but a <c>rmdir</c> after it takes the survivor anyway,
-    /// so the two do not combine into one that stops.
-    ///
-    /// And it does not say when it failed. <c>rmdir /s /q</c> over a file another process holds open
-    /// prints the reason and exits nought all the same; so does <c>del</c>. Since a shell command is
-    /// judged here by its exit status, every refusal would read as a removal — the tree would be
-    /// reported gone while it was still there.
-    ///
-    /// Walking costs a round trip per entry where one command would have done. It is worth it: SFTP
-    /// refuses what it may not remove and says so, which is the whole of what was wanted.
+    /// Answers that there is no one-line way, so the tree is walked instead. <c>rmdir /s</c> takes read-only
+    /// files along with the rest, and exits nought even where it failed.
     /// </summary>
     /// <param name="path">The folder, as SFTP spells it.</param>
     /// <returns><c>null</c>, always.</returns>
@@ -190,9 +170,8 @@ public sealed class WindowsCommandShell : WindowsShell
     public override string Quote(string path) => $"\"{Local(path)}\"";
 
     /// <summary>
-    /// Fills in <c>cmd.exe</c> behind <c>/s /c</c>, which is the only spelling it reads back
-    /// unchanged. Handed the same command as an escaped argument it eats a quote and leaves a path in
-    /// half, which is why the arguments go over as one raw string.
+    /// Fills in <c>cmd.exe</c> behind <c>/s /c</c>, which is the only spelling it reads back unchanged. The
+    /// arguments go over as one raw string, since an escaped one loses a quote.
     /// </summary>
     /// <param name="started">What to fill in.</param>
     /// <param name="command">What the user typed.</param>
@@ -212,9 +191,8 @@ public sealed class PowerShellShell : WindowsShell
     public static readonly PowerShellShell Instance = new();
 
     /// <summary>
-    /// Removes the folder without <c>-Force</c>. That switch takes read-only and hidden items too,
-    /// which is how a delete reaches further than it was asked to. <c>-Recurse</c> is what stops the
-    /// prompt about a folder that holds things, so nothing is left waiting on an answer.
+    /// Removes the folder without <c>-Force</c>, which would take read-only and hidden items too.
+    /// <c>-Recurse</c> stops the prompt about a folder that holds things.
     /// </summary>
     /// <param name="path">The folder, as SFTP spells it.</param>
     /// <returns>The command.</returns>

@@ -3,12 +3,8 @@ using System;
 namespace Arlecchino.Commander.Files.Trash;
 
 /// <summary>
-/// Where a deleted file goes when it is not meant to be gone. Every desktop has one and no two agree
-/// on what it is: a folder with a sidecar file describing where each thing came from, a shell service
-/// that also keeps the undo entry, a call into the window server. What they agree on is the promise —
-/// the file can be got back by the means the user already knows, from the same place they would look.
-///
-/// A server has nothing of the sort, so this is only ever about a disk on this machine.
+/// Where a deleted file goes when it is not meant to be gone, which every desktop spells differently. A
+/// server has nothing of the sort, so this is only ever about a disk on this machine.
 /// </summary>
 public abstract class Trash
 {

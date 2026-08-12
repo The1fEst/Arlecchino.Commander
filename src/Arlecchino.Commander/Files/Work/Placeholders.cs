@@ -7,28 +7,20 @@ using Arlecchino.Commander.Model;
 namespace Arlecchino.Commander.Files.Work;
 
 /// <summary>
-/// What a command line means by <c>%s</c> and the rest of them. A file manager whose command line
-/// cannot name what the panel is showing is a worse terminal than the terminal; these are the words
-/// that let a typed command act on what was marked.
-///
-/// Every path goes in escaped by the end that will read it, so a name with a space or an apostrophe in
-/// it arrives as one word rather than as several or as a syntax error. That is the whole reason this
-/// exists rather than being a few calls to <c>Replace</c>: a marked file called <c>don't go.txt</c>
-/// pasted in raw would end a quoted string somebody else opened.
+/// What a command line means by <c>%s</c> and the rest of them, so a typed command can act on what the panel
+/// has marked. Every path goes in escaped by the end that will read it.
 /// </summary>
 public static class Placeholders
 {
     /// <summary>
-    /// Fills in what the panel knows. The words are those of Midnight Commander, which is where anybody
-    /// reaching for them learned them:
+    /// Fills in what the panel knows, using the words Midnight Commander uses. Anything else after a percent
+    /// is left alone, percent and all, since a command line is full of percents meant for something else.
     /// <list type="bullet">
     ///   <item><description><c>%f</c> — the file under the cursor.</description></item>
     ///   <item><description><c>%s</c> — everything marked, or the file under the cursor when nothing is.</description></item>
     ///   <item><description><c>%d</c> — the folder the panel is looking at.</description></item>
     ///   <item><description><c>%%</c> — a percent sign, for a command that wanted one.</description></item>
     /// </list>
-    /// Anything else after a percent is left alone, percent and all, because a command line is full of
-    /// percents that were never meant for us — a Windows variable, a <c>printf</c> format, a URL.
     /// </summary>
     /// <param name="command">What was typed.</param>
     /// <param name="source">The end the command will run on, which decides how a path is escaped.</param>

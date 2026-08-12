@@ -5,9 +5,8 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
 ///     The band along the top: what this is, which tabs are open, and the one key that leads everywhere.
-///     It is drawn on the lit surface, so the drop to the panels marks the edge between them without a rule
-///     having to be spent on it.
-///     What the tabs do with the room left between the name and the hint is <see cref="TabStrip" />'s.
+///     It is drawn on the lit surface, and the room left between the name and the hint goes to
+///     <see cref="TabStrip" />.
 /// </summary>
 public sealed class Banner
 {
@@ -61,9 +60,8 @@ public sealed class Banner
     }
 
     /// <summary>
-    ///     What a click on the band landed on. The click arrives in frame cells, and the tabs were measured
-    ///     inside a strip that sits well in from the edge of a content area that is itself inset. So the two
-    ///     are put in the same coordinates rather than assumed to already share them.
+    ///     What a click on the band landed on. The click arrives in frame cells and the tabs were measured
+    ///     inside an inset strip, so the two are put in the same coordinates first.
     /// </summary>
     /// <param name="row">Which row of the frame it was on.</param>
     /// <param name="column">How far along that row.</param>

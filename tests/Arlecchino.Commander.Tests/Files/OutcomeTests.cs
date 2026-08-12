@@ -5,9 +5,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// What a long job says about itself while it runs and once it is over. The bar and the error list are
-/// the only sight anyone has of work that is happening off the drawing thread, so what they say has to
-/// hold even while several threads are reporting into them at once.
+/// What a long job says about itself while it runs and once it is over. What the bar and the error list
+/// say has to hold while several threads report into them at once.
 /// </summary>
 public sealed class OutcomeTests
 {

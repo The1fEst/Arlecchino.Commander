@@ -15,11 +15,8 @@ namespace Arlecchino.Commander.Widgets.Dialogs;
 public sealed record Pick(string Label, string Hint = "", string Key = "", Action? Run = null);
 
 /// <summary>
-/// A list to pick one thing out of: a menu, the drives, the hosts, the folders been in.
-///
-/// Every one of them is the same question — which of these — so they are all asked the same way, and
-/// all of them narrow as you type. A menu of ten does not need narrowing; the same list of a hundred
-/// hosts does, and a list that behaves differently at each size is one nobody trusts.
+/// A list to pick one thing out of: a menu, the drives, the hosts, the folders been in. All of them are
+/// the same question, so all of them narrow as you type.
 /// </summary>
 public sealed class Choosing
 {
@@ -91,8 +88,7 @@ public sealed class Choosing
     }
 
     /// <summary>
-    /// Fills the query out to as much as every remaining row agrees on. It is the shell gesture, and it
-    /// is what turns a list of a hundred into a list of three without anybody having to read it.
+    /// Fills the query out to as much as every remaining row agrees on, which is the shell gesture.
     /// </summary>
     public void Complete()
     {

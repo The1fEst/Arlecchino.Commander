@@ -5,16 +5,13 @@ namespace Arlecchino.Commander.Model;
 
 /// <summary>
 /// What a paste amounts to on a row that holds one line. The clipboard carries whatever was last copied
-/// anywhere on the machine — a paragraph as readily as a file name — and the rows here have one line to
-/// put it on.
+/// anywhere on the machine, and the rows here have one line to put it on.
 /// </summary>
 internal static class Pasted
 {
     /// <summary>
-    /// The first line of what was pasted, with the control characters left out.
-    ///
-    /// The rest is dropped rather than joined up. A newline in the middle of a paste is an Enter nobody
-    /// pressed, and on the command line that is a command run before anybody has read it.
+    /// The first line of what was pasted, with the control characters left out. The rest is dropped rather
+    /// than joined up, since a newline in the middle of a paste would read as the Enter key.
     /// </summary>
     /// <param name="text">What was pasted.</param>
     /// <returns>What a line of one row can take of it.</returns>

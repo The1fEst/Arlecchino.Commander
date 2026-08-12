@@ -10,37 +10,20 @@ using Renci.SshNet;
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// Writes a whole file to a server over several handles at once.
-///
-/// Reading from a server is already as fast as the line allows: the library keeps a hundred read requests
-/// outstanding and the answers arrive in a stream. Writing has no such arrangement anywhere in it — one
-/// write is sent, its status is waited for, and only then is the next sent. A server will not take more
-/// than 32 KB in one write however much is offered, so a file climbs at 32 KB per round trip. On a link a
-/// tenth of a second wide that is under 300 KB a second, whatever the line beneath could carry, and no
-/// buffer size changes it.
-///
-/// What changes it is having several writes in the air, and that needs several open handles rather than
-/// several connections. One SFTP session carries any number of requests at once, telling the answers apart
-/// by the number it stamped on each. So the handles here all come from the one session the caller leased,
-/// and the pool stays free for the panels to list folders while the file goes.
-///
-/// The reader stays single: the bytes arrive in one stream and are handed out in order, which is what lets
-/// the caller count what it has read as progress. Each handle then seeks to where its piece belongs and
-/// writes it there, since SFTP has each write name its own offset and wait for no turn.
+/// Writes a whole file to a server over several handles at once, all of them on the one session the caller
+/// leased. One reader hands out the bytes in order, and each handle writes its piece at its own offset.
 /// </summary>
 internal static class SftpUpload
 {
     /// <summary>
-    /// How much of the file one handle claims at a time. Any size well past the 32 KB that writes are capped
-    /// at will do — it only has to be enough that a handle is not back asking for more before the last of its
-    /// writes has gone.
+    /// How much of the file one handle claims at a time, which only has to be well past the 32 KB a server
+    /// takes at once. A handle then still has writes going when it asks for more.
     /// </summary>
     private const int Chunk = 512 * 1024;
 
     /// <summary>
-    /// How many handles write at once, and so how many times faster than one this goes. Higher would be
-    /// faster still, but every handle in flight holds a piece of the file in memory, and this is a
-    /// program that draws a panel while it works.
+    /// How many handles write at once, and so how many times faster than one this goes. Every handle in
+    /// flight holds a piece of the file in memory.
     /// </summary>
     private const int Handles = 4;
 
@@ -66,10 +49,8 @@ internal static class SftpUpload
     }
 
     /// <summary>
-    /// The same, told where to get its handles rather than how. What can go wrong here is a piece landing at
-    /// the wrong offset, which a server would accept without a word and hand back as a file quietly unlike
-    /// the one that was sent. So the handles are asked for through this, and a test can answer with its own
-    /// and read back what was assembled.
+    /// The same, told where to get its handles rather than how, so a test can answer with its own and read
+    /// back what was assembled. A piece landing at the wrong offset is what would go unnoticed otherwise.
     /// </summary>
     /// <param name="opening">Opens one handle; told whether it is the one that truncates.</param>
     /// <param name="reading">Where the bytes come from, read to its end.</param>
@@ -226,12 +207,8 @@ internal static class SftpUpload
     }
 
     /// <summary>
-    /// Takes pieces as they come and writes each where it belongs. A handle that fails gives up on the
-    /// reader too, so the transfer stops instead of the reader waiting on a channel nobody drains.
-    ///
-    /// The buffer is emptied before the seek rather than by it: a seek with bytes still held would send
-    /// them and wait for the answer on this thread, which is the one thing the whole arrangement is for
-    /// avoiding.
+    /// Takes pieces as they come and writes each where it belongs, giving up on the reader when a handle
+    /// fails. The buffer is emptied before the seek, since a seek holding bytes would send them and wait.
     /// </summary>
     /// <param name="handle">This handle.</param>
     /// <param name="pieces">Where the pieces come from.</param>
@@ -271,10 +248,8 @@ internal static class SftpUpload
     }
 
     /// <summary>
-    /// Which of the failures to answer with. When a handle gives up, the reader is given up on in turn,
-    /// so the pile ends up holding one real complaint from the server and a handful of cancellations
-    /// that are merely how the rest were stopped. Answering with a cancellation would have the caller
-    /// file a failed transfer as one the user called off, and say nothing about it.
+    /// Which of the failures to answer with: the complaint from the server rather than the cancellations that
+    /// are merely how the rest were stopped. A cancellation would be filed as a transfer called off.
     /// </summary>
     /// <param name="all">The finished work, faulted.</param>
     /// <param name="fallback">What was thrown, for when there is nothing better.</param>

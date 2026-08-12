@@ -6,8 +6,7 @@ namespace Arlecchino.Commander.Model;
 
 /// <summary>
 /// How a folder is written where there is no room for all of it. The panel and the command line both name
-/// the folder the panel is looking at, and they name it the same way. A path that reads one way above and
-/// another below is two folders as far as anybody reading quickly is concerned.
+/// the folder the panel is looking at, and they name it the same way.
 /// </summary>
 public static class Paths
 {
@@ -38,8 +37,8 @@ public static class Paths
     }
 
     /// <summary>
-    /// The path cut to the room there is. What goes is the head: the folder you are in is the end of the
-    /// path, and a path cut from the other end would drop the only part that answers where you are.
+    /// The path cut to the room there is. What goes is the head, since the folder you are in is the end
+    /// of the path.
     /// </summary>
     /// <param name="source">Where the folder lives.</param>
     /// <param name="folder">The folder.</param>

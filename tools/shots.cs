@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using SkiaSharp;
 
-// Columns by rows, not pixels. A hundred rows is a screenshot nobody can read at a glance.
 const string Size = "200x34";
 var repository = Directory.GetCurrentDirectory();
 var output = Path.Combine(repository, "assets", "screenshots");
@@ -22,8 +21,6 @@ var fixture = Path.Combine(Path.GetTempPath(), "arlecchino-shots");
 var scratchLeft = Path.Combine(fixture, "project");
 var scratchRight = Path.Combine(fixture, "backup");
 
-// The host the server scenes use. A `~/.ssh/config` entry, so the shots say nothing about anyone's
-// credentials; scenes that name it are skipped when the host does not answer.
 const string host = "ubuntu";
 
 if (args is ["tape", ..])
@@ -46,9 +43,12 @@ if (args is ["shoot", ..])
 
 Shots();
 
-// The panels show the two repositories, because a screenshot of a real tree says more than a
-// made-up one. The scenes that actually copy work on a scratch fixture instead, so a picture never
-// writes into a repository.
+/// <summary>
+/// Every picture that gets taken, in order. The panels show the two repositories, apart from the scenes
+/// that copy, which work on a scratch fixture, so a picture never writes into a repository.
+/// </summary>
+/// <param name="size">Columns by rows, as the application is told it.</param>
+/// <returns>What to shoot, what keys to play first, and what to caption it with.</returns>
 (string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] Scenes(
     string size) =>
     [
@@ -119,19 +119,11 @@ void Shots()
     }
 }
 
-// Walks the same scenes with nothing between them and the terminal: each frame is written out as the
-// application drew it, Enter goes to the next one, q stops.
-//
-// The pictures go through a renderer of our own — the ANSI is parsed into cells and painted with
-// Skia — and a renderer of our own is a second place for the drawing to be wrong. Here the terminal
-// draws it, with the real font, the real glyph widths and the real colours, so a frame that looks
-// right here and wrong in the picture says the fault is in the painting rather than in the program.
-//
-// Every frame is captured at the size of this terminal rather than the fixed one the pictures use,
-// because a frame composed for 200 columns and shown in 120 is not the screen anybody would see. It
-// gets every row: the newline the frame ends with is taken off rather than given a row of its own,
-// the cursor is put away, and wrapping is turned off so writing the last cell cannot scroll the top
-// row off the screen. What is on screen is the application and nothing else.
+/// <summary>
+/// Walks the same scenes with nothing between them and the terminal, so each frame is drawn by the
+/// terminal itself. Enter goes to the next one and <c>q</c> stops, at whatever size this terminal is.
+/// </summary>
+/// <param name="shoot">Whether to photograph the window as well as draw in it.</param>
 void Show(bool shoot)
 {
     if (Console.IsInputRedirected || Console.IsOutputRedirected)
@@ -217,8 +209,8 @@ void Show(bool shoot)
     }
 }
 
-// Waits for the one key that means anything here. Anything else moves on, because a reviewer pressing
-// space or an arrow means "next" and being told otherwise is a puzzle nobody asked for.
+/// <summary>Waits for a key, where <c>q</c> and Escape stop and anything else moves on.</summary>
+/// <returns><c>true</c> when the walk should end.</returns>
 static bool Stop()
 {
     var key = Console.ReadKey(intercept: true);
@@ -230,9 +222,6 @@ static bool Stopped() => Console.KeyAvailable && Stop();
 
 void Tape()
 {
-    // How long each frame is held is how long a hand would have waited there: a moment to see where
-    // the cursor is, a longer one over a dialog that has to be read, and no two presses exactly alike.
-    // A step with no key of its own is the recording watching work that is already running.
     (string Key, int Hold)[] beats =
     [
         ("", 1500),
@@ -346,8 +335,12 @@ void Tape()
     }
 }
 
-// Splits a recording into its frames. Each is announced by a record separator and the milliseconds it
-// is to be held for, so the reel carries the timing the application ran at rather than a guess.
+/// <summary>
+/// Splits a recording into its frames. Each is announced by a record separator and the milliseconds it is
+/// to be held for, so the reel carries the timing the application ran at.
+/// </summary>
+/// <param name="text">What the headless run wrote.</param>
+/// <returns>Each frame and how long to hold it.</returns>
 static List<(int Hold, string Ansi)> Reel(string text)
 {
     var frames = new List<(int Hold, string Ansi)>();
@@ -367,9 +360,9 @@ static List<(int Hold, string Ansi)> Reel(string text)
     return frames;
 }
 
-// Every picture is the size its scene asked for, whatever the screen happened to draw: a dialog over
-// an otherwise empty screen leaves the rest of the frame blank, and a gallery of pictures that are
-// each a different height reads as a mistake.
+/// <summary>Reads a <c>columns x rows</c> size, which every picture is cut or padded to.</summary>
+/// <param name="size">The size as it was written.</param>
+/// <returns>The two numbers.</returns>
 static (int Columns, int Rows) Measure(string size)
 {
     var parts = size.Split('x');
@@ -399,8 +392,6 @@ static List<List<Cell>> Fit(List<List<Cell>> grid, int columns, int rows)
 
 string Capture(string mode, string size, string keys, string wait, string leftPanel, string rightPanel, string connect)
 {
-    // Release, named rather than left to the default. Without it the pictures come from whatever was
-    // last built in Debug, which is how a screenshot ends up showing a screen that no longer exists.
     var arguments = $"run --project src/Arlecchino.Commander -c Release --no-build -- " +
                     $"{mode} {size} --left \"{leftPanel}\" --right \"{rightPanel}\"";
 
@@ -439,10 +430,12 @@ string Capture(string mode, string size, string keys, string wait, string leftPa
     return Masked(text);
 }
 
-// No picture carries a real address. Every scene that reaches a server draws the host it connected
-// to, and that is somebody's machine — so any address in a captured frame is replaced before it is
-// drawn, with one from the range set aside for documentation, padded to the width it stood in so no
-// row shifts under it.
+/// <summary>
+/// Replaces every address in a captured frame, so no picture carries a real one. What goes in its place
+/// is padded to the width it stood in, so no row shifts under it.
+/// </summary>
+/// <param name="text">The frame as it was captured.</param>
+/// <returns>The frame with its addresses hidden.</returns>
 static string Masked(string text)
 {
     const string replace = "***.***.***.***";
@@ -456,9 +449,8 @@ static string Masked(string text)
 readonly record struct Cell(string Symbol, SKColor Foreground, SKColor Background, bool Bold);
 
 /// <summary>
-/// Draws a grid of cells as a window: the terminal on a rounded plate, three lamps and a caption above
-/// it. The size of the type sets everything else, so the same drawing serves a screenshot at one scale
-/// and an animation at another.
+/// Draws a grid of cells as a window: the terminal on a rounded plate, three lamps and a caption above it.
+/// The size of the type sets everything else, so one drawing serves both scales.
 /// </summary>
 sealed class Paper : IDisposable
 {
@@ -624,9 +616,12 @@ sealed class Paper : IDisposable
             text);
     }
 
-    // Where a font lives differs per platform, and picking the wrong one is not an error anybody sees
-    // as one: Skia hands back a proportional face and the picture comes out with its columns adrift.
-    // So every folder the three platforms keep fonts in is searched by name, and only then a family.
+    /// <summary>
+    /// The monospaced face to draw with. Every folder the three platforms keep fonts in is searched by
+    /// file name first, and only then a family, since a proportional face draws the columns adrift.
+    /// </summary>
+    /// <param name="file">The font file to look for.</param>
+    /// <returns>The face.</returns>
     private static SKTypeface Face(string file) =>
         Found(file) ??
         Found("CascadiaMono.ttf") ??
@@ -737,9 +732,8 @@ static class Playground
 }
 
 /// <summary>
-/// The folders the screenshots are taken of. Shooting the repository itself would put whatever the
-/// working copy happens to hold into the pictures, so the panels are pointed at a small tree instead.
-/// It is laid out the same way every time, and rebuilt between the scenes whose copies would change it.
+/// The folders the screenshots are taken of, which is a small tree rather than the repository itself. It
+/// is laid out the same way every time, and rebuilt between the scenes whose copies would change it.
 /// </summary>
 static class Fixture
 {
@@ -813,10 +807,8 @@ static class Fixture
 }
 
 /// <summary>
-/// Binds the captured frames into one animation, which FFmpeg does as an APNG. A GIF has 256 colors
-/// and one of them has to stand for transparency, so neither the shades a terminal draws text in nor
-/// the shadow under the window survive it; an APNG carries both. Every frame is held for as long as
-/// the recording says it was held, to the nearest fortieth of a second.
+/// Binds the captured frames into one animation, which FFmpeg does as an APNG rather than as a GIF, whose
+/// 256 colors carry neither the shades nor the shadow. Every frame is held for as long as it was recorded.
 /// </summary>
 static class Film
 {
@@ -883,9 +875,8 @@ static class Film
 }
 
 /// <summary>
-/// The terminal window as macOS sees it. A frame drawn by kitty is the real font, the real glyph
-/// widths and the real colors, and the system hands the window back with the shadow it draws under it,
-/// which is the picture a README wants.
+/// The terminal window as macOS sees it. A frame drawn by kitty is the real font, the real glyph widths
+/// and the real colors, and the system hands the window back with its shadow.
 /// </summary>
 static class Shot
 {

@@ -23,9 +23,8 @@ public static class HeadlessFrame
     private const char Separator = '';
 
     /// <summary>
-    /// Draws one frame and returns, for a screenshot or a check that needs no terminal. A process
-    /// started without a console of its own is told there is no color, which is right for a log and
-    /// wrong for a picture, so <c>ARLECCHINO_COLOR</c> says what to emit regardless.
+    /// Draws one frame and returns, for a screenshot or a check that needs no terminal. A process started
+    /// without a console of its own is told there is no color, so <c>ARLECCHINO_COLOR</c> overrides that.
     /// </summary>
     /// <param name="size">Frame size as <c>columns x rows</c>.</param>
     /// <param name="script">Keys to play before the frame is drawn.</param>
@@ -48,11 +47,8 @@ public static class HeadlessFrame
     }
 
     /// <summary>
-    /// Plays a script and writes a frame wherever it asks for one, which is how a recording is made
-    /// without a terminal to record. A <c>shot</c> step draws the screen and then lets that many
-    /// milliseconds pass, so the application is running between frames and a bar that fills or an
-    /// entry that finishes is caught as it happens. Every frame is preceded by a record separator and
-    /// the milliseconds it is to be held for, and one more is drawn once the script has run out.
+    /// Plays a script and writes a frame wherever it asks for one, each preceded by a record separator and
+    /// the milliseconds to hold it. A <c>shot</c> step draws the screen and then lets that many pass.
     /// </summary>
     /// <param name="size">Frame size as <c>columns x rows</c>.</param>
     /// <param name="script">Keys and <c>shot</c> steps to play.</param>
@@ -103,9 +99,8 @@ public static class HeadlessFrame
     }
 
     /// <summary>
-    /// How long to let the work behind a frame answer. A folder is read off the drawing thread whoever
-    /// it belongs to, so even a picture of the disk has something to wait for: drawn the instant it is
-    /// asked for, it catches two panels that both say <c>loading…</c>.
+    /// How long to let the work behind a frame answer. A folder is read off the drawing thread wherever it
+    /// lives, so a frame drawn the instant it is asked for catches two panels saying <c>loading…</c>.
     /// </summary>
     /// <param name="wait">What was asked for, when anything was.</param>
     /// <param name="connect">The link the left panel opens on, when there is one.</param>
@@ -147,9 +142,8 @@ public static class HeadlessFrame
     }
 
     /// <summary>
-    /// Connects before a headless frame is drawn. This one waits outright: there is no screen yet and
-    /// nothing else to get on with, and a picture of a panel that has not connected is not the picture
-    /// that was asked for.
+    /// Connects before a headless frame is drawn. This one waits outright, since there is no screen yet
+    /// and nothing else to get on with.
     /// </summary>
     /// <param name="sessions">The panels to attach to.</param>
     /// <param name="remote">Told which session is open.</param>

@@ -27,8 +27,8 @@ public sealed class CommanderFooterTests : IDisposable
     }
 
     /// <summary>
-    ///     The bar along the bottom says what the keys of this moment do, in words: spelled out rather than
-    ///     abbreviated to fit, since a bar of ten abbreviations answers nothing anybody was asking.
+    ///     The bar along the bottom says what the keys of this moment do, in words spelled out rather than
+    ///     abbreviated to fit.
     /// </summary>
     [Fact]
     public void TheActionsAlongTheBottomAreSpelledOut()
@@ -43,8 +43,7 @@ public sealed class CommanderFooterTests : IDisposable
 
     /// <summary>
     ///     A terminal too narrow for ten spelled-out labels carries the rest onto another row rather than
-    ///     dropping them. The keys that would have gone are the last on the bar, and the last on the bar are
-    ///     the menu and the way out of the application.
+    ///     dropping them. What would have gone is the menu and the way out of the application.
     /// </summary>
     [Fact]
     public void ANarrowBarWrapsRatherThanLosingTheLastKeys()
@@ -61,10 +60,8 @@ public sealed class CommanderFooterTests : IDisposable
     }
 
     /// <summary>
-    ///     The row a wrapped bar takes is a row the panels gave up, not a row it drew over: the command line
-    ///     above it comes up by one, and it is the panels that end a line shorter. Nothing tells the screen
-    ///     how tall the bar is — it finds out by drawing — so this is the whole of what keeps the two in
-    ///     step.
+    ///     The row a wrapped bar takes is a row the panels gave up, not a row it drew over. The command line
+    ///     comes up by one, and it is the panels that end a line shorter.
     /// </summary>
     [Fact]
     public void TheRowAWrappedBarTakesComesOffThePanels()

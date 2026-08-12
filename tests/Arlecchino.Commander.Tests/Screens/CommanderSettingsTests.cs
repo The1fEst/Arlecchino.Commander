@@ -91,8 +91,7 @@ public sealed class CommanderSettingsTests : IDisposable
     }
 
     /// <summary>
-    ///     Escape gives the row back to the command line, which is the row it has whenever nobody asked for
-    ///     anything else.
+    ///     Escape gives the row back to the command line, which holds it whenever nothing else has asked.
     /// </summary>
     [Fact]
     public void EscapeGivesTheRowBack()

@@ -9,11 +9,8 @@ using Xunit;
 namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
-/// Sending a whole file to a server over several handles at once. The failure this guards against is the
-/// quiet one: a piece written at the wrong offset, or one handle's leftovers landing in another's
-/// stretch. A server accepts all of that without complaint and hands back a file the same length as the
-/// one that was sent and not the same file, which is why the check here is the bytes themselves rather
-/// than that the call returned.
+/// Sending a whole file to a server over several handles at once. What is checked is the bytes that
+/// landed, since a piece written at the wrong offset still comes back as a file of the right length.
 /// </summary>
 public sealed class SftpUploadTests
 {
@@ -147,6 +144,7 @@ public sealed class SftpUploadTests
         }
 
         /// <summary>One open handle: it remembers where it is and writes there.</summary>
+        /// <param name="server">The file every handle is writing into.</param>
         private sealed class Handle(Server server) : Stream
         {
             public override bool CanRead => false;
@@ -197,6 +195,7 @@ public sealed class SftpUploadTests
     }
 
     /// <summary>A source that never answers with everything it was asked for.</summary>
+    /// <param name="bytes">What it hands out, a little at a time.</param>
     private sealed class Dribbling(byte[] bytes) : Stream
     {
         private int _position;

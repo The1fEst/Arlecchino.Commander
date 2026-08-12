@@ -12,9 +12,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// Who may do what to a file, and whose it is. Both questions are asked of what is marked rather than
-/// of one file at a time, because raising a bit on forty files one dialog at a time is not a thing
-/// anybody does twice.
+/// Who may do what to a file, and whose it is. Both are asked of everything marked rather than of one
+/// file at a time.
 /// </summary>
 public sealed class Rights : PanelWork
 {

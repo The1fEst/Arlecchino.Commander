@@ -104,8 +104,8 @@ public sealed class OperationsTests : IDisposable
     }
 
     /// <summary>
-    /// The panels redraw off a revision rather than by watching the disk, so work that changed
-    /// something has to say so or the change stays invisible until something else asks for a frame.
+    /// The panels redraw off a revision rather than by watching the disk, so work that changed something
+    /// has to say so, or the change stays invisible until something else asks for a frame.
     /// </summary>
     [Fact]
     public void WorkThatChangedSomethingSaysSo()

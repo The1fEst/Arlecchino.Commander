@@ -5,9 +5,8 @@ using System.IO;
 namespace Arlecchino.Commander.Files.Work;
 
 /// <summary>
-/// Permissions as chmod writes them. The three sources keep them in three shapes:
-/// a <see cref="UnixFileMode"/> on a disk, nine flags over SFTP, a number over FTP. All three are the same
-/// three octal digits to whoever is typing them.
+/// Permissions as chmod writes them. The three sources keep them in three shapes, and all three are the same
+/// three octal digits to the person typing them.
 /// </summary>
 public static class Modes
 {
@@ -54,9 +53,8 @@ public static class Modes
     public static string Write(int mode) => Convert.ToString(mode, Digits).PadLeft(3, '0');
 
     /// <summary>
-    /// The digits written out as <c>rwxr-xr-x</c>. Three digits are the compact way of saying it and
-    /// the letters are the readable one; a dialog that changes permissions should say both, since
-    /// hardly anybody reads <c>750</c> without pausing.
+    /// The digits written out as <c>rwxr-xr-x</c>, which is the readable spelling of the same thing. A dialog
+    /// that changes permissions shows both.
     /// </summary>
     /// <param name="mode">Three or four octal digits, as typed.</param>
     /// <returns>The nine letters, or nothing when the digits were not digits.</returns>

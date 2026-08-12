@@ -10,20 +10,15 @@ namespace Arlecchino.Commander.Tests.Files;
 
 /// <summary>
 ///     Signing in, and where it is allowed to happen. Everything here is about the calling thread rather
-///     than about servers: what the connection ends up being is somebody else's test.
+///     than about what the connection ends up being.
 /// </summary>
 public sealed class ConnectorTests
 {
     private const int Patience = 2000;
 
     /// <summary>
-    ///     Starting a connection hands the caller straight back. The library has no asynchronous way to
-    ///     sign in over SSH, and an <c>async</c> method runs on its caller until the first <c>await</c> —
-    ///     so a blocking connect written straight into one blocked the frame loop for the whole handshake.
-    ///     The screen froze, the spinner could not turn, and the dialog last drawn looked like the thing
-    ///     that had hung.
-    ///     The server here accepts the socket and then says nothing, which is what a slow one looks like
-    ///     from the inside: SSH.NET sits waiting for a banner that never comes.
+    ///     Starting a connection hands the caller straight back, rather than blocking the frame loop for
+    ///     the handshake. The server here accepts the socket and then sends no banner at all.
     /// </summary>
     [Fact]
     public void StartingAConnectionDoesNotBlockTheCaller()

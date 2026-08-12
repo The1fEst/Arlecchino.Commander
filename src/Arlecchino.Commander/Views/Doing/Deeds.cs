@@ -11,11 +11,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// The five things the function keys do to files: copy, move, rename, make a folder, delete.
-///
-/// None of them happens on the key press. Each opens the one dialog, which says in words what is about to
-/// happen and to how much. Only then is the work handed to something that runs on its own, so the panels
-/// stay usable while a copy of eight gigabytes is going on behind them.
+/// The five things the function keys do to files: copy, move, rename, make a folder, delete. None happens
+/// on the key press: each opens a dialog first, then hands the work to something that runs on its own.
 /// </summary>
 public sealed class Deeds : PanelWork
 {
@@ -58,9 +55,8 @@ public sealed class Deeds : PanelWork
     }
 
     /// <summary>
-    /// Moves what is marked. Whether it is a move at all depends on where it lands. Within one volume nothing
-    /// is copied and only the names change; across two it is a copy followed by a deletion, which is a
-    /// different promise, and the dialog says which one is being made.
+    /// Moves what is marked. Within one volume only the names change; across two it is a copy followed by a
+    /// deletion, and the dialog says which one is being made.
     /// </summary>
     public void Move()
     {
@@ -146,16 +142,12 @@ public sealed class Deeds : PanelWork
     }
 
     /// <summary>
-    /// Gets rid of what is marked, putting it in the trash where there is one. What the dialog promises
-    /// is what will happen: the trash is offered only where something could actually be fetched back
-    /// out of it, and everywhere else this is the same final thing it always was.
+    /// Gets rid of what is marked, putting it in the trash where there is one. The trash is offered only
+    /// where something could actually be fetched back out of it.
     /// </summary>
     public void Delete() => Removing(Here.Source.HasTrash);
 
-    /// <summary>
-    /// Deletes what is marked outright, trash or no trash. Somebody who wants a thing gone rather than
-    /// moved should not have to go and empty the trash afterward.
-    /// </summary>
+    /// <summary>Deletes what is marked outright, trash or no trash.</summary>
     public void DeleteForGood() => Removing(toTrash: false);
 
     private void Removing(bool toTrash)

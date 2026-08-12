@@ -83,7 +83,7 @@ public sealed class CommanderPanelTests : IDisposable
 
     /// <summary>
     ///     Marked files go over whole and one to a line, so what lands on the clipboard can be pasted into
-    ///     a shell or an editor without anybody unpicking a separator first.
+    ///     a shell or an editor with no separator to unpick first.
     /// </summary>
     [Fact]
     public void CopyingPathsTakesEveryMarkedFileOnItsOwnLine()
@@ -146,9 +146,8 @@ public sealed class CommanderPanelTests : IDisposable
     }
 
     /// <summary>
-    ///     <c>Ctrl+PageUp</c> goes to the folder above, the way it always has. It once meant the tab beside
-    ///     this one as well, in code the router never reached — a view's commands are read before its
-    ///     <c>Handle</c>, so the folder won every time and the tab could not be got to at all.
+    ///     <c>Ctrl+PageUp</c> goes to the folder above and nowhere else. A view's commands are read before
+    ///     its <c>Handle</c>, so a second meaning bound here could never be reached.
     /// </summary>
     [Fact]
     public void ControlPageUpGoesToTheFolderAbove()
@@ -163,8 +162,8 @@ public sealed class CommanderPanelTests : IDisposable
     }
 
     /// <summary>
-    ///     The column heads are the first thing anybody with a mouse clicks, so clicking one sorts by it.
-    ///     Clicking the same one again turns the order around, which is what the arrow beside it says.
+    ///     Clicking a column head sorts by it. Clicking the same one again turns the order around, which is
+    ///     what the arrow beside it says.
     /// </summary>
     [Fact]
     public void ClickingAColumnHeadSortsByIt()

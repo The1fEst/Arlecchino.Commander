@@ -30,11 +30,8 @@ internal sealed class CommandLineKeys
     }
 
     /// <summary>
-    /// Whether a key press is the one that asks for the line. It is read as the character it types rather
-    /// than as a key, so a layout that puts that character somewhere else still opens it.
-    ///
-    /// Shift is forgiven, because the characters this is asked about are typed with it held. A console
-    /// that reports the modifier along with the character would otherwise never open the line.
+    /// Whether a key press is the one that asks for the line, read as the character it types rather than as
+    /// a key. Shift is forgiven, since the characters this is asked about are typed with it held.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line should be opened.</returns>

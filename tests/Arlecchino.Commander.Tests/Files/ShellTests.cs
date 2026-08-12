@@ -9,8 +9,8 @@ namespace Arlecchino.Commander.Tests.Files;
 public sealed class ShellTests
 {
     /// <summary>
-    /// The one command that must not be written the same way twice: <c>rm -f</c> walks past a
-    /// read-only file, and a delete that takes what it was not asked to is worse than one that fails.
+    /// The one command that must not be written the same way twice. A <c>rm -f</c> walks past a read-only
+    /// file, taking what it was never asked for.
     /// </summary>
     [Fact]
     public void NothingIsRemovedByForce()
@@ -73,11 +73,11 @@ public sealed class ShellTests
     }
 
     /// <summary>
-    /// A shell nobody recognised takes no shortcuts: the command goes over as it was typed, since
-    /// wrapping it in a dialect that may not be the server's would break what does work.
+    /// An unrecognized shell takes no shortcuts, and the command goes over as it was typed. Wrapping it in
+    /// a dialect that may not be the server's would break what does work.
     /// </summary>
     [Fact]
-    public void AShellNobodyRecognisedChangesNothing()
+    public void AnUnrecognizedShellChangesNothing()
     {
         Assert.Equal("ls", ForeignShell.Instance.Within("/var/log", "ls"));
         Assert.Null(ForeignShell.Instance.Link("/a", "/b"));

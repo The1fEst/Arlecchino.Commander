@@ -5,15 +5,8 @@ using System.Runtime.Versioning;
 namespace Arlecchino.Commander.Files.Trash;
 
 /// <summary>
-/// The trash on a Mac, which is not a folder anybody should be moving files into by hand. Finder keeps
-/// the record of where each thing came from beside the file itself, and only the system call writes it;
-/// a file moved into <c>~/.Trash</c> by hand lands there with no way back, and Put Back is grayed out.
-/// So this asks the system, through the same call Finder makes.
-///
-/// Asking it means the Objective-C runtime, since there is no other door to <c>NSFileManager</c>. Each
-/// message is sent through its own declaration of <c>objc_msgSend</c>: the function takes whatever the
-/// method takes, and giving it one signature for all of them is how interop like this goes wrong on one
-/// architecture while looking right on another.
+/// The trash on a Mac, asked for through the same call Finder makes, since only that call writes the record
+/// Put Back needs. It goes through the Objective-C runtime, one declaration per message sent.
 /// </summary>
 [SupportedOSPlatform("macos")]
 public sealed class MacTrash : Trash
