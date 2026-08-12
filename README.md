@@ -71,9 +71,10 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   walk back and forward through the folders the panel has been in, with `g p` listing them. `g u` `g o`
   `g m` jump to the top, the middle and the bottom of the panel, `g b` sends the other panel here and
   `g y` sends it into the folder under the cursor. Which way a key goes is where it sits rather than what
-  it stands for. Once the leader is pressed, the box in the corner lists what finishes it, so nothing here
-  has to be remembered. Nothing needs a key a laptop does not have: where `Ctrl+PgUp` and `Ctrl+PgDn` read
-  well they still leave and enter a folder, but only as a second way in.
+  it stands for. Once the leader is pressed, the keys that finish it are listed over the command line, in
+  the shape the settings use to offer their own words, so nothing here has to be remembered. Nothing needs
+  a key a laptop does not have: where `Ctrl+PgUp` and `Ctrl+PgDn` read well they still leave and enter a
+  folder, but only as a second way in.
 - **Getting around the way Midnight Commander does.** `/` searches as you type, `+` and `-` mark and
   unmark by shell pattern, `*` inverts the marks, and `Ctrl+B` keeps a hotlist.
 - **Find file.** `Ctrl+F7` walks down from the panel — over SFTP as readily as over a disk — matching

@@ -23,14 +23,7 @@ namespace Arlecchino.Commander.Views;
 
 /// <summary>
 ///     The screen the application opens on: two panels, a band above them, a command line and a bar of
-///     keys below.
-///     It draws and it routes. What every key and every menu entry actually does lives in
-///     <see cref="Doings" />, which is handed the same pair of panels this screen is showing. So the screen
-///     has no operation of its own to keep in step with the menu, and the menu has no idea which screen it
-///     was opened from.
-///     The footer is no longer a fixed two rows. The bar of keys wraps when the terminal is narrow, and it
-///     only finds out how tall it is by drawing itself. So the screen subscribes to the height it reports and
-///     lays itself out again when that changes, rather than guessing at a number a resize would make wrong.
+///     keys below. It draws and routes; what every key does lives in <see cref="Doings" />.
 /// </summary>
 public sealed class CommanderView : IArlecchinoView, IDisposable
 {
@@ -41,7 +34,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     private readonly Doings _doings;
     private readonly Gutter _gutter;
     private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
+    private readonly KeyText _typing;
+    private readonly CommandKeys _keys;
     private readonly Operations _operations;
 
     private readonly Pair _panels;
@@ -73,6 +67,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// <param name="services">Where the navigator is found, which is built after this screen is.</param>
     /// <param name="lifetime">How the application is quit.</param>
     /// <param name="settings">What is kept between runs, which the settings line changes.</param>
+    /// <param name="keys">Asked what a half-typed chord has behind it, which this screen draws itself.</param>
     public CommanderView(
         Surface surface,
         Sessions sessions,
@@ -85,7 +80,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         IArlecchinoTerminal terminal,
         IServiceProvider services,
         IHostApplicationLifetime lifetime,
-        Settings settings)
+        Settings settings,
+        CommandKeys keys)
     {
         ArgumentNullException.ThrowIfNull(sessions);
         ArgumentNullException.ThrowIfNull(options);
@@ -94,7 +90,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _sessions = sessions;
         _operations = operations;
         _keymap = options.Keymap;
-        _keys = KeyText.For(options.TextInput);
+        _typing = KeyText.For(options.TextInput);
+        _keys = keys;
 
         _seen = operations.Revision.Value;
         _moved = sessions.Revision.Value;
@@ -104,7 +101,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         var dialogs = new Dialogs(state);
 
         _panels = new(left, right);
-        _settingBar = new(settings, state, _keymap, _keys);
+        _settingBar = new(settings, state, _keymap, _typing);
         _doings = new(
             dialogs,
             _panels,
@@ -118,7 +115,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
             services,
             settings,
             _settingBar);
-        _commandBar = new(new(runner.History, _keys, _keymap, ':'), runner, state, _keymap, _panels);
+        _commandBar = new(new(runner.History, _typing, _keymap, ':'), runner, state, _keymap, _panels);
         _gutter = new(sessions, _panels);
         _actionBar = new(_panels);
         _card = new(runner, state);
@@ -178,12 +175,16 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _layout.Draw(screen);
         _card.Draw(above);
         _settingBar.DrawHints(above);
+
+        if (_keys.IsWaiting)
+        {
+            KeyHints.Draw(above, Loc(LocString.MenuKeys), _keys.Hints());
+        }
     }
 
     /// <summary>
     ///     The one row under the panels, which belongs to whichever line has been asked for. Two lines
-    ///     cannot both have it, and they never want it at once: the settings line is opened from a screen
-    ///     where nothing is being typed, and it gives the row back the moment it is closed.
+    ///     cannot both have it, and they never want it at once.
     /// </summary>
     /// <param name="row">The row to draw on.</param>
     private void Line(SurfaceRegion row)
@@ -216,9 +217,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
     /// <summary>
     ///     Offers the key to the two lines under the panels. Whichever of them has the keyboard is asked
-    ///     first and is asked alone — the exclamation mark is a character like any other while a command is
-    ///     being typed, and the colon is one while a setting is. With neither of them open the key is
-    ///     offered to both, and each takes only the character that asks for it.
+    ///     first and asked alone; with neither open the key goes to both.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when a line took it.</returns>
@@ -233,10 +232,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Text pasted into the terminal, which goes where typing goes: the search running on the panel when
-    ///     there is one, and the command line otherwise. A paste arrives as a block of its own rather than as
-    ///     the keys that would have typed it. A screen that answers keys alone drops it on the floor, and
-    ///     text that lands nowhere is what a broken paste looks like from the other side.
+    ///     Text pasted into the terminal, which goes where typing goes: the search running on the panel
+    ///     when there is one, and the lines under the panels otherwise.
     /// </summary>
     /// <param name="text">What was pasted, with the terminal's markers already stripped.</param>
     /// <returns>Where to go, which is nowhere.</returns>
@@ -251,9 +248,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Clicks, which go to whichever panel was clicked in. The band along the top is no longer here — it
-    ///     belongs to the layout, and the layout is asked before the view is — so everything that reaches
-    ///     this has landed below it.
+    ///     Clicks, which go to whichever panel was clicked in. The band along the top belongs to the
+    ///     layout, which is asked before the view is.
     /// </summary>
     /// <param name="mouse">The event that arrived.</param>
     /// <returns>Where to go, which is nowhere.</returns>
@@ -263,15 +259,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Every key the screen answers to — unless something is being typed into, and then the letters
-    ///     among them are not keys at all. A command bound to a bare letter and something taking letters
-    ///     cannot both have the keyboard, and whatever was asked for wins: the command line opened with a
-    ///     colon, or the search running on the panel. What is left is what a letter cannot be — the
-    ///     function keys, and everything held with a modifier.
-    ///
-    ///     One rule in one place rather than a condition on each key. Written per command it is written
-    ///     thirty times, and the one that gets forgotten is a leader swallowing a letter somebody was
-    ///     spelling a file name with.
+    ///     Every key the screen answers to, minus the ones a letter could be while something is being
+    ///     typed into. What is left then is the function keys and everything held with a modifier.
     /// </summary>
     /// <returns>The commands to match this key against.</returns>
     public IReadOnlyList<ViewCommand> Commands()
@@ -280,9 +269,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Whether the command line would rather have this key. Anything pressed on its own it would: the
-    ///     letters it types, and the arrows and the rub-outs it edits with. What is left to the screen is
-    ///     the function keys and everything held with a modifier, which a line of text has no use for.
+    ///     Whether a line of text would rather have this key. Anything pressed on its own it would: the
+    ///     letters it types, and the arrows and the rub-outs it edits with.
     /// </summary>
     /// <param name="binding">The binding to judge.</param>
     /// <returns><c>true</c> when the line should be given the key instead.</returns>
@@ -290,9 +278,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         binding is { Modifiers: KeyModifiers.None, Key: < ConsoleKey.F1 or > ConsoleKey.F24 };
 
     /// <summary>
-    ///     The two panels of a session, made once and kept. A tab that is come back to shows what it showed
-    ///     before — the same cursor, the same place in a long folder — which it could not do if its panels
-    ///     were built afresh every time it was switched to.
+    ///     The two panels of a session, made once and kept, so a tab that is come back to shows what it
+    ///     showed before.
     /// </summary>
     /// <param name="session">Whose panels.</param>
     /// <returns>The pair.</returns>
@@ -305,7 +292,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
         FilePanel Over(PanelState state)
         {
-            return new(state, _keymap, _keys)
+            return new(state, _keymap, _typing)
             {
                 OnOpenFile = entry => _doings.Open(entry),
                 OnGroup = marking => _doings.Group(marking)
@@ -319,10 +306,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Lays the screen out: the two panels side by side with the gutter between them, and the command
-    ///     line and the bar of keys under both. Both splits are measured from the end, so the footer keeps the
-    ///     rows it asked for, and the panels take whatever is left over. That is the way round that survives
-    ///     a terminal being made shorter.
+    ///     Lays the screen out: the two panels side by side with the gutter between them, and the line and
+    ///     the bar of keys under both. Both splits are measured from the end.
     /// </summary>
     /// <returns>The layout, which the focus ring is made from as well as drawn.</returns>
     private PaneTree Lay()
@@ -381,8 +366,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
     /// <summary>
     ///     Gives up what watching the bar's height took out. The screen is built afresh every time it is
-    ///     navigated back to, and the viewer, the finder and the output screen all leave it. A subscription
-    ///     that outlived the screen would be one more per visit, each laying out a screen nobody is on.
+    ///     navigated back to, so a subscription that outlived it would be one more per visit.
     /// </summary>
     public void Dispose()
     {

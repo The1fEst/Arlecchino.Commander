@@ -80,9 +80,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Nothing goes anywhere by the asking. What the dialog promises depends on where the file is headed: a
-    /// machine with a trash says it can be fetched back out of it, one without says it cannot. The one thing
-    /// this dialog must not do is offer a comfort that is not there.
+    /// Nothing goes anywhere by the asking. A machine with a trash says the file can be fetched back out
+    /// of it, and one without says it cannot.
     /// </summary>
     [Fact]
     public void DeletingAsksBeforeItDeletes()
@@ -101,8 +100,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Shift asks for the other one, which is final wherever it runs. Somebody who wants a thing gone
-    /// should not have to go and empty the trash afterward.
+    /// Shift asks for the other one, which is final wherever it runs. Wanting a thing gone should not
+    /// mean emptying the trash afterward.
     /// </summary>
     [Fact]
     public void DeletingForGoodSaysItCannotBeUndone()
@@ -296,8 +295,7 @@ public sealed class CommanderKeysTests : IDisposable
 
     /// <summary>
     /// What a key does is written down once. The palette lists every command of the screen, so the tab
-    /// rows must not carry the keys as well — a row offered twice is a list that has stopped saying
-    /// anything about where a thing lives.
+    /// rows must not carry the keys as well.
     /// </summary>
     [Fact]
     public void ThePaletteOffersNewTabOnce()
@@ -313,9 +311,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    ///     Filtering moved off <c>F4</c> when that key came to mean editing, which is what it means in
-    ///     every other file manager. It sits behind the leader that does something to what the panel is
-    ///     showing, which is where the rest of the once-in-a-while operations are.
+    ///     Filtering moved off <c>F4</c> when that key came to mean editing. It sits behind the leader
+    ///     that does something to what the panel is showing.
     /// </summary>
     [Fact]
     public void FilteringAsksForThePattern()
@@ -388,9 +385,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// The way out of a folder is the <c>..</c> row, and only that. Backspace used to do it as well and
-    /// no longer does: the command line is typed on without ever taking the focus, so a Backspace meant
-    /// for a typo would leave the folder instead.
+    /// The way out of a folder is the <c>..</c> row, and only that. The command line is typed on without
+    /// taking the focus, so a Backspace meant for a typo must not leave the folder.
     /// </summary>
     [Fact]
     public void GoingUpLeavesTheFolder()
@@ -463,10 +459,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Stopping the work is Escape behind the leader. It was plain Escape, which meant one key stood for
-    /// "get out of this" most of the time and "stop the copy" whenever something was running — and you cannot
-    /// press a key you have to think about first. It was held with Alt afterward, which a Mac terminal
-    /// never sends, so it now sits where the rest of the operations are.
+    /// Stopping the work is Escape behind the leader, where the rest of the operations are. Plain Escape
+    /// already stands for getting out of things, and Alt is a modifier a Mac terminal never sends.
     /// </summary>
     [Fact]
     public void StoppingTheWorkIsEscapeBehindTheLeader()
@@ -497,8 +491,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// A leader on its own puts what finishes it in the box in the corner. That is the whole reason the
-    /// keys are grouped behind one: the second key is read rather than remembered.
+    /// A leader on its own puts what finishes it on the screen, drawn by this screen rather than by the
+    /// framework. The framework fences it in a titled box, and nothing else here is fenced in.
     /// </summary>
     [Fact]
     public void ALeaderListsWhatFinishesIt()
@@ -507,14 +501,26 @@ public sealed class CommanderKeysTests : IDisposable
 
         var frame = _app.Frame();
 
+        Assert.Contains(Loc(LocString.MenuKeys).ToUpperInvariant(), frame, StringComparison.Ordinal);
         Assert.Contains(Loc(LocString.Permissions), frame, StringComparison.Ordinal);
         Assert.Contains(Loc(LocString.MenuHardLink), frame, StringComparison.Ordinal);
+        Assert.DoesNotContain("╭─", frame, StringComparison.Ordinal);
+    }
+
+    /// <summary>The list goes away with the chord, so it is only ever answering a question being asked.</summary>
+    [Fact]
+    public void WhatFinishesTheLeaderGoesWithIt()
+    {
+        _app.Press(ConsoleKey.X);
+        _app.Frame();
+        _app.Press(ConsoleKey.Escape);
+
+        Assert.DoesNotContain(Loc(LocString.MenuKeys).ToUpperInvariant(), _app.Frame(), StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// Going up a folder answers to all three: the letter an editor puts it on, the arrow that points that
-    /// way, and the pair a laptop cannot press but a full keyboard can. The binding is named after the
-    /// letter, since that is the one every keyboard has.
+    /// Going up a folder answers to all three: the letter an editor puts it on, the arrow that points
+    /// that way, and the pair a full keyboard has. It is named after the letter.
     /// </summary>
     [Fact]
     public void GoingUpAnswersToTheLetterTheArrowAndTheKeyTheFullKeyboardHas()
@@ -553,11 +559,11 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// The function keys as a terminal speaking the keyboard protocol really sends them. These bytes were
-    /// read off kitty rather than written from the specification: with the protocol on, the first four
-    /// arrive as <c>CSI P Q S</c> and — because <c>CSI R</c> is how a terminal answers where its cursor
-    /// is — F3 arrives as <c>CSI 13~</c> instead.
+    /// The function keys as a terminal speaking the keyboard protocol really sends them, read off kitty
+    /// rather than written from the specification.
     /// </summary>
+    /// <param name="sequence">The bytes the terminal sends.</param>
+    /// <param name="expected">What the screen says once they arrive.</param>
     [Theory]
     [InlineData("\e[P", "Keys")]
     [InlineData("\e[Q", "Tabs")]
@@ -612,9 +618,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Three keys for the three columns and a fourth to turn the order around. Asking for the column it is
-    /// already on turns it around too — that is what a click on the column head has always done — but the
-    /// fourth says it about whichever column that is, without having to know which.
+    /// Three keys for the three columns and a fourth to turn the order around. Asking for the column it
+    /// is already on turns it around too, as a click on the column head does.
     /// </summary>
     [Fact]
     public void SortingIsThreeColumnsAndAWayBack()
@@ -635,9 +640,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// A search running on the panel has the letters, leaders and all. Every leader is a letter somebody
-    /// spells file names with, so a search that lets them through is a search that cannot find a file
-    /// beginning with any of them.
+    /// A search running on the panel has the letters, leaders and all. Every leader is a letter a file
+    /// name can begin with.
     /// </summary>
     [Fact]
     public void ASearchKeepsTheLettersTheLeadersAreOn()
@@ -653,9 +657,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Enter ends the search and then opens what it found, in the one press. Swallowing it would mean
-    /// pressing Enter twice for a thing already under the cursor, which is the answer to a question
-    /// nobody asked. Escape is the one key the search keeps: it says stop and nothing else.
+    /// Enter ends the search and then opens what it found, in the one press. Escape is the one key the
+    /// search keeps, since it says stop and nothing else.
     /// </summary>
     [Fact]
     public void EnterEndsTheSearchAndOpensWhatItFound()
