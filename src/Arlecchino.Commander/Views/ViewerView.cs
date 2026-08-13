@@ -6,8 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
-using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
+using Arlecchino.Pictures;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
@@ -16,6 +16,8 @@ using Arlecchino.Input;
 using Arlecchino.Layout;
 using Arlecchino.Navigation;
 using Arlecchino.Rendering;
+using Arlecchino.Rendering.Terminals;
+using Arlecchino.Rendering.Text;
 using Arlecchino.Widgets;
 using Arlecchino.Widgets.Pictures;
 using Arlecchino.Widgets.Readouts;
@@ -109,8 +111,8 @@ public sealed class ViewerView : IArlecchinoView
     ];
 
     /// <summary>
-    /// Reads the file and decides what to show it with: a PNG as itself, anything else as text or a hex
-    /// dump. A picture is read whole, since half a deflate stream decodes to nothing.
+    /// Reads the file and decides what to show it with: a picture as itself, anything else as text or a
+    /// hex dump. A picture is read whole, since half of one decodes to nothing.
     /// </summary>
     /// <param name="source">Where the file lives.</param>
     /// <param name="path">Which file.</param>
@@ -125,21 +127,31 @@ public sealed class ViewerView : IArlecchinoView
     {
         try
         {
-            var head = await HeadAsync(source, path, ReadLimit).ConfigureAwait(false);
+            await using var stream = await source.OpenReadAsync(path, CancellationToken.None)
+                .ConfigureAwait(false);
+            var held = new MemoryStream();
+            var head = await TakeAsync(stream, held, ReadLimit).ConfigureAwait(false);
 
-            if (Png.Starts(head))
+            if (PictureFormats.For(head) is { } format)
             {
                 var whole = head.Length >= size
                     ? head
-                    : await HeadAsync(source, path, ImageLimit).ConfigureAwait(false);
+                    : await TakeAsync(stream, held, ImageLimit).ConfigureAwait(false);
+                var picture = new Picture();
 
-                if (Png.Read(whole) is { } raster)
+                if (format.Read(whole, PictureLimits.For(picture.Detail)) is { } raster)
                 {
-                    var picture = new Picture();
-
                     picture.Show(raster.Pixels, raster.Width, raster.Height);
 
-                    return (picture, Loc(LocString.ViewerPicture, raster.Width, raster.Height), whole.Length);
+                    return (
+                        picture,
+                        Loc(
+                            LocString.ViewerPicture,
+                            format.Name,
+                            raster.Width,
+                            raster.Height,
+                            Drawing(picture)),
+                        whole.Length);
                 }
             }
 
@@ -159,21 +171,30 @@ public sealed class ViewerView : IArlecchinoView
         }
     }
 
+    /// <summary>
+    /// How the picture will reach the terminal: the pixels themselves where the terminal admitted to a
+    /// graphics protocol, and half-blocks where it did not.
+    /// </summary>
+    /// <param name="picture">The picture about to be drawn.</param>
+    /// <returns>What to call the way it is drawn.</returns>
+    private static string Drawing(Picture picture) =>
+        TerminalCapabilities.Resolve(picture.Protocol ?? Glyphs.Picture)
+            .ToString()
+            .ToLowerInvariant();
+
     private static string Truncated(string kind, int read, long size) =>
         read < size ? Loc(LocString.ViewerFirst, kind, Sizes.Brief(read)) : kind;
 
     /// <summary>
-    /// The front of a file, as much of it as the viewer will show. It waits on a few blocks rather than on
-    /// the whole file, and the view is built from what it hands back.
+    /// Reads the file up to a limit, carrying on from where the last read left off. Over a network,
+    /// reading the front of it a second time would be the file twice.
     /// </summary>
-    /// <param name="source">Where the file is.</param>
-    /// <param name="path">The file.</param>
-    /// <param name="limit">How much of it to read.</param>
+    /// <param name="stream">The file, still open.</param>
+    /// <param name="held">What has been read so far, which this adds to.</param>
+    /// <param name="limit">How much of the file to have read by the end.</param>
     /// <returns>The bytes.</returns>
-    private static async Task<byte[]> HeadAsync(IFileSource source, string path, long limit)
+    private static async Task<byte[]> TakeAsync(Stream stream, MemoryStream held, long limit)
     {
-        await using var stream = await source.OpenReadAsync(path, CancellationToken.None).ConfigureAwait(false);
-        var held = new MemoryStream();
         var chunk = new byte[ChunkBytes];
 
         while (held.Length < limit)

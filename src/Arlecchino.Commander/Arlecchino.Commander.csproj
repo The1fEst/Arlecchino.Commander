@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../lib/Arlecchino/src/Arlecchino/Arlecchino.csproj" />
+    <ProjectReference Include="../../lib/Arlecchino/src/Arlecchino.Pictures/Arlecchino.Pictures.csproj" />
     <ProjectReference Include="../../lib/Arlecchino/src/Arlecchino.Generators/Arlecchino.Generators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />

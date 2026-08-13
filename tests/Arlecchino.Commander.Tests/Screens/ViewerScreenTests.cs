@@ -36,6 +36,27 @@ public sealed class ViewerScreenTests : IDisposable
         Assert.Contains("third line", _app.Frame(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     A picture says what it is, how large, and how it is being drawn. Half-blocks, sixel and the
+    ///     kitty protocol differ by more than they look.
+    /// </summary>
+    [Fact]
+    public void APictureSaysItsFormatItsSizeAndHowItIsDrawn()
+    {
+        var path = Path.Combine(_app.Folder, "dot.pnm");
+
+        using (var file = File.Create(path))
+        {
+            file.Write("P6\n2 1\n255\n"u8);
+            file.Write([255, 0, 0, 0, 255, 0]);
+        }
+
+        _app.Sessions.Viewing.Value = path;
+        _app.Sessions.ViewingSize = new FileInfo(path).Length;
+
+        Assert.True(_app.Shows("pnm, 2×1, drawn as blocks"));
+    }
+
     [Fact]
     public void TheNameOfTheFileIsInTheChrome()
     {
