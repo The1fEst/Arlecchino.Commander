@@ -89,14 +89,19 @@ of time — one file, nothing to install, no .NET on the machine required. They 
   in both panels every file the other one does not have the same of, `x y` puts the marked paths on the
   clipboard, `x i` shows the invisible files, `x f` shows only the names matching a pattern, and `x r`
   reads both panels again.
+- **Panels that keep up by themselves.** A file made, written or deleted by something else — another
+  window, a build, a download — turns up in the panel with no key pressed. On a disk the operating system
+  says so; on a server, which says nothing, the folder on screen is read again every few seconds and
+  compared with what the panel has, and nothing is asked of it while it is carrying files. The panels of a
+  tab that is not on screen stop watching until it is come back to, and `watch off` stops all of it.
 - **A real editor on `F4`.** There is no editor of our own: the terminal is handed to the one the
   settings name — the screen steps aside, the editor gets the keyboard and the screen to itself, and the
   panel is read again when it exits. Files on this machine only; a panel showing a server says so.
 - **Settings, behind `!`.** The same row the command line uses, opened by an exclamation mark, with a box
   above it listing what can be set, what each of them is now and what it is for — narrowing as you type,
   `Tab` finishing the word, and a name on its own filling in its current value so it can be edited rather
-  than retyped. `editor vim` keeps the editor. What is kept lives in
-  `~/.config/arlecchino.commander/settings.toml` (or under `XDG_CONFIG_HOME`), written the moment
+  than retyped. `editor vim` keeps the editor, and `watch 5` how often a server is read again. What is
+  kept lives in `~/.config/arlecchino.commander/settings.toml` (or under `XDG_CONFIG_HOME`), written the moment
   something changes rather than on the way out — a file manager is quit by closing the terminal as often
   as by pressing the key for it. With nothing set, `$VISUAL` and `$EDITOR` are what the editor already is.
 - **A command line under the panels, behind `:`.** The panel keeps the letters until the colon asks for

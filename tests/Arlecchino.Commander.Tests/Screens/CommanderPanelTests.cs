@@ -210,6 +210,50 @@ public sealed class CommanderPanelTests : IDisposable
         Assert.DoesNotContain("Unhandled", screen, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     A file made by something else — another window, a build, a download — turns up in the panel with
+    ///     no key pressed. This is the whole point of the watching, and the disk is what says so.
+    /// </summary>
+    [Fact]
+    public void AFileMadeOutsideTheApplicationTurnsUpByItself()
+    {
+        Assert.DoesNotContain("gamma.txt", _app.Frame(), StringComparison.Ordinal);
+
+        File.WriteAllText(Path.Combine(_app.Folder, "gamma.txt"), "three");
+
+        Assert.True(_app.Shows("gamma.txt"));
+    }
+
+    /// <summary>A file that went away the same way stops being drawn, and the panel says so quietly.</summary>
+    [Fact]
+    public void AFileDeletedOutsideTheApplicationGoesByItself()
+    {
+        Assert.Contains("beta.txt", _app.Frame(), StringComparison.Ordinal);
+
+        File.Delete(Path.Combine(_app.Folder, "beta.txt"));
+
+        Assert.True(_app.Until(() => !_app.Frame().Contains("beta.txt", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    ///     A reading the watch asked for is said nothing about: the panel keeps its cursor, its marks and
+    ///     its names, and never flashes the word it shows while a folder is being waited for.
+    /// </summary>
+    [Fact]
+    public void WhatTheWatchReadsArrivesWithoutTheWordForWaiting()
+    {
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.Spacebar);
+        _app.Frame();
+
+        File.WriteAllText(Path.Combine(_app.Folder, "gamma.txt"), "three");
+
+        Assert.True(_app.Shows("gamma.txt"));
+        Assert.DoesNotContain("reading", _app.Frame(), StringComparison.Ordinal);
+        Assert.True(_app.Sessions.Left.Marks.Contains("alpha.txt"));
+    }
+
     [Fact]
     public void ANarrowTerminalIsToldRatherThanDrawnInto()
     {

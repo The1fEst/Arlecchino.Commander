@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Arlecchino.Atoms;
 using Arlecchino.Commander.Model;
 
@@ -14,8 +15,22 @@ public sealed class Settings : IArlecchinoStore
     /// <summary>The name the editor is set under, on the line and in the file.</summary>
     public const string EditorName = "editor";
 
+    /// <summary>The name the watching is set under, in seconds or as the word for none.</summary>
+    public const string WatchName = "watch";
+
+    /// <summary>The word that turns the watching off, typed in place of a number of seconds.</summary>
+    public const string WatchOff = "off";
+
     private static readonly string[] KnownEditors =
         ["vim", "nvim", "helix", "hx", "micro", "nano", "kak", "emacs", "vi", "code", "subl"];
+
+    private static readonly string[] KnownWatches = [WatchOff, "2", "5", "10", "30"];
+
+    private static readonly TimeSpan WatchByDefault = TimeSpan.FromSeconds(5);
+
+    private static readonly TimeSpan Fastest = TimeSpan.FromSeconds(1);
+
+    private static readonly TimeSpan Slowest = TimeSpan.FromHours(1);
 
     private readonly Dictionary<string, string> _values;
 
@@ -30,7 +45,11 @@ public sealed class Settings : IArlecchinoStore
             _values[EditorName] = named;
         }
 
-        All = [new(EditorName, LocString.SettingsEditor, static () => Programs.Present(KnownEditors))];
+        All =
+        [
+            new(EditorName, LocString.SettingsEditor, static () => Programs.Present(KnownEditors)),
+            new(WatchName, LocString.SettingsWatch, static () => KnownWatches),
+        ];
     }
 
     /// <summary>The file all of this is kept in, named on screen so it can be edited by hand.</summary>
@@ -45,6 +64,32 @@ public sealed class Settings : IArlecchinoStore
     /// than act on.
     /// </summary>
     public string Editor => Value(EditorName);
+
+    /// <summary>
+    /// How often a panel on a server reads its folder again, and whether the panels watch at all. Nothing
+    /// at all stops the watching, the disk included; anything else is a number of seconds, up to an hour.
+    /// </summary>
+    public TimeSpan Watch
+    {
+        get
+        {
+            var value = Value(WatchName);
+
+            if (value.Length == 0)
+            {
+                return WatchByDefault;
+            }
+
+            if (value.Equals(WatchOff, StringComparison.OrdinalIgnoreCase))
+            {
+                return TimeSpan.Zero;
+            }
+
+            return double.TryParse(value, CultureInfo.InvariantCulture, out var seconds) && seconds > 0
+                ? TimeSpan.FromSeconds(Math.Clamp(seconds, Fastest.TotalSeconds, Slowest.TotalSeconds))
+                : TimeSpan.Zero;
+        }
+    }
 
     /// <summary>What a setting is now.</summary>
     /// <param name="name">Which setting.</param>

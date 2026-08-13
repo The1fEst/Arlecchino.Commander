@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
+using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
@@ -15,15 +16,15 @@ using Arlecchino.Widgets.Lists;
 
 namespace Arlecchino.Commander.Widgets.Panels;
 
-public sealed class FilePanel : IArlecchinoInteractiveWidget
+public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
 {
     private readonly PanelState _state;
     private readonly ArlecchinoKeymap _keymap;
     private readonly KeyText _keys;
     private readonly ListBox<FileEntry> _table;
-    private readonly List<FileEntry> _entries = [];
     private readonly PanelPaint _paint = new();
     private readonly SearchLine _searchLine;
+    private readonly PanelReading _reading;
 
     /// <summary>Creates a panel over one side's state.</summary>
     /// <param name="state">What that side is showing.</param>
@@ -32,7 +33,14 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     /// Turns a key press into the character it types, so the search that runs while you type and the
     /// marking keys work with a Cyrillic layout switched on.
     /// </param>
-    public FilePanel(PanelState state, ArlecchinoKeymap keymap, KeyText keys)
+    /// <param name="settings">Asked how often a server should be read again, and whether to watch at all.</param>
+    /// <param name="operations">Asked whether files are being carried, which a server is not read during.</param>
+    public FilePanel(
+        PanelState state,
+        ArlecchinoKeymap keymap,
+        KeyText keys,
+        Settings settings,
+        Operations operations)
     {
         _state = state;
         _keymap = keymap;
@@ -46,7 +54,19 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
             OnActivate = Activate,
         };
 
+        _reading = new(state, _paint, _table, settings, operations);
+
         Reload();
+    }
+
+    /// <summary>
+    /// Whether this panel is one of the two on-screen. A tab that has been stepped away from stops watching,
+    /// and reads its folder again on the way back.
+    /// </summary>
+    public bool IsShown
+    {
+        get => _reading.IsShown;
+        set => _reading.IsShown = value;
     }
 
     public Func<FileEntry, ViewRoute>? OnOpenFile { get; init; }
@@ -72,7 +92,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     public string Typed => _searchLine.Typed;
 
     /// <summary>What the panel is showing, in the order it is shown.</summary>
-    public IReadOnlyList<FileEntry> Entries => _entries;
+    public IReadOnlyList<FileEntry> Entries => _reading.Entries;
 
     public bool IsFocused
     {
@@ -89,7 +109,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
         var marked = new List<FileEntry>();
 
-        foreach (var entry in _entries)
+        foreach (var entry in _reading.Entries)
         {
             if (!entry.IsParent && _state.Marks.Contains(entry.Name))
             {
@@ -146,9 +166,9 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
     public void Top() => _table.Selected = 0;
 
-    public void Middle() => _table.Selected = _entries.Count / 2;
+    public void Middle() => _table.Selected = _reading.Entries.Count / 2;
 
-    public void Bottom() => _table.Selected = Math.Max(0, _entries.Count - 1);
+    public void Bottom() => _table.Selected = Math.Max(0, _reading.Entries.Count - 1);
 
     /// <summary>
     /// Starts the search that runs while you type, which moves the cursor to the first name that
@@ -164,57 +184,40 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     /// <summary>Marks, or unmarks, every file whose name fits a shell pattern.</summary>
     /// <param name="pattern">The pattern, as <c>*.cs</c> or <c>a*,b*</c>.</param>
     /// <param name="marking"><c>true</c> to mark what fits, <c>false</c> to unmark it.</param>
-    public void MarkGroup(string pattern, bool marking) => Marking.Group(_state, _entries, pattern, marking);
+    public void MarkGroup(string pattern, bool marking) =>
+        Marking.Group(_state, _reading.Entries, pattern, marking);
 
     /// <summary>Marks what is not marked and unmarks what is.</summary>
-    public void Invert() => Marking.Invert(_state, _entries);
+    public void Invert() => Marking.Invert(_state, _reading.Entries);
 
+    /// <summary>
+    /// Puts the panel on another source, stopping the watch first: the source being left is closed with it,
+    /// and a reading on its way to a closed connection asks nothing.
+    /// </summary>
+    /// <param name="source">What to look at now.</param>
+    /// <param name="folder">Where to land on it.</param>
     public void Connect(IFileSource source, string folder)
     {
+        _reading.Stop();
         _state.Connect(source, folder);
         Reload();
     }
 
-    /// <summary>
-    /// Reads the folder and lands on it. Every source is read the same way, the disk included, and the
-    /// frame that asked for it carries on drawing meanwhile, saying that it is loading.
-    /// </summary>
-    public void Reload()
-    {
-        var cursor = _state.Cursor.Length > 0 ? _state.Cursor : Current?.Name ?? "";
-        var source = _state.Source;
-        var folder = _state.Folder;
-        var hidden = _state.ShowHidden;
+    /// <summary>Reads the folder and lands on it, saying meanwhile that it is being waited for.</summary>
+    public void Reload() => _reading.Reload();
 
-        _state.Cursor = "";
-        _paint.Loading = true;
+    /// <summary>Reads the folder again without saying so, which is what the watch asks for.</summary>
+    public void Refresh() => _reading.Refresh();
 
-        _ = Reading();
-
-        async Task Reading()
-        {
-            var read = await Listing.ReadAsync(source, folder, hidden).ConfigureAwait(false);
-
-            FrameThread.Post(() => Landed(source, folder, read, cursor));
-
-            var free = await Listing.FreeAsync(source, folder).ConfigureAwait(false);
-
-            FrameThread.Post(() =>
-            {
-                if (ReferenceEquals(source, _state.Source) && folder == _state.Folder)
-                {
-                    _paint.Free = free;
-                }
-            });
-        }
-    }
+    /// <summary>Stops watching the folder, for good.</summary>
+    public void Dispose() => _reading.Dispose();
 
     public void SortBy(Sorting sorting)
     {
         _state.Descending = _state.Sorting == sorting && !_state.Descending;
         _state.Sorting = sorting;
 
-        Sort();
+        _reading.Sort();
     }
 
     /// <summary>
@@ -225,16 +228,18 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
     {
         _state.Descending = !_state.Descending;
 
-        Sort();
+        _reading.Sort();
     }
 
     /// <summary>Moves the cursor to the first name the typed letters begin, keeping it where it is otherwise.</summary>
     /// <param name="typed">The letters spelled so far.</param>
     private void Nearest(string typed)
     {
-        for (var index = 0; index < _entries.Count; index++)
+        var entries = _reading.Entries;
+
+        for (var index = 0; index < entries.Count; index++)
         {
-            if (!_entries[index].Name.StartsWith(typed, StringComparison.OrdinalIgnoreCase))
+            if (!entries[index].Name.StartsWith(typed, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -255,20 +260,6 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         Reload();
 
         return true;
-    }
-
-    private void Point(string name)
-    {
-        for (var index = 0; index < _entries.Count; index++)
-        {
-            if (!string.Equals(_entries[index].Name, name, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            _table.Selected = index;
-            return;
-        }
     }
 
     public ViewRoute Activate(FileEntry entry)
@@ -316,7 +307,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
 
         if (key.Modifiers == 0 &&
             _keys.Resolve(key) is { } marking &&
-            Marking.Typed(marking, _state, _entries, OnGroup))
+            Marking.Typed(marking, _state, _reading.Entries, OnGroup))
         {
             return FocusResult.Handled;
         }
@@ -361,44 +352,6 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget
         SortBy(sorting);
 
         return FocusResult.Handled;
-    }
-
-    private void Landed(
-        IFileSource source,
-        string folder,
-        (IReadOnlyList<FileEntry> Entries, string Error) read,
-        string cursor)
-    {
-        if (!ReferenceEquals(source, _state.Source) || folder != _state.Folder)
-        {
-            return;
-        }
-
-        _paint.Loading = false;
-        _paint.Error = read.Error;
-        _entries.Clear();
-
-        foreach (var entry in read.Entries)
-        {
-            if (Kept(entry))
-            {
-                _entries.Add(entry);
-            }
-        }
-
-        Sort();
-        Point(cursor);
-    }
-
-    private bool Kept(FileEntry entry) =>
-        _state.Filter.Length == 0 ||
-        entry.IsFolder ||
-        entry.Name.Contains(_state.Filter, StringComparison.OrdinalIgnoreCase);
-
-    private void Sort()
-    {
-        _entries.Sort((first, second) => Listing.Compare(first, second, _state.Sorting, _state.Descending));
-        _table.Items = _entries;
     }
 
     private void Up()

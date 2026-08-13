@@ -41,6 +41,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     private readonly Pair _panels;
     private readonly Dictionary<Session, (FilePanel Left, FilePanel Right)> _panes = [];
     private readonly Sessions _sessions;
+    private readonly Settings _settings;
 
     private readonly Surface _surface;
     private readonly CommandBar _commandBar;
@@ -88,6 +89,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
         _surface = surface;
         _sessions = sessions;
+        _settings = settings;
         _operations = operations;
         _keymap = options.Keymap;
         _typing = KeyText.For(options.TextInput);
@@ -292,7 +294,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
         FilePanel Over(PanelState state)
         {
-            return new(state, _keymap, _typing)
+            return new(state, _keymap, _typing, _settings, _operations)
             {
                 OnOpenFile = entry => _doings.Open(entry),
                 OnGroup = marking => _doings.Group(marking)
@@ -344,9 +346,15 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
         _showing = _sessions.Current;
 
+        _panels.Left.IsShown = false;
+        _panels.Right.IsShown = false;
+
         var (left, right) = Panes(_showing);
 
         _panels.Show(left, right);
+
+        left.IsShown = true;
+        right.IsShown = true;
 
         _layout = Lay();
         _focus = _layout.AsFocusRing(_keymap);
@@ -365,11 +373,17 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     }
 
     /// <summary>
-    ///     Gives up what watching the bar's height took out. The screen is built afresh every time it is
-    ///     navigated back to, so a subscription that outlived it would be one more per visit.
+    ///     Gives up what watching the bar's height took out, and the watches the panels had on the file
+    ///     system. The screen is built afresh on every visit, so anything outliving it would be one more.
     /// </summary>
     public void Dispose()
     {
         _actionBarHeight.Dispose();
+
+        foreach (var (left, right) in _panes.Values)
+        {
+            left.Dispose();
+            right.Dispose();
+        }
     }
 }

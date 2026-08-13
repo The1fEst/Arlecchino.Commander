@@ -204,6 +204,7 @@ CommandLineAsleep = ": — type a command here"
 SettingsTail = "name value — Enter keeps it"
 SettingsSaid = "what is kept in {0}"
 SettingsEditor = "The program F4 opens a file in"
+SettingsWatch = "Seconds between readings of a server, or off to watch nothing"
 SettingsUnset = "not set"
 
 OperationWhat = "what"

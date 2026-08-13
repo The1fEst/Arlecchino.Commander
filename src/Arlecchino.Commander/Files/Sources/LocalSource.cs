@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Files.Ssh;
+using Arlecchino.Commander.Files.Watching;
 using Arlecchino.Commander.Files.Work;
 
 namespace Arlecchino.Commander.Files.Sources;
@@ -13,7 +14,7 @@ namespace Arlecchino.Commander.Files.Sources;
 /// The disk this machine has. Reading and writing bytes is asked for rather than done, and the rest is one
 /// call into the kernel with no waiting form to ask for.
 /// </summary>
-public sealed class LocalSource : IFileSource
+public sealed class LocalSource : IFileSource, IWatchesFolder
 {
     private const int Block = 128 * 1024;
 
@@ -28,6 +29,15 @@ public sealed class LocalSource : IFileSource
     public bool WalksCheaply => true;
 
     public Task<bool> TryDeleteTreeAsync(FileEntry entry, CancellationToken token) => Task.FromResult(false);
+
+    /// <summary>
+    /// Asks the operating system to say when the folder changes, which it does whoever changed it — another
+    /// program, a shell in another window, or this one.
+    /// </summary>
+    /// <param name="folder">The folder to watch.</param>
+    /// <param name="changed">Called whenever something in it changed.</param>
+    /// <returns>What stops the watching, or <c>null</c> when this folder cannot be watched.</returns>
+    public IDisposable? Watch(string folder, Action changed) => LocalWatch.Over(folder, changed);
 
     /// <summary>
     /// The permissions of a file on this disk. Windows keeps none of the kind a chmod sets, and says

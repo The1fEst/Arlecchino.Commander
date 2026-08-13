@@ -106,6 +106,28 @@ public sealed class CommanderSettingsTests : IDisposable
     }
 
     /// <summary>
+    ///     The watching is set in seconds, and the word for none turns it off altogether. It is read back as
+    ///     a length of time rather than as what was typed, since that is what the panels are handed.
+    /// </summary>
+    [Fact]
+    public void TheWatchingIsSetInSecondsAndTurnedOffByAWord()
+    {
+        Assert.Equal(TimeSpan.FromSeconds(5), _app.Settings.Watch);
+
+        _app.Type($"!{Settings.WatchName} 10");
+        _app.Press(ConsoleKey.Enter);
+        _app.Frame();
+
+        Assert.Equal(TimeSpan.FromSeconds(10), _app.Settings.Watch);
+
+        _app.Type($"!{Settings.WatchName} {Settings.WatchOff}");
+        _app.Press(ConsoleKey.Enter);
+        _app.Frame();
+
+        Assert.Equal(TimeSpan.Zero, _app.Settings.Watch);
+    }
+
+    /// <summary>
     ///     While the line has the keyboard the letters on it are letters. A screen that read them as keys
     ///     would open the menu on the <c>e</c> of <c>editor</c>.
     /// </summary>
