@@ -67,8 +67,7 @@ public static class Listing
 
         foreach (var found in new DirectoryInfo(path).EnumerateFileSystemInfos())
         {
-            var hidden = found.Attributes.HasFlag(FileAttributes.Hidden) ||
-                         found.Attributes.HasFlag(FileAttributes.System);
+            var hidden = Hidden(found);
 
             if (hidden && !showHidden)
             {
@@ -179,6 +178,16 @@ public static class Listing
             return "";
         }
     }
+
+    /// <summary>
+    /// Whether a name is one to keep back. Windows says so in the attributes, while the rest of the world
+    /// says so with a leading dot, which is what a shell and every other file manager there go by.
+    /// </summary>
+    /// <param name="found">What was read off the disk.</param>
+    /// <returns><c>true</c> when it is hidden.</returns>
+    private static bool Hidden(FileSystemInfo found) => OperatingSystem.IsWindows()
+        ? found.Attributes.HasFlag(FileAttributes.Hidden) || found.Attributes.HasFlag(FileAttributes.System)
+        : found.Name.StartsWith('.');
 
     private static DateTime Written(FileSystemInfo found)
     {
