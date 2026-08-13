@@ -1,26 +1,24 @@
 using System;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
-using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
+using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Hosting;
 using Arlecchino.Navigation;
 using Arlecchino.State;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Arlecchino.Commander.Views.Doing;
 
 /// <summary>
-/// Everything the file manager can be asked to do, in one place and under one name each. A key, a menu
-/// entry and a row of the palette all name the same thing here.
+///     Everything the file manager can be asked to do, in one place and under one name each. A key, a menu
+///     entry and a row of the palette all name the same thing here.
 /// </summary>
 public sealed class Doings
 {
-    private readonly ArlecchinoState _state;
     private readonly Finder _finder;
-    private readonly IArlecchinoTerminal _terminal;
-    private readonly IServiceProvider _services;
     private readonly SettingBar _setting;
+    private readonly ArlecchinoState _state;
+    private readonly IArlecchinoTerminal _terminal;
 
     /// <summary>Gathers everything the screen can do.</summary>
     /// <param name="dialogs">How anything is asked.</param>
@@ -32,7 +30,8 @@ public sealed class Doings
     /// <param name="remote">Where the connection that was made is remembered.</param>
     /// <param name="state">Where the last word said is kept.</param>
     /// <param name="terminal">What reaches the clipboard of the machine the user is sitting at.</param>
-    /// <param name="services">Where the navigator is found, which is built after this screen is.</param>
+    /// <param name="navigation">Where the screens of the application are reached.</param>
+    /// <param name="handover">What lends the terminal to the editor while it runs.</param>
     /// <param name="settings">What is kept between runs, which the editor is named in.</param>
     /// <param name="setting">The line settings are typed on, which one menu entry opens.</param>
     public Doings(
@@ -45,20 +44,19 @@ public sealed class Doings
         Remote remote,
         ArlecchinoState state,
         IArlecchinoTerminal terminal,
-        IServiceProvider services,
+        Navigator navigation,
+        Handover handover,
         Settings settings,
         SettingBar setting)
     {
-        ArgumentNullException.ThrowIfNull(services);
-
         Dialogs = dialogs;
         Panels = panels;
 
         Sessions = sessions;
+        Navigation = navigation;
         _state = state;
         _finder = finder;
         _terminal = terminal;
-        _services = services;
         _setting = setting;
 
         Files = new(dialogs, operations, state, panels);
@@ -66,7 +64,7 @@ public sealed class Doings
         Linking = new(dialogs, state, panels);
         Places = new(dialogs, sessions, state);
         Dialling = new(dialogs, remote, state);
-        Editing = new(services.GetRequiredService<Handover>(), settings, state, panels);
+        Editing = new(handover, settings, state, panels);
     }
 
     /// <summary>How anything is asked.</summary>
@@ -78,8 +76,8 @@ public sealed class Doings
     /// <summary>Every tab and which one is open.</summary>
     public Sessions Sessions { get; }
 
-    /// <summary>Where the screens of the application are reached, resolved late because it knows them all.</summary>
-    public Navigator Navigation => _services.GetRequiredService<Navigator>();
+    /// <summary>Where the screens of the application are reached.</summary>
+    public Navigator Navigation { get; }
 
     /// <summary>Copying, moving, renaming, making a folder, deleting.</summary>
     public Deeds Files { get; }
@@ -100,10 +98,13 @@ public sealed class Doings
     public Editing Editing { get; }
 
     /// <summary>
-    /// Asks for the settings line. It is a key of its own — the exclamation mark — and this is the same
-    /// thing for the hand that came through the menu instead.
+    ///     Asks for the settings line. It is a key of its own — the exclamation mark — and this is the same
+    ///     thing for the hand that came through the menu instead.
     /// </summary>
-    public void OpenSettings() => _setting.Open();
+    public void OpenSettings()
+    {
+        _setting.Open();
+    }
 
     /// <summary>Reads what is under the cursor.</summary>
     /// <returns>The reading screen, or nowhere when there is nothing under it.</returns>
@@ -122,8 +123,8 @@ public sealed class Doings
     }
 
     /// <summary>
-    /// Puts the full path of everything marked on the clipboard, one to a line, or the path under the
-    /// cursor when nothing is marked. It goes through the terminal, and reports how many were copied.
+    ///     Puts the full path of everything marked on the clipboard, one to a line, or the path under the
+    ///     cursor when nothing is marked. It goes through the terminal, and reports how many were copied.
     /// </summary>
     public void CopyPaths()
     {
@@ -169,8 +170,8 @@ public sealed class Doings
     }
 
     /// <summary>
-    /// Asks what to look for and starts the walk, which runs on its own while the results screen
-    /// fills up.
+    ///     Asks what to look for and starts the walk, which runs on its own while the results screen
+    ///     fills up.
     /// </summary>
     /// <returns>Nowhere: the results screen is gone to when the second question has been answered.</returns>
     public ViewRoute Find()

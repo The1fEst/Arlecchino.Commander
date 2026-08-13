@@ -17,7 +17,6 @@ using Arlecchino.Navigation;
 using Arlecchino.Rendering;
 using Arlecchino.State;
 using Arlecchino.Widgets.Readouts;
-using Microsoft.Extensions.DependencyInjection;
 using static Arlecchino.Layout.PaneSplit;
 using static Arlecchino.Layout.PaneTree;
 
@@ -29,17 +28,17 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     private const int HighestPort = 65535;
 
     private static readonly string[] Schemes = ["sftp", "ftp"];
-
-    private readonly Surface _surface;
-    private readonly Remote _session;
-    private readonly Sessions _sessions;
-    private readonly ArlecchinoState _state;
-    private readonly IServiceProvider _services;
-    private readonly Spinner _spinner = new();
     private readonly FocusRing _focus;
     private readonly PaneTree _layout;
-    private readonly IDisposable _watchingScheme;
+    private readonly Navigator _navigation;
+    private readonly Remote _session;
+    private readonly Sessions _sessions;
+    private readonly Spinner _spinner = new();
+    private readonly ArlecchinoState _state;
+
+    private readonly Surface _surface;
     private readonly IDisposable _watchingSaved;
+    private readonly IDisposable _watchingScheme;
 
     public ConnectView(
         Surface surface,
@@ -47,7 +46,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         Sessions sessions,
         ArlecchinoState state,
         ArlecchinoOptions options,
-        IServiceProvider services)
+        Navigator navigation)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -55,7 +54,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _session = session;
         _sessions = sessions;
         _state = state;
-        _services = services;
+        _navigation = navigation;
 
         var saved = SshConfig.Hosts();
 
@@ -98,8 +97,8 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
                     static () => Loc(LocString.ConnectFolderHint)),
                 Field.Action(static () => Loc(LocString.ConnectVerb),
                     Start,
-                    () => !session.Connecting.Value && Ready(session)),
-            ],
+                    () => !session.Connecting.Value && Ready(session))
+            ]
         };
 
         _layout = Branch(
@@ -114,22 +113,34 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
             session.Port.Value = Connection.PortFor(session.Scheme.Value == "ftp" ? Protocol.Ftp : Protocol.Sftp));
     }
 
-    public void Draw() => _layout.Draw(_surface.Content);
+    public void Draw()
+    {
+        _layout.Draw(_surface.Content);
+    }
+
+    public ViewRoute Handle(KeyPress key)
+    {
+        return _focus.Handle(key);
+    }
+
+    public ViewRoute HandleMouse(MouseEvent mouse)
+    {
+        return _focus.HandleMouse(mouse);
+    }
+
+    public IReadOnlyList<ViewCommand> Commands()
+    {
+        return
+        [
+            Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander)
+        ];
+    }
 
     public void Dispose()
     {
         _watchingScheme.Dispose();
         _watchingSaved.Dispose();
     }
-
-    public ViewRoute Handle(KeyPress key) => _focus.Handle(key);
-
-    public ViewRoute HandleMouse(MouseEvent mouse) => _focus.HandleMouse(mouse);
-
-    public IReadOnlyList<ViewCommand> Commands() =>
-    [
-        Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
-    ];
 
     private void DrawHeader(SurfaceRegion header)
     {
@@ -146,7 +157,10 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _spinner.Draw(header.SplitLeft(header.Width - 1).Right);
     }
 
-    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), Loc(LocString.ConnectHints));
+    private void DrawFooter(SurfaceRegion footer)
+    {
+        Sheet.Hints(footer, Said(), Loc(LocString.ConnectHints));
+    }
 
     private string Said()
     {
@@ -182,7 +196,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         Side().Connect(source, folder);
 
         _state.Output = Loc(LocString.ConnectLanded, connection.Label);
-        _services.GetRequiredService<Navigator>().Apply(ViewKind.Commander);
+        _navigation.Apply(ViewKind.Commander);
     }
 
     private void Failed(string message, bool denied)
@@ -198,16 +212,24 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
                 Verb = Loc(LocString.ConnectClose),
                 Weight = Weight.Destroys,
                 Note = _ => new(message, true),
-                Confirm = static _ => { },
+                Confirm = static _ => { }
             });
     }
 
-    private PanelState Side() => _sessions.RightIsActive.Value ? _sessions.Right : _sessions.Left;
+    private PanelState Side()
+    {
+        return _sessions.RightIsActive.Value ? _sessions.Right : _sessions.Left;
+    }
 
-    private static string? Filled(string text) =>
-        text.Trim().Length == 0 ? Loc(LocString.ConnectNeeded) : null;
+    private static string? Filled(string text)
+    {
+        return text.Trim().Length == 0 ? Loc(LocString.ConnectNeeded) : null;
+    }
 
-    private static string Keys() => Path.Combine(Listing.Home(), ".ssh");
+    private static string Keys()
+    {
+        return Path.Combine(Listing.Home(), ".ssh");
+    }
 
     private static List<string> Aliases(IReadOnlyList<SshHost> saved)
     {
@@ -235,6 +257,8 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         }
     }
 
-    private static bool Ready(Remote session) =>
-        session.Host.Value.Trim().Length > 0 && session.User.Value.Trim().Length > 0;
+    private static bool Ready(Remote session)
+    {
+        return session.Host.Value.Trim().Length > 0 && session.User.Value.Trim().Length > 0;
+    }
 }
