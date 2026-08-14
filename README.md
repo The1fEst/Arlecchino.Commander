@@ -48,7 +48,9 @@ dotnet run --project src/Arlecchino.Commander -- C:\some\folder C:\another
 
 Every tag builds a native binary for Windows, macOS and Linux on both architectures, compiled ahead
 of time — one file, nothing to install, no .NET on the machine required. They are on the
-[releases page](https://github.com/The1fEst/Arlecchino.Commander/releases).
+[releases page](https://github.com/The1fEst/Arlecchino.Commander/releases). A version is the year,
+the month and which release of that month it is, so `2026.8.1` is the first release of August 2026
+and the number says how old the binary in hand is.
 
 ## What it does
 
