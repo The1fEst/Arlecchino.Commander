@@ -36,4 +36,4 @@ jobs:
           dotnet publish src/Arlecchino.Commander/Arlecchino.Commander.csproj \
             --configuration Release --runtime linux-x64 --output aot
 
-          ./aot/Arlecchino.Commander --frame 120x30 --left . --right src
+          ./aot/arlc --frame 120x30 --left . --right src

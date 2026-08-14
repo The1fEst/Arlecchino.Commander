@@ -60,7 +60,7 @@ jobs:
         if: matrix.runs
         shell: bash
         run: |
-          binary=out/Arlecchino.Commander
+          binary=out/arlc
           [ -f "$binary.exe" ] && binary="$binary.exe"
 
           "$binary" --frame 120x30 --left . --right src
@@ -80,7 +80,7 @@ jobs:
           if [ "${{ matrix.archive }}" = "zip" ]; then
             7z a -tzip "dist/$name.zip" ./out/* > /dev/null
           else
-            chmod +x out/Arlecchino.Commander
+            chmod +x out/arlc
             tar -C out -czf "dist/$name.tar.gz" .
           fi
 
