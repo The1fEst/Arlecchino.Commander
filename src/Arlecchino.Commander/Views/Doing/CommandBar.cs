@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms.Local;
+using Arlecchino.Editing;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -27,6 +29,7 @@ public sealed class CommandBar
     private readonly ArlecchinoState _state;
     private readonly ArlecchinoKeymap _keymap;
     private readonly Pair _panels;
+    private readonly TextCompleter _completer;
 
     /// <summary>Puts the line under a pair of panels.</summary>
     /// <param name="line">The line itself.</param>
@@ -41,6 +44,7 @@ public sealed class CommandBar
         _state = state;
         _keymap = keymap;
         _panels = panels;
+        _completer = new(line.Entry, new CommandWords(panels, runner.History), new ShellWords(), keymap);
     }
 
     /// <summary>
@@ -69,8 +73,26 @@ public sealed class CommandBar
     public void Open() => _line.Open();
 
     /// <summary>
-    /// Gives the key to the line, which takes it only once it has been asked for. The key that asks is
-    /// taken too, so the colon that opened the line does not also land on it.
+    /// Draws what the half-typed word could still turn into, which stands over the panels. Nothing is drawn
+    /// until Tab has been pressed, and what was found is dropped again by the next letter typed.
+    /// </summary>
+    /// <param name="over">The room above the foot.</param>
+    public void DrawHints(SurfaceRegion over)
+    {
+        var words = _completer.Words;
+        var rows = new List<HintRow>(words.Count);
+
+        foreach (var word in words)
+        {
+            rows.Add(new(word, "", ""));
+        }
+
+        HintRows.Draw(over, Loc(LocString.MenuCommand), rows, _completer.Chosen);
+    }
+
+    /// <summary>
+    /// Gives the key to the line, which takes it only once it has been asked for. Tab finishes the word
+    /// being typed and is offered before the line, so that nothing else claims it.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line took it.</returns>
@@ -80,6 +102,11 @@ public sealed class CommandBar
         {
             _line.Open();
 
+            return true;
+        }
+
+        if (_line.IsTyping && _completer.Handle(key))
+        {
             return true;
         }
 

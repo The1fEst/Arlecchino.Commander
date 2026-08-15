@@ -6,18 +6,19 @@ using Arlecchino.Rendering.Text;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// One row of the box above the settings line: the word to type, what it is now, and what it is for.
+/// One row of the box above a line being typed on: the word to type, whatever is worth saying about it, and
+/// what it is for.
 /// </summary>
-/// <param name="Word">What typing this row would put on the line.</param>
+/// <param name="Word">What taking this row would put on the line.</param>
 /// <param name="Value">What it is now, or nothing when the row is itself a value.</param>
 /// <param name="About">What it is for.</param>
-public sealed record SettingHint(string Word, string Value, string About);
+public sealed record HintRow(string Word, string Value, string About);
 
 /// <summary>
-/// What the half-typed word on the settings line could still turn into, drawn in the shape the keys
-/// behind a leader are drawn in. A dot and a weight of its own divide the three columns of a row.
+/// What the half-typed word on a line could still turn into, drawn in the shape the keys behind a leader are
+/// drawn in. A dot and a weight of its own divide the three columns of a row.
 /// </summary>
-internal static class SettingHints
+internal static class HintRows
 {
     private const string Between = " · ";
 
@@ -27,25 +28,28 @@ internal static class SettingHints
     /// <param name="over">Everything above the line, which the box places itself at the foot of.</param>
     /// <param name="title">What the box is called.</param>
     /// <param name="hints">What it lists, the best match first.</param>
-    public static void Draw(SurfaceRegion over, string title, IReadOnlyList<SettingHint> hints)
+    /// <param name="chosen">
+    /// Which row is on the line now, drawn as taken; <c>-1</c> while the line holds none of them in
+    /// particular.
+    /// </param>
+    public static void Draw(SurfaceRegion over, string title, IReadOnlyList<HintRow> hints, int chosen)
     {
-        ArgumentNullException.ThrowIfNull(hints);
-
         if (hints.Count == 0)
         {
             return;
         }
 
-        var showing = Math.Min(hints.Count, MostRows);
+        var from = Math.Max(0, Math.Min(chosen - MostRows + 1, hints.Count - MostRows));
+        var showing = Math.Min(hints.Count - from, MostRows);
         var words = 0;
         var values = 0;
         var about = 0;
 
         for (var at = 0; at < showing; at++)
         {
-            words = Math.Max(words, TextWidth.Of(hints[at].Word));
-            values = Math.Max(values, TextWidth.Of(hints[at].Value));
-            about = Math.Max(about, TextWidth.Of(hints[at].About));
+            words = Math.Max(words, TextWidth.Of(hints[from + at].Word));
+            values = Math.Max(values, TextWidth.Of(hints[from + at].Value));
+            about = Math.Max(about, TextWidth.Of(hints[from + at].About));
         }
 
         var columns = new Columns(words, values, words + Column(values) + Column(about));
@@ -58,7 +62,7 @@ internal static class SettingHints
 
         for (var at = 0; at < showing; at++)
         {
-            Row(rows, at, hints[at], columns with { Inner = rows.Width });
+            Row(rows, at, hints[from + at], columns with { Inner = rows.Width }, from + at == chosen);
         }
     }
 
@@ -75,11 +79,13 @@ internal static class SettingHints
     /// <param name="at">Which row.</param>
     /// <param name="hint">What it says.</param>
     /// <param name="columns">Where each column starts.</param>
-    private static void Row(SurfaceRegion rows, int at, SettingHint hint, Columns columns)
+    /// <param name="taken">Whether this is the row the line holds.</param>
+    private static void Row(SurfaceRegion rows, int at, HintRow hint, Columns columns, bool taken)
     {
         var coat = Skin.Overlay;
+        var word = taken ? Skin.ChosenName : coat.Text;
 
-        rows.Write(at, 0, TextWidth.Truncate(hint.Word, Math.Min(columns.Word, columns.Inner)), coat.Text);
+        rows.Write(at, 0, TextWidth.Truncate(hint.Word, Math.Min(columns.Word, columns.Inner)), word);
 
         if (columns.Values > 0 && columns.Value < columns.Inner)
         {

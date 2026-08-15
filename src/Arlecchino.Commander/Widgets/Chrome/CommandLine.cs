@@ -41,8 +41,6 @@ public sealed class CommandLine
         IArlecchinoTerminal terminal,
         char opens)
     {
-        ArgumentNullException.ThrowIfNull(history);
-
         _history = history;
         _keymap = keymap;
         _terminal = terminal;
@@ -70,6 +68,12 @@ public sealed class CommandLine
     /// that narrow with every letter, and the completion behind Tab.
     /// </summary>
     public string Typed => _text.Text;
+
+    /// <summary>
+    /// The text as something that can be edited from outside, for whatever is hung on a line being typed
+    /// into. Completion is one such thing: it finishes the word under the caret.
+    /// </summary>
+    public ITextEntry Entry => _text;
 
     /// <summary>
     /// Whether a key press is the one that asks for the line. It is read as the character it types rather
@@ -147,8 +151,6 @@ public sealed class CommandLine
     /// <param name="piece">What to put in.</param>
     public void Insert(string piece)
     {
-        ArgumentNullException.ThrowIfNull(piece);
-
         var quoted = piece.Contains(' ', StringComparison.Ordinal) ? $"\"{piece}\"" : piece;
 
         _text.Insert(quoted + " ");
@@ -189,8 +191,6 @@ public sealed class CommandLine
     /// <param name="tail">What the far end of the first row says.</param>
     public void Draw(SurfaceRegion region, string prompt, string tail)
     {
-        ArgumentNullException.ThrowIfNull(prompt);
-
         Height.Value = CommandLinePaint.Draw(region, _text, IsTyping, prompt, tail);
     }
 

@@ -66,7 +66,7 @@ public sealed class SettingBar
     {
         if (_line.IsTyping)
         {
-            SettingHints.Draw(over, Loc(LocString.MenuSettings), Hints());
+            HintRows.Draw(over, Loc(LocString.MenuSettings), Hints(), -1);
         }
     }
 
@@ -174,10 +174,10 @@ public sealed class SettingBar
     /// typed; after one it is what the named setting is worth being set to, narrowed the same way.
     /// </summary>
     /// <returns>The rows, or nothing when what is typed can go nowhere.</returns>
-    private List<SettingHint> Hints()
+    private List<HintRow> Hints()
     {
         var typed = _line.Typed;
-        var rows = new List<SettingHint>();
+        var rows = new List<HintRow>();
 
         if (!typed.Contains(' ', StringComparison.Ordinal))
         {

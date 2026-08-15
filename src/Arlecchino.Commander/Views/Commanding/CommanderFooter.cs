@@ -35,8 +35,6 @@ public sealed class CommanderFooter
         IArlecchinoTerminal terminal,
         Pair panels)
     {
-        ArgumentNullException.ThrowIfNull(runner);
-
         Setting = new(settings, state, keymap, typing, terminal);
         Line = new(new(runner.History, typing, keymap, terminal, ':'), runner, state, keymap, panels);
         _actionBar = new(panels);
@@ -97,11 +95,21 @@ public sealed class CommanderFooter
         _actionBar.Draw(bar);
     }
 
-    /// <summary>Draws what the settings line is offering, which stands over the panels.</summary>
+    /// <summary>
+    ///     Draws what the line being typed on is offering, which stands over the panels. Only one line is
+    ///     ever typed on, so only one box is ever drawn.
+    /// </summary>
     /// <param name="over">The room above the foot.</param>
     public void DrawHints(SurfaceRegion over)
     {
-        Setting.DrawHints(over);
+        if (Setting.IsTyping)
+        {
+            Setting.DrawHints(over);
+
+            return;
+        }
+
+        Line.DrawHints(over);
     }
 
     /// <summary>
