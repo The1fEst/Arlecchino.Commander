@@ -73,7 +73,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
         var panels = _panels.Panels;
 
-        _footer = new(runner, state, settings, options.Keymap, typing, panels);
+        _footer = new(runner, state, settings, options.Keymap, typing, terminal, panels);
 
         var doings = new Doings(
             new(state),

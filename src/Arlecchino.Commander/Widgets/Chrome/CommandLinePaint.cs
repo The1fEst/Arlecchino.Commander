@@ -1,4 +1,5 @@
 using System;
+using Arlecchino.Editing;
 using Arlecchino.Rendering;
 using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
@@ -54,9 +55,11 @@ internal static class CommandLinePaint
         var first = Math.Max(0, caret - MostRows + 1);
         var shown = Math.Min(MostRows, rows.Count - first);
 
+        var (from, to) = TextEditing.Selection(text);
+
         for (var row = 0; row < shown; row++)
         {
-            region.Write(row, at, rows[first + row].Text, coat.Text);
+            Row(region, rows[first + row], row, at, from, to);
         }
 
         if (typing)
@@ -65,6 +68,31 @@ internal static class CommandLinePaint
         }
 
         return shown;
+    }
+
+    /// <summary>
+    /// Draws one row of what is typed, with whatever part of it the selection covers standing out. A
+    /// selection spanning rows is drawn as the piece of it each row holds.
+    /// </summary>
+    /// <param name="region">The rows to draw on.</param>
+    /// <param name="row">The row and where in the text it starts.</param>
+    /// <param name="at">Which row of the region it goes on.</param>
+    /// <param name="column">The column the text starts at.</param>
+    /// <param name="from">Where the selection starts in the text.</param>
+    /// <param name="to">Where it ends.</param>
+    private static void Row(SurfaceRegion region, CommandLineRow row, int at, int column, int from, int to)
+    {
+        var coat = Skin.Quiet;
+        var head = Math.Clamp(from - row.Start, 0, row.Text.Length);
+        var tail = Math.Clamp(to - row.Start, 0, row.Text.Length);
+
+        region.Write(at, column, row.Text[..head], coat.Text);
+        region.Write(
+            at,
+            column + TextWidth.Of(row.Text[..head]),
+            row.Text[head..tail],
+            Skin.Paint(Skin.Ink, Skin.Sea));
+        region.Write(at, column + TextWidth.Of(row.Text[..tail]), row.Text[tail..], coat.Text);
     }
 
     /// <summary>

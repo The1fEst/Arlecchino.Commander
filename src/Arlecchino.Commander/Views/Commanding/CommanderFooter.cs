@@ -24,6 +24,7 @@ public sealed class CommanderFooter
     /// <param name="settings">What is kept between runs, which the settings line changes.</param>
     /// <param name="keymap">Keys the lines obey.</param>
     /// <param name="typing">Turns a key press into the character it types.</param>
+    /// <param name="terminal">What reaches the clipboard, for the selection that is copied or cut.</param>
     /// <param name="panels">The two panels on screen, which the bar names the keys of.</param>
     public CommanderFooter(
         Runner runner,
@@ -31,12 +32,13 @@ public sealed class CommanderFooter
         Settings settings,
         ArlecchinoKeymap keymap,
         KeyText typing,
+        IArlecchinoTerminal terminal,
         Pair panels)
     {
         ArgumentNullException.ThrowIfNull(runner);
 
-        Setting = new(settings, state, keymap, typing);
-        Line = new(new(runner.History, typing, keymap, ':'), runner, state, keymap, panels);
+        Setting = new(settings, state, keymap, typing, terminal);
+        Line = new(new(runner.History, typing, keymap, terminal, ':'), runner, state, keymap, panels);
         _actionBar = new(panels);
     }
 

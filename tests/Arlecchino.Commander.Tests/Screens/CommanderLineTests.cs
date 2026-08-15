@@ -165,6 +165,48 @@ public sealed class CommanderLineTests : IDisposable
         Assert.Contains("echo oneX two", _app.Frame(), StringComparison.Ordinal);
     }
 
+    /// <summary>Shift and the arrows select, and what is typed next lands over what was selected.</summary>
+    [Fact]
+    public void TypingOverASelectionReplacesIt()
+    {
+        _app.Frame();
+        _app.Type(":echo one two");
+        _app.Press(ConsoleKey.LeftArrow, shift: true);
+        _app.Press(ConsoleKey.LeftArrow, shift: true);
+        _app.Press(ConsoleKey.LeftArrow, shift: true);
+        _app.Type("X");
+
+        var screen = _app.Frame();
+
+        Assert.Contains("echo one X", screen, StringComparison.Ordinal);
+        Assert.DoesNotContain("echo one two", screen, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheSelectionIsWhatCopyingTakes()
+    {
+        _app.Frame();
+        _app.Type(":echo carrots");
+        _app.Press(ConsoleKey.LeftArrow, shift: true, alt: true);
+        _app.Press(ConsoleKey.Insert, control: true);
+
+        Assert.Equal("carrots", _app.Copied);
+    }
+
+    [Fact]
+    public void CuttingTakesTheSelectionOffTheLine()
+    {
+        _app.Frame();
+        _app.Type(":echo carrots");
+        _app.Press(ConsoleKey.LeftArrow, shift: true, alt: true);
+        _app.Press(ConsoleKey.Delete, shift: true);
+
+        var screen = _app.Frame();
+
+        Assert.Equal("carrots", _app.Copied);
+        Assert.DoesNotContain("carrots", screen, StringComparison.Ordinal);
+    }
+
     /// <summary>
     ///     A command too long for one row is carried onto the next rather than scrolled sideways, and the
     ///     panels give up the rows it took. What was carried over is on the rows under the prompt.

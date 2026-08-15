@@ -1,4 +1,5 @@
 using System;
+using Arlecchino.Editing;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
 
@@ -62,85 +63,16 @@ internal sealed class CommandLineKeys
     public bool Handle(KeyPress key, CommandLineText text) => Edits(key, text) || Typed(key, text);
 
     /// <summary>
-    /// Rubbing out and moving about: every key that changes the line without typing a character. These are
-    /// asked before the modified keys the application claims, since a word is stepped over on one of them.
+    /// Selecting, moving about and rubbing out: every key that changes the line without typing a character.
+    /// These are asked before the modified keys the application claims, since a word is stepped over on one.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <param name="text">The text to work on.</param>
     /// <returns><c>true</c> when the key was one of these and has been dealt with.</returns>
-    public bool Edits(KeyPress key, CommandLineText text) => Erasing(key, text) || Moving(key, text);
-
-    private bool Erasing(KeyPress key, CommandLineText text)
-    {
-        if (_keymap.Erase.Matches(key))
-        {
-            text.Back();
-            return true;
-        }
-
-        if (_keymap.EraseWord.Matches(key))
-        {
-            text.Word();
-            return true;
-        }
-
-        if (_keymap.EraseToStart.Matches(key))
-        {
-            text.EraseToStart();
-            return true;
-        }
-
-        if (!_keymap.DeleteForward.Matches(key))
-        {
-            return false;
-        }
-
-        text.Ahead();
-
-        return true;
-    }
-
-    private bool Moving(KeyPress key, CommandLineText text)
-    {
-        if (_keymap.WordLeft.Matches(key))
-        {
-            text.WordLeft();
-            return true;
-        }
-
-        if (_keymap.WordRight.Matches(key))
-        {
-            text.WordRight();
-            return true;
-        }
-
-        if (_keymap.MoveLeft.Matches(key))
-        {
-            text.Left();
-            return true;
-        }
-
-        if (_keymap.MoveRight.Matches(key))
-        {
-            text.Right();
-            return true;
-        }
-
-        if (_keymap.First.Matches(key))
-        {
-            text.First();
-            return true;
-        }
-
-        if (!_keymap.Last.Matches(key))
-        {
-            return false;
-        }
-
-        text.Last();
-
-        return true;
-    }
+    public bool Edits(KeyPress key, CommandLineText text) =>
+        SelectKeys.Handled(text, _keymap, key) ||
+        CaretKeys.Moved(text, _keymap, key) ||
+        EraseKeys.Erased(text, _keymap, key);
 
     private bool Typed(KeyPress key, CommandLineText text) => _keys.Resolve(key) is { } typed && text.Put(typed);
 }

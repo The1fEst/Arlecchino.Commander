@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Arlecchino.Atoms.Local;
+using Arlecchino.Editing;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
 using Arlecchino.Rendering;
@@ -17,6 +18,8 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 public sealed class CommandLine
 {
     private readonly List<string> _history;
+    private readonly ArlecchinoKeymap _keymap;
+    private readonly IArlecchinoTerminal _terminal;
     private readonly CommandLineKeys _keys;
     private readonly CommandLineText _text = new();
 
@@ -29,12 +32,20 @@ public sealed class CommandLine
     /// character is what lets a command be typed with a Cyrillic layout left switched on.
     /// </param>
     /// <param name="keymap">The keys the application obeys, which the line edits by.</param>
+    /// <param name="terminal">What reaches the clipboard, for the selection that is copied or cut.</param>
     /// <param name="opens">The character that asks for the line.</param>
-    public CommandLine(List<string> history, KeyText keys, ArlecchinoKeymap keymap, char opens)
+    public CommandLine(
+        List<string> history,
+        KeyText keys,
+        ArlecchinoKeymap keymap,
+        IArlecchinoTerminal terminal,
+        char opens)
     {
         ArgumentNullException.ThrowIfNull(history);
 
         _history = history;
+        _keymap = keymap;
+        _terminal = terminal;
         _keys = new(keymap, keys, opens);
         _place = history.Count;
     }
@@ -98,7 +109,7 @@ public sealed class CommandLine
             return Recall(back);
         }
 
-        if (_keys.Edits(key, _text))
+        if (Clipped(key) || _keys.Edits(key, _text))
         {
             return true;
         }
@@ -181,6 +192,34 @@ public sealed class CommandLine
         ArgumentNullException.ThrowIfNull(prompt);
 
         Height.Value = CommandLinePaint.Draw(region, _text, IsTyping, prompt, tail);
+    }
+
+    /// <summary>
+    /// Copying and cutting, which take the selection where there is one and the whole line where there is
+    /// not. Cutting an empty line would leave nothing to run, so it takes the selection alone.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <returns><c>true</c> when the key was one of these and has been dealt with.</returns>
+    private bool Clipped(KeyPress key)
+    {
+        var selected = TextEditing.Selected(_text);
+
+        if (_keymap.Copy.Matches(key))
+        {
+            _terminal.CopyToClipboard(selected.Length > 0 ? selected : _text.Text);
+
+            return true;
+        }
+
+        if (!_keymap.Cut.Matches(key) || selected.Length == 0)
+        {
+            return false;
+        }
+
+        _terminal.CopyToClipboard(selected);
+        TextEditing.EraseSelection(_text);
+
+        return true;
     }
 
     /// <summary>
