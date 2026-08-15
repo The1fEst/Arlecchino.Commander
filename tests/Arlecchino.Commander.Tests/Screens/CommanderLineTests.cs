@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Arlecchino.Commander.Tests.Support;
 using Xunit;
 
@@ -101,6 +102,27 @@ public sealed class CommanderLineTests : IDisposable
 
         Assert.Contains("echo one", line, StringComparison.Ordinal);
         Assert.DoesNotContain("rm -rf two", _app.Frame(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     A command too long for one row is carried onto the next rather than scrolled sideways, and the
+    ///     panels give up the rows it took. What was carried over is on the rows under the prompt.
+    /// </summary>
+    [Fact]
+    public void ALongCommandIsCarriedOntoTheRowsUnderThePrompt()
+    {
+        _app.Frame();
+
+        var was = _app.CommandLineRow();
+
+        _app.ReadFromTerminal($"\e[200~echo {string.Join(' ', Enumerable.Repeat("word", 40))} caboose\e[201~");
+        _app.Frame();
+
+        var lines = _app.FrameLines();
+        var row = _app.CommandLineRow();
+
+        Assert.True(row < was, $"the prompt was on row {was} and is on row {row}");
+        Assert.Contains("caboose", string.Concat(lines[(row + 1)..]), StringComparison.Ordinal);
     }
 
     /// <summary>

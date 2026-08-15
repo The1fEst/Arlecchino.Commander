@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Atoms.Local;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
 using Arlecchino.Rendering;
@@ -46,6 +47,12 @@ public sealed class CommandLine
 
     /// <summary>Whether the line has the keyboard, which is what tells a typed letter from a pressed key.</summary>
     public bool IsTyping { get; private set; }
+
+    /// <summary>
+    /// How many rows what is typed took, worked out while drawing rather than before. An atom, so the
+    /// screen that leaves room for the line can lay itself out again on the frame after it changed.
+    /// </summary>
+    public LocalAtom<int> Height { get; } = new(1);
 
     /// <summary>
     /// What is on the line as it stands, for whoever has to answer while it is still being typed — hints
@@ -157,15 +164,18 @@ public sealed class CommandLine
         Open();
     }
 
-    /// <summary>Draws the line, prompted with where what is typed would land.</summary>
-    /// <param name="region">The row to draw on.</param>
+    /// <summary>
+    /// Draws the line, prompted with where what is typed would land. How many rows it took goes on
+    /// <see cref="Height"/>, since a long command is carried onto rows the screen has to leave room for.
+    /// </summary>
+    /// <param name="region">The rows to draw on.</param>
     /// <param name="prompt">Where it would land.</param>
-    /// <param name="tail">What the far end of the row says.</param>
+    /// <param name="tail">What the far end of the first row says.</param>
     public void Draw(SurfaceRegion region, string prompt, string tail)
     {
         ArgumentNullException.ThrowIfNull(prompt);
 
-        CommandLinePaint.Draw(region, _text, IsTyping, prompt, tail);
+        Height.Value = CommandLinePaint.Draw(region, _text, IsTyping, prompt, tail);
     }
 
     /// <summary>

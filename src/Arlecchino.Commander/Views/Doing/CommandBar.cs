@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Arlecchino.Atoms.Local;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -60,6 +61,9 @@ public sealed class CommandBar
 
     /// <summary>Whether the line has the keyboard, which is what the panel asks before reading a letter.</summary>
     public bool IsTyping => _line.IsTyping;
+
+    /// <summary>How many rows a long command carried the line onto, which the screen leaves room for.</summary>
+    public LocalAtom<int> Height => _line.Height;
 
     /// <summary>Asks for the line, as the colon does by itself and as the key of that name does.</summary>
     public void Open() => _line.Open();

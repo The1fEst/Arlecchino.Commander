@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Atoms.Local;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Hosting;
@@ -41,6 +42,9 @@ public sealed class SettingBar
 
     /// <summary>Whether the line has the keyboard, which is what the panel asks before reading a letter.</summary>
     public bool IsTyping => _line.IsTyping;
+
+    /// <summary>How many rows a long setting carried the line onto, which the screen leaves room for.</summary>
+    public LocalAtom<int> Height => _line.Height;
 
     /// <summary>Asks for the line, as the menu entry does when there is no key being pressed.</summary>
     public void Open() => _line.Open();

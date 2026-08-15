@@ -11,8 +11,8 @@ using Arlecchino.State;
 namespace Arlecchino.Commander.Views.Commanding;
 
 /// <summary>
-///     What sits under the panels: one row for whichever line has been asked for, and the bar of keys below
-///     it. The two lines cannot both have the row, and they never want it at once.
+///     What sits under the panels: the rows whichever line has been asked for takes, and the bar of keys
+///     below them. The two lines cannot both have the room, and they never want it at once.
 /// </summary>
 public sealed class CommanderFooter
 {
@@ -47,27 +47,35 @@ public sealed class CommanderFooter
     public SettingBar Setting { get; }
 
     /// <summary>
-    ///     What the panels have to give up at the foot: the one row of the line, and however many rows the
-    ///     bar of keys wrapped itself into.
+    ///     What the panels have to give up at the foot: the rows the line being typed on carried itself onto,
+    ///     and however many rows the bar of keys wrapped itself into.
     /// </summary>
-    public int Rows => 1 + BarRows;
+    public int Rows => LineRows + BarRows;
 
     /// <summary>How many rows the bar of keys took, which is known only once it has been drawn.</summary>
     public int BarRows => _actionBar.Height.Value;
 
+    /// <summary>
+    ///     How many rows the line took. It is the line that is being drawn that is asked, since the other one
+    ///     is left holding whatever it took when it last had the room.
+    /// </summary>
+    public int LineRows => Setting.IsTyping ? Setting.Height.Value : Line.Height.Value;
+
     /// <summary>Whether either line has the keyboard.</summary>
     public bool IsTyping => Line.IsTyping || Setting.IsTyping;
 
-    /// <summary>Says when the bar wrapped onto another row, which the screen is laid out again after.</summary>
+    /// <summary>
+    ///     Says when the bar or either line wrapped onto another row, which the screen is laid out again after.
+    /// </summary>
     /// <param name="then">What to do about it.</param>
     /// <returns>What to give up to stop hearing about it.</returns>
-    public IDisposable WhenResized(Action then)
+    public IDisposable[] WhenResized(Action then)
     {
-        return _actionBar.Height.Subscribe(then);
+        return [_actionBar.Height.Subscribe(then), Line.Height.Subscribe(then), Setting.Height.Subscribe(then)];
     }
 
     /// <summary>Draws whichever line has been asked for.</summary>
-    /// <param name="row">The row to draw on.</param>
+    /// <param name="row">The rows to draw on.</param>
     public void DrawLine(SurfaceRegion row)
     {
         if (Setting.IsTyping)

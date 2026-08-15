@@ -23,7 +23,7 @@ public sealed class CommanderLayout : IDisposable
     private readonly Gutter _gutter;
     private readonly ArlecchinoKeymap _keymap;
     private readonly Pair _panels;
-    private readonly IDisposable _resized;
+    private readonly IDisposable[] _resized;
     private FocusRing _focus;
 
     private PaneTree _tree;
@@ -47,10 +47,13 @@ public sealed class CommanderLayout : IDisposable
         _focus = _tree.AsFocusRing(keymap);
     }
 
-    /// <summary>Gives up what watching the bar's height took out.</summary>
+    /// <summary>Gives up what watching the heights of the bar and the two lines took out.</summary>
     public void Dispose()
     {
-        _resized.Dispose();
+        foreach (var resized in _resized)
+        {
+            resized.Dispose();
+        }
     }
 
     /// <summary>
