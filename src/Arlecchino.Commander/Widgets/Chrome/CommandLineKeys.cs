@@ -59,7 +59,16 @@ internal sealed class CommandLineKeys
     /// <param name="key">The key that arrived.</param>
     /// <param name="text">The text to work on.</param>
     /// <returns><c>true</c> when the key was one of these and has been dealt with.</returns>
-    public bool Handle(KeyPress key, CommandLineText text) => Erasing(key, text) || Moving(key, text) || Typed(key, text);
+    public bool Handle(KeyPress key, CommandLineText text) => Edits(key, text) || Typed(key, text);
+
+    /// <summary>
+    /// Rubbing out and moving about: every key that changes the line without typing a character. These are
+    /// asked before the modified keys the application claims, since a word is stepped over on one of them.
+    /// </summary>
+    /// <param name="key">The key that arrived.</param>
+    /// <param name="text">The text to work on.</param>
+    /// <returns><c>true</c> when the key was one of these and has been dealt with.</returns>
+    public bool Edits(KeyPress key, CommandLineText text) => Erasing(key, text) || Moving(key, text);
 
     private bool Erasing(KeyPress key, CommandLineText text)
     {
@@ -93,6 +102,18 @@ internal sealed class CommandLineKeys
 
     private bool Moving(KeyPress key, CommandLineText text)
     {
+        if (_keymap.WordLeft.Matches(key))
+        {
+            text.WordLeft();
+            return true;
+        }
+
+        if (_keymap.WordRight.Matches(key))
+        {
+            text.WordRight();
+            return true;
+        }
+
         if (_keymap.MoveLeft.Matches(key))
         {
             text.Left();

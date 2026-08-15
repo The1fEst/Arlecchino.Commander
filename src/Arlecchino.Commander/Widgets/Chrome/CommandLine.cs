@@ -76,7 +76,7 @@ public sealed class CommandLine
     {
         IsTyping = false;
 
-        _text.Clear();
+        _text.Text = "";
         _place = _history.Count;
     }
 
@@ -96,6 +96,11 @@ public sealed class CommandLine
         if (CommandLineKeys.Recalls(key) is { } back)
         {
             return Recall(back);
+        }
+
+        if (_keys.Edits(key, _text))
+        {
+            return true;
         }
 
         if (key.Modifiers == KeyModifiers.Control)
@@ -159,7 +164,7 @@ public sealed class CommandLine
     /// <param name="text">What the line should say.</param>
     public void Set(string text)
     {
-        _text.Set(text);
+        _text.Text = text;
 
         Open();
     }
@@ -193,7 +198,7 @@ public sealed class CommandLine
 
         _place = back ? Math.Max(0, _place - 1) : Math.Min(_history.Count, _place + 1);
 
-        _text.Set(_place == _history.Count ? "" : _history[_place]);
+        _text.Text = _place == _history.Count ? "" : _history[_place];
 
         return true;
     }

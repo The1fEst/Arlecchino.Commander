@@ -1,6 +1,7 @@
 using System;
 using Arlecchino.Rendering;
 using Arlecchino.Rendering.Colors;
+using Arlecchino.Rendering.Text;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
 
@@ -49,7 +50,7 @@ internal static class CommandLinePaint
         }
 
         var rows = CommandLineWrap.Rows(text.Text, room);
-        var (caret, column) = CommandLineWrap.Caret(rows, text.Cursor);
+        var (caret, column) = CommandLineWrap.Caret(rows, text.Caret);
         var first = Math.Max(0, caret - MostRows + 1);
         var shown = Math.Min(MostRows, rows.Count - first);
 
@@ -60,13 +61,20 @@ internal static class CommandLinePaint
 
         if (typing)
         {
-            region.Write(
-                caret - first,
-                at + column,
-                text.Cursor < text.Text.Length ? text.Text[text.Cursor].ToString() : " ",
-                Skin.Paint(Skin.Ink, Skin.Crimson));
+            region.Write(caret - first, at + column, Under(text), Skin.Paint(Skin.Ink, Skin.Crimson));
         }
 
         return shown;
     }
+
+    /// <summary>
+    /// The symbol the caret stands on, which is what is drawn the other way round. It is taken whole: half
+    /// of a surrogate pair under the caret would be drawn as the character neither of them is.
+    /// </summary>
+    /// <param name="text">What is written on the line and where the caret is.</param>
+    /// <returns>The symbol, or a space when the caret is past the end.</returns>
+    private static string Under(CommandLineText text) =>
+        text.Caret < text.Text.Length
+            ? text.Text[text.Caret..TextWidth.NextClusterEnd(text.Text, text.Caret)]
+            : " ";
 }

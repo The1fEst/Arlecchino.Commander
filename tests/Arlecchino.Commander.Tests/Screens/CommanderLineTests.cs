@@ -104,6 +104,67 @@ public sealed class CommanderLineTests : IDisposable
         Assert.DoesNotContain("rm -rf two", _app.Frame(), StringComparison.Ordinal);
     }
 
+    /// <summary>Rubbing out a whole word, which a Mac types as Alt and everything else as Ctrl.</summary>
+    [Fact]
+    public void RubbingOutAWordTakesTheWholeWordOff()
+    {
+        _app.Frame();
+        _app.Type(":echo one carrots");
+        _app.Press(ConsoleKey.Backspace, alt: true);
+
+        var screen = _app.Frame();
+
+        Assert.Contains("echo one", screen, StringComparison.Ordinal);
+        Assert.DoesNotContain("carrots", screen, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RubbingOutAWordReachesPastTheSpaceTheCaretStandsAfter()
+    {
+        _app.Frame();
+        _app.Type(":echo one carrots ");
+        _app.Press(ConsoleKey.Backspace, alt: true);
+
+        var screen = _app.Frame();
+
+        Assert.Contains("echo one", screen, StringComparison.Ordinal);
+        Assert.DoesNotContain("carrots", screen, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Moving by word, which a Mac types as Alt and everything else as Ctrl. The framework walks the
+    ///     screens on Alt and the arrows, and stands aside for a line that is being typed on.
+    /// </summary>
+    [Fact]
+    public void TheCaretMovesAWordAtATimeUnderBothHabits()
+    {
+        _app.Frame();
+        _app.Type(":echo one two");
+        _app.Press(ConsoleKey.LeftArrow, alt: true);
+        _app.Type("X");
+
+        Assert.Contains("echo one Xtwo", _app.Frame(), StringComparison.Ordinal);
+
+        _app.Press(ConsoleKey.LeftArrow, control: true);
+        _app.Type("Y");
+
+        Assert.Contains("echo one YXtwo", _app.Frame(), StringComparison.Ordinal);
+    }
+
+    /// <summary>The way back, which stops at the end of the word rather than at the start of the next.</summary>
+    [Fact]
+    public void TheCaretComesBackAWordAtATime()
+    {
+        _app.Frame();
+        _app.Type(":echo one two");
+        _app.Press(ConsoleKey.LeftArrow, alt: true);
+        _app.Press(ConsoleKey.LeftArrow, alt: true);
+        _app.Press(ConsoleKey.RightArrow, alt: true);
+        _app.Type("X");
+
+        Assert.Contains("echo oneX two", _app.Frame(), StringComparison.Ordinal);
+    }
+
     /// <summary>
     ///     A command too long for one row is carried onto the next rather than scrolled sideways, and the
     ///     panels give up the rows it took. What was carried over is on the rows under the prompt.

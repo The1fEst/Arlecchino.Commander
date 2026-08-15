@@ -155,6 +155,12 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         return _input.HandleMouse(mouse);
     }
 
+    /// <summary>
+    ///     Whether a line or a search has the keyboard. It keeps the keys a caret moves by word on from
+    ///     walking the screens instead, which is what they do while nothing is being typed.
+    /// </summary>
+    public bool IsTyping => _footer.IsTyping || _panels.Panels.Active.IsSearching;
+
     /// <summary>Every key the screen answers to at this moment.</summary>
     /// <returns>The commands to match this key against.</returns>
     public IReadOnlyList<ViewCommand> Commands()
