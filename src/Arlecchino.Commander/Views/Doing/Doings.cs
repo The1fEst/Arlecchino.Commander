@@ -1,4 +1,3 @@
-using System;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Dialogs;
@@ -157,8 +156,6 @@ public sealed class Doings
     /// <returns>The reading screen.</returns>
     public ViewRoute Open(FileEntry entry)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         var panel = Panels.Active;
 
         panel.State.Cursor = entry.Name;
@@ -198,8 +195,6 @@ public sealed class Doings
     /// <param name="panel">Which panel.</param>
     public void Filter(FilePanel panel)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-
         Dialogs.AskFor(
             Loc(LocString.Filter),
             Loc(LocString.FilterField),
@@ -235,8 +230,6 @@ public sealed class Doings
     /// <param name="panel">Which panel.</param>
     public void ChooseDrive(FilePanel panel)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-
         Dialogs.Pick(Loc(LocString.PickDrive), Listing.Drives(), panel.GoTo);
     }
 
@@ -244,8 +237,6 @@ public sealed class Doings
     /// <param name="panel">Which panel.</param>
     public void ToggleHidden(FilePanel panel)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-
         panel.State.ShowHidden = !panel.State.ShowHidden;
         panel.Reload();
 

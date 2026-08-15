@@ -33,8 +33,6 @@ public sealed class TabWindow
     /// <returns>One past the last tab that is showing.</returns>
     public int Showing(IReadOnlyList<int> widths, int room, int open)
     {
-        ArgumentNullException.ThrowIfNull(widths);
-
         var wanted = Math.Clamp(open, 0, Math.Max(0, widths.Count - 1));
 
         _first = Math.Clamp(_first, 0, Math.Max(0, widths.Count - 1));

@@ -15,9 +15,6 @@ public static class Answers
     /// <param name="answered">What to do with the answer.</param>
     public static void From<T>(Func<Task<T>> asking, Action<T> answered)
     {
-        ArgumentNullException.ThrowIfNull(asking);
-        ArgumentNullException.ThrowIfNull(answered);
-
         _ = Asked();
 
         async Task Asked()

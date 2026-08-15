@@ -72,8 +72,6 @@ public sealed class Dialling
     /// <param name="panel">The panel.</param>
     public void Disconnect(FilePanel panel)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-
         if (!panel.Source.IsRemote)
         {
             _state.Output = Loc(LocString.SaidPanelIsLocal);

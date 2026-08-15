@@ -35,8 +35,6 @@ public sealed class CommanderLayout : IDisposable
     /// <param name="keymap">Keys the focus steps by.</param>
     public CommanderLayout(Pair panels, Sessions sessions, CommanderFooter footer, ArlecchinoKeymap keymap)
     {
-        ArgumentNullException.ThrowIfNull(footer);
-
         _panels = panels;
         _footer = footer;
         _keymap = keymap;

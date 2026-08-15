@@ -21,9 +21,6 @@ public static class Paths
     /// <returns>The path, shortened at the front when it started at home.</returns>
     public static string Homed(IFileSource source, string folder)
     {
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(folder);
-
         if (source.IsRemote)
         {
             return folder;

@@ -42,8 +42,6 @@ public sealed class NotesView : IArlecchinoView
     /// <param name="navigator">How the screen is left.</param>
     public NotesView(Surface surface, ArlecchinoState state, ArlecchinoOptions options, Navigator navigator)
     {
-        ArgumentNullException.ThrowIfNull(options);
-
         _surface = surface;
         _state = state;
         _navigator = navigator;

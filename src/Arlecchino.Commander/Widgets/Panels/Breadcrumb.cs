@@ -24,10 +24,6 @@ public static class Breadcrumb
     /// <param name="right">What goes at the right, which the trail makes room for.</param>
     public static void Draw(SurfaceRegion row, PanelState state, Skin.Coat coat, Rgb beneath, string right)
     {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(coat);
-        ArgumentNullException.ThrowIfNull(right);
-
         var room = Math.Max(0, row.Width - TextWidth.Of(right) - PanelColumns.Gap);
         var trail = Trail(state, coat, beneath);
         var column = 0;

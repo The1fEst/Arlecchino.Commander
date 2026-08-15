@@ -48,8 +48,6 @@ public sealed class LocalSource : IFileSource, IWatchesFolder
     /// <returns>The octal digits, or an empty string on Windows.</returns>
     public Task<string> ModeAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (OperatingSystem.IsWindows())
         {
             return Task.FromResult("");
@@ -67,8 +65,6 @@ public sealed class LocalSource : IFileSource, IWatchesFolder
 
     public Task<bool> TryChangeModeAsync(FileEntry entry, string mode, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (OperatingSystem.IsWindows() || Modes.Read(mode) is not { } wanted)
         {
             return Task.FromResult(false);
@@ -133,8 +129,6 @@ public sealed class LocalSource : IFileSource, IWatchesFolder
     /// <returns><c>false</c> when it could not be put there and is still where it was.</returns>
     public Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         return Task.Run(() => Trash.Trash.Here.TryPut(entry.Path), token);
     }
 
@@ -206,8 +200,6 @@ public sealed class LocalSource : IFileSource, IWatchesFolder
 
     public Task DeleteAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (entry.IsFolder)
         {
             Directory.Delete(entry.Path, true);

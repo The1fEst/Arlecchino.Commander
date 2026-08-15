@@ -1,4 +1,3 @@
-using System;
 using Arlecchino.Commander.Model;
 using Arlecchino.Rendering;
 using Arlecchino.Rendering.Colors;
@@ -23,9 +22,6 @@ public static class PanelRow
     /// <param name="focused">Whether the panel is the one being worked in.</param>
     public static void Draw(SurfaceRegion row, FileEntry entry, PanelState state, bool chosen, bool focused)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-        ArgumentNullException.ThrowIfNull(state);
-
         var coat = focused ? Skin.Lively : Skin.Quiet;
         var cursor = chosen && focused;
         var marked = state.Marks.Contains(entry.Name);

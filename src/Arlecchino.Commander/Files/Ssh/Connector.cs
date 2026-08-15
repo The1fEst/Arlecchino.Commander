@@ -17,10 +17,6 @@ public static class Connector
     /// <param name="failed">Called with what went wrong and whether the credentials were refused.</param>
     public static void Start(Connection wanted, Action<IFileSource, string> landed, Action<string, bool> failed)
     {
-        ArgumentNullException.ThrowIfNull(wanted);
-        ArgumentNullException.ThrowIfNull(landed);
-        ArgumentNullException.ThrowIfNull(failed);
-
         _ = Connecting();
 
         async Task Connecting()

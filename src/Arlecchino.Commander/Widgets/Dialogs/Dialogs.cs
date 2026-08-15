@@ -23,8 +23,6 @@ public sealed class Dialogs
     /// <param name="chose">What to do with what was picked.</param>
     public void Pick(string title, IReadOnlyList<string> items, Action<string> chose)
     {
-        ArgumentNullException.ThrowIfNull(items);
-
         Pick(title, [.. items.Select(static item => new Pick(item))], chose);
     }
 
@@ -71,8 +69,6 @@ public sealed class Dialogs
         string hint = "",
         bool secret = false)
     {
-        ArgumentNullException.ThrowIfNull(answered);
-
         Ask(new()
         {
             Title = title,

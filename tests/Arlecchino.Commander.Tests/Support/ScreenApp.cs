@@ -212,8 +212,6 @@ public sealed class ScreenApp : IDisposable
     /// <returns><c>true</c> when it became so.</returns>
     public bool Until(Func<bool> done)
     {
-        ArgumentNullException.ThrowIfNull(done);
-
         for (var attempt = 0; attempt < Attempts; attempt++)
         {
             Frame();

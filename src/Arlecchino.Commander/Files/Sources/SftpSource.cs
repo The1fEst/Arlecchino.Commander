@@ -131,8 +131,6 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
     public async Task<string> ModeAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         using var lease = _pool.Take();
         var client = lease.Client;
 
@@ -158,8 +156,6 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     /// <returns><c>false</c> when the digits were not digits, or the server refused.</returns>
     public Task<bool> TryChangeModeAsync(FileEntry entry, string mode, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (Modes.AsDigits(mode) is not { } wanted)
         {
             return Task.FromResult(false);
@@ -293,8 +289,6 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
     public async Task DeleteAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         using var lease = _pool.Take();
         var client = lease.Client;
 
@@ -324,8 +318,6 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     /// <returns><c>false</c> when the server has no shell to run it, leaving the tree to be walked.</returns>
     public async Task<bool> TryDeleteTreeAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (!entry.IsFolder)
         {
             return false;

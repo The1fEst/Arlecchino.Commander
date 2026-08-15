@@ -22,8 +22,6 @@ public sealed class OperationModal : Modal
     [SetsRequiredMembers]
     public OperationModal(Operation asking, Action<Operation>? completing = null)
     {
-        ArgumentNullException.ThrowIfNull(asking);
-
         Asking = asking;
         Title = asking.Title;
 
@@ -92,8 +90,6 @@ public sealed class OperationModal : Modal
     /// <param name="mouse">The event that arrived.</param>
     public override void HandleMouse(ModalFrame frame, MouseEvent mouse)
     {
-        ArgumentNullException.ThrowIfNull(frame);
-
         if (mouse.Action != MouseAction.Pressed)
         {
             return;

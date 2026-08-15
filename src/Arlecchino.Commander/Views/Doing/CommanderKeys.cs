@@ -36,11 +36,6 @@ public static class CommanderKeys
         SettingBar setting,
         IHostApplicationLifetime lifetime)
     {
-        ArgumentNullException.ThrowIfNull(doings);
-        ArgumentNullException.ThrowIfNull(panels);
-        ArgumentNullException.ThrowIfNull(sessions);
-        ArgumentNullException.ThrowIfNull(lifetime);
-
         return
         [
             Bind.To(new(ConsoleKey.F1, KeyModifiers.Control),

@@ -48,8 +48,6 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         ArlecchinoOptions options,
         Navigator navigation)
     {
-        ArgumentNullException.ThrowIfNull(options);
-
         _surface = surface;
         _session = session;
         _sessions = sessions;

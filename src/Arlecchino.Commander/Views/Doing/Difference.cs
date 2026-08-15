@@ -18,9 +18,6 @@ public static class Difference
     /// <returns>How much was marked, all told.</returns>
     public static int Mark(FilePanel left, FilePanel right)
     {
-        ArgumentNullException.ThrowIfNull(left);
-        ArgumentNullException.ThrowIfNull(right);
-
         left.State.Marks.Clear();
         right.State.Marks.Clear();
 

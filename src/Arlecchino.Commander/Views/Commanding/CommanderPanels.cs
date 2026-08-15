@@ -39,9 +39,6 @@ public sealed class CommanderPanels : IDisposable
         ArlecchinoKeymap keymap,
         KeyText typing)
     {
-        ArgumentNullException.ThrowIfNull(sessions);
-        ArgumentNullException.ThrowIfNull(operations);
-
         _sessions = sessions;
         _operations = operations;
         _settings = settings;

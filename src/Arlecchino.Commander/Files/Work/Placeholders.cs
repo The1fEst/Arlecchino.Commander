@@ -35,10 +35,6 @@ public static class Placeholders
         IReadOnlyList<FileEntry> targets,
         FileEntry? current)
     {
-        ArgumentNullException.ThrowIfNull(command);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(targets);
-
         if (!command.Contains('%', StringComparison.Ordinal))
         {
             return command;

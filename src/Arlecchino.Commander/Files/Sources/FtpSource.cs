@@ -40,8 +40,6 @@ public sealed class FtpSource : IFileSource
 
     public static async Task<FtpSource> ConnectAsync(Connection connection, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(connection);
-
         try
         {
             var client = await FtpConnection
@@ -67,8 +65,6 @@ public sealed class FtpSource : IFileSource
     /// <returns>The octal digits, or an empty string.</returns>
     public async Task<string> ModeAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         await _turn.WaitAsync(token).ConfigureAwait(false);
 
         try
@@ -97,8 +93,6 @@ public sealed class FtpSource : IFileSource
 
     public async Task<bool> TryChangeModeAsync(FileEntry entry, string mode, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (Modes.AsDigits(mode) is not { } wanted)
         {
             return false;
@@ -295,8 +289,6 @@ public sealed class FtpSource : IFileSource
 
     public async Task DeleteAsync(FileEntry entry, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         await _turn.WaitAsync(token).ConfigureAwait(false);
 
         try

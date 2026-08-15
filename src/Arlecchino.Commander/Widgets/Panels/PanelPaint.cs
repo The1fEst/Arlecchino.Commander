@@ -1,4 +1,3 @@
-using System;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Input;
@@ -37,8 +36,6 @@ public sealed class PanelPaint
     /// <returns>Where the rows go, which is empty when there is no room for any or nothing to put there.</returns>
     public SurfaceRegion Draw(SurfaceRegion region, FilePanel panel)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-
         var none = region.Rows(region.Height, 0);
 
         if (region.IsEmpty)

@@ -46,8 +46,6 @@ public sealed class Runner : IArlecchinoStore
     /// <param name="finished">Called on the drawing thread once it has ended.</param>
     public void Run(string command, string folder, IFileSource source, Action finished)
     {
-        ArgumentNullException.ThrowIfNull(finished);
-
         if (IsRunning)
         {
             _state.Output = Loc(LocString.SaidCommandRunning);

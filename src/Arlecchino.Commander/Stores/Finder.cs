@@ -61,9 +61,6 @@ public sealed class Finder : IArlecchinoStore
     /// <param name="done">Called on the drawing thread when the walk has ended.</param>
     public void Start(IFileSource source, string folder, string pattern, Action done)
     {
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(done);
-
         if (IsRunning)
         {
             _state.Output = Loc(LocString.SaidSearchRunning);

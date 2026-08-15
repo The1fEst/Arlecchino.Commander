@@ -39,8 +39,6 @@ public static class OperationBox
     /// <returns>Where it landed, for the clicks.</returns>
     public static OperationSpots Draw(SurfaceRegion screen, Operation operation)
     {
-        ArgumentNullException.ThrowIfNull(operation);
-
         var width = Math.Min(Wanted, screen.Width - 4);
         var rows = Rows(operation);
 

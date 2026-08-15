@@ -54,9 +54,6 @@ public sealed class ViewerView : IArlecchinoView
     /// <param name="lifetime">Stops the application on F10.</param>
     public ViewerView(Surface surface, Sessions sessions, ArlecchinoOptions options, IHostApplicationLifetime lifetime)
     {
-        ArgumentNullException.ThrowIfNull(sessions);
-        ArgumentNullException.ThrowIfNull(options);
-
         _surface = surface;
         _lifetime = lifetime;
 

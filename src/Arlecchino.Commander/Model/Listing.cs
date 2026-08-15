@@ -22,8 +22,6 @@ public static class Listing
         string folder,
         bool hidden)
     {
-        ArgumentNullException.ThrowIfNull(source);
-
         try
         {
             return (await source.ListAsync(folder, hidden, CancellationToken.None).ConfigureAwait(false), "");
@@ -44,8 +42,6 @@ public static class Listing
     /// <returns>What it said, or nothing when it would not say.</returns>
     public static async Task<string> FreeAsync(IFileSource source, string folder)
     {
-        ArgumentNullException.ThrowIfNull(source);
-
         try
         {
             return await source.FreeAsync(folder, CancellationToken.None).ConfigureAwait(false);

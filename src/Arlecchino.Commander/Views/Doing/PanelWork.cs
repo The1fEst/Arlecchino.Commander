@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Widgets.Panels;
@@ -46,8 +45,6 @@ public abstract class PanelWork
     /// <returns><c>true</c> when there is nothing.</returns>
     protected bool Nothing(IReadOnlyList<FileEntry> sources)
     {
-        ArgumentNullException.ThrowIfNull(sources);
-
         if (sources.Count > 0)
         {
             return false;

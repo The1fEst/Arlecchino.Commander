@@ -61,9 +61,6 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         Settings settings,
         CommandKeys keys)
     {
-        ArgumentNullException.ThrowIfNull(sessions);
-        ArgumentNullException.ThrowIfNull(options);
-
         _surface = surface;
         _keys = keys;
 

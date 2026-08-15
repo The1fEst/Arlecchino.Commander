@@ -1,4 +1,3 @@
-using System;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Input;
@@ -24,9 +23,6 @@ public sealed class CommanderInput
     /// <param name="sessions">Which side is being worked in, which is written down as the focus moves.</param>
     public CommanderInput(Pair panels, CommanderFooter footer, CommanderLayout layout, Sessions sessions)
     {
-        ArgumentNullException.ThrowIfNull(panels);
-        ArgumentNullException.ThrowIfNull(footer);
-
         _panels = panels;
         _footer = footer;
         _layout = layout;

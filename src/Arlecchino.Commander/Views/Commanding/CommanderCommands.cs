@@ -38,9 +38,6 @@ public sealed class CommanderCommands
         CommanderFooter footer,
         IHostApplicationLifetime lifetime)
     {
-        ArgumentNullException.ThrowIfNull(panels);
-        ArgumentNullException.ThrowIfNull(footer);
-
         _panels = panels;
         _footer = footer;
 

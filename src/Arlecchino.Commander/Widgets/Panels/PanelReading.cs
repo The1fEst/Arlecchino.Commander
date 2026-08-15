@@ -36,9 +36,6 @@ public sealed class PanelReading : IDisposable
         Settings settings,
         Operations operations)
     {
-        ArgumentNullException.ThrowIfNull(settings);
-        ArgumentNullException.ThrowIfNull(operations);
-
         _state = state;
         _paint = paint;
         _table = table;

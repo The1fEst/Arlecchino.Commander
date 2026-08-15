@@ -140,9 +140,6 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(sources);
-        ArgumentNullException.ThrowIfNull(to);
-
         foreach (var source in sources)
         {
             await CopyOneAsync(from, source, to, to.Combine(target, source.Name), outcome, token)
@@ -158,9 +155,6 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(sources);
-        ArgumentNullException.ThrowIfNull(to);
-
         foreach (var source in sources)
         {
             await MoveOneAsync(from, source, to, to.Combine(target, source.Name), outcome, token)
@@ -187,8 +181,6 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(entries);
-
         foreach (var entry in entries)
         {
             if (token.IsCancellationRequested)
@@ -206,8 +198,6 @@ public static class FileTasks
         string name,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(source);
-
         try
         {
             var path = source.Combine(parent, name);
@@ -320,8 +310,6 @@ public static class FileTasks
         Func<FileEntry, Task> work,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(source);
-
         if (source.Concurrency <= 1 || entries.Count < 2)
         {
             foreach (var entry in entries)
@@ -375,8 +363,6 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(from);
-
         if (token.IsCancellationRequested)
         {
             return;
@@ -427,9 +413,6 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(from);
-        ArgumentNullException.ThrowIfNull(source);
-
         if (!ReferenceEquals(from, to) || !from.SameVolume(source.Path, target))
         {
             var copied = new Outcome();

@@ -20,8 +20,6 @@ public sealed class ChoiceListModal : Modal
     [SetsRequiredMembers]
     public ChoiceListModal(Choosing picking)
     {
-        ArgumentNullException.ThrowIfNull(picking);
-
         Picking = picking;
         Title = picking.Title;
     }
@@ -102,8 +100,6 @@ public sealed class ChoiceListModal : Modal
     /// <param name="mouse">The event that arrived.</param>
     public override void HandleMouse(ModalFrame frame, MouseEvent mouse)
     {
-        ArgumentNullException.ThrowIfNull(frame);
-
         if (mouse.Action is MouseAction.ScrolledUp or MouseAction.ScrolledDown && _spots.Box.Contains(mouse.Row, mouse.Column))
         {
             Picking.Move(mouse.Action == MouseAction.ScrolledDown ? 1 : -1);

@@ -53,8 +53,6 @@ public static class Shells
     /// <returns>Everything it printed, with how it ended as the last line.</returns>
     public static async Task<List<string>> CollectAsync(Process running, CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(running);
-
         var lines = new List<string>();
 
         running.StandardInput.Close();

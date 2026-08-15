@@ -52,8 +52,6 @@ internal sealed class PollWatch : IDisposable
     /// <returns>The number.</returns>
     public static long Print(IReadOnlyList<FileEntry> entries)
     {
-        ArgumentNullException.ThrowIfNull(entries);
-
         var print = (long)entries.Count;
 
         foreach (var entry in entries)

@@ -25,8 +25,6 @@ internal static class HintBox
     /// <returns>The rows to write into, which is empty when there was no room for the box.</returns>
     public static SurfaceRegion Open(SurfaceRegion over, string title, int inner, int rows)
     {
-        ArgumentNullException.ThrowIfNull(title);
-
         var room = Math.Min(inner, over.Width - (SideRoom * 2) - Around);
         var height = rows + 1;
 

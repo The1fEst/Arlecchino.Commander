@@ -17,8 +17,6 @@ public static class Modes
     /// <returns>The number, or <c>null</c> when that is not what was typed.</returns>
     public static int? Read(string mode)
     {
-        ArgumentNullException.ThrowIfNull(mode);
-
         var trimmed = mode.Trim();
 
         if (trimmed.Length is 0 or > 4)

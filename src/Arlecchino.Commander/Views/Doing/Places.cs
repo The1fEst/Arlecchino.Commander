@@ -32,8 +32,6 @@ public sealed class Places
     /// <param name="panel">Whose history.</param>
     public void History(FilePanel panel)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-
         var been = panel.State.Visited;
         var listed = new List<string>(been.Count);
 
@@ -62,8 +60,6 @@ public sealed class Places
     /// <param name="panel">The panel the list acts on.</param>
     public void Hotlist(FilePanel panel)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-
         var add = Loc(LocString.HotlistAdd);
         var drop = Loc(LocString.HotlistDrop);
         var listed = new List<string>(_sessions.Hotlist) { add };

@@ -1,5 +1,3 @@
-using System;
-
 namespace Arlecchino.Commander.Model;
 
 /// <summary>
@@ -14,9 +12,6 @@ public static class NaturalSort
     /// <returns>Negative, zero or positive, as string comparisons go.</returns>
     public static int Compare(string first, string second)
     {
-        ArgumentNullException.ThrowIfNull(first);
-        ArgumentNullException.ThrowIfNull(second);
-
         var here = 0;
         var there = 0;
 

@@ -43,8 +43,6 @@ public static class ChoiceBox
     /// <returns>Where it landed, for the clicks.</returns>
     public static ChoiceSpots Draw(SurfaceRegion screen, Choosing choosing)
     {
-        ArgumentNullException.ThrowIfNull(choosing);
-
         var shown = Math.Min(MostRows, Math.Max(1, choosing.Matching.Count));
         var rows = shown + Chrome;
         var width = Math.Min(Wanted, screen.Width - 4);

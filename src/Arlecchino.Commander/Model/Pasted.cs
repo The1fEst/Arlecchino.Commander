@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 
 namespace Arlecchino.Commander.Model;
@@ -17,8 +16,6 @@ internal static class Pasted
     /// <returns>What a line of one row can take of it.</returns>
     public static string OneLine(string text)
     {
-        ArgumentNullException.ThrowIfNull(text);
-
         var end = text.IndexOfAny(['\r', '\n']);
         var first = end < 0 ? text : text[..end];
 

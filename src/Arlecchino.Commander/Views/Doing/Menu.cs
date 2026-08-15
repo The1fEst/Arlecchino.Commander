@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Widgets.Panels;
@@ -17,8 +16,6 @@ public static class Menu
     /// <param name="doings">Everything the screen can do.</param>
     public static void Open(Doings doings)
     {
-        ArgumentNullException.ThrowIfNull(doings);
-
         var sections = Sections(doings);
         var headings = new List<Pick>(sections.Count);
 
@@ -39,8 +36,6 @@ public static class Menu
     /// <param name="doings">Everything the screen can do.</param>
     public static void Palette(Doings doings)
     {
-        ArgumentNullException.ThrowIfNull(doings);
-
         doings.Dialogs.Pick(
             Loc(LocString.PaletteTitle),
             Everything(doings),

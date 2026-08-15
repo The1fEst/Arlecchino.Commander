@@ -39,8 +39,6 @@ public sealed class SshView : IArlecchinoView
 
     public SshView(Surface surface, Remote session, ArlecchinoState state, ArlecchinoOptions options)
     {
-        ArgumentNullException.ThrowIfNull(options);
-
         _surface = surface;
         _session = session;
         _state = state;

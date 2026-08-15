@@ -108,9 +108,6 @@ public static class Credentials
     /// <returns>What to ask afterward for the reason, when it refused.</returns>
     public static HostCheck Watch(BaseClient client, Connection connection)
     {
-        ArgumentNullException.ThrowIfNull(client);
-        ArgumentNullException.ThrowIfNull(connection);
-
         var check = new HostCheck();
         var known = KnownHosts.Read(KnownHosts.Path);
 

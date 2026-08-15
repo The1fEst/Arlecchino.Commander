@@ -19,8 +19,6 @@ public static class FtpListings
     /// <returns>The entries.</returns>
     public static IReadOnlyList<FtpEntry> Machine(string text)
     {
-        ArgumentNullException.ThrowIfNull(text);
-
         var entries = new List<FtpEntry>();
 
         foreach (var line in Lines(text))
@@ -91,8 +89,6 @@ public static class FtpListings
     /// <returns>The entries it could read.</returns>
     public static IReadOnlyList<FtpEntry> Plain(string text)
     {
-        ArgumentNullException.ThrowIfNull(text);
-
         var entries = new List<FtpEntry>();
 
         foreach (var line in Lines(text))
@@ -116,8 +112,6 @@ public static class FtpListings
     /// <returns>The port, or nought when it is not in there.</returns>
     public static int ExtendedPort(string text)
     {
-        ArgumentNullException.ThrowIfNull(text);
-
         var open = text.IndexOf('(', StringComparison.Ordinal);
         var close = text.IndexOf(')', StringComparison.Ordinal);
 
@@ -141,8 +135,6 @@ public static class FtpListings
     /// <returns>The port, or nought when it is not in there.</returns>
     public static int PassivePort(string text)
     {
-        ArgumentNullException.ThrowIfNull(text);
-
         var open = text.IndexOf('(', StringComparison.Ordinal);
         var close = text.IndexOf(')', StringComparison.Ordinal);
 

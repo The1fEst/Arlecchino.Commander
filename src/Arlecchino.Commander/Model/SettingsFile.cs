@@ -58,9 +58,6 @@ public static class SettingsFile
     /// <returns><c>true</c> when it was written.</returns>
     public static bool Write(string path, IReadOnlyDictionary<string, string> values)
     {
-        ArgumentNullException.ThrowIfNull(values);
-        ArgumentException.ThrowIfNullOrEmpty(path);
-
         var written = new StringBuilder().AppendLine(Head).AppendLine();
 
         foreach (var (name, value) in values)

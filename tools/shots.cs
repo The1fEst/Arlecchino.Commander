@@ -492,8 +492,6 @@ sealed class Paper : IDisposable
     /// <returns>The picture, for the caller to encode or dispose.</returns>
     public SKBitmap Draw(IReadOnlyList<List<Cell>> grid, string caption)
     {
-        ArgumentNullException.ThrowIfNull(grid);
-
         var columns = grid[0].Count;
         var width = (int)MathF.Ceiling(columns * _cellWidth) + (int)(_padding * 2);
         var height = (int)(grid.Count * _cellHeight) + (int)(_padding * 2) + (int)_titleBar;
@@ -820,8 +818,6 @@ static class Film
     /// <returns>Whether FFmpeg wrote it.</returns>
     public static bool Weave(IReadOnlyList<(string Path, int Hold)> frames, string target)
     {
-        ArgumentNullException.ThrowIfNull(frames);
-
         var folder = Path.GetDirectoryName(frames[0].Path)!;
         var reel = Path.Combine(folder, "reel.txt");
         var lines = new List<string> { "ffconcat version 1.0" };

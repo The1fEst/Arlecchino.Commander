@@ -20,8 +20,6 @@ public static class Glob
     /// <returns>The pattern to match names against, which is everything when nothing was typed.</returns>
     public static string Anywhere(string pattern)
     {
-        ArgumentNullException.ThrowIfNull(pattern);
-
         var pieces = pattern.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         if (pieces.Length == 0)
@@ -47,8 +45,6 @@ public static class Glob
     /// <returns><c>true</c> when any one of them fits.</returns>
     public static bool Matches(string name, string pattern)
     {
-        ArgumentNullException.ThrowIfNull(pattern);
-
         foreach (var piece in pattern.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             if (Regex.IsMatch(name, Translate(piece), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, Patience))

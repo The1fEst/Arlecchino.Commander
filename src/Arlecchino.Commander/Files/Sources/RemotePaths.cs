@@ -48,8 +48,6 @@ public static class RemotePaths
     /// <returns>The number.</returns>
     public static int ModeOf(SftpFileAttributes attributes)
     {
-        ArgumentNullException.ThrowIfNull(attributes);
-
         var mode = 0;
 
         mode |= attributes.OwnerCanRead ? 256 : 0;

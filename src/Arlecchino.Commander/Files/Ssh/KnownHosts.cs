@@ -72,8 +72,6 @@ public sealed class KnownHosts
     /// <returns>What it said.</returns>
     public static KnownHosts Read(string path)
     {
-        ArgumentNullException.ThrowIfNull(path);
-
         try
         {
             return Parse(File.ReadAllLines(path));
@@ -90,8 +88,6 @@ public sealed class KnownHosts
     /// <returns>What they said.</returns>
     public static KnownHosts Parse(IEnumerable<string> lines)
     {
-        ArgumentNullException.ThrowIfNull(lines);
-
         var entries = new List<Entry>();
 
         foreach (var line in lines)
@@ -116,8 +112,6 @@ public sealed class KnownHosts
     /// <returns>The verdict.</returns>
     public HostVerdict Check(string host, int port, string kind, byte[] key)
     {
-        ArgumentNullException.ThrowIfNull(key);
-
         var about = _entries.Where(entry => entry.IsAbout(host, port)).ToArray();
 
         if (about.Any(entry => entry.Revoked && entry.Holds(key)))
@@ -146,8 +140,6 @@ public sealed class KnownHosts
     /// <returns>The line, without its newline.</returns>
     public static string Line(string host, int port, string kind, byte[] key)
     {
-        ArgumentNullException.ThrowIfNull(key);
-
         var named = port is 22 or 0 ? host : $"[{host}]:{port.ToString(CultureInfo.InvariantCulture)}";
 
         return $"{named} {kind} {Convert.ToBase64String(key)}";

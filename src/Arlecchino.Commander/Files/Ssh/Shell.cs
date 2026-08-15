@@ -57,8 +57,6 @@ public abstract class Shell
     /// <returns>The shell that answered, or <see cref="ForeignShell"/> when none of them did.</returns>
     public static async Task<Shell> AskAsync(Func<string, Task<(string Output, int Status)>> run)
     {
-        ArgumentNullException.ThrowIfNull(run);
-
         var unix = await run("uname -s").ConfigureAwait(false);
 
         if (unix.Status == 0 && unix.Output.Trim().Length > 0 && !Confused(unix.Output))
@@ -111,8 +109,6 @@ public sealed class PosixShell : Shell
     /// <inheritdoc/>
     public override void Hand(ProcessStartInfo started, string command)
     {
-        ArgumentNullException.ThrowIfNull(started);
-
         started.FileName = Environment.GetEnvironmentVariable("SHELL") is { Length: > 0 } shell
             ? shell
             : "/bin/sh";
@@ -138,8 +134,6 @@ public abstract class WindowsShell : Shell
     /// <returns>The same path with a drive letter and backslashes.</returns>
     protected static string Local(string path)
     {
-        ArgumentNullException.ThrowIfNull(path);
-
         var trimmed = path.StartsWith('/') && path.Length > 2 && path[2] == ':' ? path[1..] : path;
 
         return trimmed.Replace('/', '\\');
@@ -177,8 +171,6 @@ public sealed class WindowsCommandShell : WindowsShell
     /// <param name="command">What the user typed.</param>
     public override void Hand(ProcessStartInfo started, string command)
     {
-        ArgumentNullException.ThrowIfNull(started);
-
         started.FileName = "cmd.exe";
         started.Arguments = $"/s /c \"{command}\"";
     }
@@ -210,8 +202,6 @@ public sealed class PowerShellShell : WindowsShell
     /// <inheritdoc/>
     public override void Hand(ProcessStartInfo started, string command)
     {
-        ArgumentNullException.ThrowIfNull(started);
-
         started.FileName = "powershell.exe";
         started.ArgumentList.Add("-NoProfile");
         started.ArgumentList.Add("-Command");

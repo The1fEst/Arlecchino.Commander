@@ -39,8 +39,6 @@ internal static class SftpUpload
         string target,
         CancellationToken token)
     {
-        ArgumentNullException.ThrowIfNull(client);
-
         return SendAsync(
             async (mode, waiting) =>
                 await client.OpenAsync(target, mode, FileAccess.Write, waiting).ConfigureAwait(false),

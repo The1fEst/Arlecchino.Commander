@@ -50,8 +50,6 @@ public static class TabFace
     /// <returns>Where the name ends, which is where the cross would go.</returns>
     public static int Draw(SurfaceRegion strip, int column, Session session, int most, TabLook look)
     {
-        ArgumentNullException.ThrowIfNull(session);
-
         var (near, far) = Shortened(session, most);
         var label = near.Length + far.Length + 3;
         var width = label + Chrome + (look.Closable ? Crossed : 0);

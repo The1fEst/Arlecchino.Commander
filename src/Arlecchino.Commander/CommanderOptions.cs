@@ -1,4 +1,3 @@
-using System;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Hosting;
 
@@ -17,8 +16,6 @@ public static class CommanderOptions
     /// <param name="options">The options to fill in.</param>
     public static void Apply(ArlecchinoOptions options)
     {
-        ArgumentNullException.ThrowIfNull(options);
-
         options.Theme = Skin.Palette;
         options.CommandPaletteKey = '\0';
         options.MinimumWidth = 100;

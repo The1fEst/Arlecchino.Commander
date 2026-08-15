@@ -17,8 +17,6 @@ public static class Completion
     /// <param name="asking">What is being asked.</param>
     public static void Finish(Operation asking)
     {
-        ArgumentNullException.ThrowIfNull(asking);
-
         if (asking.Over is not { } source)
         {
             return;

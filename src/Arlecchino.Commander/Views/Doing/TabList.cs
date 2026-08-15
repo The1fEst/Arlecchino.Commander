@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Widgets.Dialogs;
 
@@ -14,8 +13,6 @@ public static class TabList
     /// <param name="doings">Everything the screen can do, for the dialog and the tabs.</param>
     public static void Open(Doings doings)
     {
-        ArgumentNullException.ThrowIfNull(doings);
-
         var sessions = doings.Sessions;
         var where = Loc(LocString.TabsTitle).ToLowerInvariant();
         var rows = new List<Pick> { new(Loc(LocString.TabsNew), where, "Alt+T", sessions.Add) };
@@ -38,8 +35,6 @@ public static class TabList
     /// <returns>The rows.</returns>
     public static List<Pick> Rows(Doings doings)
     {
-        ArgumentNullException.ThrowIfNull(doings);
-
         var sessions = doings.Sessions;
         var rows = new List<Pick>(sessions.All.Count);
         var where = Loc(LocString.TabsTitle).ToLowerInvariant();

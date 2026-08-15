@@ -17,9 +17,6 @@ public static class Marking
     /// <param name="marking"><c>true</c> to mark what fits, <c>false</c> to unmark it.</param>
     public static void Group(PanelState state, IReadOnlyList<FileEntry> entries, string pattern, bool marking)
     {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(entries);
-
         foreach (var entry in entries)
         {
             if (entry.IsParent || entry.IsFolder || !Glob.Matches(entry.Name, pattern))
@@ -43,9 +40,6 @@ public static class Marking
     /// <param name="entries">What the panel is showing.</param>
     public static void Invert(PanelState state, IReadOnlyList<FileEntry> entries)
     {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(entries);
-
         foreach (var entry in entries)
         {
             if (entry.IsParent || entry.IsFolder)
@@ -66,8 +60,6 @@ public static class Marking
     /// <returns><c>true</c> when there was something to mark, and the cursor should move on.</returns>
     public static bool One(PanelState state, FileEntry? current)
     {
-        ArgumentNullException.ThrowIfNull(state);
-
         if (current is not { IsParent: false } entry)
         {
             return false;

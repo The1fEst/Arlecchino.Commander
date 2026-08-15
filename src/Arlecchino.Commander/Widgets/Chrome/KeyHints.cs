@@ -21,8 +21,6 @@ internal static class KeyHints
     /// <param name="keys">Each key that would finish the chord, and what it would do.</param>
     public static void Draw(SurfaceRegion over, string title, IReadOnlyList<(string Key, string Description)> keys)
     {
-        ArgumentNullException.ThrowIfNull(keys);
-
         if (keys.Count == 0)
         {
             return;

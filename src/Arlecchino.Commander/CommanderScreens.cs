@@ -1,4 +1,3 @@
-using System;
 using Arlecchino.Commander.Views;
 using Arlecchino.Hosting;
 using Arlecchino.Navigation;
@@ -16,8 +15,6 @@ public static class CommanderScreens
     /// <returns>The same builder.</returns>
     public static ArlecchinoBuilder UseCommanderScreens(this ArlecchinoBuilder builder)
     {
-        ArgumentNullException.ThrowIfNull(builder);
-
         return builder
             .AddView<NotesView>(Routes.Notifications.Name)
             .UseLayout<LayoutView>();

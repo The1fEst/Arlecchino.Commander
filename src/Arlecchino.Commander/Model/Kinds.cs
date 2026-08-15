@@ -36,8 +36,6 @@ public static class Kinds
     /// <returns>Three letters, or fewer.</returns>
     public static string Tag(FileEntry entry)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (entry.IsParent)
         {
             return "up";
@@ -70,8 +68,6 @@ public static class Kinds
     /// <returns>The tone.</returns>
     public static Tone ToneOf(FileEntry entry)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-
         if (entry.IsParent)
         {
             return Tone.Parent;
