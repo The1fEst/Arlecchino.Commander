@@ -60,4 +60,25 @@ public sealed class GlobTests
     {
         Assert.True(Glob.Matches("notes.txt", " *.txt , *.md "));
     }
+
+    [Theory]
+    [InlineData("notes", "*notes*")]
+    [InlineData("notes, todo", "*notes*,*todo*")]
+    [InlineData("*.txt", "*.txt")]
+    [InlineData("notes.???", "notes.???")]
+    [InlineData("notes, *.txt", "*notes*,*.txt")]
+    [InlineData("", "*")]
+    [InlineData(" , ", "*")]
+    public void APieceWithNoWildcardsInItStandsForThatMuchOfAName(string typed, string pattern)
+    {
+        Assert.Equal(pattern, Glob.Anywhere(typed));
+    }
+
+    [Fact]
+    public void WhatWasTypedIsThenFoundWhereverItSitsInTheName()
+    {
+        Assert.True(Glob.Matches("my-notes.txt", Glob.Anywhere("notes")));
+        Assert.True(Glob.Matches("NOTES.TXT", Glob.Anywhere("notes")));
+        Assert.False(Glob.Matches("todo.txt", Glob.Anywhere("notes")));
+    }
 }

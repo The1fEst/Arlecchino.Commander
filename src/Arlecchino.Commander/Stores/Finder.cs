@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
@@ -18,15 +17,13 @@ namespace Arlecchino.Commander.Stores;
 public sealed record Hit(string Folder, FileEntry Entry);
 
 /// <summary>
-/// The search behind <c>Find file</c>, which walks down from where the panel is looking, matching names
-/// against a shell pattern and, when asked, the text inside them. It runs off the drawing thread.
+/// The search behind <c>Find file</c>, which walks down from where the panel is looking and matches names
+/// against what was typed. It runs off the drawing thread.
 /// </summary>
 public sealed class Finder : IArlecchinoStore
 {
     private const int Most = 5000;
     private const int Batch = 32;
-    private const int Chunk = 64 * 1024;
-    private const long Largest = 32L * 1024 * 1024;
 
     private readonly ArlecchinoState _state;
 
@@ -48,6 +45,9 @@ public sealed class Finder : IArlecchinoStore
     /// <summary>The folder the walk started from, which the results are shown relative to.</summary>
     public string Root { get; private set; } = "";
 
+    /// <summary>Where the walk is being run, which is what <see cref="Root"/> is written against.</summary>
+    public IFileSource? Source { get; private set; }
+
     /// <summary>How many folders have been looked in so far.</summary>
     public int Looked { get; private set; }
 
@@ -57,10 +57,9 @@ public sealed class Finder : IArlecchinoStore
     /// </summary>
     /// <param name="source">Where to look.</param>
     /// <param name="folder">The folder to start from.</param>
-    /// <param name="pattern">A shell pattern the name must fit.</param>
-    /// <param name="content">Text the file must hold, or empty to ask nothing of the contents.</param>
+    /// <param name="pattern">What the name must hold, or a shell pattern it must fit when one was spelled.</param>
     /// <param name="done">Called on the drawing thread when the walk has ended.</param>
-    public void Start(IFileSource source, string folder, string pattern, string content, Action done)
+    public void Start(IFileSource source, string folder, string pattern, Action done)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(done);
@@ -72,12 +71,14 @@ public sealed class Finder : IArlecchinoStore
         }
 
         var cancelling = new CancellationTokenSource();
+        var wanted = Glob.Anywhere(pattern);
 
         _cancelling = cancelling;
         IsRunning = true;
         Looked = 0;
         Root = folder;
-        What = content.Length == 0 ? $"{pattern} under {folder}" : $"{pattern} holding {content} under {folder}";
+        Source = source;
+        What = wanted;
 
         Found.Clear();
 
@@ -85,7 +86,7 @@ public sealed class Finder : IArlecchinoStore
 
         async Task Searching()
         {
-            await WalkAsync(source, folder, pattern, content, cancelling.Token).ConfigureAwait(false);
+            await WalkAsync(source, folder, wanted, cancelling.Token).ConfigureAwait(false);
 
             FrameThread.Post(() =>
             {
@@ -109,25 +110,19 @@ public sealed class Finder : IArlecchinoStore
     /// <param name="source">Where to look.</param>
     /// <param name="folder">The folder to start from.</param>
     /// <param name="pattern">The shell pattern.</param>
-    /// <param name="content">Text the file must hold, or empty.</param>
     /// <param name="token">Stops the walk.</param>
-    private async Task WalkAsync(
-        IFileSource source,
-        string folder,
-        string pattern,
-        string content,
-        CancellationToken token)
+    private async Task WalkAsync(IFileSource source, string folder, string pattern, CancellationToken token)
     {
-        var pending = new Stack<string>();
+        var pending = new Queue<string>();
         var batch = new List<Hit>();
         var looked = 0;
         var hits = 0;
 
-        pending.Push(folder);
+        pending.Enqueue(folder);
 
         while (pending.Count > 0 && !token.IsCancellationRequested && hits < Most)
         {
-            var here = pending.Pop();
+            var here = pending.Dequeue();
             var seen = ++looked;
 
             FrameThread.Post(() => Looked = seen);
@@ -141,12 +136,11 @@ public sealed class Finder : IArlecchinoStore
 
                 if (entry.IsFolder)
                 {
-                    pending.Push(entry.Path);
+                    pending.Enqueue(entry.Path);
                     continue;
                 }
 
-                if (!Glob.Matches(entry.Name, pattern) ||
-                    (content.Length > 0 && !await HoldsAsync(source, entry, content, token).ConfigureAwait(false)))
+                if (!Glob.Matches(entry.Name, pattern))
                 {
                     continue;
                 }
@@ -188,55 +182,6 @@ public sealed class Finder : IArlecchinoStore
                                           or InvalidOperationException)
         {
             return [];
-        }
-    }
-
-    /// <summary>
-    /// Whether a file holds the text. It is read in chunks with the tail of one kept in front of the
-    /// next, so a match that straddles the join is still a match, and anything enormous is left alone.
-    /// </summary>
-    /// <param name="source">Where the file is.</param>
-    /// <param name="entry">The file.</param>
-    /// <param name="content">The text to look for.</param>
-    /// <param name="token">Stops the read.</param>
-    /// <returns><c>true</c> when the text is in there.</returns>
-    private static async Task<bool> HoldsAsync(
-        IFileSource source,
-        FileEntry entry,
-        string content,
-        CancellationToken token)
-    {
-        if (entry.Size > Largest)
-        {
-            return false;
-        }
-
-        try
-        {
-            await using var stream = await source.OpenReadAsync(entry.Path, token).ConfigureAwait(false);
-            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-
-            var buffer = new char[Chunk];
-            var carried = "";
-
-            while (await reader.ReadAsync(buffer.AsMemory(), token).ConfigureAwait(false) is var read && read > 0)
-            {
-                var text = carried + new string(buffer, 0, read);
-
-                if (text.Contains(content, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                carried = text.Length <= content.Length ? text : text[^content.Length..];
-            }
-
-            return false;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException
-                                          or InvalidOperationException or ObjectDisposedException)
-        {
-            return false;
         }
     }
 }

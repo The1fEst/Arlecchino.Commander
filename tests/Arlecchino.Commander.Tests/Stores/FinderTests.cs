@@ -28,11 +28,11 @@ public sealed class FinderTests : IDisposable
 
     public void Dispose() => _app.Dispose();
 
-    private bool Search(string pattern, string content = "")
+    private bool Search(string pattern)
     {
         var done = false;
 
-        _app.Finder.Start(_source, _app.Folder, pattern, content, () => done = true);
+        _app.Finder.Start(_source, _app.Folder, pattern, () => done = true);
 
         return _app.Until(() => done);
     }
@@ -58,10 +58,13 @@ public sealed class FinderTests : IDisposable
         Assert.Equal(_app.Folder, _app.Finder.Root);
     }
 
+    /// <summary>
+    /// A name with no wildcards in it is a piece of a name, since that is what someone typing one means.
+    /// </summary>
     [Fact]
-    public void AskingForTextNarrowsItToTheFilesHoldingThat()
+    public void APieceOfANameFindsTheNamesHoldingIt()
     {
-        Assert.True(Search("*.txt", "needle"));
+        Assert.True(Search("alph"));
 
         var found = _app.Finder.Found.Value.Select(static hit => hit.Entry.Name).ToList();
 
@@ -69,12 +72,24 @@ public sealed class FinderTests : IDisposable
     }
 
     [Fact]
+    public void NothingTypedFindsEverything()
+    {
+        Assert.True(Search(""));
+
+        var found = _app.Finder.Found.Value.Select(static hit => hit.Entry.Name).ToList();
+
+        Assert.Contains("alpha.txt", found);
+        Assert.Contains("beta.md", found);
+        Assert.Contains("gamma.txt", found);
+    }
+
+    [Fact]
     public void WhatIsBeingLookedForIsSaidSoItCanBeShown()
     {
-        Assert.True(Search("*.txt", "needle"));
+        Assert.True(Search("*.txt"));
 
         Assert.Contains("*.txt", _app.Finder.What, StringComparison.Ordinal);
-        Assert.Contains("needle", _app.Finder.What, StringComparison.Ordinal);
+        Assert.Equal(_source, _app.Finder.Source);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
@@ -8,6 +9,7 @@ using Arlecchino.Input;
 using Arlecchino.Layout;
 using Arlecchino.Navigation;
 using Arlecchino.Rendering;
+using Arlecchino.Rendering.Text;
 using Arlecchino.State;
 using Arlecchino.Widgets.Lists;
 using Arlecchino.Commander.Widgets.Chrome;
@@ -76,7 +78,7 @@ public sealed class FindView : IArlecchinoView
 
     private void DrawHeader(SurfaceRegion header)
     {
-        Sheet.Title(header, _finder.What, Loc(LocString.FindFoundIn, _finder.Found.Count, _finder.Looked));
+        Sheet.Title(header, _finder.What, Counted(header.Width));
 
         if (!_finder.IsRunning)
         {
@@ -90,6 +92,22 @@ public sealed class FindView : IArlecchinoView
     private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(footer, Said(), Loc(LocString.FindHints));
 
     /// <summary>
+    /// How many were found and how much was looked through, with the folder the search started from
+    /// beside it while there is room. Every result shares that folder, so it is named once here.
+    /// </summary>
+    /// <param name="room">How many cells the line has.</param>
+    /// <returns>The line under the title.</returns>
+    private string Counted(int room)
+    {
+        var counted = Loc(LocString.FindFoundIn, _finder.Found.Count, _finder.Looked);
+        var left = room - TextWidth.Of(counted) - 3;
+
+        return left <= 0 || _finder.Source is not { } source
+            ? counted
+            : Loc(LocString.Joined, counted, Paths.Shortened(source, _finder.Root, left));
+    }
+
+    /// <summary>
     /// A result as it is listed: the path below the folder the search started from, because every
     /// one of them begins with that folder and repeating it leaves no room for the rest.
     /// </summary>
@@ -98,7 +116,7 @@ public sealed class FindView : IArlecchinoView
     private string Under(Hit hit)
     {
         var root = _finder.Root;
-        var folder = hit.Folder.Length > root.Length && hit.Folder.StartsWith(root, StringComparison.OrdinalIgnoreCase)
+        var folder = hit.Folder.Length >= root.Length && hit.Folder.StartsWith(root, StringComparison.OrdinalIgnoreCase)
             ? hit.Folder[root.Length..].TrimStart('/', '\\')
             : hit.Folder;
 

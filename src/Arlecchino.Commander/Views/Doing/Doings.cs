@@ -170,30 +170,26 @@ public sealed class Doings
     }
 
     /// <summary>
-    ///     Asks what to look for and starts the walk, which runs on its own while the results screen
-    ///     fills up.
+    ///     Asks for a name and starts the walk, which runs on its own while the results screen fills up.
+    ///     One question and no more: the name is what a file is looked for by.
     /// </summary>
-    /// <returns>Nowhere: the results screen is gone to when the second question has been answered.</returns>
+    /// <returns>Nowhere: the results screen is gone to when the question has been answered.</returns>
     public ViewRoute Find()
     {
         var panel = Panels.Active;
 
         Dialogs.AskFor(
             Loc(LocString.FindTitle),
-            Loc(LocString.OperationMatching),
-            "*",
-            Loc(LocString.FindNext),
-            pattern => Dialogs.AskFor(
-                Loc(LocString.FindTitle),
-                Loc(LocString.OperationHoldingText),
-                "",
-                Loc(LocString.FindVerb),
-                content =>
-                {
-                    _finder.Start(panel.Source, panel.Folder, pattern.Trim(), content.Trim(), () => { });
+            Loc(LocString.FindField),
+            "",
+            Loc(LocString.FindVerb),
+            name =>
+            {
+                _finder.Start(panel.Source, panel.Folder, name.Trim(), () => { });
 
-                    Navigation.Apply(ViewKind.Find);
-                }));
+                Navigation.Apply(ViewKind.Find);
+            },
+            Loc(LocString.FindHint));
 
         return ViewRoute.None;
     }

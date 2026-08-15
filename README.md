@@ -79,9 +79,10 @@ and the number says how old the binary in hand is.
   folder, but only as a second way in.
 - **Getting around the way Midnight Commander does.** `/` searches as you type, `+` and `-` mark and
   unmark by shell pattern, `*` inverts the marks, and `Ctrl+B` keeps a hotlist.
-- **Find file.** `Ctrl+F7` walks down from the panel — over SFTP as readily as over a disk — matching
-  names against a shell pattern and, when asked for one, the text inside the files. Results fill in
-  while the walk runs, `F3` stops it, and `Enter` sends the panel to the file it found.
+- **Find file.** `Ctrl+F7` asks for a name and walks down from the panel — over SFTP as readily as
+  over a disk. What is typed is looked for anywhere in a name, unless it spells a shell pattern of its
+  own. Results fill in while the walk runs, `F3` stops it, and `Enter` sends the panel to the file it
+  found.
 - **Everything in one list.** `Ctrl+K` opens a palette holding every menu entry, every tab and every
   key the screen answers to, narrowing as you type — so nothing has to be found by remembering which
   menu it was filed under.
