@@ -5,4 +5,5 @@ public enum Sorting
     Name,
     Size,
     Modified,
+    Kind,
 }

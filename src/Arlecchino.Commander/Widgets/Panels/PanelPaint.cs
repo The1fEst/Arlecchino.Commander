@@ -110,6 +110,7 @@ public sealed class PanelPaint
     {
         var (name, size, date) = PanelColumns.Widths(row.Width);
 
+        Head(row, 0, Kinds.TagWidth - 1, "", Sorting.Kind, state, coat, Align.Left);
         Head(row, Kinds.TagWidth, name, Loc(LocString.PanelName), Sorting.Name, state, coat, Align.Left);
 
         if (size > 0)

@@ -98,6 +98,7 @@ public static class Listing
         {
             Sorting.Size => first.Size.CompareTo(second.Size),
             Sorting.Modified => first.Modified.CompareTo(second.Modified),
+            Sorting.Kind => Kind(first, second),
             _ => NaturalSort.Compare(first.Name, second.Name),
         };
 
@@ -174,6 +175,23 @@ public static class Listing
         {
             return "";
         }
+    }
+
+    /// <summary>
+    /// The order two rows come in by kind, which is the order their tags come in. A row with no tag has
+    /// nothing to stand beside, so it goes after everything that has one.
+    /// </summary>
+    /// <param name="first">One row.</param>
+    /// <param name="second">The other.</param>
+    /// <returns>Less than nought when the first of them comes first.</returns>
+    private static int Kind(FileEntry first, FileEntry second)
+    {
+        var one = Kinds.Tag(first);
+        var other = Kinds.Tag(second);
+
+        return one.Length == 0 || other.Length == 0
+            ? other.Length.CompareTo(one.Length)
+            : string.CompareOrdinal(one, other);
     }
 
     /// <summary>

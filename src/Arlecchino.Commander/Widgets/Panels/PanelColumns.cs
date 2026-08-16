@@ -48,6 +48,11 @@ public static class PanelColumns
     {
         var (name, size, date) = Widths(width);
 
+        if (column < Kinds.TagWidth)
+        {
+            return Sorting.Kind;
+        }
+
         if (column < Kinds.TagWidth + name)
         {
             return Sorting.Name;

@@ -604,11 +604,11 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Three keys for the three columns and a fourth to turn the order around. Asking for the column it
-    /// is already on turns it around too, as a click on the column head does.
+    /// A key for each column and one more to turn the order around. Asking for the column it is already
+    /// on turns it around too, as a click on the column head does.
     /// </summary>
     [Fact]
-    public void SortingIsThreeColumnsAndAWayBack()
+    public void SortingIsAColumnEachAndAWayBack()
     {
         _app.Press(ConsoleKey.S);
         _app.Press(ConsoleKey.J);
@@ -623,6 +623,17 @@ public sealed class CommanderKeysTests : IDisposable
 
         Assert.Equal(Sorting.Size, _app.Sessions.Left.Sorting);
         Assert.True(_app.Sessions.Left.Descending);
+    }
+
+    /// <summary>The tag column sorts too, off the key the other columns are on.</summary>
+    [Fact]
+    public void SortingByKindIsOneOfTheColumns()
+    {
+        _app.Press(ConsoleKey.S);
+        _app.Press(ConsoleKey.T);
+        _app.Settled();
+
+        Assert.Equal(Sorting.Kind, _app.Sessions.Left.Sorting);
     }
 
     /// <summary>
