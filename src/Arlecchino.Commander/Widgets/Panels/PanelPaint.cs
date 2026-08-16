@@ -1,8 +1,10 @@
+using System;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Input;
 using Arlecchino.Rendering;
 using Arlecchino.Rendering.Text;
+using Arlecchino.Widgets.Text;
 
 namespace Arlecchino.Commander.Widgets.Panels;
 
@@ -200,7 +202,16 @@ public sealed class PanelPaint
     {
         if (panel.IsSearching)
         {
-            row.Write(0, 0, TextWidth.Truncate(Loc(LocString.PanelJumpTo, panel.Typed), row.Width), coat.Accent);
+            var label = Loc(LocString.PanelJumpTo, "");
+
+            row.Write(0, 0, TextWidth.Truncate(label, row.Width), coat.Accent);
+            EntryRow.Draw(
+                row,
+                0,
+                TextWidth.Of(label),
+                Math.Max(0, row.Width - TextWidth.Of(label)),
+                panel.Typed,
+                Skin.Typed(coat.Accent, Skin.Crimson));
 
             return;
         }

@@ -1,5 +1,4 @@
 using System;
-using Arlecchino.Commander.Model;
 using Arlecchino.Editing;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
@@ -51,13 +50,7 @@ internal sealed class CommandLineText : ITextEntry
 
     /// <summary>Puts a piece in where the caret is, over whatever was selected.</summary>
     /// <param name="piece">What to put in.</param>
-    public void Insert(string piece)
-    {
-        foreach (var character in piece)
-        {
-            TextEditing.Insert(this, character);
-        }
-    }
+    public void Insert(string piece) => TextEditing.InsertText(this, piece);
 
     /// <summary>
     /// One typed character. The control codes are refused, since a terminal sends them for keys that mean
@@ -79,5 +72,6 @@ internal sealed class CommandLineText : ITextEntry
 
     /// <summary>Puts pasted text in, as much of it as one row can hold.</summary>
     /// <param name="text">What was pasted.</param>
-    public void Paste(string text) => Insert(Pasted.OneLine(text));
+    public void Paste(string text) =>
+        Insert(PastedText.FirstLine(text, static character => !char.IsControl(character)));
 }

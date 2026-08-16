@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Editing;
 
 namespace Arlecchino.Commander.Widgets.Dialogs;
 
@@ -22,7 +23,7 @@ public sealed class Choosing
 {
     private readonly List<Pick> _matching = [];
 
-    private string _typed = "";
+    private string _narrowedFor = "";
 
     /// <summary>What the list is called.</summary>
     public required string Title { get; init; }
@@ -36,27 +37,24 @@ public sealed class Choosing
     /// <summary>What is written along the bottom.</summary>
     public string Footer { get; init; } = Loc(LocString.ChoosingHints);
 
+    /// <summary>
+    /// The line the list is narrowed by: what is typed, where the caret is and what is selected in it. It is
+    /// edited the way every other line the framework knows about is.
+    /// </summary>
+    public TextEntry Filter { get; } = new();
+
     /// <summary>Whatever has been typed to narrow the list.</summary>
-    public string Typed
-    {
-        get => _typed;
-        set
-        {
-            _typed = value;
-            Chosen = 0;
-            Narrow();
-        }
-    }
+    public string Typed => Filter.Text;
 
     /// <summary>Which row the cursor is on, among the ones still showing.</summary>
     public int Chosen { get; set; }
 
-    /// <summary>The rows still showing.</summary>
+    /// <summary>The rows still showing, worked out again whenever what is typed has changed.</summary>
     public IReadOnlyList<Pick> Matching
     {
         get
         {
-            if (_matching.Count == 0 && _typed.Length == 0)
+            if (_narrowedFor != Filter.Text || (_matching.Count == 0 && Filter.Text.Length == 0))
             {
                 Narrow();
             }
@@ -64,6 +62,12 @@ public sealed class Choosing
             return _matching;
         }
     }
+
+    /// <summary>
+    /// Puts the cursor back on the first row, which is what a change to the filter comes to: the rows
+    /// showing after it are a different set.
+    /// </summary>
+    public void Reset() => Chosen = 0;
 
     /// <summary>The row the cursor is on, or nothing when everything was narrowed away.</summary>
     public Pick? Current => Matching.Count == 0
@@ -73,19 +77,6 @@ public sealed class Choosing
     /// <summary>Moves the cursor, stopping at either end.</summary>
     /// <param name="by">How far, and which way.</param>
     public void Move(int by) => Chosen = Math.Clamp(Chosen + by, 0, Math.Max(0, Matching.Count - 1));
-
-    /// <summary>Adds a letter to what is narrowing the list.</summary>
-    /// <param name="typed">The letter.</param>
-    public void Put(char typed) => Typed += typed;
-
-    /// <summary>Takes the last letter off.</summary>
-    public void Back()
-    {
-        if (_typed.Length > 0)
-        {
-            Typed = _typed[..^1];
-        }
-    }
 
     /// <summary>
     /// Fills the query out to as much as every remaining row agrees on, which is the shell gesture.
@@ -104,9 +95,10 @@ public sealed class Choosing
             shared = Common(shared, pick.Label);
         }
 
-        if (shared.Length > _typed.Length)
+        if (shared.Length > Filter.Text.Length)
         {
-            Typed = shared;
+            Filter.Text = shared;
+            Reset();
         }
     }
 
@@ -126,11 +118,14 @@ public sealed class Choosing
 
     private void Narrow()
     {
+        var typed = Filter.Text;
+
         _matching.Clear();
+        _narrowedFor = typed;
 
         foreach (var item in Items)
         {
-            if (_typed.Length == 0 || item.Label.Contains(_typed, StringComparison.OrdinalIgnoreCase))
+            if (typed.Length == 0 || item.Label.Contains(typed, StringComparison.OrdinalIgnoreCase))
             {
                 _matching.Add(item);
             }

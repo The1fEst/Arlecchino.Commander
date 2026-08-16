@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Arlecchino.Rendering.Colors;
+using Arlecchino.Widgets.Text;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
 
@@ -146,6 +147,16 @@ public static class Skin
     /// border and nothing is drawn on it. Only one panel is worked in, and only it wears a line.
     /// </summary>
     public static TermColor BorderInactiveColor => field ??= Paint(Unlit, Unlit);
+
+    /// <summary>
+    /// How a line being typed into is written, wherever the application draws one: the selection on the
+    /// sea green, and the symbol the caret stands on the other way round on the color the line belongs to.
+    /// </summary>
+    /// <param name="text">What the line itself is written in, which the surface under it decides.</param>
+    /// <param name="caret">What is behind the symbol the caret stands on.</param>
+    /// <returns>The three colors, for <see cref="EntryRow"/> and <see cref="EntryRuns"/>.</returns>
+    public static EntryLook Typed(IArlecchinoColor text, Rgb caret) =>
+        new(text, Paint(Ink, Sea), Paint(Ink, caret));
 
     /// <summary>
     /// A color, remembered. Styles are compared by what they are made of rather than by reference, so

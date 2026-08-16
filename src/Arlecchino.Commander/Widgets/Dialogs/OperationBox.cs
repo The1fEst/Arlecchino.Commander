@@ -70,7 +70,7 @@ public static class OperationBox
 
         row += 2;
         row = What(inside, operation, coat, row);
-        row = Field(inside, operation, coat, fill, row);
+        row = OperationField.Draw(inside, operation, coat, fill, row);
 
         var switches = operation.Options.Count == 0
             ? default
@@ -155,54 +155,6 @@ public static class OperationBox
         }
 
         return row + shown + 2;
-    }
-
-    private static int Field(SurfaceRegion inside, Operation operation, Skin.Coat coat, Rgb fill, int row)
-    {
-        if (operation.FieldLabel is not { } label)
-        {
-            return row;
-        }
-
-        inside.Write(row, 0, label.ToUpperInvariant(), coat.Label);
-
-        var line = inside.Rows(row + 1, 1);
-        var chip = Skin.Inlaid;
-
-        line.Fill(chip.Text);
-
-        var at = 1;
-
-        if (operation.Host.Length > 0)
-        {
-            line.Write(0, at, operation.Host, chip.Remote);
-            at += operation.Host.Length + 1;
-        }
-
-        var written = operation.Secret ? new('•', operation.Value.Length) : operation.Value;
-        var room = Math.Max(1, line.Width - at - 2);
-        var offset = Math.Max(0, operation.Caret - room + 1);
-        var shown = written[offset..Math.Min(written.Length, offset + room)];
-
-        line.Write(0, at, shown, chip.Text);
-
-        if (operation.Chosen < 0)
-        {
-            line.Write(0,
-                at + operation.Caret - offset,
-                operation.Caret < operation.Value.Length ? operation.Value[operation.Caret].ToString() : " ",
-                Skin.Paint(Skin.Ink, fill));
-        }
-
-        if (operation.FieldHint.Length > 0)
-        {
-            inside.WriteLine(row,
-                TextWidth.Truncate(operation.FieldHint, inside.Width - label.Length - 2),
-                coat.Label,
-                Align.Right);
-        }
-
-        return row + 3;
     }
 
     private static int Options(SurfaceRegion inside, Operation operation, Skin.Coat coat, Rgb fill, int row)

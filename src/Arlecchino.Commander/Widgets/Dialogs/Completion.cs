@@ -37,7 +37,6 @@ public static class Completion
                 }
 
                 asking.Value = source.Combine(folder, found);
-                asking.Caret = asking.Value.Length;
             });
     }
 

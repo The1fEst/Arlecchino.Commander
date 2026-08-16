@@ -1,6 +1,7 @@
 using System;
 using Arlecchino.Rendering;
 using Arlecchino.Rendering.Text;
+using Arlecchino.Widgets.Text;
 using Arlecchino.Commander.Widgets.Chrome;
 
 namespace Arlecchino.Commander.Widgets.Dialogs;
@@ -90,16 +91,18 @@ public static class ChoiceBox
     {
         inside.Write(2, 0, "❯", coat.Accent);
 
-        if (choosing.Typed.Length > 0)
+        var written = EntryRow.Draw(
+            inside,
+            2,
+            2,
+            Math.Max(0, inside.Width - 4),
+            choosing.Filter,
+            Skin.Typed(coat.Text, Skin.Crimson));
+
+        if (choosing.Typed.Length == 0)
         {
-            inside.Write(2, 2, TextWidth.Truncate(choosing.Typed, inside.Width - 4), coat.Text);
-            inside.Write(2, 2 + TextWidth.Of(choosing.Typed), " ", Skin.Paint(Skin.Ink, Skin.Crimson));
-
-            return;
+            inside.Write(2, 2 + written + 1, Loc(LocString.ChoosingNarrow), coat.Ghost);
         }
-
-        inside.Write(2, 2, " ", Skin.Paint(Skin.Ink, Skin.Crimson));
-        inside.Write(2, 4, Loc(LocString.ChoosingNarrow), coat.Ghost);
     }
 
     /// <summary>Draws the rows that fit, scrolled to keep the chosen one in view.</summary>

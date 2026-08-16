@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
+using Arlecchino.Editing;
 using Arlecchino.Rendering.Colors;
 using Arlecchino.Commander.Widgets.Chrome;
 
@@ -82,11 +83,18 @@ public sealed class Operation
     /// <summary>Whether the field holds a secret, and so is drawn as dots rather than as itself.</summary>
     public bool Secret { get; init; }
 
-    /// <summary>What is typed in the field.</summary>
-    public string Value { get; set; } = "";
+    /// <summary>
+    /// The field itself: what is typed, where the caret is and what is selected in it. It is edited the way
+    /// every other line the framework knows about is.
+    /// </summary>
+    public TextEntry Field { get; } = new();
 
-    /// <summary>Where the caret is in it.</summary>
-    public int Caret { get; set; }
+    /// <summary>What is typed in the field. Assigning it puts the caret after what was assigned.</summary>
+    public string Value
+    {
+        get => Field.Text;
+        set => Field.Text = value;
+    }
 
     /// <summary>The switches, in the order they are drawn.</summary>
     public IReadOnlyList<Choice> Options { get; init; } = [];
@@ -154,31 +162,4 @@ public sealed class Operation
 
         Options[Chosen].On = !Options[Chosen].On;
     }
-
-    /// <summary>Puts a character into the field.</summary>
-    /// <param name="typed">What was typed.</param>
-    public void Put(char typed)
-    {
-        Caret = Math.Clamp(Caret, 0, Value.Length);
-        Value = Value.Insert(Caret, typed.ToString());
-        Caret++;
-    }
-
-    /// <summary>Rubs out the character before the caret.</summary>
-    public void Back()
-    {
-        Caret = Math.Clamp(Caret, 0, Value.Length);
-
-        if (Caret == 0)
-        {
-            return;
-        }
-
-        Value = Value.Remove(Caret - 1, 1);
-        Caret--;
-    }
-
-    /// <summary>Moves the caret along the field.</summary>
-    /// <param name="by">How far, and which way.</param>
-    public void Nudge(int by) => Caret = Math.Clamp(Caret + by, 0, Value.Length);
 }

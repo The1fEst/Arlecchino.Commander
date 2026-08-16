@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Arlecchino.Editing;
 using Arlecchino.Input;
 using Arlecchino.Modals;
 
@@ -26,12 +27,16 @@ public sealed class OperationModal : Modal
         Title = asking.Title;
 
         _completing = completing;
-
-        asking.Caret = asking.Value.Length;
     }
 
     /// <summary>What is being asked.</summary>
     private Operation Asking { get; }
+
+    /// <summary>
+    /// The field, while the cursor is in it. With the cursor on the switches nothing here is typed into, so
+    /// pasted text has nowhere to land.
+    /// </summary>
+    public override ITextEntry? Typing => Asking is { Chosen: < 0, FieldLabel: not null } ? Asking.Field : null;
 
     /// <inheritdoc/>
     public override void Draw(ModalFrame frame)
@@ -79,7 +84,7 @@ public sealed class OperationModal : Modal
             return;
         }
 
-        Typing(frame, key);
+        Edit(frame, key);
     }
 
     /// <summary>
@@ -146,25 +151,16 @@ public sealed class OperationModal : Modal
         }
     }
 
-    private void Typing(ModalFrame frame, KeyPress key)
+    private void Edit(ModalFrame frame, KeyPress key)
     {
-        if (frame.Keymap.Erase.Matches(key))
+        if (EntryKeys.Handled(Asking.Field, frame.Keymap, frame.Copy, key))
         {
-            Asking.Back();
-
-            return;
-        }
-
-        if (key.Key is ConsoleKey.LeftArrow or ConsoleKey.RightArrow)
-        {
-            Asking.Nudge(key.Key == ConsoleKey.RightArrow ? 1 : -1);
-
             return;
         }
 
         if (frame.Keys.Resolve(key) is { } typed && !char.IsControl(typed))
         {
-            Asking.Put(typed);
+            TextEditing.Insert(Asking.Field, typed);
         }
     }
 }

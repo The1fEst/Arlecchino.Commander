@@ -3,6 +3,7 @@ using Arlecchino.Editing;
 using Arlecchino.Rendering;
 using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
+using Arlecchino.Widgets.Text;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
 
@@ -51,58 +52,51 @@ internal static class CommandLinePaint
         }
 
         var rows = CommandLineWrap.Rows(text.Text, room);
-        var (caret, column) = CommandLineWrap.Caret(rows, text.Caret);
+        var (caret, _) = CommandLineWrap.Caret(rows, text.Caret);
         var first = Math.Max(0, caret - MostRows + 1);
         var shown = Math.Min(MostRows, rows.Count - first);
 
-        var (from, to) = TextEditing.Selection(text);
+        var selection = TextEditing.Selection(text);
 
         for (var row = 0; row < shown; row++)
         {
-            Row(region, rows[first + row], row, at, from, to);
-        }
-
-        if (typing)
-        {
-            region.Write(caret - first, at + column, Under(text), Skin.Paint(Skin.Ink, Skin.Crimson));
+            Row(region, rows[first + row], row, at, selection, typing && first + row == caret ? text.Caret : -1);
         }
 
         return shown;
     }
 
     /// <summary>
-    /// Draws one row of what is typed, with whatever part of it the selection covers standing out. A
-    /// selection spanning rows is drawn as the piece of it each row holds.
+    /// Draws one row of what is typed, with whatever part of it the selection covers standing out and the
+    /// caret on the symbol it stands on. A selection spanning rows is drawn as the piece of it each row holds.
     /// </summary>
     /// <param name="region">The rows to draw on.</param>
     /// <param name="row">The row and where in the text it starts.</param>
     /// <param name="at">Which row of the region it goes on.</param>
     /// <param name="column">The column the text starts at.</param>
-    /// <param name="from">Where the selection starts in the text.</param>
-    /// <param name="to">Where it ends.</param>
-    private static void Row(SurfaceRegion region, CommandLineRow row, int at, int column, int from, int to)
+    /// <param name="selection">Where the selection starts and ends in the whole text.</param>
+    /// <param name="caret">Where the caret is in the whole text, or <c>-1</c> when it is not on this row.</param>
+    private static void Row(
+        SurfaceRegion region,
+        CommandLineRow row,
+        int at,
+        int column,
+        (int Start, int End) selection,
+        int caret)
     {
         var coat = Skin.Quiet;
-        var head = Math.Clamp(from - row.Start, 0, row.Text.Length);
-        var tail = Math.Clamp(to - row.Start, 0, row.Text.Length);
+        var written = column;
 
-        region.Write(at, column, row.Text[..head], coat.Text);
-        region.Write(
-            at,
-            column + TextWidth.Of(row.Text[..head]),
-            row.Text[head..tail],
-            Skin.Paint(Skin.Ink, Skin.Sea));
-        region.Write(at, column + TextWidth.Of(row.Text[..tail]), row.Text[tail..], coat.Text);
+        EntryRuns.Of(
+            row.Text,
+            caret < 0 ? -1 : Math.Clamp(caret - row.Start, 0, row.Text.Length),
+            (Math.Clamp(selection.Start - row.Start, 0, row.Text.Length),
+                Math.Clamp(selection.End - row.Start, 0, row.Text.Length)),
+            Skin.Typed(coat.Text, Skin.Crimson),
+            (piece, style) =>
+            {
+                region.Write(at, written, piece, style);
+                written += TextWidth.Of(piece);
+            });
     }
-
-    /// <summary>
-    /// The symbol the caret stands on, which is what is drawn the other way round. It is taken whole: half
-    /// of a surrogate pair under the caret would be drawn as the character neither of them is.
-    /// </summary>
-    /// <param name="text">What is written on the line and where the caret is.</param>
-    /// <returns>The symbol, or a space when the caret is past the end.</returns>
-    private static string Under(CommandLineText text) =>
-        text.Caret < text.Text.Length
-            ? text.Text[text.Caret..TextWidth.NextClusterEnd(text.Text, text.Caret)]
-            : " ";
 }

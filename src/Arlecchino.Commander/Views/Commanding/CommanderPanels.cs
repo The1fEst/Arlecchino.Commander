@@ -21,6 +21,7 @@ public sealed class CommanderPanels : IDisposable
     private readonly Sessions _sessions;
     private readonly Settings _settings;
     private readonly KeyText _typing;
+    private readonly IArlecchinoTerminal _terminal;
     private int _moved;
     private int _seen;
 
@@ -32,18 +33,21 @@ public sealed class CommanderPanels : IDisposable
     /// <param name="settings">What is kept between runs, which a panel reads itself by.</param>
     /// <param name="keymap">Keys the panels obey.</param>
     /// <param name="typing">Turns a key press into the character it types.</param>
+    /// <param name="terminal">Reached for the clipboard by the search that runs while you type.</param>
     public CommanderPanels(
         Sessions sessions,
         Operations operations,
         Settings settings,
         ArlecchinoKeymap keymap,
-        KeyText typing)
+        KeyText typing,
+        IArlecchinoTerminal terminal)
     {
         _sessions = sessions;
         _operations = operations;
         _settings = settings;
         _keymap = keymap;
         _typing = typing;
+        _terminal = terminal;
 
         _seen = operations.Revision.Value;
         _moved = sessions.Revision.Value;
@@ -148,7 +152,7 @@ public sealed class CommanderPanels : IDisposable
 
         FilePanel Over(PanelState state)
         {
-            return new(state, _keymap, _typing, _settings, _operations)
+            return new(state, _keymap, _typing, _terminal, _settings, _operations)
             {
                 OnOpenFile = entry => OnOpenFile?.Invoke(entry) ?? ViewRoute.None,
                 OnGroup = marking => OnGroup?.Invoke(marking)

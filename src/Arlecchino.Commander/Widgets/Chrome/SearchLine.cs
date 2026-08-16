@@ -1,44 +1,53 @@
 using System;
-using Arlecchino.Commander.Model;
+using Arlecchino.Editing;
+using Arlecchino.Hosting;
 using Arlecchino.Input;
 
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
 /// The search that runs while you type, which moves the cursor to the first name beginning with what has
-/// been spelled so far. It keeps the letters and hands everything else back to the panel.
+/// been spelled. It is a line of text like any other while it has the keyboard.
 /// </summary>
 internal sealed class SearchLine
 {
+    private readonly ArlecchinoKeymap _keymap;
     private readonly KeyText _keys;
+    private readonly IArlecchinoTerminal _terminal;
     private readonly Action<string> _look;
 
-    private string _typed = "";
     private bool _running;
 
     /// <summary>Puts a search over a panel.</summary>
+    /// <param name="keymap">The keys the application obeys, which the line is edited by.</param>
     /// <param name="keys">
     /// Turns a key press into the character it types, so a name is spelled the same with a Cyrillic
     /// layout switched on.
     /// </param>
+    /// <param name="terminal">Reached for the clipboard when what is spelled is copied or cut.</param>
     /// <param name="look">What to do with the letters so far, which is to go and find them.</param>
-    public SearchLine(KeyText keys, Action<string> look)
+    public SearchLine(ArlecchinoKeymap keymap, KeyText keys, IArlecchinoTerminal terminal, Action<string> look)
     {
+        _keymap = keymap;
         _keys = keys;
+        _terminal = terminal;
         _look = look;
     }
 
     /// <summary>Whether the search has the keyboard, in which case typing is its own.</summary>
     public bool IsRunning => _running;
 
+    /// <summary>What is being spelled, with the caret and whatever is selected in it.</summary>
+    public TextEntry Entry { get; } = new();
+
     /// <summary>Whatever has been typed into it, which the foot of the panel shows.</summary>
-    public string Typed => _typed;
+    public string Typed => Entry.Text;
 
     /// <summary>Starts it, with nothing spelled yet.</summary>
     public void Start()
     {
         _running = true;
-        _typed = "";
+        Entry.Text = "";
     }
 
     /// <summary>
@@ -55,14 +64,15 @@ internal sealed class SearchLine
             return false;
         }
 
-        Spell(Pasted.OneLine(text));
+        TextEditing.InsertText(Entry, PastedText.FirstLine(text, static character => !char.IsControl(character)));
+        _look(Entry.Text);
 
         return true;
     }
 
     /// <summary>
-    /// Reads one key. Anything that is not a letter or a rub-out ends the search and is left for the panel,
-    /// apart from Escape, which is kept so calling a search off does not also leave the screen.
+    /// Reads one key. Everything a line of text answers to is its own while something is spelled, and
+    /// anything else ends the search, apart from Escape, which it keeps.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the search took it.</returns>
@@ -73,10 +83,9 @@ internal sealed class SearchLine
             return false;
         }
 
-        if (key.Key is ConsoleKey.Backspace && _typed.Length > 0)
+        if (Entry.Text.Length > 0 && EntryKeys.Handled(Entry, _keymap, _terminal.CopyToClipboard, key))
         {
-            _typed = _typed[..^1];
-            _look(_typed);
+            _look(Entry.Text);
 
             return true;
         }
@@ -92,15 +101,9 @@ internal sealed class SearchLine
             return key.Key is ConsoleKey.Escape;
         }
 
-        Spell(typed.ToString());
+        TextEditing.Insert(Entry, typed);
+        _look(Entry.Text);
 
         return true;
-    }
-
-    private void Spell(string more)
-    {
-        _typed += more;
-
-        _look(_typed);
     }
 }

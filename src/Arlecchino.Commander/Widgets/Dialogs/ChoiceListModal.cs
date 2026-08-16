@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Arlecchino.Editing;
 using Arlecchino.Input;
 using Arlecchino.Modals;
 
@@ -26,6 +27,22 @@ public sealed class ChoiceListModal : Modal
 
     /// <summary>What is being picked from.</summary>
     private Choosing Picking { get; }
+
+    /// <summary>The line being typed into, which here is what narrows the list.</summary>
+    public override ITextEntry Typing => Picking.Filter;
+
+    /// <summary>
+    /// Takes pasted text into the filter and puts the cursor back on the first row, since what is showing
+    /// after the paste is a different set of rows.
+    /// </summary>
+    /// <param name="frame">The keys to obey, and how to close.</param>
+    /// <param name="text">What was pasted.</param>
+    public override void HandlePaste(ModalFrame frame, string text)
+    {
+        base.HandlePaste(frame, text);
+
+        Picking.Reset();
+    }
 
     /// <inheritdoc/>
     public override void Draw(ModalFrame frame)
@@ -79,18 +96,32 @@ public sealed class ChoiceListModal : Modal
             return;
         }
 
-        if (frame.Keymap.Erase.Matches(key))
-        {
-            Picking.Back();
+        Filtering(frame, key);
+    }
 
-            return;
+    /// <summary>
+    /// The keys that edit what the list is narrowed by. Everything a line of text answers to is read once
+    /// something is being filtered by; with nothing typed only the letters are.
+    /// </summary>
+    /// <param name="frame">The keys to obey, and the clipboard.</param>
+    /// <param name="key">The key that arrived.</param>
+    private void Filtering(ModalFrame frame, KeyPress key)
+    {
+        var typedSoFar = Picking.Typed;
+
+        if (!Edited(frame, key) && frame.Keys.Resolve(key) is { } typed && !char.IsControl(typed))
+        {
+            TextEditing.Insert(Picking.Filter, typed);
         }
 
-        if (frame.Keys.Resolve(key) is { } typed && !char.IsControl(typed))
+        if (Picking.Typed != typedSoFar)
         {
-            Picking.Put(typed);
+            Picking.Reset();
         }
     }
+
+    private bool Edited(ModalFrame frame, KeyPress key) =>
+        Picking.Typed.Length > 0 && EntryKeys.Handled(Picking.Filter, frame.Keymap, frame.Copy, key);
 
     /// <summary>
     /// Clicks. A click on a row selects it and a second click on the row already selected picks it, while a

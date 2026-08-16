@@ -6,6 +6,7 @@ using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Chrome;
+using Arlecchino.Editing;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
@@ -33,19 +34,21 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// Turns a key press into the character it types, so the search that runs while you type and the
     /// marking keys work with a Cyrillic layout switched on.
     /// </param>
+    /// <param name="terminal">Reached for the clipboard when what is being searched for is copied.</param>
     /// <param name="settings">Asked how often a server should be read again, and whether to watch at all.</param>
     /// <param name="operations">Asked whether files are being carried, which a server is not read during.</param>
     public FilePanel(
         PanelState state,
         ArlecchinoKeymap keymap,
         KeyText keys,
+        IArlecchinoTerminal terminal,
         Settings settings,
         Operations operations)
     {
         _state = state;
         _keymap = keymap;
         _keys = keys;
-        _searchLine = new(keys, Nearest);
+        _searchLine = new(keymap, keys, terminal, Nearest);
 
         _table = new(keymap)
         {
@@ -88,8 +91,10 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// <summary>Whether the search that runs while you type is on, in which case typing is its own.</summary>
     public bool IsSearching => _searchLine.IsRunning;
 
-    /// <summary>Whatever has been typed into that search, which the foot of the panel shows.</summary>
-    public string Typed => _searchLine.Typed;
+    /// <summary>
+    /// What is being searched for, with its caret and selection, which the foot of the panel shows.
+    /// </summary>
+    public ITextEntry Typed => _searchLine.Entry;
 
     /// <summary>What the panel is showing, in the order it is shown.</summary>
     public IReadOnlyList<FileEntry> Entries => _reading.Entries;
