@@ -20,8 +20,8 @@ public sealed class ConnectScreenTests : IDisposable
     {
         var screen = _app.Frame();
 
-        Assert.Contains("Host", screen, StringComparison.Ordinal);
-        Assert.Contains("Folder", screen, StringComparison.Ordinal);
+        Assert.Contains("HOST", screen, StringComparison.Ordinal);
+        Assert.Contains("FOLDER", screen, StringComparison.Ordinal);
         Assert.Contains("Connect", screen, StringComparison.Ordinal);
     }
 

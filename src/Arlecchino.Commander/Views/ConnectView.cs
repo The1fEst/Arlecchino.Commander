@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Ssh;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
+using Arlecchino.Commander.Views.Connecting;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Commander.Widgets.Dialogs;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
-using Arlecchino.Forms;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
 using Arlecchino.Layout;
@@ -22,12 +21,12 @@ using static Arlecchino.Layout.PaneTree;
 
 namespace Arlecchino.Commander.Views;
 
+/// <summary>
+/// Where a panel is pointed at a server. What it asks for is <see cref="ConnectFields"/>; this is the
+/// frame around those rows, and what happens once the button is pressed.
+/// </summary>
 public sealed class ConnectView : IArlecchinoView, IDisposable
 {
-    private const int LowestPort = 1;
-    private const int HighestPort = 65535;
-
-    private static readonly string[] Schemes = ["sftp", "ftp"];
     private readonly FocusRing _focus;
     private readonly PaneTree _layout;
     private readonly Navigator _navigation;
@@ -40,6 +39,13 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     private readonly IDisposable _watchingSaved;
     private readonly IDisposable _watchingScheme;
 
+    /// <summary>Builds the screen over whatever was last typed into it.</summary>
+    /// <param name="surface">What is drawn on.</param>
+    /// <param name="session">Where the answers and the connection that was made are kept.</param>
+    /// <param name="sessions">Says which panel is being connected.</param>
+    /// <param name="state">Where the dialog on top and the last word said live.</param>
+    /// <param name="options">The keys this was started with.</param>
+    /// <param name="navigation">How the screen is left once a server answers.</param>
     public ConnectView(
         Surface surface,
         Remote session,
@@ -55,49 +61,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _navigation = navigation;
 
         var saved = SshConfig.Hosts();
-
-        var form = new Form(state, options)
-        {
-            Fields =
-            [
-                Field.Choice(static () => Loc(LocString.ConnectSaved),
-                    Aliases(saved),
-                    session.Saved,
-                    static () => Loc(LocString.ConnectSavedHint)),
-                Field.Choice(static () => Loc(LocString.ConnectProtocol),
-                    Schemes,
-                    session.Scheme,
-                    static () => Loc(LocString.ConnectProtocolHint)),
-                Field.Text(static () => Loc(LocString.ConnectHost),
-                    session.Host,
-                    Filled,
-                    static () => Loc(LocString.ConnectHostHint)),
-                Field.Number(static () => Loc(LocString.ConnectPort),
-                    session.Port,
-                    LowestPort,
-                    HighestPort,
-                    static () => Loc(LocString.ConnectPortHint)),
-                Field.Text(static () => Loc(LocString.ConnectUser),
-                    session.User,
-                    Filled),
-                Field.Secret(static () => Loc(LocString.ConnectPassword),
-                    session.Password,
-                    static () => Loc(LocString.ConnectPasswordHint)),
-                Field.PathFrom(static () => Loc(LocString.ConnectKeyFile),
-                    session.KeyFile,
-                    ViewKind.Connect,
-                    false,
-                    Keys,
-                    static () => Loc(LocString.ConnectKeyFileHint)),
-                Field.Text(static () => Loc(LocString.ConnectFolder),
-                    session.Folder,
-                    null,
-                    static () => Loc(LocString.ConnectFolderHint)),
-                Field.Action(static () => Loc(LocString.ConnectVerb),
-                    Start,
-                    () => !session.Connecting.Value && Ready(session))
-            ]
-        };
+        var form = ConnectFields.For(session, new(state), options.Keymap, saved, Start);
 
         _layout = Branch(
             Rows,
@@ -106,26 +70,30 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
             Branch(Rows, PaneSize.CellsFromEnd(Sheet.Foot), Leaf(form), Leaf(DrawFooter)));
 
         _focus = _layout.AsFocusRing(options.Keymap);
-        _watchingSaved = session.Saved.Subscribe(() => Fill(saved, session));
+        _watchingSaved = session.Saved.Subscribe(() => ConnectFields.Fill(saved, session));
         _watchingScheme = session.Scheme.Subscribe(() =>
             session.Port.Value = Connection.PortFor(session.Scheme.Value == "ftp" ? Protocol.Ftp : Protocol.Sftp));
     }
 
+    /// <inheritdoc/>
     public void Draw()
     {
         _layout.Draw(Sheet.Inside(_surface.Content));
     }
 
+    /// <inheritdoc/>
     public ViewRoute Handle(KeyPress key)
     {
         return _focus.Handle(key);
     }
 
+    /// <inheritdoc/>
     public ViewRoute HandleMouse(MouseEvent mouse)
     {
         return _focus.HandleMouse(mouse);
     }
 
+    /// <inheritdoc/>
     public IReadOnlyList<ViewCommand> Commands()
     {
         return
@@ -134,6 +102,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         ];
     }
 
+    /// <summary>Gives up the watches on the saved host and the protocol, which the screen outlived.</summary>
     public void Dispose()
     {
         _watchingScheme.Dispose();
@@ -157,7 +126,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     private void DrawFooter(SurfaceRegion footer)
     {
-        Sheet.Hints(footer, Said(), Loc(LocString.EscBack));
+        Sheet.Hints(footer, Said(), Loc(LocString.ConnectHints));
     }
 
     private string Said()
@@ -170,7 +139,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         return _session.Failure.Value.Length > 0 ? _session.Failure.Value : Loc(LocString.ConnectNothing);
     }
 
-    private ViewRoute Start()
+    private void Start()
     {
         var wanted = _session.Wanted();
 
@@ -178,8 +147,6 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _session.Failure.Value = "";
 
         Connector.Start(wanted, (source, folder) => Landed(wanted, source, folder), Failed);
-
-        return ViewRoute.None;
     }
 
     private void Landed(Connection connection, IFileSource source, string folder)
@@ -217,46 +184,5 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     private PanelState Side()
     {
         return _sessions.RightIsActive.Value ? _sessions.Right : _sessions.Left;
-    }
-
-    private static string? Filled(string text)
-    {
-        return text.Trim().Length == 0 ? Loc(LocString.ConnectNeeded) : null;
-    }
-
-    private static string Keys()
-    {
-        return Path.Combine(Listing.Home(), ".ssh");
-    }
-
-    private static List<string> Aliases(IReadOnlyList<SshHost> saved)
-    {
-        var names = new List<string>(saved.Count + 1) { "" };
-
-        foreach (var host in saved)
-        {
-            names.Add(host.Alias);
-        }
-
-        return names;
-    }
-
-    private static void Fill(IReadOnlyList<SshHost> saved, Remote session)
-    {
-        foreach (var host in saved)
-        {
-            if (host.Alias != session.Saved.Value)
-            {
-                continue;
-            }
-
-            session.Fill(host);
-            return;
-        }
-    }
-
-    private static bool Ready(Remote session)
-    {
-        return session.Host.Value.Trim().Length > 0 && session.User.Value.Trim().Length > 0;
     }
 }
