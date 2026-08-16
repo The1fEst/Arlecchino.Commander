@@ -138,16 +138,13 @@ public sealed class SshView : IArlecchinoView
 
         _lines.Add($"$ {command}");
 
-        Task.Run(() =>
+        FrameThread.Post(async () =>
         {
-            var report = Execute(ssh, command);
+            var report = await Task.Run(() => Execute(ssh, command));
 
-            FrameThread.Post(() =>
-            {
-                _running = false;
-                _lines.AddRange(report);
-                _state.Invalidate();
-            });
+            _running = false;
+            _lines.AddRange(report);
+            _state.Invalidate();
         });
     }
 

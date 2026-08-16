@@ -152,26 +152,22 @@ public sealed class Operations : IArlecchinoStore
 
         Redraw(cancelling.Token);
 
-        _ = Working();
-
-        async Task Working()
+        FrameThread.Post(async () =>
         {
             try
             {
                 outcome.Planning(measure is null
                     ? default
-                    : await measure(cancelling.Token).ConfigureAwait(false));
+                    : await Task.Run(() => measure(cancelling.Token), cancelling.Token));
 
-                await work(outcome, cancelling.Token).ConfigureAwait(false);
+                await Task.Run(() => work(outcome, cancelling.Token), cancelling.Token);
             }
             catch (OperationCanceledException) { }
             finally
             {
-                var stopped = cancelling.Token.IsCancellationRequested;
-
-                FrameThread.Post(() => Finish(outcome, verb, stopped));
+                Finish(outcome, verb, cancelling.Token.IsCancellationRequested);
             }
-        }
+        });
     }
 
     private void Redraw(CancellationToken token) => Task.Run(

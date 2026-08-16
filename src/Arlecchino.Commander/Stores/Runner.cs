@@ -58,25 +58,20 @@ public sealed class Runner : IArlecchinoStore
         Remember(command);
         Lines.Add($"$ {command}");
 
-        _ = Running();
-
-        async Task Running()
+        FrameThread.Post(async () =>
         {
-            var said = await SayAsync(source, command, folder).ConfigureAwait(false);
+            var said = await SayAsync(source, command, folder);
 
-            FrameThread.Post(() =>
-            {
-                IsRunning = false;
-                _running = null;
+            IsRunning = false;
+            _running = null;
 
-                Lines.Add(said);
-                Trim();
+            Lines.Add(said);
+            Trim();
 
-                _state.Output = Loc(LocString.SaidCommandDone, command);
+            _state.Output = Loc(LocString.SaidCommandDone, command);
 
-                finished();
-            });
-        }
+            finished();
+        });
     }
 
     /// <summary>Kills what is running, along with anything it started.</summary>

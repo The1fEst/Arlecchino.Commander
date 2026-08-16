@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Watching;
 using Arlecchino.Commander.Model;
@@ -112,24 +111,17 @@ public sealed class PanelReading : IDisposable
             _paint.Loading = true;
         }
 
-        _ = Reading();
-
-        async Task Reading()
+        FrameThread.Post(async () =>
         {
-            var read = await Listing.ReadAsync(source, folder, hidden).ConfigureAwait(false);
+            Landed(source, folder, hidden, await Listing.ReadAsync(source, folder, hidden), cursor);
 
-            FrameThread.Post(() => Landed(source, folder, hidden, read, cursor));
+            var free = await Listing.FreeAsync(source, folder);
 
-            var free = await Listing.FreeAsync(source, folder).ConfigureAwait(false);
-
-            FrameThread.Post(() =>
+            if (ReferenceEquals(source, _state.Source) && folder == _state.Folder)
             {
-                if (ReferenceEquals(source, _state.Source) && folder == _state.Folder)
-                {
-                    _paint.Free = free;
-                }
-            });
-        }
+                _paint.Free = free;
+            }
+        });
     }
 
     /// <summary>

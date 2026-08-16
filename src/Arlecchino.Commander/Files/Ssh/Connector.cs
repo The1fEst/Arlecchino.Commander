@@ -17,28 +17,24 @@ public static class Connector
     /// <param name="failed">Called with what went wrong and whether the credentials were refused.</param>
     public static void Start(Connection wanted, Action<IFileSource, string> landed, Action<string, bool> failed)
     {
-        _ = Connecting();
-
-        async Task Connecting()
+        FrameThread.Post(async () =>
         {
             try
             {
                 var source = wanted.Protocol == Protocol.Sftp
-                    ? await Task.Run(() => (IFileSource)SftpSource.Connect(wanted)).ConfigureAwait(false)
-                    : await FtpSource.ConnectAsync(wanted, CancellationToken.None).ConfigureAwait(false);
+                    ? await Task.Run(() => (IFileSource)SftpSource.Connect(wanted))
+                    : await FtpSource.ConnectAsync(wanted, CancellationToken.None);
 
-                var folder = wanted.Path.Length > 0 ? wanted.Path : source.Home;
-
-                FrameThread.Post(() => landed(source, folder));
+                landed(source, wanted.Path.Length > 0 ? wanted.Path : source.Home);
             }
             catch (UnauthorizedAccessException error)
             {
-                FrameThread.Post(() => failed(error.Message, true));
+                failed(error.Message, true);
             }
             catch (Exception error) when (error is IOException or InvalidOperationException)
             {
-                FrameThread.Post(() => failed(error.Message, false));
+                failed(error.Message, false);
             }
-        }
+        });
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -59,20 +58,15 @@ public sealed class ViewerView : IArlecchinoView
         _layout = Chrome(new TextView(options.Keymap) { Text = "" });
         _focus = _layout.AsFocusRing(options.Keymap);
 
-        _ = Opening();
-
-        async Task Opening()
+        FrameThread.Post(async () =>
         {
-            var (body, kind, read) = await Reading.OpenAsync(_source, _path, size, options).ConfigureAwait(false);
+            var (body, kind, read) = await Reading.OpenAsync(_source, _path, size, options);
 
-            FrameThread.Post(() =>
-            {
-                _kind = kind;
-                _read = read;
-                _layout = Chrome(body);
-                _focus = _layout.AsFocusRing(options.Keymap);
-            });
-        }
+            _kind = kind;
+            _read = read;
+            _layout = Chrome(body);
+            _focus = _layout.AsFocusRing(options.Keymap);
+        });
     }
 
     /// <inheritdoc/>

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -132,21 +131,16 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// <param name="folder">Where to go.</param>
     public void GoTo(string folder)
     {
-        _ = Going();
-
-        async Task Going()
+        FrameThread.Post(async () =>
         {
-            if (!await _state.Source.FolderExistsAsync(folder, CancellationToken.None).ConfigureAwait(false))
+            if (!await _state.Source.FolderExistsAsync(folder, CancellationToken.None))
             {
                 return;
             }
 
-            FrameThread.Post(() =>
-            {
-                _state.GoTo(folder);
-                Reload();
-            });
-        }
+            _state.GoTo(folder);
+            Reload();
+        });
     }
 
     /// <summary>Goes back to the folder this panel was in before this one.</summary>

@@ -79,13 +79,13 @@ public sealed class Finder : IArlecchinoStore
 
         Found.Clear();
 
-        _ = Searching();
-
-        async Task Searching()
+        FrameThread.Post(async () =>
         {
-            await WalkAsync(source, folder, wanted, cancelling.Token).ConfigureAwait(false);
-
-            FrameThread.Post(() =>
+            try
+            {
+                await Task.Run(() => WalkAsync(source, folder, wanted, cancelling.Token), cancelling.Token);
+            }
+            finally
             {
                 IsRunning = false;
                 _cancelling = null;
@@ -94,8 +94,8 @@ public sealed class Finder : IArlecchinoStore
                 done();
 
                 _state.Invalidate();
-            });
-        }
+            }
+        });
     }
 
     public void Stop() => _cancelling?.Cancel();
