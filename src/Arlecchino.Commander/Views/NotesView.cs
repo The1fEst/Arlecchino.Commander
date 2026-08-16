@@ -70,13 +70,7 @@ public sealed class NotesView : IArlecchinoView
     /// <inheritdoc/>
     public void Draw()
     {
-        var (edge, body) = _surface.Content.SplitLeft(1);
-
-        edge.Fill(Skin.CrimsonFill);
-
-        body = body.Inset(new Margin(1, 0, 0, 0));
-
-        _layout.Draw(body);
+        _layout.Draw(Sheet.Inside(_surface.Content));
     }
 
     /// <inheritdoc/>

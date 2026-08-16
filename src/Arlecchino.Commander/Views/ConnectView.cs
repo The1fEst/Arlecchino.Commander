@@ -113,7 +113,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     public void Draw()
     {
-        _layout.Draw(_surface.Content);
+        _layout.Draw(Sheet.Inside(_surface.Content));
     }
 
     public ViewRoute Handle(KeyPress key)

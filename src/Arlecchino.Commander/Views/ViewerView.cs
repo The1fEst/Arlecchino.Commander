@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
-using Arlecchino.Pictures;
 using Arlecchino.Commander.Stores;
+using Arlecchino.Commander.Views.Viewing;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Commands;
 using Arlecchino.Focus;
 using Arlecchino.Hosting;
@@ -16,10 +14,7 @@ using Arlecchino.Input;
 using Arlecchino.Layout;
 using Arlecchino.Navigation;
 using Arlecchino.Rendering;
-using Arlecchino.Rendering.Terminals;
-using Arlecchino.Rendering.Text;
 using Arlecchino.Widgets;
-using Arlecchino.Widgets.Pictures;
 using Arlecchino.Widgets.Readouts;
 using Microsoft.Extensions.Hosting;
 using static Arlecchino.Layout.PaneSplit;
@@ -27,16 +22,16 @@ using static Arlecchino.Layout.PaneTree;
 
 namespace Arlecchino.Commander.Views;
 
+/// <summary>
+/// One file, shown as whatever it turns out to be: a picture, its text, or a hex dump. It is read by
+/// <see cref="Reading"/> and framed here, in the bands every other screen wears.
+/// </summary>
 public sealed class ViewerView : IArlecchinoView
 {
-    private const int ReadLimit = 512 * 1024;
-    private const int ImageLimit = 32 * 1024 * 1024;
-    private const int ChunkBytes = 8192;
-    private const int BytesPerRow = 16;
-    private const int TextProbe = 8192;
-
     private readonly Surface _surface;
     private readonly IHostApplicationLifetime _lifetime;
+    private readonly IFileSource _source;
+    private readonly string _path;
 
     private PaneTree _layout;
     private FocusRing _focus;
@@ -56,27 +51,19 @@ public sealed class ViewerView : IArlecchinoView
     {
         _surface = surface;
         _lifetime = lifetime;
+        _path = sessions.Viewing.Value;
+        _source = sessions.ViewingSource;
 
-        var path = sessions.Viewing.Value;
         var size = sessions.ViewingSize;
-        var source = sessions.ViewingSource;
 
-        var empty = new TextView(options.Keymap) { Text = "" };
-
-        var status = new StatusBar
-        {
-            Left = [() => Loc(LocString.ViewerBytes, Sizes.Grouped(_read), _kind)],
-            Right = [static () => Loc(LocString.EscBack), static () => Loc(LocString.ViewerScroll)],
-        };
-
-        _layout = Chrome(empty);
+        _layout = Chrome(new TextView(options.Keymap) { Text = "" });
         _focus = _layout.AsFocusRing(options.Keymap);
 
         _ = Opening();
 
         async Task Opening()
         {
-            var (body, kind, read) = await LoadAsync(source, path, size, options).ConfigureAwait(false);
+            var (body, kind, read) = await Reading.OpenAsync(_source, _path, size, options).ConfigureAwait(false);
 
             FrameThread.Post(() =>
             {
@@ -86,20 +73,18 @@ public sealed class ViewerView : IArlecchinoView
                 _focus = _layout.AsFocusRing(options.Keymap);
             });
         }
-
-        PaneTree Chrome(IArlecchinoWidget body) => Branch(
-            Rows,
-            PaneSize.CellsFromEnd(1),
-            Leaf(body, () => Path.GetFileName(path)),
-            Leaf(status));
     }
 
-    public void Draw() => _layout.Draw(_surface.Content);
+    /// <inheritdoc/>
+    public void Draw() => _layout.Draw(Sheet.Inside(_surface.Content));
 
+    /// <inheritdoc/>
     public ViewRoute Handle(KeyPress key) => _focus.Handle(key);
 
+    /// <inheritdoc/>
     public ViewRoute HandleMouse(MouseEvent mouse) => _focus.HandleMouse(mouse);
 
+    /// <inheritdoc/>
     public IReadOnlyList<ViewCommand> Commands() =>
     [
         Bind.Going(new(ConsoleKey.Escape), LocString.KeyBack, static () => ViewKind.Commander),
@@ -107,153 +92,28 @@ public sealed class ViewerView : IArlecchinoView
         Bind.To(new(ConsoleKey.F10), LocString.BarQuit, _lifetime.StopApplication),
     ];
 
-    /// <summary>
-    /// Reads the file and decides what to show it with: a picture as itself, anything else as text or a
-    /// hex dump. A picture is read whole, since half of one decodes to nothing.
-    /// </summary>
-    /// <param name="source">Where the file lives.</param>
-    /// <param name="path">Which file.</param>
-    /// <param name="size">How large it is said to be.</param>
-    /// <param name="options">Supplies the keymap the text viewer scrolls by.</param>
-    /// <returns>What to draw, what to call it, and how much of it was read.</returns>
-    private static async Task<(IArlecchinoWidget Body, string Kind, long Read)> LoadAsync(
-        IFileSource source,
-        string path,
-        long size,
-        ArlecchinoOptions options)
-    {
-        try
-        {
-            await using var stream = await source.OpenReadAsync(path, CancellationToken.None)
-                .ConfigureAwait(false);
-            var held = new MemoryStream();
-            var head = await TakeAsync(stream, held, ReadLimit).ConfigureAwait(false);
+    private PaneTree Chrome(IArlecchinoWidget body) => Branch(
+        Rows,
+        Sheet.Head,
+        Leaf(DrawHeader),
+        Branch(Rows, PaneSize.CellsFromEnd(Sheet.Foot), Leaf(body), Leaf(DrawFooter)));
 
-            if (PictureFormats.For(head) is { } format)
-            {
-                var whole = head.Length >= size
-                    ? head
-                    : await TakeAsync(stream, held, ImageLimit).ConfigureAwait(false);
-                var picture = new Picture();
-
-                if (format.Read(whole, PictureLimits.For(picture.Detail)) is { } raster)
-                {
-                    picture.Show(raster.Pixels, raster.Width, raster.Height);
-
-                    return (
-                        picture,
-                        Loc(
-                            LocString.ViewerPicture,
-                            format.Name,
-                            raster.Width,
-                            raster.Height,
-                            Drawing(picture)),
-                        whole.Length);
-                }
-            }
-
-            var binary = IsBinary(head);
-            var text = new TextView(options.Keymap)
-            {
-                Text = binary
-                    ? Dump(head)
-                    : Encoding.UTF8.GetString(head).Replace("\t", "    ", StringComparison.Ordinal),
-            };
-
-            return (text, Truncated(Loc(binary ? LocString.ViewerHex : LocString.ViewerText), head.Length, size), size);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return (new TextView(options.Keymap) { Text = error.Message }, Loc(LocString.ViewerUnreadable), 0);
-        }
-    }
+    private void DrawHeader(SurfaceRegion header) => Sheet.Title(
+        header,
+        _source.IsRemote ? RemotePaths.NameOf(_path) : Path.GetFileName(_path),
+        Loc(LocString.ViewerBytes, Sizes.Grouped(_read), _kind));
 
     /// <summary>
-    /// How the picture will reach the terminal: the pixels themselves where the terminal admitted to a
-    /// graphics protocol, and half-blocks where it did not.
+    /// The band along the bottom: which folder the file was opened from, and the keys that leave or
+    /// scroll. The name itself is in the band at the top, so what is left to say is where it came from.
     /// </summary>
-    /// <param name="picture">The picture about to be drawn.</param>
-    /// <returns>What to call the way it is drawn.</returns>
-    private static string Drawing(Picture picture) =>
-        TerminalCapabilities.Resolve(picture.Protocol ?? Glyphs.Picture)
-            .ToString()
-            .ToLowerInvariant();
+    /// <param name="footer">The rows to draw on.</param>
+    private void DrawFooter(SurfaceRegion footer) => Sheet.Hints(
+        footer,
+        Paths.Shortened(_source, Folder(), footer.Width / 2),
+        Loc(LocString.Joined, Loc(LocString.EscBack), Loc(LocString.ViewerScroll)));
 
-    private static string Truncated(string kind, int read, long size) =>
-        read < size ? Loc(LocString.ViewerFirst, kind, Sizes.Brief(read)) : kind;
-
-    /// <summary>
-    /// Reads the file up to a limit, carrying on from where the last read left off. Over a network,
-    /// reading the front of it a second time would be the file twice.
-    /// </summary>
-    /// <param name="stream">The file, still open.</param>
-    /// <param name="held">What has been read so far, which this adds to.</param>
-    /// <param name="limit">How much of the file to have read by the end.</param>
-    /// <returns>The bytes.</returns>
-    private static async Task<byte[]> TakeAsync(Stream stream, MemoryStream held, long limit)
-    {
-        var chunk = new byte[ChunkBytes];
-
-        while (held.Length < limit)
-        {
-            var wanted = (int)Math.Min(chunk.Length, limit - held.Length);
-            var read = await stream.ReadAsync(chunk.AsMemory(0, wanted), CancellationToken.None)
-                .ConfigureAwait(false);
-
-            if (read <= 0)
-            {
-                break;
-            }
-
-            await held.WriteAsync(chunk.AsMemory(0, read), CancellationToken.None).ConfigureAwait(false);
-        }
-
-        return held.ToArray();
-    }
-
-    private static bool IsBinary(byte[] bytes)
-    {
-        var probed = Math.Min(TextProbe, bytes.Length);
-
-        for (var index = 0; index < probed; index++)
-        {
-            if (bytes[index] == 0)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string Dump(byte[] bytes)
-    {
-        var text = new StringBuilder();
-
-        for (var offset = 0; offset < bytes.Length; offset += BytesPerRow)
-        {
-            var row = bytes.AsSpan(offset, Math.Min(BytesPerRow, bytes.Length - offset));
-
-            text.Append(offset.ToString("x8", CultureInfo.InvariantCulture)).Append("  ");
-
-            for (var index = 0; index < BytesPerRow; index++)
-            {
-                text.Append(index < row.Length
-                        ? row[index].ToString("x2", CultureInfo.InvariantCulture)
-                        : "  ")
-                    .Append(' ');
-            }
-
-            text.Append(' ');
-
-            foreach (var value in row)
-            {
-                text.Append(value is >= 32 and < 127 ? (char)value : '.');
-            }
-
-            text.AppendLine();
-        }
-
-        return text.ToString();
-    }
+    private string Folder() => _source.IsRemote
+        ? RemotePaths.Parent(_path) ?? RemotePaths.Root
+        : Path.GetDirectoryName(_path) ?? "";
 }

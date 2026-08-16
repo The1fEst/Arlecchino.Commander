@@ -15,6 +15,21 @@ public static class Sheet
     /// <summary>How many rows the band along the bottom takes, rule included.</summary>
     public const int Foot = 2;
 
+    /// <summary>
+    /// Draws the accent down the left of the screen and hands back what is beside it. It is the rule the
+    /// panel being worked in wears, said of a whole screen: there is one thing here, and this is it.
+    /// </summary>
+    /// <param name="screen">Everything the screen was given.</param>
+    /// <returns>The rows to draw the bands and the body in.</returns>
+    public static SurfaceRegion Inside(SurfaceRegion screen)
+    {
+        var (edge, beside) = screen.SplitLeft(1);
+
+        edge.Fill(Skin.CrimsonFill);
+
+        return beside.Inset(new Margin(1, 0, 0, 0));
+    }
+
     /// <summary>Draws the band at the top.</summary>
     /// <param name="header">The rows to draw on.</param>
     /// <param name="title">What the screen is.</param>

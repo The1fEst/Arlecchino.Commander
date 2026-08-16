@@ -64,7 +64,7 @@ public sealed class SshView : IArlecchinoView
         _focus = _layout.AsFocusRing(options.Keymap);
     }
 
-    public void Draw() => _layout.Draw(_surface.Content);
+    public void Draw() => _layout.Draw(Sheet.Inside(_surface.Content));
 
     public ViewRoute Handle(KeyPress key) => _focus.Handle(key);
 
