@@ -82,9 +82,9 @@ public static class PanelRow
         {
             Tone.Folder => Skin.Paint(Skin.Sea, back),
             Tone.Protected => Skin.Paint(Skin.AmberRule, back),
-            Tone.Ignorable => Skin.Paint(new(0x3A, 0x35, 0x3F), back),
-            Tone.Parent => Skin.Paint(new(0x4A, 0x45, 0x50), back),
-            _ => Skin.Paint(new(0x6E, 0x68, 0x70), back),
+            Tone.Ignorable => Skin.Paint(Skin.GhostInk, back),
+            Tone.Parent => Skin.Paint(Skin.TraceInk, back),
+            _ => Skin.Paint(Skin.Faint, back),
         };
     }
 
@@ -105,8 +105,8 @@ public static class PanelRow
         return tone switch
         {
             Tone.Protected => Skin.Paint(Skin.Amber, back),
-            Tone.Ignorable => Skin.Paint(new(0x57, 0x51, 0x5F), back),
-            Tone.Parent => Skin.Paint(new(0x6E, 0x68, 0x70), back),
+            Tone.Ignorable => Skin.Paint(Skin.LabelInk, back),
+            Tone.Parent => Skin.Paint(Skin.Faint, back),
             _ => Skin.Paint(Skin.Bone, back),
         };
     }
@@ -114,7 +114,7 @@ public static class PanelRow
     private static TermColor Quiet(bool cursor, bool chosen, bool marked, Skin.Coat coat) => cursor
         ? Skin.CursorMeta
         : chosen
-            ? Skin.Paint(new(0x8A, 0x83, 0x90), Skin.Chip)
+            ? Skin.Paint(Skin.Muted, Skin.Chip)
             : marked
                 ? coat.MarkedMeta
                 : coat.Meta;

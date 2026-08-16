@@ -22,16 +22,22 @@ public static class Skin
     public static readonly Rgb Unlit = new(0x13, 0x12, 0x16);
 
     /// <summary>Dialogs, the palette, job cards — anything drawn over the screen.</summary>
-    public static readonly Rgb Over = new(0x1B, 0x18, 0x20);
+    public static readonly Rgb Over = new(0x1D, 0x1A, 0x18);
 
     /// <summary>Key chips and inline fields, which sit on an overlay and have to be told from it.</summary>
-    public static readonly Rgb Chip = new(0x24, 0x1F, 0x2A);
+    public static readonly Rgb Chip = new(0x27, 0x23, 0x20);
 
     /// <summary>Primary text.</summary>
     public static readonly Rgb Bone = new(0xED, 0xE6, 0xD9);
 
     /// <summary>The brand crimson: the focus rule, marks, carets, the primary key of the moment.</summary>
     public static readonly Rgb Crimson = new(0xC9, 0x38, 0x2B);
+
+    /// <summary>
+    /// The same accent as words rather than as a fill. It is the crimson lifted until a line of it reads
+    /// against what it is written on; anything filled keeps <see cref="Crimson"/> itself.
+    /// </summary>
+    public static readonly Rgb Flame = new(0xD7, 0x51, 0x47);
 
     /// <summary>Text and icons on a crimson fill.</summary>
     public static readonly Rgb OnCrimson = new(0xFF, 0xF3, 0xEE);
@@ -57,16 +63,39 @@ public static class Skin
     /// <summary>The rule beside one.</summary>
     public static readonly Rgb AmberRule = new(0x8A, 0x5A, 0x2B);
 
-    private static readonly Rgb Hairline = new(0x21, 0x1E, 0x26);
-    private static readonly Rgb HairlineDim = new(0x1D, 0x1A, 0x21);
-    private static readonly Rgb HairlineOver = new(0x32, 0x2C, 0x3A);
-    private static readonly Rgb SecondaryInk = new(0xA7, 0x9F, 0xAE);
-    private static readonly Rgb MutedInk = new(0x8A, 0x83, 0x90);
-    private static readonly Rgb FaintInk = new(0x6E, 0x68, 0x70);
-    private static readonly Rgb LabelInk = new(0x57, 0x51, 0x5F);
-    private static readonly Rgb TraceInk = new(0x4A, 0x45, 0x50);
-    private static readonly Rgb GhostInk = new(0x3A, 0x35, 0x3F);
-    private static readonly Rgb IdleInk = new(0x2F, 0x2B, 0x35);
+    /// <summary>
+    /// The warmest and loudest of the seven grays that everything quieter than a name is written in.
+    /// They are spaced by contrast against the surrounds rather than by lightness, and the last of them
+    /// still reads at three to one.
+    /// </summary>
+    public static readonly Rgb Secondary = new(0xC5, 0xC3, 0xBF);
+
+    /// <summary>Sizes, counts, everything that qualifies a name.</summary>
+    public static readonly Rgb Muted = new(0xB3, 0xB1, 0xAB);
+
+    /// <summary>Hints, the parent row, a plain file's tag.</summary>
+    public static readonly Rgb Faint = new(0xA2, 0x9F, 0x98);
+
+    /// <summary>Column heads, the small capitals that label a section, and a file worth ignoring.</summary>
+    public static readonly Rgb LabelInk = new(0x94, 0x90, 0x88);
+
+    /// <summary>A date, or a count on the panel that is not being worked in.</summary>
+    public static readonly Rgb TraceInk = new(0x88, 0x83, 0x79);
+
+    /// <summary>Line numbers, the tag of a file worth ignoring, a hint not needed yet.</summary>
+    public static readonly Rgb GhostInk = new(0x7D, 0x78, 0x6F);
+
+    /// <summary>The command line at rest.</summary>
+    public static readonly Rgb Idle = new(0x6C, 0x67, 0x60);
+
+    private static readonly Rgb Hairline = new(0x2F, 0x2C, 0x28);
+    private static readonly Rgb HairlineDim = new(0x27, 0x25, 0x21);
+    private static readonly Rgb HairlineOver = new(0x3C, 0x38, 0x33);
+
+    /// <summary>The same two steps down the row the cursor is on, which is bone and turns the ladder over.</summary>
+    private static readonly Rgb OnBoneMeta = new(0x42, 0x3E, 0x38);
+
+    private static readonly Rgb OnBoneDate = new(0x59, 0x54, 0x4C);
 
     private static readonly Dictionary<(Rgb Front, Rgb Back, TextStyle Style), TermColor> Made = [];
     private static readonly Lock Gate = new();
@@ -93,14 +122,14 @@ public static class Skin
     public static ThemePalette Palette { get; } = new()
     {
         Default = Paint(Bone, Ink),
-        Header = Paint(Crimson, Ink, TextStyle.Bold),
+        Header = Paint(Flame, Ink, TextStyle.Bold),
         TableHeader = Paint(LabelInk, Ink),
-        Accent = Paint(Crimson, Ink),
-        Info = Paint(SecondaryInk, Ink),
-        Muted = Paint(MutedInk, Ink),
+        Accent = Paint(Flame, Ink),
+        Info = Paint(Secondary, Ink),
+        Muted = Paint(Muted, Ink),
         Input = Paint(Bone, Chip),
         Selected = Paint(Bone, Chip),
-        Active = Paint(Crimson, Ink),
+        Active = Paint(Flame, Ink),
         ActiveSelected = Paint(OnCrimson, Crimson, TextStyle.Bold),
         Warning = Paint(Amber, Ink),
         Error = Paint(Coral, Ink),
@@ -110,10 +139,10 @@ public static class Skin
     public static TermColor CursorName => field ??= Paint(Ink, Bone, TextStyle.Bold);
 
     /// <summary>Its size and anything else that qualifies the name.</summary>
-    public static TermColor CursorMeta => field ??= Paint(GhostInk, Bone);
+    public static TermColor CursorMeta => field ??= Paint(OnBoneMeta, Bone);
 
     /// <summary>Its date, which is quieter still.</summary>
-    public static TermColor CursorDate => field ??= Paint(LabelInk, Bone);
+    public static TermColor CursorDate => field ??= Paint(OnBoneDate, Bone);
 
     /// <summary>Its kind tag, the one span of the row that keeps the accent.</summary>
     public static TermColor CursorTag => field ??= Paint(Crimson, Bone);
@@ -217,18 +246,17 @@ public static class Skin
     {
         _ when colour == Bone => TerminalColor.White,
         _ when colour == OnCrimson => TerminalColor.BrightWhite,
-        _ when colour == Crimson || colour == Coral => TerminalColor.BrightRed,
+        _ when colour == Crimson || colour == Coral || colour == Flame => TerminalColor.BrightRed,
         _ when colour == Danger => TerminalColor.Red,
         _ when colour == Sea => TerminalColor.Cyan,
         _ when colour == Calm || colour == CalmText => TerminalColor.Green,
         _ when colour == Amber || colour == AmberRule => TerminalColor.Yellow,
-        _ when colour == SecondaryInk ||
-               colour == MutedInk ||
-               colour == FaintInk ||
-               colour == LabelInk ||
+        _ when colour == Secondary || colour == Muted || colour == Faint => TerminalColor.White,
+        _ when colour == OnBoneMeta || colour == OnBoneDate => TerminalColor.Black,
+        _ when colour == LabelInk ||
                colour == TraceInk ||
                colour == GhostInk ||
-               colour == IdleInk =>
+               colour == Idle =>
             TerminalColor.BrightBlack,
         _ => TerminalColor.Default,
     };
@@ -247,13 +275,13 @@ public static class Skin
         public TermColor Strong => Paint(Bone, under, TextStyle.Bold);
 
         /// <summary>Text that is not the point but is still read.</summary>
-        public TermColor Second => Paint(SecondaryInk, under);
+        public TermColor Second => Paint(Secondary, under);
 
         /// <summary>Sizes, counts, everything that qualifies a name.</summary>
-        public TermColor Meta => Paint(MutedInk, under);
+        public TermColor Meta => Paint(Muted, under);
 
         /// <summary>Hints, the parent row, a plain file's tag.</summary>
-        public TermColor Faded => Paint(FaintInk, under);
+        public TermColor Faded => Paint(Faint, under);
 
         /// <summary>Column heads and the small capitals that label a section.</summary>
         public TermColor Label => Paint(LabelInk, under);
@@ -265,13 +293,13 @@ public static class Skin
         public TermColor Ghost => Paint(GhostInk, under);
 
         /// <summary>The gutter at rest.</summary>
-        public TermColor Sleeping => Paint(IdleInk, under);
+        public TermColor Sleeping => Paint(Idle, under);
 
         /// <summary>The accent as text: a caret, a sort arrow, the key of the moment.</summary>
-        public TermColor Accent => Paint(Crimson, under);
+        public TermColor Accent => Paint(Flame, under);
 
         /// <summary>The accent as text, said louder.</summary>
-        public TermColor AccentStrong => Paint(Crimson, under, TextStyle.Bold);
+        public TermColor AccentStrong => Paint(Flame, under, TextStyle.Bold);
 
         /// <summary>A host name or a remote path.</summary>
         public TermColor Remote => Paint(Sea, under);
@@ -286,7 +314,7 @@ public static class Skin
         public TermColor Marked => Paint(Coral, Tinted);
 
         /// <summary>Everything else in a marked row, which is tinted with it.</summary>
-        public TermColor MarkedMeta => Paint(MutedInk, Tinted);
+        public TermColor MarkedMeta => Paint(Muted, Tinted);
 
         /// <summary>The band itself, for the width the row does not write on.</summary>
         public TermColor MarkedRow => Paint(Bone, Tinted);

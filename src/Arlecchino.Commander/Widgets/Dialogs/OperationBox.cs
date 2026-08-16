@@ -232,7 +232,7 @@ public static class OperationBox
         var no = "  " + Loc(LocString.OperationCancel) + "  ";
 
         inside.Write(row, 0, go, Skin.Paint(on, fill, TextStyle.Bold));
-        inside.Write(row, go.Length + 2, no, Skin.Paint(new(0xA7, 0x9F, 0xAE), Skin.Chip));
+        inside.Write(row, go.Length + 2, no, Skin.Paint(Skin.Secondary, Skin.Chip));
 
         var tab = operation.Over is not null
             ? Loc(LocString.OperationTabCompletes)

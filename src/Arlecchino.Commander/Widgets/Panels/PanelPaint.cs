@@ -87,7 +87,7 @@ public sealed class PanelPaint
             .WriteLine(
                 0,
                 TextWidth.Truncate(Error, body.Width),
-                Skin.Paint(Skin.Crimson, PanelRow.Under(coat)));
+                Skin.Paint(Skin.Flame, PanelRow.Under(coat)));
 
         return none;
     }

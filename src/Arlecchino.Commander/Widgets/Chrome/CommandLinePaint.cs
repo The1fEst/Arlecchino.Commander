@@ -36,7 +36,7 @@ internal static class CommandLinePaint
             0,
             mark,
             "❯",
-            typing ? Skin.Paint(Skin.Crimson, Skin.Unlit, TextStyle.Bold) : coat.Sleeping);
+            typing ? Skin.Paint(Skin.Flame, Skin.Unlit, TextStyle.Bold) : coat.Sleeping);
 
         var at = mark + 2;
         var room = region.Width - at - tail.Length - SideRoom - 2;

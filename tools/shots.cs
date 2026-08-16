@@ -11,46 +11,62 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using SkiaSharp;
 
-const string Size = "200x34";
-var repository = Directory.GetCurrentDirectory();
-var output = Path.Combine(repository, "assets", "screenshots");
-
-var framework = Path.Combine(Directory.GetParent(repository)!.FullName, "Arlecchino");
-
-var fixture = Path.Combine(Path.GetTempPath(), "arlecchino-shots");
-var scratchLeft = Path.Combine(fixture, "project");
-var scratchRight = Path.Combine(fixture, "backup");
-
-const string host = "ubuntu";
+var studio = new Studio();
 
 if (args is ["tape", ..])
 {
-    Tape();
+    studio.Tape();
     return;
 }
 
 if (args is ["show", ..])
 {
-    Show(false);
+    studio.Show(false, args[1..]);
     return;
 }
 
 if (args is ["shoot", ..])
 {
-    Show(true);
+    studio.Show(true, args[1..]);
     return;
 }
 
-Shots();
+studio.Shots(args);
 
 /// <summary>
-/// Every picture that gets taken, in order. The panels show the two repositories, apart from the scenes
-/// that copy, which work on a scratch fixture, so a picture never writes into a repository.
+/// Where the pictures are taken: the folders the panels are pointed at, the keys played into the
+/// application before each picture, and the place the pictures land.
 /// </summary>
-/// <param name="size">Columns by rows, as the application is told it.</param>
-/// <returns>What to shoot, what keys to play first, and what to caption it with.</returns>
-(string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[] Scenes(
-    string size) =>
+internal sealed class Studio
+{
+    private const string Size = "200x34";
+    private const string Host = "ubuntu";
+
+    private readonly string _repository = Directory.GetCurrentDirectory();
+    private readonly string _fixture = Path.Combine(Path.GetTempPath(), "arlecchino-shots");
+    private readonly string _output;
+    private readonly string _framework;
+    private readonly string _scratchLeft;
+    private readonly string _scratchRight;
+
+    /// <summary>Works out every folder the pictures are taken from and land in.</summary>
+    public Studio()
+    {
+        _output = Path.Combine(_repository, "assets", "screenshots");
+        _framework = Path.Combine(_repository, "lib", "Arlecchino");
+        _scratchLeft = Path.Combine(_fixture, "project");
+        _scratchRight = Path.Combine(_fixture, "backup");
+    }
+
+    /// <summary>
+    /// Every picture that gets taken, in order. The panels show the framework this is written on beside
+    /// the application itself, apart from the scenes that copy: those work on a scratch fixture, so a
+    /// picture never writes into a repository.
+    /// </summary>
+    /// <param name="size">Columns by rows, as the application is told it.</param>
+    /// <returns>What to shoot, what keys to play first, and what to caption it with.</returns>
+    private static (string Name, string Size, string Keys, string Wait, bool Scratch, string Connect, string Caption)[]
+        Scenes(string size) =>
     [
         ("panels", size, "", "", false, "", "two panels over a local disk"),
         ("marks", size, "End,Up,Up,Space,Space,Space", "", false, "", "three files marked, counted at the foot of the panel"),
@@ -60,390 +76,441 @@ Shots();
         ("copy", size, "End,Up,Up,Space,Space,F5", "", false, "", "copying asks where to"),
         ("delete", size, "End,Up,Space,F8", "", false, "", "deleting asks first, with no selected"),
         ("viewer", size, "End,Up,Up,Up,F3", "", false, "", "a file read without leaving the panels"),
-        ("filter", size, "F4,s,r", "", false, "", "the panel filtered by name"),
+        ("search", size, "/,s,r,c", "", false, "", "the panel jumped through as the name is typed"),
         ("palette", size, "Ctrl+K", "", false, "", "everything the application can do, by name"),
         ("hosts", size, "g,n", "", false, "", "hosts read from ~/.ssh/config"),
-        ("find", size, "Ctrl+F7,Enter,Enter", "600", false, "", "a walk of the folder, filling in as it goes"),
+        ("find", size, "Ctrl+F7,Enter", "700", false, "", "a walk of the folder, filling in as it goes"),
         ("output", size, ":,l,s,Enter,Ctrl+O", "900", false, "", "everything the commands printed"),
         ("connect", size, "Ctrl+K,c,o,n,n,e,c,t,Enter", "", false, "", "a connection asked for in full"),
-        ("help", size, "F1", "", false, "", "the keys screen, which comes with the framework"),
-        ("server", size, "", "", false, host, "a panel browsing a server over SFTP"),
-        ("ssh", size, "Ctrl+K,s,s,h,Enter,l,s,Enter", "3000", false, host, "a command run on that server"),
+        ("help", size, "F1", "", false, "", "every key at once, the framework's and this application's"),
+        ("server", size, "", "", false, Host, "a panel browsing a server over SFTP"),
+        ("ssh", size, "Ctrl+K,s,s,h,Enter,l,s,Enter", "3000", false, Host, "a command run on that server"),
         ("progress", size, "Down,Down,F5,Enter", "150", true, "", "a copy running in the background, with a bar and a key to stop"),
         ("notification", size, "Down,Down,F5,Enter,Ctrl+N,Enter", "150", true, "", "the same copy opened in full, with Stop offered"),
         ("done", size, "Down,Down,F5,Enter,Ctrl+N,wait4000", "600", true, "", "the same entry once the copy is over"),
     ];
 
-void Shots()
-{
-    Directory.CreateDirectory(output);
-
-    Fixture.Lay(fixture, scratchLeft, scratchRight);
-
-    using var paper = new Paper(32f);
-
-    foreach (var scene in Scenes(Size))
+    /// <summary>
+    /// Takes the pictures. Naming scenes takes only those, which is what a change to one screen wants:
+    /// the rest are left as they were rather than redrawn against today's folders.
+    /// </summary>
+    /// <param name="wanted">The scenes to take, or none at all for every one of them.</param>
+    public void Shots(string[] wanted)
     {
-        if (scene.Scratch)
+        Directory.CreateDirectory(_output);
+
+        Fixture.Lay(_fixture, _scratchLeft, _scratchRight);
+
+        using var paper = new Paper(32f);
+
+        foreach (var scene in Scenes(Size))
         {
-            Fixture.Reset(scratchRight);
-        }
-
-        var ansi = Capture(
-            "--frame",
-            scene.Size,
-            scene.Keys,
-            scene.Wait,
-            scene.Scratch ? scratchLeft : framework,
-            scene.Scratch ? scratchRight : repository,
-            scene.Connect);
-        
-        var grid = Terminal.Parse(ansi);
-        if (grid.Count == 0)
-        {
-            Console.WriteLine($"{scene.Name}: nothing came back");
-            continue;
-        }
-
-        var (columns, rows) = Measure(scene.Size);
-        var path = Path.Combine(output, $"{scene.Name}.png");
-
-        using var picture = paper.Draw(Fit(grid, columns, rows), scene.Caption);
-        using var image = SKImage.FromBitmap(picture);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        using var file = File.Create(path);
-
-        data.SaveTo(file);
-
-        Console.WriteLine($"{scene.Name}: {grid[0].Count}x{grid.Count} → {path}");
-    }
-}
-
-/// <summary>
-/// Walks the same scenes with nothing between them and the terminal, so each frame is drawn by the
-/// terminal itself. Enter goes to the next one and <c>q</c> stops, at whatever size this terminal is.
-/// </summary>
-/// <param name="shoot">Whether to photograph the window as well as draw in it.</param>
-void Show(bool shoot)
-{
-    if (Console.IsInputRedirected || Console.IsOutputRedirected)
-    {
-        Console.Error.WriteLine("show needs a terminal of its own: run it without a pipe.");
-
-        return;
-    }
-
-    var window = shoot ? Shot.Window() : 0;
-
-    if (shoot && window == 0)
-    {
-        Console.Error.WriteLine("shoot takes a picture of this window, and only kitty on macOS will say which window that is.");
-
-        return;
-    }
-
-    var columns = Math.Max(40, Console.WindowWidth);
-    var rows = Math.Max(10, Console.WindowHeight);
-    var size = $"{columns}x{rows}";
-    var scenes = Scenes(size);
-    var taken = new List<string>();
-
-    Fixture.Lay(fixture, scratchLeft, scratchRight);
-
-    if (shoot)
-    {
-        Directory.CreateDirectory(output);
-        Console.Write("\e]2;arlecchino.commander\a");
-    }
-
-    Console.Write("\e[?1049h\e[?25l\e[?7l");
-
-    try
-    {
-        foreach (var scene in scenes)
-        {
-            if (scene.Scratch)
-            {
-                Fixture.Reset(scratchRight);
-            }
-
-            Console.Write("\e[2J\e[H");
-            Console.Write($"{scene.Name}: drawing…");
-
-            var ansi = Capture(
-                "--frame",
-                size,
-                scene.Keys,
-                scene.Wait,
-                scene.Scratch ? scratchLeft : framework,
-                scene.Scratch ? scratchRight : repository,
-                scene.Connect);
-
-            Console.Write("\e[2J\e[H");
-            Console.Write(ansi.Length == 0 ? $"{scene.Name}: nothing came back" : ansi.TrimEnd('\r', '\n'));
-            Console.Out.Flush();
-
-            if (shoot && ansi.Length > 0)
-            {
-                var picture = Path.Combine(output, $"{scene.Name}.png");
-
-                taken.Add(Shot.Take(window, picture, shadow: true)
-                    ? $"{scene.Name}: {size} → {picture}"
-                    : $"{scene.Name}: screencapture would not take it");
-            }
-
-            if (shoot ? Stopped() : Stop())
-            {
-                return;
-            }
-        }
-    }
-    finally
-    {
-        Console.Write("\e[?7h\e[?25h\e[?1049l");
-
-        foreach (var line in taken)
-        {
-            Console.WriteLine(line);
-        }
-    }
-}
-
-/// <summary>Waits for a key, where <c>q</c> and Escape stop and anything else moves on.</summary>
-/// <returns><c>true</c> when the walk should end.</returns>
-static bool Stop()
-{
-    var key = Console.ReadKey(intercept: true);
-
-    return key.Key is ConsoleKey.Q or ConsoleKey.Escape;
-}
-
-static bool Stopped() => Console.KeyAvailable && Stop();
-
-void Tape()
-{
-    (string Key, int Hold)[] beats =
-    [
-        ("", 1500),
-        ("Down", 340), ("Space", 280), ("Space", 240), ("Space", 700),
-        ("F5", 1600),
-        ("Enter", 260), ("", 220), ("", 260),
-        ("Ctrl+N", 600),
-        ("Enter", 420), ("", 380), ("", 900),
-        ("Esc", 700), ("wait2500", 1600),
-        ("Esc", 900),
-        ("F1", 2400),
-    ];
-
-    var steps = new List<string>();
-
-    foreach (var (key, hold) in beats)
-    {
-        if (key.Length > 0)
-        {
-            steps.Add(key);
-        }
-
-        steps.Add($"shot{hold}");
-    }
-
-    steps.Add("Esc");
-
-    var script = string.Join(',', steps);
-
-    if (Console.IsInputRedirected || Console.IsOutputRedirected)
-    {
-        Console.Error.WriteLine("tape needs a terminal of its own: run it without a pipe.");
-
-        return;
-    }
-
-    var window = Shot.Window();
-
-    if (window == 0)
-    {
-        Console.Error.WriteLine("tape is a recording of this window, and only kitty on macOS will say which window that is.");
-
-        return;
-    }
-
-    var size = $"{Math.Max(40, Console.WindowWidth)}x{Math.Max(10, Console.WindowHeight)}";
-
-    Console.WriteLine($"tape: laying the tree and playing the script at {size}…");
-
-    Playground.Lay();
-
-    var ansi = Capture("--tape", size, script, "", Playground.Left, Playground.Right, "");
-    var reel = Path.Combine(Path.GetTempPath(), "arlecchino-tape");
-    var frames = new List<(string Path, int Hold)>();
-
-    if (Directory.Exists(reel))
-    {
-        Directory.Delete(reel, true);
-    }
-
-    Directory.CreateDirectory(reel);
-    Console.Write("\e]2;arlecchino.commander\a");
-    Console.Write("\e[?1049h\e[?25l\e[?7l");
-
-    try
-    {
-        foreach (var (hold, text) in Reel(ansi))
-        {
-            if (text.Trim().Length == 0)
+            if (wanted.Length > 0 && Array.IndexOf(wanted, scene.Name) < 0)
             {
                 continue;
             }
 
-            Console.Write("\e[2J\e[H");
-            Console.Write(text.TrimEnd('\r', '\n'));
-            Console.Out.Flush();
-
-            var frame = Path.Combine(reel, $"frame{frames.Count:000}.png");
-
-            if (Shot.Take(window, frame, shadow: true))
+            if (scene.Scratch)
             {
-                frames.Add((frame, hold));
+                Fixture.Reset(_scratchRight);
             }
+
+            var ansi = Capture(
+                "--frame",
+                scene.Size,
+                scene.Keys,
+                scene.Wait,
+                scene.Scratch ? _scratchLeft : _framework,
+                scene.Scratch ? _scratchRight : _repository,
+                scene.Connect);
+
+            var grid = Terminal.Parse(ansi);
+
+            if (grid.Count == 0)
+            {
+                Console.WriteLine($"{scene.Name}: nothing came back");
+
+                continue;
+            }
+
+            var (columns, rows) = Measure(scene.Size);
+            var path = Path.Combine(_output, $"{scene.Name}.png");
+
+            using var picture = paper.Draw(Fit(grid, columns, rows), scene.Caption);
+            using var image = SKImage.FromBitmap(picture);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var file = File.Create(path);
+
+            data.SaveTo(file);
+
+            Console.WriteLine($"{scene.Name}: {grid[0].Count}x{grid.Count} → {path}");
         }
     }
-    finally
-    {
-        Console.Write("\e[?7h\e[?25h\e[?1049l");
-    }
 
-    try
+    /// <summary>
+    /// Walks the scenes with nothing between them and the terminal, so each frame is drawn by the
+    /// terminal itself. Enter goes to the next one and <c>q</c> stops, at whatever size this terminal is.
+    /// </summary>
+    /// <param name="shoot">Whether to photograph the window as well as draw in it.</param>
+    /// <param name="wanted">The scenes to walk, or none at all for every one of them.</param>
+    public void Show(bool shoot, string[] wanted)
     {
-        if (frames.Count == 0)
+        if (Console.IsInputRedirected || Console.IsOutputRedirected)
         {
-            Console.WriteLine("tape: nothing came back");
+            Console.Error.WriteLine("show needs a terminal of its own: run it without a pipe.");
 
             return;
         }
 
-        var target = Path.Combine(repository, "assets", "demo.png");
+        var window = shoot ? Shot.Window() : 0;
 
-        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-
-        Console.WriteLine(Film.Weave(frames, target)
-            ? $"tape: {frames.Count} frames, {new FileInfo(target).Length / 1024d / 1024d:0.0} MB → {target}"
-            : "tape: ffmpeg would not weave the frames");
-    }
-    finally
-    {
-        Directory.Delete(reel, true);
-    }
-}
-
-/// <summary>
-/// Splits a recording into its frames. Each is announced by a record separator and the milliseconds it is
-/// to be held for, so the reel carries the timing the application ran at.
-/// </summary>
-/// <param name="text">What the headless run wrote.</param>
-/// <returns>Each frame and how long to hold it.</returns>
-static List<(int Hold, string Ansi)> Reel(string text)
-{
-    var frames = new List<(int Hold, string Ansi)>();
-
-    foreach (var piece in text.Split('', StringSplitOptions.RemoveEmptyEntries))
-    {
-        var line = piece.IndexOf('\n');
-
-        if (line < 0 || !int.TryParse(piece[..line].Trim(), out var hold))
+        if (shoot && window == 0)
         {
-            continue;
+            Console.Error.WriteLine(
+                "shoot takes a picture of this window, and only kitty on macOS will say which window that is.");
+
+            return;
         }
 
-        frames.Add((hold, piece[(line + 1)..]));
-    }
+        var columns = Math.Max(40, Console.WindowWidth);
+        var rows = Math.Max(10, Console.WindowHeight);
+        var size = $"{columns}x{rows}";
+        var scenes = Scenes(size);
+        var taken = new List<string>();
 
-    return frames;
-}
+        Fixture.Lay(_fixture, _scratchLeft, _scratchRight);
 
-/// <summary>Reads a <c>columns x rows</c> size, which every picture is cut or padded to.</summary>
-/// <param name="size">The size as it was written.</param>
-/// <returns>The two numbers.</returns>
-static (int Columns, int Rows) Measure(string size)
-{
-    var parts = size.Split('x');
-
-    return (int.Parse(parts[0]), int.Parse(parts[1]));
-}
-
-static List<List<Cell>> Fit(List<List<Cell>> grid, int columns, int rows)
-{
-    var blank = new Cell(" ", Terminal.Foreground, Terminal.Background, false);
-
-    while (grid.Count < rows)
-    {
-        grid.Add([]);
-    }
-
-    foreach (var line in grid)
-    {
-        while (line.Count < columns)
+        if (shoot)
         {
-            line.Add(blank);
+            Directory.CreateDirectory(_output);
+            Console.Write("\e]2;arlecchino.commander\a");
+        }
+
+        Console.Write("\e[?1049h\e[?25l\e[?7l");
+
+        try
+        {
+            foreach (var scene in scenes)
+            {
+                if (wanted.Length > 0 && Array.IndexOf(wanted, scene.Name) < 0)
+                {
+                    continue;
+                }
+
+                if (scene.Scratch)
+                {
+                    Fixture.Reset(_scratchRight);
+                }
+
+                Console.Write("\e[2J\e[H");
+                Console.Write($"{scene.Name}: drawing…");
+
+                var ansi = Capture(
+                    "--frame",
+                    size,
+                    scene.Keys,
+                    scene.Wait,
+                    scene.Scratch ? _scratchLeft : _framework,
+                    scene.Scratch ? _scratchRight : _repository,
+                    scene.Connect);
+
+                Console.Write("\e[2J\e[H");
+                Console.Write(ansi.Length == 0 ? $"{scene.Name}: nothing came back" : ansi.TrimEnd('\r', '\n'));
+                Console.Out.Flush();
+
+                if (shoot && ansi.Length > 0)
+                {
+                    var picture = Path.Combine(_output, $"{scene.Name}.png");
+
+                    taken.Add(Shot.Take(window, picture, shadow: true)
+                        ? $"{scene.Name}: {size} → {picture}"
+                        : $"{scene.Name}: screencapture would not take it");
+                }
+
+                if (shoot ? Stopped() : Stop())
+                {
+                    return;
+                }
+            }
+        }
+        finally
+        {
+            Console.Write("\e[?7h\e[?25h\e[?1049l");
+
+            foreach (var line in taken)
+            {
+                Console.WriteLine(line);
+            }
         }
     }
 
-    return grid;
-}
-
-string Capture(string mode, string size, string keys, string wait, string leftPanel, string rightPanel, string connect)
-{
-    var arguments = $"run --project src/Arlecchino.Commander -c Release --no-build -- " +
-                    $"{mode} {size} --left \"{leftPanel}\" --right \"{rightPanel}\"";
-
-    if (connect.Length > 0)
+    /// <summary>Waits for a key, where <c>q</c> and Escape stop and anything else moves on.</summary>
+    /// <returns><c>true</c> when the walk should end.</returns>
+    private static bool Stop()
     {
-        arguments += $" --connect {connect}";
+        var key = Console.ReadKey(intercept: true);
+
+        return key.Key is ConsoleKey.Q or ConsoleKey.Escape;
     }
 
-    if (keys.Length > 0)
-    {
-        arguments += $" --keys {keys}";
-    }
+    /// <summary>The same, for the walk that photographs: it moves on by itself unless a key is waiting.</summary>
+    /// <returns><c>true</c> when the walk should end.</returns>
+    private static bool Stopped() => Console.KeyAvailable && Stop();
 
-    if (wait.Length > 0)
+    /// <summary>
+    /// Records the demonstration: one script played through the application, every frame of it drawn by
+    /// this terminal, photographed, and woven into the animation the README opens with.
+    /// </summary>
+    public void Tape()
     {
-        arguments += $" --wait {wait}";
-    }
+        (string Key, int Hold)[] beats =
+        [
+            ("", 1500),
+            ("Down", 340), ("Space", 280), ("Space", 240), ("Space", 700),
+            ("F5", 1600),
+            ("Enter", 260), ("", 220), ("", 260),
+            ("Ctrl+N", 600),
+            ("Enter", 420), ("", 380), ("", 900),
+            ("Esc", 700), ("wait2500", 1600),
+            ("Esc", 900),
+            ("F1", 2400),
+        ];
 
-    var start = new ProcessStartInfo("dotnet", arguments)
-    {
-        RedirectStandardOutput = true,
-        WorkingDirectory = repository,
-        UseShellExecute = false,
-        Environment =
+        var steps = new List<string>();
+
+        foreach (var (key, hold) in beats)
         {
-            ["COLORTERM"] = "truecolor",
-            ["TERM"] = "xterm-256color",
-            ["ARLECCHINO_COLOR"] = "truecolor"
+            if (key.Length > 0)
+            {
+                steps.Add(key);
+            }
+
+            steps.Add($"shot{hold}");
         }
-    };
 
-    using var process = Process.Start(start)!;
-    var text = process.StandardOutput.ReadToEnd();
-    process.WaitForExit();
+        steps.Add("Esc");
 
-    return Masked(text);
-}
+        var script = string.Join(',', steps);
 
-/// <summary>
-/// Replaces every address in a captured frame, so no picture carries a real one. What goes in its place
-/// is padded to the width it stood in, so no row shifts under it.
-/// </summary>
-/// <param name="text">The frame as it was captured.</param>
-/// <returns>The frame with its addresses hidden.</returns>
-static string Masked(string text)
-{
-    const string replace = "***.***.***.***";
+        if (Console.IsInputRedirected || Console.IsOutputRedirected)
+        {
+            Console.Error.WriteLine("tape needs a terminal of its own: run it without a pipe.");
 
-    return Regex.Replace(
-        text,
-        @"\b\d{1,3}(?:\.\d{1,3}){3}\b",
-        found => replace.PadRight(found.Length)[..Math.Max(found.Length, replace.Length)]);
+            return;
+        }
+
+        var window = Shot.Window();
+
+        if (window == 0)
+        {
+            Console.Error.WriteLine(
+                "tape is a recording of this window, and only kitty on macOS will say which window that is.");
+
+            return;
+        }
+
+        var size = $"{Math.Max(40, Console.WindowWidth)}x{Math.Max(10, Console.WindowHeight)}";
+
+        Console.WriteLine($"tape: laying the tree and playing the script at {size}…");
+
+        Playground.Lay();
+
+        var ansi = Capture("--tape", size, script, "", Playground.Left, Playground.Right, "");
+        var reel = Path.Combine(Path.GetTempPath(), "arlecchino-tape");
+        var frames = new List<(string Path, int Hold)>();
+
+        if (Directory.Exists(reel))
+        {
+            Directory.Delete(reel, true);
+        }
+
+        Directory.CreateDirectory(reel);
+        Console.Write("\e]2;arlecchino.commander\a");
+        Console.Write("\e[?1049h\e[?25l\e[?7l");
+
+        try
+        {
+            foreach (var (hold, text) in Reel(ansi))
+            {
+                if (text.Trim().Length == 0)
+                {
+                    continue;
+                }
+
+                Console.Write("\e[2J\e[H");
+                Console.Write(text.TrimEnd('\r', '\n'));
+                Console.Out.Flush();
+
+                var frame = Path.Combine(reel, $"frame{frames.Count:000}.png");
+
+                if (Shot.Take(window, frame, shadow: true))
+                {
+                    frames.Add((frame, hold));
+                }
+            }
+        }
+        finally
+        {
+            Console.Write("\e[?7h\e[?25h\e[?1049l");
+        }
+
+        try
+        {
+            if (frames.Count == 0)
+            {
+                Console.WriteLine("tape: nothing came back");
+
+                return;
+            }
+
+            var target = Path.Combine(_repository, "assets", "demo.png");
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+
+            Console.WriteLine(Film.Weave(frames, target)
+                ? $"tape: {frames.Count} frames, {new FileInfo(target).Length / 1024d / 1024d:0.0} MB → {target}"
+                : "tape: ffmpeg would not weave the frames");
+        }
+        finally
+        {
+            Directory.Delete(reel, true);
+        }
+    }
+
+    /// <summary>
+    /// Splits a recording into its frames. Each is announced by a record separator and the milliseconds
+    /// it is to be held for, so the reel carries the timing the application ran at.
+    /// </summary>
+    /// <param name="text">What the headless run wrote.</param>
+    /// <returns>Each frame and how long to hold it.</returns>
+    private static List<(int Hold, string Ansi)> Reel(string text)
+    {
+        var frames = new List<(int Hold, string Ansi)>();
+
+        foreach (var piece in text.Split('', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var line = piece.IndexOf('\n');
+
+            if (line < 0 || !int.TryParse(piece[..line].Trim(), out var hold))
+            {
+                continue;
+            }
+
+            frames.Add((hold, piece[(line + 1)..]));
+        }
+
+        return frames;
+    }
+
+    /// <summary>Reads a <c>columns x rows</c> size, which every picture is cut or padded to.</summary>
+    /// <param name="size">The size as it was written.</param>
+    /// <returns>The two numbers.</returns>
+    private static (int Columns, int Rows) Measure(string size)
+    {
+        var parts = size.Split('x');
+
+        return (int.Parse(parts[0]), int.Parse(parts[1]));
+    }
+
+    /// <summary>Pads a frame out to the size the scene asked for, so every picture comes out the same.</summary>
+    /// <param name="grid">The cells as they were parsed.</param>
+    /// <param name="columns">How wide the picture is to be.</param>
+    /// <param name="rows">How tall.</param>
+    /// <returns>The same grid, filled out.</returns>
+    private static List<List<Cell>> Fit(List<List<Cell>> grid, int columns, int rows)
+    {
+        var blank = new Cell(" ", Terminal.Foreground, Terminal.Background, false);
+
+        while (grid.Count < rows)
+        {
+            grid.Add([]);
+        }
+
+        foreach (var line in grid)
+        {
+            while (line.Count < columns)
+            {
+                line.Add(blank);
+            }
+        }
+
+        return grid;
+    }
+
+    /// <summary>
+    /// Runs the application once, headless, and hands back the frame it wrote. It is the built binary
+    /// rather than this process, so what is photographed is what a terminal would be sent.
+    /// </summary>
+    /// <param name="mode">Whether one frame is wanted or the whole recording.</param>
+    /// <param name="size">Columns by rows, as the application is told it.</param>
+    /// <param name="keys">What to play before the frame is taken.</param>
+    /// <param name="wait">Milliseconds to leave the application running first.</param>
+    /// <param name="leftPanel">The folder the left panel opens on.</param>
+    /// <param name="rightPanel">The folder the right one opens on.</param>
+    /// <param name="connect">The saved host to connect to, or nothing for a local pair of panels.</param>
+    /// <returns>What the run wrote, with every address hidden.</returns>
+    private string Capture(
+        string mode,
+        string size,
+        string keys,
+        string wait,
+        string leftPanel,
+        string rightPanel,
+        string connect)
+    {
+        var arguments = "run --project src/Arlecchino.Commander -c Release --no-build -- " +
+                        $"{mode} {size} --left \"{leftPanel}\" --right \"{rightPanel}\"";
+
+        if (connect.Length > 0)
+        {
+            arguments += $" --connect {connect}";
+        }
+
+        if (keys.Length > 0)
+        {
+            arguments += $" --keys {keys}";
+        }
+
+        if (wait.Length > 0)
+        {
+            arguments += $" --wait {wait}";
+        }
+
+        var start = new ProcessStartInfo("dotnet", arguments)
+        {
+            RedirectStandardOutput = true,
+            WorkingDirectory = _repository,
+            UseShellExecute = false,
+            Environment =
+            {
+                ["COLORTERM"] = "truecolor",
+                ["TERM"] = "xterm-256color",
+                ["ARLECCHINO_COLOR"] = "truecolor"
+            }
+        };
+
+        using var process = Process.Start(start)!;
+        var text = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+
+        return Masked(text);
+    }
+
+    /// <summary>
+    /// Replaces every address in a captured frame, so no picture carries a real one. What goes in its
+    /// place is padded to the width it stood in, so no row shifts under it.
+    /// </summary>
+    /// <param name="text">The frame as it was captured.</param>
+    /// <returns>The frame with its addresses hidden.</returns>
+    private static string Masked(string text)
+    {
+        const string replace = "***.***.***.***";
+
+        return Regex.Replace(
+            text,
+            @"\b\d{1,3}(?:\.\d{1,3}){3}\b",
+            found => replace.PadRight(found.Length)[..Math.Max(found.Length, replace.Length)]);
+    }
 }
 
 readonly record struct Cell(string Symbol, SKColor Foreground, SKColor Background, bool Bold);
