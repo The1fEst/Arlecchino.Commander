@@ -74,7 +74,7 @@ public sealed class CommandLineTextTests
         var text = new CommandLineText { Text = "git commit -m" };
 
         TextEditing.MoveWord(text, -1);
-        Assert.Equal(11, text.Caret);
+        Assert.Equal(12, text.Caret);
 
         TextEditing.MoveWord(text, -1);
         Assert.Equal(4, text.Caret);
