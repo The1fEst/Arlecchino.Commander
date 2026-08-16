@@ -17,6 +17,7 @@ public static class CommanderScreens
     {
         return builder
             .AddView<NotesView>(Routes.Notifications.Name)
+            .AddView<KeysView>(Routes.Help.Name)
             .UseLayout<LayoutView>();
     }
 }

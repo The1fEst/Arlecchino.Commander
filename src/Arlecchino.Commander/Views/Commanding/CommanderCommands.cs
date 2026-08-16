@@ -29,6 +29,7 @@ public sealed class CommanderCommands
     /// <param name="runner">The commands, which the stop key stops.</param>
     /// <param name="footer">The two lines, which some of these keys write to or open.</param>
     /// <param name="lifetime">How the application is quit.</param>
+    /// <param name="keyboard">Where the table is left for the screen that lists every key.</param>
     public CommanderCommands(
         Doings doings,
         Pair panels,
@@ -36,13 +37,16 @@ public sealed class CommanderCommands
         Operations operations,
         Runner runner,
         CommanderFooter footer,
-        IHostApplicationLifetime lifetime)
+        IHostApplicationLifetime lifetime,
+        Keyboard keyboard)
     {
         _panels = panels;
         _footer = footer;
 
         _all = CommanderKeys.For(doings, panels, sessions, operations, runner, footer.Line, footer.Setting, lifetime);
         _typed = [.. _all.Where(command => !WantedByTheLine(command.Binding))];
+
+        keyboard.Panels = _all;
     }
 
     /// <summary>

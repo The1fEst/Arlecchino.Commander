@@ -291,6 +291,12 @@ PaletteKey = "key"
 PickDrive = "Drive"
 PickSavedHosts = "Saved hosts"
 
+KeysSaid = "every key this application answers to"
+KeysEverywhere = "Everywhere"
+KeysPanels = "On the panels"
+KeysHints = "↑↓ PgUp PgDn scroll · Esc back"
+KeysCounted = "{0} keys"
+
 NotesTitle = "Notifications"
 NotesSaid = "what the application has said lately, newest first"
 NotesEmpty = "nothing has been said yet"

@@ -45,6 +45,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// <param name="lifetime">How the application is quit.</param>
     /// <param name="settings">What is kept between runs, which the settings line changes.</param>
     /// <param name="keys">Asked what a half-typed chord has behind it, which this screen draws itself.</param>
+    /// <param name="keyboard">Where this screen leaves its table of keys for the screen that lists them.</param>
     public CommanderView(
         Surface surface,
         Sessions sessions,
@@ -59,7 +60,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         Handover handover,
         IHostApplicationLifetime lifetime,
         Settings settings,
-        CommandKeys keys)
+        CommandKeys keys,
+        Keyboard keyboard)
     {
         _surface = surface;
         _keys = keys;
@@ -93,7 +95,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _card = new(runner, state);
         _layout = new(panels, sessions, _footer, options.Keymap);
         _input = new(panels, _footer, _layout, sessions);
-        _commands = new(doings, panels, sessions, operations, runner, _footer, lifetime);
+        _commands = new(doings, panels, sessions, operations, runner, _footer, lifetime, keyboard);
 
         _layout.Focus(_panels.Working);
     }
