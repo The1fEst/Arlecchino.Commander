@@ -61,7 +61,6 @@ public sealed class Doings
         Files = new(dialogs, operations, state, panels);
         Rights = new(dialogs, runner, state, panels);
         Linking = new(dialogs, state, panels);
-        Places = new(dialogs, sessions, state);
         Dialling = new(dialogs, remote, state);
         Editing = new(handover, settings, state, panels);
     }
@@ -86,9 +85,6 @@ public sealed class Doings
 
     /// <summary>Symbolic and hard links.</summary>
     public Linking Linking { get; }
-
-    /// <summary>The folders been in and the folders kept.</summary>
-    public Places Places { get; }
 
     /// <summary>Getting onto a server and off it.</summary>
     public Dialling Dialling { get; }
@@ -177,7 +173,7 @@ public sealed class Doings
 
         Dialogs.AskFor(
             Loc(LocString.FindTitle),
-            Loc(LocString.FindField),
+            Loc(LocString.OperationName),
             "",
             Loc(LocString.FindVerb),
             name =>
@@ -189,22 +185,6 @@ public sealed class Doings
             Loc(LocString.FindHint));
 
         return ViewRoute.None;
-    }
-
-    /// <summary>Shows only the names holding what is typed.</summary>
-    /// <param name="panel">Which panel.</param>
-    public void Filter(FilePanel panel)
-    {
-        Dialogs.AskFor(
-            Loc(LocString.Filter),
-            Loc(LocString.FilterField),
-            panel.State.Filter,
-            Loc(LocString.Filter),
-            text =>
-            {
-                panel.State.Filter = text.Trim();
-                panel.Reload();
-            });
     }
 
     /// <summary>Marks or unmarks everything matching a pattern.</summary>
@@ -222,7 +202,7 @@ public sealed class Doings
             {
                 panel.MarkGroup(pattern.Trim(), marking);
 
-                _state.Output = Loc(LocString.SaidMarked, panel.State.Marks.Count);
+                _state.Output = Loc(LocString.Marked, panel.State.Marks.Count);
             });
     }
 

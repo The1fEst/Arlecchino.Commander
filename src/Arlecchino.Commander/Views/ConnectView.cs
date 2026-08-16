@@ -157,7 +157,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     private void DrawFooter(SurfaceRegion footer)
     {
-        Sheet.Hints(footer, Said(), Loc(LocString.ConnectHints));
+        Sheet.Hints(footer, Said(), Loc(LocString.EscBack));
     }
 
     private string Said()
@@ -207,7 +207,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
             {
                 Title = Loc(denied ? LocString.ConnectRefused : LocString.ConnectFailed),
                 Key = "",
-                Verb = Loc(LocString.ConnectClose),
+                Verb = Loc(LocString.CloseVerb),
                 Weight = Weight.Destroys,
                 Note = _ => new(message, true),
                 Confirm = static _ => { }

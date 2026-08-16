@@ -159,10 +159,7 @@ public sealed class PanelReading : IDisposable
 
         foreach (var entry in read.Entries)
         {
-            if (Kept(entry))
-            {
-                _entries.Add(entry);
-            }
+            _entries.Add(entry);
         }
 
         Sort();
@@ -198,14 +195,6 @@ public sealed class PanelReading : IDisposable
 
         _watch.Follow(source, folder, hidden, read.Entries);
     }
-
-    /// <summary>Whether a name survives the filter the panel is showing through, if it is showing through one.</summary>
-    /// <param name="entry">The file or folder.</param>
-    /// <returns><c>true</c> when it is drawn.</returns>
-    private bool Kept(FileEntry entry) =>
-        _state.Filter.Length == 0 ||
-        entry.IsFolder ||
-        entry.Name.Contains(_state.Filter, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Puts the cursor back on a name, and leaves it where it landed when that name has gone.</summary>
     /// <param name="name">What it was on before the reading.</param>

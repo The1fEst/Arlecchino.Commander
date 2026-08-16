@@ -129,7 +129,7 @@ public sealed class Dialling
             Loc(LocString.PasswordTitle, host.User, host.HostName),
             Loc(LocString.OperationPassword),
             "",
-            Loc(LocString.PasswordVerb),
+            Loc(LocString.ConnectVerb),
             password => Dial(panel, host, wanted with { Password = password }),
             secret: true);
     }

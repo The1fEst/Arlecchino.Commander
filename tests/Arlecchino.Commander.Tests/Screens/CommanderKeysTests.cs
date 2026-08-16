@@ -226,11 +226,11 @@ public sealed class CommanderKeysTests : IDisposable
     {
         _app.Press(ConsoleKey.K, control: true);
         _app.Frame();
-        _app.Type("hotlist");
+        _app.Type("hard link");
 
         var screen = _app.Frame();
 
-        Assert.Contains("Hotlist", screen, StringComparison.Ordinal);
+        Assert.Contains("Hard link", screen, StringComparison.Ordinal);
         Assert.Contains(" of ", screen, StringComparison.Ordinal);
         Assert.DoesNotContain("Find file", screen, StringComparison.Ordinal);
     }
@@ -308,20 +308,6 @@ public sealed class CommanderKeysTests : IDisposable
         var offered = lines.Count(line => line.Contains("New tab", StringComparison.Ordinal));
 
         Assert.Equal(1, offered);
-    }
-
-    /// <summary>
-    ///     Filtering moved off <c>F4</c> when that key came to mean editing. It sits behind the leader
-    ///     that does something to what the panel is showing.
-    /// </summary>
-    [Fact]
-    public void FilteringAsksForThePattern()
-    {
-        _app.Press(ConsoleKey.X);
-        _app.Press(ConsoleKey.F);
-        _app.Frame();
-
-        Assert.NotNull(_app.State.Modal);
     }
 
     /// <summary>
@@ -503,7 +489,7 @@ public sealed class CommanderKeysTests : IDisposable
 
         Assert.Contains(Loc(LocString.MenuKeys).ToUpperInvariant(), frame, StringComparison.Ordinal);
         Assert.Contains(Loc(LocString.Permissions), frame, StringComparison.Ordinal);
-        Assert.Contains(Loc(LocString.MenuHardLink), frame, StringComparison.Ordinal);
+        Assert.Contains(Loc(LocString.LinkHard), frame, StringComparison.Ordinal);
         Assert.DoesNotContain("╭─", frame, StringComparison.Ordinal);
     }
 

@@ -90,9 +90,6 @@ public static class CommanderKeys
             Bind.To(new('!'),
                 LocString.KeySettingsLine,
                 setting.Open),
-            Bind.To(Hotlisting(),
-                LocString.Hotlist,
-                () => doings.Places.Hotlist(panels.Active)),
             Bind.To(new(ConsoleKey.K, KeyModifiers.Control),
                 LocString.PaletteTitle,
                 () => Menu.Palette(doings)),
@@ -121,9 +118,6 @@ public static class CommanderKeys
             Bind.To(Go(ConsoleKey.M),
                 LocString.KeyBottom,
                 () => panels.Active.Bottom()),
-            Bind.To(Go(ConsoleKey.P),
-                LocString.FoldersBeenIn,
-                () => doings.Places.History(panels.Active)),
             Bind.To(Go(ConsoleKey.B),
                 LocString.MenuBothPanelsHere,
                 () => panels.Passive.GoTo(panels.Active.Folder)),
@@ -174,10 +168,10 @@ public static class CommanderKeys
                 LocString.MenuOwner,
                 doings.Rights.Owner),
             Bind.To(Execute(ConsoleKey.S),
-                LocString.MenuSymbolicLink,
+                LocString.LinkSymbolic,
                 () => doings.Linking.Make(hard: false)),
             Bind.To(Execute(ConsoleKey.L),
-                LocString.MenuHardLink,
+                LocString.LinkHard,
                 () => doings.Linking.Make(hard: true)),
             Bind.To(Execute(ConsoleKey.D),
                 LocString.MenuCompareDirectories,
@@ -191,24 +185,15 @@ public static class CommanderKeys
             Bind.To(Execute(ConsoleKey.T),
                 LocString.KeyNamesOntoLine,
                 () => Names(panels, commandBar)),
-            Bind.To(Execute(ConsoleKey.H),
-                LocString.HotlistAdd,
-                () => doings.Places.Remember(panels.Active.Folder)),
             Bind.To(Execute(ConsoleKey.Y),
                 LocString.MenuCopyPaths,
                 doings.CopyPaths),
-            Bind.Going(Execute(ConsoleKey.J),
-                LocString.MenuNotifications,
-                static () => Routes.Notifications),
             Bind.To(Execute(ConsoleKey.R),
                 LocString.MenuReload,
                 doings.Reload),
             Bind.To(Execute(ConsoleKey.I),
                 LocString.MenuShowHidden,
                 () => doings.ToggleHidden(panels.Active)),
-            Bind.To(Execute(ConsoleKey.F),
-                LocString.Filter,
-                () => doings.Filter(panels.Active)),
             Bind.When(Execute(ConsoleKey.Escape),
                 LocString.KeyStop,
                 () => operations.IsBusy || runner.IsRunning,
@@ -254,7 +239,6 @@ public static class CommanderKeys
             .AddAlternative(ConsoleKey.RightArrow)
             .AddAlternative(ConsoleKey.PageDown, KeyModifiers.Control);
 
-
     /// <summary>
     /// A key behind the <c>x</c> leader, which is the one that does something to what the panel is
     /// showing. These are the letters Midnight Commander puts behind its own <c>Ctrl+X</c>.
@@ -272,12 +256,6 @@ public static class CommanderKeys
         new KeyBinding('/')
             .AddAlternative(ConsoleKey.S, KeyModifiers.Control)
             .AddAlternative(ConsoleKey.S, KeyModifiers.Alt);
-
-    /// <summary>The hotlist, which answers to the backslash beside it as Midnight Commander does.</summary>
-    /// <returns>The binding.</returns>
-    private static KeyBinding Hotlisting() =>
-        new KeyBinding(ConsoleKey.B, KeyModifiers.Control)
-            .AddAlternative(ConsoleKey.Oem5, KeyModifiers.Control);
 
     /// <summary>Whether there is more than one tab, which is what the three tab keys wait for.</summary>
     /// <param name="sessions">The tabs.</param>

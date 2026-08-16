@@ -39,9 +39,6 @@ public sealed class Sessions : IArlecchinoStore
 
     public long ViewingSize { get; set; }
 
-    /// <summary>Folders kept by hand for jumping straight back to them.</summary>
-    public List<string> Hotlist { get; } = [];
-
     /// <summary>
     /// Counts the times a panel was sent somewhere by a screen other than the panels themselves. That screen
     /// can then put the cursor where it likes, and the panels catch up when they are next drawn.

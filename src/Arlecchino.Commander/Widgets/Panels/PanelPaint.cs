@@ -186,7 +186,7 @@ public sealed class PanelPaint
 
         var entries = panel.Entries;
         var items = entries.Count > 0 && entries[0].IsParent ? entries.Count - 1 : entries.Count;
-        var counted = items == 1 ? Loc(LocString.PanelOneItem) : Loc(LocString.PanelManyItems, items);
+        var counted = items == 1 ? Loc(LocString.OneItem) : Loc(LocString.ManyItems, items);
 
         return Free.Length == 0 ? counted : Loc(LocString.Joined, counted, Free);
     }
@@ -251,7 +251,7 @@ public sealed class PanelPaint
         var marks = panel.State.Marks.Count;
         var held = bytes > 0
             ? Loc(LocString.PanelMarkedSize, marks, Sizes.Brief(bytes))
-            : Loc(LocString.PanelMarked, marks);
+            : Loc(LocString.Marked, marks);
 
         row.Fill(coat.MarkedRow);
         row.Write(0, 0, TextWidth.Truncate(held, row.Width), coat.Marked);
@@ -263,7 +263,7 @@ public sealed class PanelPaint
     /// <returns>The words.</returns>
     private static string Describe(FileEntry entry)
     {
-        var what = entry.IsFolder ? Loc(LocString.PanelFolder) : Sizes.Brief(entry.Size);
+        var what = entry.IsFolder ? Loc(LocString.KindFolder) : Sizes.Brief(entry.Size);
         var said = Loc(LocString.Joined, entry.Name, what);
 
         return entry.IsReadOnly ? Loc(LocString.PanelReadOnly, entry.Name, what) : said;

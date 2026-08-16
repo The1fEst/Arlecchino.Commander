@@ -86,8 +86,8 @@ public static class Menu
         new(LocString.MenuMakeFolder, doings.Files.MakeFolder),
         new(LocString.Permissions, doings.Rights.Mode),
         new(LocString.MenuOwner, doings.Rights.Owner),
-        new(LocString.MenuSymbolicLink, () => doings.Linking.Make(hard: false)),
-        new(LocString.MenuHardLink, () => doings.Linking.Make(hard: true)),
+        new(LocString.LinkSymbolic, () => doings.Linking.Make(hard: false)),
+        new(LocString.LinkHard, () => doings.Linking.Make(hard: true)),
         new(LocString.Delete, doings.Files.Delete),
         new(LocString.MenuDeleteForGood, doings.Files.DeleteForGood),
     ];
@@ -100,13 +100,10 @@ public static class Menu
         new(LocString.MenuSwapPanels, doings.Swap),
         new(LocString.MenuBothPanelsHere, () => doings.Panels.Passive.GoTo(doings.Panels.Active.Folder)),
         new(LocString.MenuCompareDirectories, doings.Compare),
-        new(LocString.FoldersBeenIn, () => doings.Places.History(doings.Panels.Active)),
-        new(LocString.Hotlist, () => doings.Places.Hotlist(doings.Panels.Active)),
         new(LocString.MenuCopyPaths, doings.CopyPaths),
         new(LocString.MenuMarkGroup, () => doings.Group(marking: true)),
         new(LocString.MenuUnmarkGroup, () => doings.Group(marking: false)),
         new(LocString.MenuInvertMarks, () => doings.Panels.Active.Invert()),
-        new(LocString.Filter, () => doings.Filter(doings.Panels.Active)),
         new(LocString.MenuRunOverSsh, () => doings.Navigation.Apply(ViewKind.Ssh)),
         new(LocString.MenuWhatCommandsSaid, () => doings.Navigation.Apply(ViewKind.Output)),
         new(LocString.MenuReloadBoth, doings.Reload),
@@ -120,7 +117,7 @@ public static class Menu
         new(LocString.MenuSettings, doings.OpenSettings),
         new(LocString.MenuHiddenHere, () => doings.ToggleHidden(doings.Panels.Left)),
         new(LocString.MenuHiddenThere, () => doings.ToggleHidden(doings.Panels.Right)),
-        new(LocString.MenuNotifications, () => doings.Navigation.Apply(Routes.Notifications)),
+        new(LocString.NotesTitle, () => doings.Navigation.Apply(Routes.Notifications)),
         new(LocString.MenuKeys, () => doings.Navigation.Apply(Routes.Help)),
     ];
 

@@ -66,7 +66,7 @@ public sealed class ViewerView : IArlecchinoView
         var status = new StatusBar
         {
             Left = [() => Loc(LocString.ViewerBytes, Sizes.Grouped(_read), _kind)],
-            Right = [static () => Loc(LocString.ViewerBack), static () => Loc(LocString.ViewerScroll)],
+            Right = [static () => Loc(LocString.EscBack), static () => Loc(LocString.ViewerScroll)],
         };
 
         _layout = Chrome(empty);

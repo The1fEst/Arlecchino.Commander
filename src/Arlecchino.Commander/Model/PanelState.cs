@@ -24,8 +24,6 @@ public sealed class PanelState
 
     public string Cursor { get; set; } = "";
 
-    public string Filter { get; set; } = "";
-
     /// <summary>
     /// What is marked in this panel, by name. A set atom rather than a <c>HashSet</c>, so a mark makes the
     /// frame stale by itself, and one made from anywhere other than the drawing thread is caught rather than
@@ -38,9 +36,6 @@ public sealed class PanelState
     public Sorting Sorting { get; set; }
 
     public bool Descending { get; set; }
-
-    /// <summary>Every folder this panel has been in on the source it is on, the oldest first.</summary>
-    public IReadOnlyList<string> Visited => _visited;
 
     public void GoTo(string folder)
     {
@@ -98,7 +93,6 @@ public sealed class PanelState
     private void Land(string folder)
     {
         Folder = folder;
-        Filter = "";
         Marks.Clear();
     }
 }

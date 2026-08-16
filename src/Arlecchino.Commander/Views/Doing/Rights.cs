@@ -147,5 +147,5 @@ public sealed class Rights : PanelWork
     /// <param name="sources">What was acted on.</param>
     /// <returns>The words.</returns>
     private static string Counted(IReadOnlyList<FileEntry> sources) =>
-        sources.Count == 1 ? sources[0].Name : Loc(LocString.SaidItems, sources.Count);
+        sources.Count == 1 ? sources[0].Name : Loc(LocString.ManyItems, sources.Count);
 }
