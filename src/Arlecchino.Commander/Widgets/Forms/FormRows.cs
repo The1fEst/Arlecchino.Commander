@@ -20,6 +20,8 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
     private readonly ArlecchinoKeymap _keymap;
 
     private SurfaceRegion _drawn;
+    private int _first;
+    private int _step = 1 + Between;
 
     /// <summary>Builds the column.</summary>
     /// <param name="keymap">Keys to obey, which are the ones a list is walked by.</param>
@@ -37,7 +39,10 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
     /// <summary>The row the cursor is on, or nothing when the form holds none.</summary>
     public FormRow? Current => Rows.Count == 0 ? null : Rows[Math.Clamp(Selected, 0, Rows.Count - 1)];
 
-    /// <summary>Draws every row that fits, one blank row between them.</summary>
+    /// <summary>
+    /// Draws the rows, one blank row between them while there is room for that. A form taller than the
+    /// screen closes the gaps first and scrolls after, keeping the row the cursor is on in view.
+    /// </summary>
     /// <param name="region">Where to draw.</param>
     /// <returns>The rows below the last one written.</returns>
     public SurfaceRegion Draw(SurfaceRegion region)
@@ -50,6 +55,11 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
         Selected = Math.Clamp(Selected, 0, Rows.Count - 1);
 
         _drawn = region;
+        _step = Spread(region.Height) ? 1 + Between : 1;
+
+        var showing = Math.Max(1, ((region.Height - 1) / _step) + 1);
+
+        _first = Math.Clamp(Selected - (showing / 2), 0, Math.Max(0, Rows.Count - showing));
 
         var labels = 0;
 
@@ -63,14 +73,19 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
 
         var at = 0;
 
-        for (var index = 0; index < Rows.Count && at < region.Height; index++)
+        for (var index = _first; index < Rows.Count && at < region.Height; index++)
         {
             Rows[index].Draw(region.Rows(at, 1), labels, index == Selected);
-            at += 1 + Between;
+            at += _step;
         }
 
         return region.Rows(Math.Min(at, region.Height), Math.Max(0, region.Height - at));
     }
+
+    /// <summary>Whether every row fits with a blank row between them.</summary>
+    /// <param name="height">The rows there are to draw in.</param>
+    /// <returns><c>true</c> when the form may be spread out.</returns>
+    private bool Spread(int height) => ((Rows.Count - 1) * (1 + Between)) + 1 <= height;
 
     /// <summary>Walks the rows, answers one, or empties it.</summary>
     /// <param name="key">The key that arrived.</param>
@@ -155,9 +170,9 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
     private FocusResult Clicked(MouseEvent mouse)
     {
         var (row, _) = _drawn.ToLocal(mouse.Row, mouse.Column);
-        var index = row / (1 + Between);
+        var index = _first + (row / _step);
 
-        if (row % (1 + Between) != 0 || index >= Rows.Count)
+        if (row % _step != 0 || index >= Rows.Count)
         {
             return FocusResult.Handled;
         }
