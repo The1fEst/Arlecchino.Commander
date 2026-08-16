@@ -12,113 +12,44 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 /// </summary>
 public static class Skin
 {
-    /// <summary>Outside the panels: the gutter, and whatever else the screen shows through.</summary>
     public static readonly Rgb Ink = new(0x14, 0x13, 0x17);
-
-    /// <summary>The panel being worked in, one step lighter than the one beside it.</summary>
     public static readonly Rgb Lit = new(0x17, 0x15, 0x1B);
-
-    /// <summary>The panel that is not.</summary>
     public static readonly Rgb Unlit = new(0x13, 0x12, 0x16);
-
-    /// <summary>Dialogs, the palette, job cards — anything drawn over the screen.</summary>
     public static readonly Rgb Over = new(0x1D, 0x1A, 0x18);
-
-    /// <summary>Key chips and inline fields, which sit on an overlay and have to be told from it.</summary>
     public static readonly Rgb Chip = new(0x27, 0x23, 0x20);
-
-    /// <summary>Primary text.</summary>
     public static readonly Rgb Bone = new(0xED, 0xE6, 0xD9);
-
-    /// <summary>The brand crimson: the focus rule, marks, carets, the primary key of the moment.</summary>
     public static readonly Rgb Crimson = new(0xC9, 0x38, 0x2B);
-
-    /// <summary>
-    /// The same accent as words rather than as a fill. It is the crimson lifted until a line of it reads
-    /// against what it is written on; anything filled keeps <see cref="Crimson"/> itself.
-    /// </summary>
     public static readonly Rgb Flame = new(0xD7, 0x51, 0x47);
-
-    /// <summary>Text and icons on a crimson fill.</summary>
     public static readonly Rgb OnCrimson = new(0xFF, 0xF3, 0xEE);
-
-    /// <summary>The name of a file that is marked.</summary>
     public static readonly Rgb Coral = new(0xF2, 0xA0, 0x93);
-
-    /// <summary>Host names and paths that belong to a server, and secondary key chips.</summary>
     public static readonly Rgb Sea = new(0xC9, 0xE0, 0xD9);
-
-    /// <summary>Destroying data, and nothing else.</summary>
     public static readonly Rgb Danger = new(0xB4, 0x34, 0x2F);
-
-    /// <summary>Something reversible and local: the rule over a rename or a new folder.</summary>
     public static readonly Rgb Calm = new(0x4E, 0x7A, 0x63);
-
-    /// <summary>What a finished job says.</summary>
     public static readonly Rgb CalmText = new(0x9C, 0xC7, 0xAF);
-
-    /// <summary>A locked file, a partial failure — worth reading, not worth alarm.</summary>
     public static readonly Rgb Amber = new(0xD9, 0xA0, 0x5B);
-
-    /// <summary>The rule beside one.</summary>
     public static readonly Rgb AmberRule = new(0x8A, 0x5A, 0x2B);
-
-    /// <summary>
-    /// The warmest and loudest of the seven grays that everything quieter than a name is written in.
-    /// They are spaced by contrast against the surrounds rather than by lightness, and the last of them
-    /// still reads at three to one.
-    /// </summary>
     public static readonly Rgb Secondary = new(0xC5, 0xC3, 0xBF);
-
-    /// <summary>Sizes, counts, everything that qualifies a name.</summary>
     public static readonly Rgb Muted = new(0xB3, 0xB1, 0xAB);
-
-    /// <summary>Hints, the parent row, a plain file's tag.</summary>
     public static readonly Rgb Faint = new(0xA2, 0x9F, 0x98);
-
-    /// <summary>Column heads, the small capitals that label a section, and a file worth ignoring.</summary>
     public static readonly Rgb LabelInk = new(0x94, 0x90, 0x88);
-
-    /// <summary>A date, or a count on the panel that is not being worked in.</summary>
     public static readonly Rgb TraceInk = new(0x88, 0x83, 0x79);
-
-    /// <summary>Line numbers, the tag of a file worth ignoring, a hint not needed yet.</summary>
     public static readonly Rgb GhostInk = new(0x7D, 0x78, 0x6F);
-
-    /// <summary>The command line at rest.</summary>
     public static readonly Rgb Idle = new(0x6C, 0x67, 0x60);
-
     private static readonly Rgb Hairline = new(0x2F, 0x2C, 0x28);
     private static readonly Rgb HairlineDim = new(0x27, 0x25, 0x21);
     private static readonly Rgb HairlineOver = new(0x3C, 0x38, 0x33);
-
-    /// <summary>The same two steps down the row the cursor is on, which is bone and turns the ladder over.</summary>
     private static readonly Rgb OnBoneMeta = new(0x42, 0x3E, 0x38);
-
     private static readonly Rgb OnBoneDate = new(0x59, 0x54, 0x4C);
 
     private static readonly Dictionary<(Rgb Front, Rgb Back, TextStyle Style), TermColor> Made = [];
     private static readonly Lock Gate = new();
 
-    /// <summary>Whatever is drawn straight on the terminal: the header, the gutter, the action bar.</summary>
     public static Coat Terminal { get; } = new(Ink);
-
-    /// <summary>The panel being worked in.</summary>
     public static Coat Lively { get; } = new(Lit);
-
-    /// <summary>The panel beside it.</summary>
     public static Coat Quiet { get; } = new(Unlit);
-
-    /// <summary>A dialog, the palette, a job card.</summary>
     public static Coat Overlay { get; } = new(Over);
-
-    /// <summary>A key chip or an inline field on an overlay.</summary>
     public static Coat Inlaid { get; } = new(Chip);
 
-    /// <summary>
-    /// This design said in the framework's own terms, so that a form, a status bar, the keys screen and the
-    /// file picker come out in it too. The panels and the dialogs are painted from the coats above instead.
-    /// </summary>
     public static ThemePalette Palette { get; } = new()
     {
         Default = Paint(Bone, Ink),
@@ -135,46 +66,16 @@ public static class Skin
         Error = Paint(Coral, Ink),
     };
 
-    /// <summary>The name of the row the cursor is on: ink on bone, which no other row can be.</summary>
     public static TermColor CursorName => field ??= Paint(Ink, Bone, TextStyle.Bold);
-
-    /// <summary>Its size and anything else that qualifies the name.</summary>
     public static TermColor CursorMeta => field ??= Paint(OnBoneMeta, Bone);
-
-    /// <summary>Its date, which is quieter still.</summary>
     public static TermColor CursorDate => field ??= Paint(OnBoneDate, Bone);
-
-    /// <summary>Its kind tag, the one span of the row that keeps the accent.</summary>
     public static TermColor CursorTag => field ??= Paint(Crimson, Bone);
-
-    /// <summary>The bone behind all of it, for the width the row does not write on.</summary>
     public static TermColor CursorRow => field ??= Paint(Ink, Bone);
-
-    /// <summary>The chosen row of a list drawn over the screen, which fills with the accent instead.</summary>
     public static TermColor ChosenName => field ??= Paint(OnCrimson, Crimson, TextStyle.Bold);
-
-    /// <summary>What qualifies it, lightened so nothing faint is left on a filled row.</summary>
     public static TermColor ChosenMeta => field ??= Paint(new(0xF0, 0xBD, 0xB5), Crimson);
-
-    /// <summary>The accent behind all of it.</summary>
     public static TermColor ChosenRow => field ??= Paint(OnCrimson, Crimson);
-
-    /// <summary>
-    /// Crimson on crimson, which is to say no text at all: the accent as something to fill a run of
-    /// cells with. It marks the edge of whatever is being worked in.
-    /// </summary>
     public static TermColor CrimsonFill => field ??= Paint(Crimson, Crimson);
-
-    /// <summary>
-    /// What closes the top and bottom of the panel being worked in. It is drawn with half blocks, so the
-    /// two colors are the surround above the line and the panel below it.
-    /// </summary>
     public static TermColor BorderActiveColor => field ??= Paint(Unlit, Lit);
-
-    /// <summary>
-    /// The same edge on the panel beside it, both halves the same, so the row is still spent on a
-    /// border and nothing is drawn on it. Only one panel is worked in, and only it wears a line.
-    /// </summary>
     public static TermColor BorderInactiveColor => field ??= Paint(Unlit, Unlit);
 
     /// <summary>
