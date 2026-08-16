@@ -43,6 +43,7 @@ public sealed class KindsTests
         Assert.Equal("img", Kinds.Tag(File("photo.JPEG")));
         Assert.Equal("cfg", Kinds.Tag(File("app.yaml")));
         Assert.Equal("lib", Kinds.Tag(File("libssh.so")));
+        Assert.Equal("cfg", Kinds.Tag(File("Arlecchino.Commander.sln.DotSettings.user")));
     }
 
     [Fact]

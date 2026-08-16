@@ -13,7 +13,7 @@ public static class KindTags
     {
         ".md" or ".markdown" or ".mdx" => "md",
         ".json" or ".jsonc" or ".yml" or ".yaml" or ".toml" or ".ini" or ".conf" or ".config" or ".props" or
-            ".targets" or ".editorconfig" or ".plist" or ".cnf" => "cfg",
+            ".targets" or ".editorconfig" or ".plist" or ".cnf" or ".dotsettings" or ".user" => "cfg",
         ".zip" or ".gz" or ".tgz" or ".tar" or ".7z" or ".rar" or ".xz" or ".bz2" or ".zst" or ".lz4" or
             ".cab" => "zip",
         ".log" => "log",
