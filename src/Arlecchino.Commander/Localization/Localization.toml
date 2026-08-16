@@ -174,7 +174,6 @@ HostKeyRevoked = "The {0} key of {1} is marked revoked in known_hosts."
 HostKeyUnknown = "{1} is not in known_hosts, so there is nothing to check its {0} key against (SHA256:{2}). Connect once with: ssh {1}"
 
 BarHelp = "Help"
-BarCommands = "Commands"
 BarQuit = "Quit"
 BarOneItem = " 1 item"
 BarManyItems = " {0} items"

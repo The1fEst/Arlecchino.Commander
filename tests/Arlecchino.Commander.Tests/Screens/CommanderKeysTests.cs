@@ -39,11 +39,15 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Frame();
     }
 
+    /// <summary>
+    /// Reading a file is Enter on it, the key that opens whatever the cursor is on. The bar has no key
+    /// spent on it, since the key everyone reaches for already does it.
+    /// </summary>
     [Fact]
     public void ViewingAFileGoesToTheViewer()
     {
         OnAlpha();
-        _app.Press(ConsoleKey.F3);
+        _app.Press(ConsoleKey.Enter);
         _app.Frame();
 
         Assert.Equal(ViewKind.Viewer, _app.Navigator.CurrentRoute);
@@ -318,7 +322,7 @@ public sealed class CommanderKeysTests : IDisposable
     public void EditingWithNoEditorSetSaysSo()
     {
         OnAlpha();
-        _app.Press(ConsoleKey.F4);
+        _app.Press(ConsoleKey.F3);
 
         Assert.Contains("No editor set", _app.Frame(), StringComparison.Ordinal);
     }
@@ -422,7 +426,7 @@ public sealed class CommanderKeysTests : IDisposable
             Assert.Contains(key, bar, StringComparison.Ordinal);
         }
 
-        Assert.Contains(Loc(LocString.View), known);
+        Assert.Contains(Loc(LocString.Edit), known);
         Assert.Contains(Loc(LocString.Copy), known);
         Assert.Contains(Loc(LocString.Delete), known);
     }
@@ -521,8 +525,8 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Every tab key is behind the one leader, so there is a single place to look for the five of them.
-    /// They were spread between a function key, two Control letters and the leader that goes places.
+    /// Every tab key is behind the one leader, so there is a single place to look for the four of them.
+    /// Listing the tabs is the exception, being what the bar spends <c>F2</c> on.
     /// </summary>
     [Fact]
     public void TheTabKeysAreAllBehindTheirOwnLeader()
@@ -533,7 +537,6 @@ public sealed class CommanderKeysTests : IDisposable
             LocString.TabsClose,
             LocString.TabsNext,
             LocString.TabsPrevious,
-            LocString.TabsTitle,
         };
 
         var tabs = _app.Navigator.CurrentCommands
@@ -553,7 +556,8 @@ public sealed class CommanderKeysTests : IDisposable
     [Theory]
     [InlineData("\e[P", "Keys")]
     [InlineData("\e[Q", "Tabs")]
-    [InlineData("\e[S", "No editor set")]
+    [InlineData("\e[R", "No editor set")]
+    [InlineData("\e[S", "Find files")]
     public void TheFunctionKeysArriveAsTheProtocolSendsThem(string sequence, string expected)
     {
         OnAlpha();
@@ -695,7 +699,8 @@ public sealed class CommanderKeysTests : IDisposable
     {
         _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.F9);
+        _app.Frame();
 
-        Assert.DoesNotContain(Loc(LocString.MenuMakeFolder), _app.Frame(), StringComparison.Ordinal);
+        Assert.Null(_app.State.Modal);
     }
 }

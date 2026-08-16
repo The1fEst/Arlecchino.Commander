@@ -11,5 +11,5 @@ namespace Arlecchino.Commander.Stores;
 public sealed class Keyboard : IArlecchinoStore
 {
     /// <summary>Every key the panels answer to, as they last built the table.</summary>
-    public IReadOnlyList<ViewCommand> Panels { get; set; } = [];
+    public IReadOnlyList<ViewCommand> Keys { get; set; } = [];
 }

@@ -44,30 +44,35 @@ public static class CommanderKeys
             Bind.To(new(ConsoleKey.F2, KeyModifiers.Control),
                 LocString.KeyDriveRight,
                 () => doings.ChooseDrive(panels.Right)),
-            Bind.Going(new(ConsoleKey.F3),
-                LocString.View,
-                doings.Read),
-            Bind.To(new(ConsoleKey.F4),
+            Bind.Going(new(ConsoleKey.F1),
+                LocString.BarHelp,
+                () => ViewKind.Keys),
+            Bind.To(new(ConsoleKey.F2),
+                LocString.TabsTitle,
+                () => TabList.Open(doings)),
+            Bind.To(new(ConsoleKey.F3),
                 LocString.Edit,
                 doings.Editing.Edit),
-            Bind.To(new(ConsoleKey.F5),
+            Bind.Going(new(ConsoleKey.F4),
+                LocString.FindVerb,
+                doings.Find),
+            Marked(new(ConsoleKey.F5),
                 LocString.Copy,
+                panels,
                 doings.Files.Copy),
-            Bind.To(new(ConsoleKey.F6),
+            Marked(new(ConsoleKey.F6),
                 LocString.Move,
+                panels,
                 doings.Files.Move),
-            Bind.To(new(ConsoleKey.F6,
-                    KeyModifiers.Shift),
+            Bind.To(new(ConsoleKey.F6, KeyModifiers.Shift),
                 LocString.Rename,
                 doings.Files.Rename),
             Bind.To(new(ConsoleKey.F7),
                 LocString.MenuMakeFolder,
                 doings.Files.MakeFolder),
-            Bind.Going(new(ConsoleKey.F7, KeyModifiers.Control),
-                LocString.MenuFindFile,
-                doings.Find),
-            Bind.To(new(ConsoleKey.F8),
+            Marked(new(ConsoleKey.F8),
                 LocString.Delete,
+                panels,
                 doings.Files.Delete),
             Bind.To(new(ConsoleKey.F8, KeyModifiers.Shift),
                 LocString.MenuDeleteForGood,
@@ -143,10 +148,6 @@ public static class CommanderKeys
                 LocString.TabsPrevious,
                 Several(sessions),
                 () => Stepped(sessions, forward: false)),
-            Bind.To(Tab(ConsoleKey.O)
-                    .AddAlternative(ConsoleKey.F2),
-                LocString.TabsTitle,
-                () => TabList.Open(doings)),
 
             Bind.To(Sorted(ConsoleKey.H),
                 LocString.MenuSortByName,
@@ -202,6 +203,37 @@ public static class CommanderKeys
                 () => operations.IsBusy || runner.IsRunning,
                 () => Stop(operations, runner)),
         ];
+    }
+
+    /// <summary>
+    /// A key that acts on what is marked, and says so: with something in hand the question is no longer
+    /// what this row is but what happens to the rows that were marked, so the count goes in the name.
+    /// </summary>
+    /// <param name="binding">The key.</param>
+    /// <param name="name">Which string names it.</param>
+    /// <param name="panels">The two panels on screen, the marks being read off whichever is active.</param>
+    /// <param name="run">What it does.</param>
+    /// <returns>The command.</returns>
+    private static ViewCommand Marked(KeyBinding binding, LocString name, Pair panels, Action run) =>
+        ViewCommand.For(binding, () => Loc(name) + Held(panels), run);
+
+    /// <summary>What the marks add to a name: nothing at all when none are marked.</summary>
+    /// <param name="panels">The two panels on screen.</param>
+    /// <returns>The count, worded, or an empty string.</returns>
+    private static string Held(Pair panels)
+    {
+        var panel = panels.Active;
+
+        if (panel.State.Marks.Count == 0)
+        {
+            return "";
+        }
+
+        var held = panel.Targets().Count;
+
+        return held == 1
+            ? Loc(LocString.BarOneItem)
+            : Loc(LocString.BarManyItems, held);
     }
 
     /// <summary>A key behind the <c>t</c> leader, which is the one the tabs live behind.</summary>

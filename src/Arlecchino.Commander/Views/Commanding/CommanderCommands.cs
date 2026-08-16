@@ -16,9 +16,9 @@ namespace Arlecchino.Commander.Views.Commanding;
 /// </summary>
 public sealed class CommanderCommands
 {
-    private readonly IReadOnlyList<ViewCommand> _all;
     private readonly CommanderFooter _footer;
     private readonly Pair _panels;
+    private readonly Keyboard _keyboard;
     private readonly IReadOnlyList<ViewCommand> _typed;
 
     /// <summary>Builds the table and the shorter one taken from it.</summary>
@@ -42,11 +42,19 @@ public sealed class CommanderCommands
     {
         _panels = panels;
         _footer = footer;
+        _keyboard = keyboard;
 
-        _all = CommanderKeys.For(doings, panels, sessions, operations, runner, footer.Line, footer.Setting, lifetime);
-        _typed = [.. _all.Where(command => !WantedByTheLine(command.Binding))];
+        _keyboard.Keys = CommanderKeys.For(
+            doings,
+            panels,
+            sessions,
+            operations,
+            runner,
+            footer.Line,
+            footer.Setting,
+            lifetime);
 
-        keyboard.Panels = _all;
+        _typed = [.. _keyboard.Keys.Where(command => !WantedByTheLine(command.Binding))];
     }
 
     /// <summary>
@@ -57,7 +65,7 @@ public sealed class CommanderCommands
     /// <returns>The commands to match this key against.</returns>
     public IReadOnlyList<ViewCommand> Now()
     {
-        return _footer.IsTyping || _panels.Active.IsSearching ? _typed : _all;
+        return _footer.IsTyping || _panels.Active.IsSearching ? _typed : _keyboard.Keys;
     }
 
     /// <summary>

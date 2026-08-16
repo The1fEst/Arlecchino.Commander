@@ -25,7 +25,8 @@ public sealed class CommanderFooter
     /// <param name="keymap">Keys the lines obey.</param>
     /// <param name="typing">Turns a key press into the character it types.</param>
     /// <param name="terminal">What reaches the clipboard, for the selection that is copied or cut.</param>
-    /// <param name="panels">The two panels on screen, which the bar names the keys of.</param>
+    /// <param name="panels">The two panels on screen, which the command line writes the names from.</param>
+    /// <param name="keyboard">Every key the screen answers to, which the bar names ten of.</param>
     public CommanderFooter(
         Runner runner,
         ArlecchinoState state,
@@ -33,11 +34,12 @@ public sealed class CommanderFooter
         ArlecchinoKeymap keymap,
         KeyText typing,
         IArlecchinoTerminal terminal,
-        Pair panels)
+        Pair panels,
+        Keyboard keyboard)
     {
         Setting = new(settings, state, keymap, typing, terminal);
         Line = new(new(runner.History, typing, keymap, terminal, ':'), runner, state, keymap, panels);
-        _actionBar = new(panels);
+        _actionBar = new(keyboard);
     }
 
     /// <summary>The line commands are typed on.</summary>

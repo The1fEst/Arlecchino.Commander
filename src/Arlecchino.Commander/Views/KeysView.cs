@@ -181,7 +181,7 @@ public sealed class KeysView : IArlecchinoView
 
         _panels.Add(new("", Loc(LocString.KeysPanels), true));
 
-        foreach (var command in keyboard.Panels)
+        foreach (var command in keyboard.Keys)
         {
             _panels.Add(new(command.Binding.ToString(), command.Label()));
         }

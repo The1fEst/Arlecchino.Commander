@@ -36,7 +36,7 @@ public sealed class CommanderFooterTests : IDisposable
         var bar = _app.BarLine();
 
         Assert.Contains("F3", bar, StringComparison.Ordinal);
-        Assert.Contains("View", bar, StringComparison.Ordinal);
+        Assert.Contains("Edit", bar, StringComparison.Ordinal);
         Assert.Contains("Copy", bar, StringComparison.Ordinal);
         Assert.Contains("Delete", bar, StringComparison.Ordinal);
     }
