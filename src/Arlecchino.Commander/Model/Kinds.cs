@@ -23,8 +23,8 @@ public enum Tone
 }
 
 /// <summary>
-/// What a file is, in three letters and a tone, written in a column of its own where an icon would be.
-/// The tags are a closed set, and a kind that is not one of them reads as <c>txt</c>.
+/// What a file is, in three letters and a tone, written where an icon would be. A family of extensions
+/// shares a tag; anything else is written as its own extension, and a name without one carries no tag.
 /// </summary>
 public static class Kinds
 {
@@ -48,19 +48,24 @@ public static class Kinds
 
         var name = entry.Name;
 
-        return Extension(name) switch
+        if (Git(name))
         {
-            ".cs" => "cs",
-            ".md" or ".markdown" => "md",
-            ".json" or ".yml" or ".yaml" or ".toml" or ".ini" or ".conf" or ".config" or ".props" or
-                ".targets" or ".editorconfig" => "cfg",
-            ".zip" or ".gz" or ".tgz" or ".tar" or ".7z" or ".rar" or ".xz" or ".bz2" => "zip",
-            ".log" => "log",
-            ".pem" or ".key" or ".pfx" or ".p12" => "key",
-            _ when Git(name) => "git",
-            _ when Secret(name) => "key",
-            _ => "txt",
-        };
+            return "git";
+        }
+
+        if (Secret(name))
+        {
+            return "key";
+        }
+
+        var extension = Extension(name);
+
+        if (KindTags.Of(extension) is { } known)
+        {
+            return known;
+        }
+
+        return entry.IsExecutable ? "exe" : Written(extension);
     }
 
     /// <summary>How loudly to draw it.</summary>
@@ -74,13 +79,14 @@ public static class Kinds
         }
 
         var name = entry.Name;
+        var tag = KindTags.Of(Extension(name));
 
-        if (Secret(name) || Extension(name) is ".pem" or ".key" or ".pfx" or ".p12")
+        if (Secret(name) || tag is "key")
         {
             return Tone.Protected;
         }
 
-        if (Machinery(name) || entry.IsHidden || Extension(name) is ".log")
+        if (Machinery(name) || entry.IsHidden || tag is "log")
         {
             return Tone.Ignorable;
         }
@@ -89,6 +95,19 @@ public static class Kinds
     }
 
     private static string Extension(string name) => Path.GetExtension(name).ToLowerInvariant();
+
+    /// <summary>
+    /// An extension no family covers, written out as far as the column goes. A longer one is cut rather
+    /// than dropped, since the first letters of it still answer what the file is.
+    /// </summary>
+    /// <param name="extension">The extension, dot and all.</param>
+    /// <returns>The letters after the dot, or nothing when there are none.</returns>
+    private static string Written(string extension) => extension.Length switch
+    {
+        < 2 => "",
+        < TagWidth => extension[1..],
+        _ => extension[1..TagWidth],
+    };
 
     private static bool Git(string name) =>
         name.StartsWith(".git", StringComparison.OrdinalIgnoreCase) && !Machinery(name);

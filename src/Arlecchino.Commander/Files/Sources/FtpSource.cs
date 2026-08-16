@@ -191,7 +191,7 @@ public sealed class FtpSource : IFileSource
 
             if (RemotePaths.Parent(folder) is { } parent)
             {
-                entries.Add(new("..", parent, true, true, 0, default, false, false));
+                entries.Add(new("..", parent, true, true, 0, default, false, false, false));
             }
 
             foreach (var found in await _client.ListAsync(folder, token).ConfigureAwait(false))
@@ -211,7 +211,8 @@ public sealed class FtpSource : IFileSource
                     Math.Max(0, found.Size),
                     found.Modified,
                     hidden,
-                    false));
+                    false,
+                    !found.IsFolder && Modes.Runs(found.Mode)));
             }
 
             return entries;

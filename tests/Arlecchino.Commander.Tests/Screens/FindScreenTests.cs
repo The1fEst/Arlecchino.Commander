@@ -24,7 +24,7 @@ public sealed class FindScreenTests : IDisposable
     {
         var path = _app.Write(name, "anything");
 
-        return new(_app.Folder, new(name, path, false, false, 8, DateTime.Now, false, false));
+        return new(_app.Folder, new(name, path, false, false, 8, DateTime.Now, false, false, false));
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public sealed class FindScreenTests : IDisposable
         var path = Path.Combine(nested, "found.txt");
         File.WriteAllText(path, "anything");
 
-        var hit = new Hit(nested, new("found.txt", path, false, false, 8, DateTime.Now, false, false));
+        var hit = new Hit(nested, new("found.txt", path, false, false, 8, DateTime.Now, false, false, false));
 
         _app.Finder.Found.Add(hit);
         _app.Frame();

@@ -32,6 +32,7 @@ public sealed class OperationsTests : IDisposable
         Directory.Exists(path) ? 0 : new FileInfo(path).Length,
         File.GetLastWriteTime(path),
         false,
+        false,
         false);
 
     private static IReadOnlyList<FileEntry> Entries(params string[] paths) => [.. paths.Select(Entry)];

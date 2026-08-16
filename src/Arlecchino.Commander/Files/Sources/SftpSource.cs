@@ -217,7 +217,7 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
         if (RemotePaths.Parent(folder) is { } parent)
         {
-            entries.Add(new("..", parent, true, true, 0, default, false, false));
+            entries.Add(new("..", parent, true, true, 0, default, false, false, false));
         }
 
         try
@@ -244,7 +244,9 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
                     found.IsDirectory ? 0 : found.Length,
                     found.LastWriteTime,
                     hidden,
-                    false));
+                    false,
+                    !found.IsDirectory &&
+                    (found.OwnerCanExecute || found.GroupCanExecute || found.OthersCanExecute)));
             }
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)

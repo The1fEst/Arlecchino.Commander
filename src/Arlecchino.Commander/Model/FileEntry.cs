@@ -10,7 +10,8 @@ public sealed record FileEntry(
     long Size,
     DateTime Modified,
     bool IsHidden,
-    bool IsReadOnly)
+    bool IsReadOnly,
+    bool IsExecutable)
 {
     public int Rank => IsParent ? 0 : IsFolder ? 1 : 2;
 }

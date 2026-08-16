@@ -21,7 +21,7 @@ public sealed class PlaceholdersTests : IDisposable
 
     private string Path(string name) => System.IO.Path.Combine(_root, name);
 
-    private FileEntry Entry(string name) => new(name, Path(name), false, false, 0, default, false, false);
+    private FileEntry Entry(string name) => new(name, Path(name), false, false, 0, default, false, false, false);
 
     private IReadOnlyList<FileEntry> Entries(params string[] names)
     {

@@ -50,6 +50,12 @@ public static class Modes
 
     public static string Write(int mode) => Convert.ToString(mode, Digits).PadLeft(3, '0');
 
+    /// <summary>Whether any of the three thirds carries the leave to run it.</summary>
+    /// <param name="digits">The digits as a number, the shape <see cref="AsDigits"/> gives back.</param>
+    /// <returns><c>true</c> when the file may be run.</returns>
+    public static bool Runs(int digits) =>
+        (digits % 10 & 1) != 0 || (digits / 10 % 10 & 1) != 0 || (digits / 100 % 10 & 1) != 0;
+
     /// <summary>
     /// The digits written out as <c>rwxr-xr-x</c>, which is the readable spelling of the same thing. A dialog
     /// that changes permissions shows both.

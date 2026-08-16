@@ -561,7 +561,7 @@ public static class FileTasks
         try
         {
             await to.DeleteAsync(
-                    new(to.NameOf(target), target, false, false, 0, DateTime.Now, false, false),
+                    new(to.NameOf(target), target, false, false, 0, DateTime.Now, false, false, false),
                     CancellationToken.None)
                 .ConfigureAwait(false);
         }

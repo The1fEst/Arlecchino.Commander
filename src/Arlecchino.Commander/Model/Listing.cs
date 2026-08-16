@@ -58,7 +58,7 @@ public static class Listing
 
         if (Parent(path) is { } parent)
         {
-            entries.Add(new("..", parent, true, true, 0, default, false, false));
+            entries.Add(new("..", parent, true, true, 0, default, false, false, false));
         }
 
         foreach (var found in new DirectoryInfo(path).EnumerateFileSystemInfos())
@@ -80,7 +80,8 @@ public static class Listing
                 found is FileInfo file ? file.Length : 0,
                 Written(found),
                 hidden,
-                found.Attributes.HasFlag(FileAttributes.ReadOnly)));
+                found.Attributes.HasFlag(FileAttributes.ReadOnly),
+                !isFolder && Runnable(found)));
         }
 
         return entries;
@@ -184,6 +185,33 @@ public static class Listing
     private static bool Hidden(FileSystemInfo found) => OperatingSystem.IsWindows()
         ? found.Attributes.HasFlag(FileAttributes.Hidden) || found.Attributes.HasFlag(FileAttributes.System)
         : found.Name.StartsWith('.');
+
+    /// <summary>
+    /// Whether the disk will run it. The bit comes off the same call that read the name, so asking costs
+    /// nothing; Windows keeps no such bit, and the tag there is read off the extension instead.
+    /// </summary>
+    /// <param name="found">What was read off the disk.</param>
+    /// <returns><c>true</c> when any of the three thirds may run it.</returns>
+    private static bool Runnable(FileSystemInfo found)
+    {
+        const UnixFileMode Executable = UnixFileMode.UserExecute |
+                                        UnixFileMode.GroupExecute |
+                                        UnixFileMode.OtherExecute;
+
+        if (OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
+        try
+        {
+            return (found.UnixFileMode & Executable) != 0;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
 
     private static DateTime Written(FileSystemInfo found)
     {
