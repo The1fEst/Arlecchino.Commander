@@ -36,7 +36,7 @@ public sealed class OperationModal : Modal
     /// The field, while the cursor is in it. With the cursor on the switches nothing here is typed into, so
     /// pasted text has nowhere to land.
     /// </summary>
-    public override ITextEntry? Typing => Asking is { Chosen: < 0, FieldLabel: not null } ? Asking.Field : null;
+    public override ITextEntry? Typing => Asking is { ChosenIndex: < 0, FieldLabel: not null } ? Asking.Field : null;
 
     /// <inheritdoc/>
     public override void Draw(ModalFrame frame)
@@ -77,7 +77,7 @@ public sealed class OperationModal : Modal
             return;
         }
 
-        if (Asking.Chosen >= 0)
+        if (Asking.ChosenIndex >= 0)
         {
             Switching(frame, key);
 
@@ -122,7 +122,7 @@ public sealed class OperationModal : Modal
 
         var (row, _) = _spots.Options.ToLocal(mouse.Row, mouse.Column);
 
-        Asking.Chosen = row;
+        Asking.ChosenIndex = row;
         Asking.Toggle();
     }
 
@@ -133,7 +133,7 @@ public sealed class OperationModal : Modal
     /// <param name="key">The key that arrived.</param>
     private void Reach(KeyPress key)
     {
-        if (Asking is { Chosen: < 0, Over: not null } && _completing is not null)
+        if (Asking is { ChosenIndex: < 0, Target: not null } && _completing is not null)
         {
             _completing(Asking);
 
@@ -158,9 +158,9 @@ public sealed class OperationModal : Modal
             return;
         }
 
-        if (frame.Keys.Resolve(key) is { } typed && !char.IsControl(typed))
+        if (frame.Keys.Resolve(key) is { } text && !char.IsControl(text))
         {
-            TextEditing.Insert(Asking.Field, typed);
+            TextEditing.Insert(Asking.Field, text);
         }
     }
 }

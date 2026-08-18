@@ -51,11 +51,11 @@ public sealed class SftpPool : IDisposable
             return new(this, free);
         }
 
-        var opened = Open();
+        var stream = Open();
 
-        _all.Add(opened);
+        _all.Add(stream);
 
-        return new(this, opened);
+        return new(this, stream);
     }
 
     /// <summary>Closes every session.</summary>

@@ -64,8 +64,8 @@ public sealed class TabStrip
 
         var closable = _sessions.All.Count > 1;
         var room = strip.Width - Plus;
-        var most = Sharing(room, closable);
-        var widths = Widths(most, closable);
+        var mostRoom = Sharing(room, closable);
+        var widths = Widths(mostRoom, closable);
         var scrolls = Together(widths) > room;
         var last = _window.Showing(widths, scrolls ? room - (Marker * 2) : room, _sessions.Open.Value);
         var column = scrolls ? Marker : 0;
@@ -77,9 +77,9 @@ public sealed class TabStrip
 
         for (var index = _window.First; index < last; index++)
         {
-            Tab(strip, column, index, most, closable);
+            Tab(strip, column, index, mostRoom, closable);
 
-            column += widths[index] + TabWindow.Between;
+            column += widths[index] + TabWindow.Gap;
         }
 
         if (scrolls)
@@ -130,35 +130,35 @@ public sealed class TabStrip
     /// <returns>The widest a name may be, or <see cref="TabFace.Whole"/> when none need shortening.</returns>
     private int Sharing(int room, bool closable)
     {
-        var cross = closable ? TabFace.Crossed : 0;
-        var wanted = 0;
+        var cross = closable ? TabFace.CloseColumn : 0;
+        var target = 0;
 
         foreach (var session in _sessions.All)
         {
-            wanted += session.Label.Length + TabFace.Chrome + cross + TabWindow.Between;
+            target += session.Label.Length + TabFace.Chrome + cross + TabWindow.Gap;
         }
 
-        if (wanted <= room)
+        if (target <= room)
         {
             return TabFace.Whole;
         }
 
-        var share = (room / _sessions.All.Count) - TabWindow.Between - TabFace.Chrome - cross;
+        var share = (room / _sessions.All.Count) - TabWindow.Gap - TabFace.Chrome - cross;
 
         return Math.Max(TabFace.Least, share);
     }
 
     /// <summary>How wide each tab comes out once its name has been shortened to what it may take.</summary>
-    /// <param name="most">The widest a name may be.</param>
+    /// <param name="mostRoom">The widest a name may be.</param>
     /// <param name="closable">Whether tabs wear a cross.</param>
     /// <returns>One width per tab.</returns>
-    private List<int> Widths(int most, bool closable)
+    private List<int> Widths(int mostRoom, bool closable)
     {
         var widths = new List<int>(_sessions.All.Count);
 
         foreach (var session in _sessions.All)
         {
-            widths.Add(TabFace.Width(session, most, closable));
+            widths.Add(TabFace.Width(session, mostRoom, closable));
         }
 
         return widths;
@@ -170,7 +170,7 @@ public sealed class TabStrip
 
         foreach (var width in widths)
         {
-            total += width + TabWindow.Between;
+            total += width + TabWindow.Gap;
         }
 
         return total;
@@ -198,20 +198,20 @@ public sealed class TabStrip
     /// <param name="strip">Where to draw.</param>
     /// <param name="column">Where the tab goes.</param>
     /// <param name="index">Which tab it is.</param>
-    /// <param name="most">The widest a name may be.</param>
+    /// <param name="mostRoom">The widest a name may be.</param>
     /// <param name="closable">Whether tabs wear a cross.</param>
-    private void Tab(SurfaceRegion strip, int column, int index, int most, bool closable)
+    private void Tab(SurfaceRegion strip, int column, int index, int mostRoom, bool closable)
     {
         var session = _sessions.All[index];
         var live = index == _sessions.Open.Value;
         var right = live ? _sessions.RightIsActive.Value : session.RightIsActive;
-        var label = TabFace.Draw(strip, column, session, most, new(live, right, closable));
+        var label = TabFace.Draw(strip, column, session, mostRoom, new(live, right, closable));
 
-        _spots.Add((column, label + TabFace.Chrome - (closable ? TabFace.Crossed : 0), TabPart.Tab, index));
+        _spots.Add((column, label + TabFace.Chrome - (closable ? TabFace.CloseColumn : 0), TabPart.Tab, index));
 
         if (closable)
         {
-            _spots.Add((column + label + 3, TabFace.Crossed + 1, TabPart.Close, index));
+            _spots.Add((column + label + 3, TabFace.CloseColumn + 1, TabPart.Close, index));
         }
     }
 }

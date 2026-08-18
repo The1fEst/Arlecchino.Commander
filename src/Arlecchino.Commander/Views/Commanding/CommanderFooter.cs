@@ -101,17 +101,17 @@ public sealed class CommanderFooter
     ///     Draws what the line being typed on is offering, which stands over the panels. Only one line is
     ///     ever typed on, so only one box is ever drawn.
     /// </summary>
-    /// <param name="over">The room above the foot.</param>
-    public void DrawHints(SurfaceRegion over)
+    /// <param name="region">The room above the foot.</param>
+    public void DrawHints(SurfaceRegion region)
     {
         if (Setting.IsTyping)
         {
-            Setting.DrawHints(over);
+            Setting.DrawHints(region);
 
             return;
         }
 
-        Line.DrawHints(over);
+        Line.DrawHints(region);
     }
 
     /// <summary>

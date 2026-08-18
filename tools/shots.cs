@@ -94,8 +94,8 @@ internal sealed class Studio
     /// Takes the pictures. Naming scenes takes only those, which is what a change to one screen wants:
     /// the rest are left as they were rather than redrawn against today's folders.
     /// </summary>
-    /// <param name="wanted">The scenes to take, or none at all for every one of them.</param>
-    public void Shots(string[] wanted)
+    /// <param name="names">The scenes to take, or none at all for every one of them.</param>
+    public void Shots(string[] names)
     {
         Directory.CreateDirectory(_output);
 
@@ -105,7 +105,7 @@ internal sealed class Studio
 
         foreach (var scene in Scenes(Size))
         {
-            if (wanted.Length > 0 && Array.IndexOf(wanted, scene.Name) < 0)
+            if (names.Length > 0 && Array.IndexOf(names, scene.Name) < 0)
             {
                 continue;
             }
@@ -152,8 +152,8 @@ internal sealed class Studio
     /// terminal itself. Enter goes to the next one and <c>q</c> stops, at whatever size this terminal is.
     /// </summary>
     /// <param name="shoot">Whether to photograph the window as well as draw in it.</param>
-    /// <param name="wanted">The scenes to walk, or none at all for every one of them.</param>
-    public void Show(bool shoot, string[] wanted)
+    /// <param name="names">The scenes to walk, or none at all for every one of them.</param>
+    public void Show(bool shoot, string[] names)
     {
         if (Console.IsInputRedirected || Console.IsOutputRedirected)
         {
@@ -176,7 +176,7 @@ internal sealed class Studio
         var rows = Math.Max(10, Console.WindowHeight);
         var size = $"{columns}x{rows}";
         var scenes = Scenes(size);
-        var taken = new List<string>();
+        var shot = new List<string>();
 
         Fixture.Lay(_fixture, _scratchLeft, _scratchRight);
 
@@ -192,7 +192,7 @@ internal sealed class Studio
         {
             foreach (var scene in scenes)
             {
-                if (wanted.Length > 0 && Array.IndexOf(wanted, scene.Name) < 0)
+                if (names.Length > 0 && Array.IndexOf(names, scene.Name) < 0)
                 {
                     continue;
                 }
@@ -222,7 +222,7 @@ internal sealed class Studio
                 {
                     var picture = Path.Combine(_output, $"{scene.Name}.png");
 
-                    taken.Add(Shot.Take(window, picture, shadow: true)
+                    shot.Add(Shot.Take(window, picture, shadow: true)
                         ? $"{scene.Name}: {size} → {picture}"
                         : $"{scene.Name}: screencapture would not take it");
                 }
@@ -237,7 +237,7 @@ internal sealed class Studio
         {
             Console.Write("\e[?7h\e[?25h\e[?1049l");
 
-            foreach (var line in taken)
+            foreach (var line in shot)
             {
                 Console.WriteLine(line);
             }
@@ -635,12 +635,12 @@ sealed class Paper : IDisposable
 
     private SKFont Pick(string symbol, bool heavy)
     {
-        var chosen = heavy ? _bold : _font;
+        var choice = heavy ? _bold : _font;
         var point = char.ConvertToUtf32(symbol, 0);
 
         if ((heavy ? _boldface : _typeface).GetGlyph(point) != 0)
         {
-            return chosen;
+            return choice;
         }
 
         if (_fallbacks.TryGetValue(point, out var known))
@@ -649,7 +649,7 @@ sealed class Paper : IDisposable
         }
 
         var face = SKFontManager.Default.MatchCharacter(point);
-        var fallback = face is null ? chosen : new(face, _size);
+        var fallback = face is null ? choice : new(face, _size);
 
         _fallbacks[point] = fallback;
         return fallback;
@@ -787,11 +787,11 @@ static class Playground
 
     private static void Fill(string folder, int count)
     {
-        var made = Directory.CreateDirectory(folder);
+        var frame = Directory.CreateDirectory(folder);
 
         for (var index = 0; index < count; index++)
         {
-            File.WriteAllText(Path.Combine(made.FullName, $"part{index:000}.cs"), new('x', PageSize));
+            File.WriteAllText(Path.Combine(frame.FullName, $"part{index:000}.cs"), new('x', PageSize));
         }
     }
 }
@@ -827,11 +827,11 @@ static class Fixture
 
         foreach (var folder in Folders)
         {
-            var made = Directory.CreateDirectory(Path.Combine(left, folder));
+            var frame = Directory.CreateDirectory(Path.Combine(left, folder));
 
             for (var index = 0; index < 4; index++)
             {
-                File.WriteAllText(Path.Combine(made.FullName, $"part{index}.cs"), new string('x', 900 + (index * 40)));
+                File.WriteAllText(Path.Combine(frame.FullName, $"part{index}.cs"), new string('x', 900 + (index * 40)));
             }
         }
 
@@ -943,7 +943,7 @@ static class Film
 /// </summary>
 static class Shot
 {
-    private static readonly TimeSpan Drawn = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan Interval = TimeSpan.FromMilliseconds(250);
 
     /// <summary>Asks kitty which window this program is running in.</summary>
     /// <returns>The number macOS knows that window by, or zero when nothing can be asked.</returns>
@@ -992,7 +992,7 @@ static class Shot
     /// <returns>Whether a file was written.</returns>
     public static bool Take(int window, string path, bool shadow)
     {
-        Thread.Sleep(Drawn);
+        Thread.Sleep(Interval);
 
         var start = new ProcessStartInfo("screencapture")
         {
@@ -1131,11 +1131,11 @@ static class Lines
 
     private static bool Shade(SKCanvas canvas, SKPaint ink, float left, float top, float right, float bottom, float alpha)
     {
-        var solid = ink.Color;
+        var original = ink.Color;
 
-        ink.Color = solid.WithAlpha((byte)(solid.Alpha * alpha));
+        ink.Color = original.WithAlpha((byte)(original.Alpha * alpha));
         canvas.DrawRect(new(left, top, right, bottom), ink);
-        ink.Color = solid;
+        ink.Color = original;
 
         return true;
     }

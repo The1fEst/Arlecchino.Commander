@@ -26,7 +26,7 @@ public sealed class ScreenApp : IDisposable
     private const int PollMilliseconds = 10;
 
     private readonly ArlecchinoTestHost _host;
-    private readonly Dictionary<string, string?> _environmentWas = [];
+    private readonly Dictionary<string, string?> _environment = [];
 
     public ScreenApp(ViewRoute start, int width = 130, int height = 30)
     {
@@ -95,13 +95,13 @@ public sealed class ScreenApp : IDisposable
     ///     What was last put on the clipboard. The terminal in memory keeps it rather than sending it, so
     ///     what is asserted is the text itself and not merely that something was sent.
     /// </summary>
-    public string? Copied => _host.Terminal.Copied;
+    public string? CopiedText => _host.Terminal.CopiedText;
 
     public void Dispose()
     {
         _host.Dispose();
 
-        foreach (var (name, value) in _environmentWas)
+        foreach (var (name, value) in _environment)
         {
             Environment.SetEnvironmentVariable(name, value);
         }
@@ -117,7 +117,7 @@ public sealed class ScreenApp : IDisposable
     /// <param name="value">What it should be for as long as the test runs.</param>
     private void Swap(string name, string? value)
     {
-        _environmentWas[name] = Environment.GetEnvironmentVariable(name);
+        _environment[name] = Environment.GetEnvironmentVariable(name);
         Environment.SetEnvironmentVariable(name, value);
     }
 

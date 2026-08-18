@@ -9,7 +9,7 @@ namespace Arlecchino.Commander.Files.Trash;
 public abstract class Trash
 {
     /// <summary>The one this machine has.</summary>
-    public static Trash Here { get; } = Pick();
+    public static Trash Current { get; } = Pick();
 
     /// <summary>Whether there is one at all, which decides whether the panel offers it.</summary>
     public abstract bool Works { get; }

@@ -45,7 +45,7 @@ public sealed class CommanderPanelTests : IDisposable
         _app.Frame();
 
         Assert.Equal(Skin.Lively.Remote.Ansi, _app.StyleOf("dir"));
-        Assert.Equal(Skin.Lively.Faded.Ansi, _app.StyleOf("txt"));
+        Assert.Equal(Skin.Lively.Hint.Ansi, _app.StyleOf("txt"));
         Assert.Equal(Skin.Lively.Text.Ansi, _app.StyleOf("alpha.txt"));
     }
 
@@ -60,7 +60,7 @@ public sealed class CommanderPanelTests : IDisposable
         _app.Frame();
 
         Assert.True(_app.Sessions.Left.Marks.Contains("alpha.txt"));
-        Assert.Equal(Skin.Lively.Marked.Ansi, _app.StyleOf("alpha.txt"));
+        Assert.Equal(Skin.Lively.MarkName.Ansi, _app.StyleOf("alpha.txt"));
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public sealed class CommanderPanelTests : IDisposable
         _app.Press(ConsoleKey.Y);
         _app.Frame();
 
-        Assert.Equal(Path.Combine(_app.Folder, "alpha.txt"), _app.Copied);
+        Assert.Equal(Path.Combine(_app.Folder, "alpha.txt"), _app.CopiedText);
     }
 
     /// <summary>
@@ -100,21 +100,21 @@ public sealed class CommanderPanelTests : IDisposable
 
         Assert.Equal(
             $"{Path.Combine(_app.Folder, "alpha.txt")}\n{Path.Combine(_app.Folder, "beta.txt")}",
-            _app.Copied);
+            _app.CopiedText);
     }
 
     [Fact]
     public void MovingTheCursorLeavesTheRestOfTheScreenAlone()
     {
-        var before = _app.FrameLines();
+        var first = _app.FrameLines();
 
         _app.Press(ConsoleKey.DownArrow);
 
-        var after = _app.FrameLines();
-        var moved = before.Zip(after).Count(static rows => rows.First != rows.Second);
+        var second = _app.FrameLines();
+        var differences = first.Zip(second).Count(static rows => rows.First != rows.Second);
 
-        Assert.InRange(moved, 0, 4);
-        Assert.Equal(before.Length, after.Length);
+        Assert.InRange(differences, 0, 4);
+        Assert.Equal(first.Length, second.Length);
     }
 
     [Fact]
@@ -152,12 +152,12 @@ public sealed class CommanderPanelTests : IDisposable
     [Fact]
     public void ControlPageUpGoesToTheFolderAbove()
     {
-        var above = Directory.GetParent(_app.Folder)!.FullName;
+        var parent = Directory.GetParent(_app.Folder)!.FullName;
 
         _app.Press(ConsoleKey.PageUp, control: true);
         _app.Settled();
 
-        Assert.Equal(above, _app.Sessions.Left.Folder);
+        Assert.Equal(parent, _app.Sessions.Left.Folder);
         Assert.Single(_app.Sessions.All);
     }
 
@@ -193,14 +193,14 @@ public sealed class CommanderPanelTests : IDisposable
     [Fact]
     public void AFolderThatCannotBeReadIsSaidOnThePanel()
     {
-        var gone = Path.Combine(_app.Folder, "gone");
+        var folder = Path.Combine(_app.Folder, "gone");
 
-        Directory.CreateDirectory(gone);
-        _app.Sessions.Left.GoTo(gone);
+        Directory.CreateDirectory(folder);
+        _app.Sessions.Left.GoTo(folder);
 
-        Assert.True(_app.Until(() => _app.Sessions.Left.Folder == gone));
+        Assert.True(_app.Until(() => _app.Sessions.Left.Folder == folder));
 
-        Directory.Delete(gone);
+        Directory.Delete(folder);
         _app.Sessions.Moved();
         _app.Settled();
 
@@ -264,15 +264,15 @@ public sealed class CommanderPanelTests : IDisposable
 
     private static int Occurrences(string screen, string name)
     {
-        var found = 0;
+        var count = 0;
         var at = screen.IndexOf(name, StringComparison.Ordinal);
 
         while (at >= 0)
         {
-            found++;
+            count++;
             at = screen.IndexOf(name, at + name.Length, StringComparison.Ordinal);
         }
 
-        return found;
+        return count;
     }
 }

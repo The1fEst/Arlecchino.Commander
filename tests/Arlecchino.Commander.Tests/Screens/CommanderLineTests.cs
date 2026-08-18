@@ -190,7 +190,7 @@ public sealed class CommanderLineTests : IDisposable
         _app.Press(ConsoleKey.LeftArrow, shift: true, alt: true);
         _app.Press(ConsoleKey.Insert, control: true);
 
-        Assert.Equal("carrots", _app.Copied);
+        Assert.Equal("carrots", _app.CopiedText);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public sealed class CommanderLineTests : IDisposable
 
         var screen = _app.Frame();
 
-        Assert.Equal("carrots", _app.Copied);
+        Assert.Equal("carrots", _app.CopiedText);
         Assert.DoesNotContain("carrots", screen, StringComparison.Ordinal);
     }
 
@@ -216,7 +216,7 @@ public sealed class CommanderLineTests : IDisposable
     {
         _app.Frame();
 
-        var was = _app.CommandLineRow();
+        var startRow = _app.CommandLineRow();
 
         _app.ReadFromTerminal($"\e[200~echo {string.Join(' ', Enumerable.Repeat("word", 40))} caboose\e[201~");
         _app.Frame();
@@ -224,7 +224,7 @@ public sealed class CommanderLineTests : IDisposable
         var lines = _app.FrameLines();
         var row = _app.CommandLineRow();
 
-        Assert.True(row < was, $"the prompt was on row {was} and is on row {row}");
+        Assert.True(row < startRow, $"the prompt was on row {startRow} and is on row {row}");
         Assert.Contains("caboose", string.Concat(lines[(row + 1)..]), StringComparison.Ordinal);
     }
 

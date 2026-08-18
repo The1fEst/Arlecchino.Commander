@@ -10,10 +10,10 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 public sealed class TabWindow
 {
     /// <summary>The gap kept between one tab and the next.</summary>
-    public const int Between = 1;
+    public const int Gap = 1;
 
     private int _first;
-    private int _seen = -1;
+    private int _width = -1;
 
     /// <summary>The first tab showing.</summary>
     public int First => _first;
@@ -33,19 +33,19 @@ public sealed class TabWindow
     /// <returns>One past the last tab that is showing.</returns>
     public int Showing(IReadOnlyList<int> widths, int room, int open)
     {
-        var wanted = Math.Clamp(open, 0, Math.Max(0, widths.Count - 1));
+        var target = Math.Clamp(open, 0, Math.Max(0, widths.Count - 1));
 
         _first = Math.Clamp(_first, 0, Math.Max(0, widths.Count - 1));
 
-        if (_seen == wanted)
+        if (_width == target)
         {
             return Math.Max(Ends(widths, room), _first + 1);
         }
 
-        _seen = wanted;
-        _first = Math.Min(_first, wanted);
+        _width = target;
+        _first = Math.Min(_first, target);
 
-        while (_first < wanted && Ends(widths, room) <= wanted)
+        while (_first < target && Ends(widths, room) <= target)
         {
             _first++;
         }
@@ -59,12 +59,12 @@ public sealed class TabWindow
     /// <returns>Where the showing tabs end.</returns>
     private int Ends(IReadOnlyList<int> widths, int room)
     {
-        var taken = 0;
+        var width = 0;
         var last = _first;
 
-        while (last < widths.Count && taken + widths[last] + Between <= room)
+        while (last < widths.Count && width + widths[last] + Gap <= room)
         {
-            taken += widths[last] + Between;
+            width += widths[last] + Gap;
             last++;
         }
 

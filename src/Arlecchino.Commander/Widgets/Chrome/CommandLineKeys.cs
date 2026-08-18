@@ -60,7 +60,7 @@ internal sealed class CommandLineKeys
     /// <param name="key">The key that arrived.</param>
     /// <param name="text">The text to work on.</param>
     /// <returns><c>true</c> when the key was one of these and has been dealt with.</returns>
-    public bool Handle(KeyPress key, CommandLineText text) => Edits(key, text) || Typed(key, text);
+    public bool Handle(KeyPress key, CommandLineText text) => Edits(key, text) || Text(key, text);
 
     /// <summary>
     /// Selecting, moving about and rubbing out: every key that changes the line without typing a character.
@@ -74,5 +74,6 @@ internal sealed class CommandLineKeys
         CaretKeys.Moved(text, _keymap, key) ||
         EraseKeys.Erased(text, _keymap, key);
 
-    private bool Typed(KeyPress key, CommandLineText text) => _keys.Resolve(key) is { } typed && text.Put(typed);
+    private bool Text(KeyPress key, CommandLineText text) =>
+        _keys.Resolve(key) is { } character && text.Put(character);
 }

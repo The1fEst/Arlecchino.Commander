@@ -36,8 +36,8 @@ public sealed class FindScreenTests : IDisposable
     [Fact]
     public void EveryHitIsListed()
     {
-        _app.Finder.Found.Add(Found("alpha.txt"));
-        _app.Finder.Found.Add(Found("beta.txt"));
+        _app.Finder.Hits.Add(Found("alpha.txt"));
+        _app.Finder.Hits.Add(Found("beta.txt"));
 
         var screen = _app.Frame();
 
@@ -49,8 +49,8 @@ public sealed class FindScreenTests : IDisposable
     [Fact]
     public void HowManyWereFoundIsSaid()
     {
-        _app.Finder.Found.Add(Found("alpha.txt"));
-        _app.Finder.Found.Add(Found("beta.txt"));
+        _app.Finder.Hits.Add(Found("alpha.txt"));
+        _app.Finder.Hits.Add(Found("beta.txt"));
 
         Assert.Contains("2 found", _app.Frame(), StringComparison.Ordinal);
     }
@@ -58,9 +58,9 @@ public sealed class FindScreenTests : IDisposable
     [Fact]
     public void MoreHitsThanRowsScrollRatherThanOverflow()
     {
-        for (var hit = 0; hit < 200; hit++)
+        for (var index = 0; index < 200; index++)
         {
-            _app.Finder.Found.Add(Found($"file-{hit}.txt"));
+            _app.Finder.Hits.Add(Found($"file-{index}.txt"));
         }
 
         var lines = _app.FrameLines();
@@ -72,13 +72,13 @@ public sealed class FindScreenTests : IDisposable
     [Fact]
     public void EnterOnAHitTakesThePanelToIt()
     {
-        var nested = Directory.CreateDirectory(Path.Combine(_app.Folder, "nested")).FullName;
-        var path = Path.Combine(nested, "found.txt");
+        var folder = Directory.CreateDirectory(Path.Combine(_app.Folder, "nested")).FullName;
+        var path = Path.Combine(folder, "found.txt");
         File.WriteAllText(path, "anything");
 
-        var hit = new Hit(nested, new("found.txt", path, false, false, 8, DateTime.Now, false, false, false));
+        var hit = new Hit(folder, new("found.txt", path, false, false, 8, DateTime.Now, false, false, false));
 
-        _app.Finder.Found.Add(hit);
+        _app.Finder.Hits.Add(hit);
         _app.Frame();
 
         _app.Press(ConsoleKey.Enter);

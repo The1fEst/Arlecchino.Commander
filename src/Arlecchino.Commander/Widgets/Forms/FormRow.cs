@@ -84,7 +84,7 @@ public sealed class FormField(
         var coat = Skin.Terminal;
         var chip = Skin.Inlaid;
         var room = Room(row, labels);
-        var written = value();
+        var run = value();
 
         row.Write(0, 0, here ? "❯" : " ", coat.Accent);
         row.Write(0, 2, TextWidth.Truncate(Label.ToUpperInvariant(), labels), here ? coat.Text : coat.Label);
@@ -94,8 +94,8 @@ public sealed class FormField(
         field.Fill(here ? chip.Text : chip.Meta);
         field.Write(0,
             1,
-            TextWidth.Truncate(written.Length == 0 ? Loc(LocString.SettingsUnset) : written, room - 2),
-            written.Length == 0 ? chip.Ghost : here ? chip.Text : chip.Second);
+            TextWidth.Truncate(run.Length == 0 ? Loc(LocString.SettingsUnset) : run, room - 2),
+            run.Length == 0 ? chip.Ghost : here ? chip.Text : chip.Second);
 
         if (here)
         {
@@ -132,20 +132,20 @@ public sealed class FormButton(Func<string> label, Func<string> hint, Action pre
     /// <inheritdoc/>
     public override void Draw(SurfaceRegion row, int labels, bool here)
     {
-        var written = $"  {Label}  ";
+        var run = $"  {Label}  ";
         var ready = enabled();
 
         row.Write(0, 0, here ? "❯" : " ", Skin.Terminal.Accent);
         row.Write(0,
             2,
-            written,
+            run,
             ready
                 ? Skin.Paint(Skin.OnCrimson, Skin.Crimson, TextStyle.Bold)
                 : Skin.Paint(Skin.Bone, Skin.Chip));
 
         if (here)
         {
-            Aside(row, hint(), written.Length + 4);
+            Aside(row, hint(), run.Length + 4);
         }
     }
 }

@@ -115,15 +115,15 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _panels.Refresh();
 
         var screen = _surface.Content;
-        var above = screen.Rows(0, Math.Max(0, screen.Height - _footer.Rows));
+        var header = screen.Rows(0, Math.Max(0, screen.Height - _footer.Rows));
 
         _layout.Draw(screen);
-        _card.Draw(above);
-        _footer.DrawHints(above);
+        _card.Draw(header);
+        _footer.DrawHints(header);
 
         if (_keys.IsWaiting)
         {
-            KeyHints.Draw(above, Loc(LocString.MenuKeys), _keys.Hints());
+            KeyHints.Draw(header, Loc(LocString.MenuKeys), _keys.Hints());
         }
     }
 

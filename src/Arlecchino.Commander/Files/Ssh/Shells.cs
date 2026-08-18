@@ -57,11 +57,11 @@ public static class Shells
 
         running.StandardInput.Close();
 
-        var printed = running.StandardOutput.ReadToEndAsync(token);
-        var complained = running.StandardError.ReadToEndAsync(token);
+        var output = running.StandardOutput.ReadToEndAsync(token);
+        var problem = running.StandardError.ReadToEndAsync(token);
 
-        lines.AddRange(Split(await printed.ConfigureAwait(false)));
-        lines.AddRange(Split(await complained.ConfigureAwait(false)));
+        lines.AddRange(Split(await output.ConfigureAwait(false)));
+        lines.AddRange(Split(await problem.ConfigureAwait(false)));
 
         await running.WaitForExitAsync(token).ConfigureAwait(false);
         lines.Add($"[exit {running.ExitCode}]");

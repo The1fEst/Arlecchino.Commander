@@ -228,18 +228,18 @@ public sealed class Doings
     /// <summary>Puts each panel where the other one was.</summary>
     public void Swap()
     {
-        var here = Panels.Left.Folder;
+        var folder = Panels.Left.Folder;
 
         Panels.Left.GoTo(Panels.Right.Folder);
-        Panels.Right.GoTo(here);
+        Panels.Right.GoTo(folder);
     }
 
     /// <summary>Marks in both panels everything the other one does not have the same of.</summary>
     public void Compare()
     {
-        var marked = Difference.Mark(Panels.Left, Panels.Right);
+        var marks = Difference.Mark(Panels.Left, Panels.Right);
 
-        _state.Output = marked == 0 ? Loc(LocString.SaidSame) : Loc(LocString.SaidDiffer, marked);
+        _state.Output = marks == 0 ? Loc(LocString.SaidSame) : Loc(LocString.SaidDiffer, marks);
     }
 
     /// <summary>Reads both folders again.</summary>
@@ -273,9 +273,9 @@ public sealed class Doings
     public void Beside()
     {
         var panel = Panels.Active;
-        var wanted = panel.Current is { IsFolder: true, IsParent: false } current ? current.Path : panel.Folder;
+        var folder = panel.Current is { IsFolder: true, IsParent: false } current ? current.Path : panel.Folder;
 
-        Panels.Passive.GoTo(wanted);
+        Panels.Passive.GoTo(folder);
     }
 
     /// <summary>Takes the screen to where a connection is made, and remembers which panel asked.</summary>

@@ -45,7 +45,7 @@ public sealed class FindView : IArlecchinoView
             Render = Under,
             ItemStyle = static _ => Skin.Terminal.Text,
             OnActivate = Open,
-            Items = finder.Found.Value,
+            Items = finder.Hits.Value,
         };
 
         _layout = Branch(
@@ -78,7 +78,7 @@ public sealed class FindView : IArlecchinoView
 
     private void DrawHeader(SurfaceRegion header)
     {
-        Sheet.Title(header, _finder.What, Counted(header.Width));
+        Sheet.Title(header, _finder.Pattern, Counted(header.Width));
 
         if (!_finder.IsRunning)
         {
@@ -99,12 +99,12 @@ public sealed class FindView : IArlecchinoView
     /// <returns>The line under the title.</returns>
     private string Counted(int room)
     {
-        var counted = Loc(LocString.FindFoundIn, _finder.Found.Count, _finder.Looked);
-        var left = room - TextWidth.Of(counted) - 3;
+        var total = Loc(LocString.FindFoundIn, _finder.Hits.Count, _finder.FolderCount);
+        var left = room - TextWidth.Of(total) - 3;
 
         return left <= 0 || _finder.Source is not { } source
-            ? counted
-            : Loc(LocString.Joined, counted, Paths.Shortened(source, _finder.Root, left));
+            ? total
+            : Loc(LocString.Joined, total, Paths.Shortened(source, _finder.Root, left));
     }
 
     /// <summary>
@@ -125,9 +125,9 @@ public sealed class FindView : IArlecchinoView
 
     private string Said() => _finder.IsRunning
         ? Loc(LocString.FindSearching, _spinner.Current)
-        : _finder.Found.Count == 0
+        : _finder.Hits.Count == 0
             ? Loc(LocString.FindNothing)
-            : Loc(LocString.FindFound, _finder.Found.Count);
+            : Loc(LocString.FindFound, _finder.Hits.Count);
 
     /// <summary>
     /// Sends the panel that was active to the folder a result is in, with the cursor on the file

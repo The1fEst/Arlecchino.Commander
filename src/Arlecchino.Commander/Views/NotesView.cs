@@ -24,7 +24,7 @@ namespace Arlecchino.Commander.Views;
 public sealed class NotesView : IArlecchinoView
 {
     private const int BarCells = 12;
-    private const char Filled = '█';
+    private const char BarCell = '█';
     private const char Empty = '░';
 
     private readonly Surface _surface;
@@ -156,8 +156,8 @@ public sealed class NotesView : IArlecchinoView
         return ViewRoute.None;
     }
 
-    private static string Counted(int held) =>
-        held == 1 ? Loc(LocString.NotesOne) : Loc(LocString.NotesMany, held);
+    private static string Counted(int count) =>
+        count == 1 ? Loc(LocString.NotesOne) : Loc(LocString.NotesMany, count);
 
     /// <summary>
     /// One row: the time it arrived, a small bar when the entry says how far along it is, and what it
@@ -167,16 +167,16 @@ public sealed class NotesView : IArlecchinoView
     /// <returns>The row.</returns>
     private static string Describe(Notification entry)
     {
-        var stamp = entry.Since.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        var stamp = entry.RaisedAt.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
-        if (entry.Filled() is not { } share)
+        if (entry.Fraction() is not { } progress)
         {
             return $"{stamp}  {entry.Line}";
         }
 
-        var filled = (int)Math.Round(share * BarCells);
-        var bar = new string(Filled, filled) + new string(Empty, Math.Max(0, BarCells - filled));
+        var cells = (int)Math.Round(progress * BarCells);
+        var bar = new string(BarCell, cells) + new string(Empty, Math.Max(0, BarCells - cells));
 
-        return $"{stamp}  {bar} {share * 100:0}%  {entry.Line}";
+        return $"{stamp}  {bar} {progress * 100:0}%  {entry.Line}";
     }
 }

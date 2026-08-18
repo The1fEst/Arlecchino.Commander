@@ -280,10 +280,10 @@ public sealed class FtpConnection : IDisposable
     /// <exception cref="IOException">The server would not open one.</exception>
     private async Task<TcpClient> OpenDataAsync(CancellationToken token)
     {
-        var extended = await SendAsync("EPSV", token).ConfigureAwait(false);
+        var features = await SendAsync("EPSV", token).ConfigureAwait(false);
 
-        var port = extended.Worked
-            ? FtpListings.ExtendedPort(extended.Text)
+        var port = features.Worked
+            ? FtpListings.ExtendedPort(features.Text)
             : FtpListings.PassivePort(Expect(await SendAsync("PASV", token).ConfigureAwait(false), "PASV").Text);
 
         if (port <= 0)
@@ -384,14 +384,14 @@ public sealed class FtpConnection : IDisposable
             : 0;
     }
 
-    private static FtpReply Expect(FtpReply reply, string what, int allow = 0)
+    private static FtpReply Expect(FtpReply reply, string caption, int allow = 0)
     {
         if (reply.Worked || reply.Code == allow)
         {
             return reply;
         }
 
-        throw new IOException($"{what} was refused: {reply.Text}");
+        throw new IOException($"{caption} was refused: {reply.Text}");
     }
 
     private static string Named(string command)

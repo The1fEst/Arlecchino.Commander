@@ -43,15 +43,15 @@ public static class Paths
     /// <returns>The path, with an ellipsis in place of whatever was dropped.</returns>
     public static string Shortened(IFileSource source, string folder, int room)
     {
-        var homed = Homed(source, folder);
-        var wanted = Math.Max(Floor, room);
+        var whole = Homed(source, folder);
+        var width = Math.Max(Floor, room);
 
-        if (TextWidth.Of(homed) <= wanted)
+        if (TextWidth.Of(whole) <= width)
         {
-            return homed;
+            return whole;
         }
 
-        var tail = homed[^(wanted - 1)..];
+        var tail = whole[^(width - 1)..];
         var cut = tail.IndexOfAny(['/', '\\']);
 
         return "…" + (cut < 0 ? tail : tail[cut..]);

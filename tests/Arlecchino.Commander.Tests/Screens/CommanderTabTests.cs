@@ -17,7 +17,7 @@ public sealed class CommanderTabTests : IDisposable
     ///     Narrow enough that a fifth tab stops fitting even shortened, and the strip has to scroll. Four
     ///     still fit: the frame around the application spends a cell a side, so the band has the room.
     /// </summary>
-    private const int Cramped = 125;
+    private const int NarrowWidth = 125;
 
     private readonly ScreenApp _app = Started.Showing();
 
@@ -33,8 +33,8 @@ public sealed class CommanderTabTests : IDisposable
     [Fact]
     public void EachTabHasPanelsOfItsOwn()
     {
-        var nested = Directory.CreateDirectory(Path.Combine(_app.Folder, "nested")).FullName;
-        var here = _app.Sessions.Left.Folder;
+        var folder = Directory.CreateDirectory(Path.Combine(_app.Folder, "nested")).FullName;
+        var leftFolder = _app.Sessions.Left.Folder;
 
         _app.Sessions.Add();
         _app.Settled();
@@ -42,16 +42,16 @@ public sealed class CommanderTabTests : IDisposable
         Assert.Equal(2, _app.Sessions.All.Count);
         Assert.Equal(1, _app.Sessions.Open.Value);
 
-        _app.Sessions.Left.GoTo(nested);
+        _app.Sessions.Left.GoTo(folder);
         _app.Sessions.Moved();
         _app.Settled();
 
-        Assert.Equal(nested, _app.Sessions.Left.Folder);
+        Assert.Equal(folder, _app.Sessions.Left.Folder);
 
         _app.Sessions.Show(0);
         _app.Settled();
 
-        Assert.Equal(here, _app.Sessions.Left.Folder);
+        Assert.Equal(leftFolder, _app.Sessions.Left.Folder);
     }
 
     /// <summary>
@@ -186,12 +186,12 @@ public sealed class CommanderTabTests : IDisposable
     [Fact]
     public void PastShorteningTheStripScrollsAndKeepsTheOpenTabInView()
     {
-        using var narrow = Started.Tabbed(Cramped, 5);
+        using var narrow = Started.Tabbed(NarrowWidth, 5);
 
         var band = narrow.BandLine();
-        var showing = band.Count(letter => letter == '×');
+        var visibleTabs = band.Count(letter => letter == '×');
 
-        Assert.True(showing < 5, band);
+        Assert.True(visibleTabs < 5, band);
         Assert.Contains('‹', band);
         Assert.Contains('›', band);
         Assert.Equal(4, narrow.Sessions.Open.Value);
@@ -199,7 +199,7 @@ public sealed class CommanderTabTests : IDisposable
         narrow.Click(narrow.Inset, band.IndexOf('●'));
         narrow.Settled();
 
-        Assert.Equal(5 - showing, narrow.Sessions.Open.Value);
+        Assert.Equal(5 - visibleTabs, narrow.Sessions.Open.Value);
     }
 
     /// <summary>
@@ -209,7 +209,7 @@ public sealed class CommanderTabTests : IDisposable
     [Fact]
     public void ClickingTheMarkerScrollsToTheTabsBehindIt()
     {
-        using var narrow = Started.Tabbed(Cramped, 5);
+        using var narrow = Started.Tabbed(NarrowWidth, 5);
 
         Assert.Contains('‹', narrow.BandLine());
 

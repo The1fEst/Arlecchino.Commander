@@ -12,9 +12,9 @@ public sealed class KnownHostsTests
     [Fact]
     public void AHostWithItsKeyIsKnown()
     {
-        var known = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
+        var hosts = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
 
-        Assert.Equal(HostVerdict.Known, known.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Known, hosts.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
     }
 
     /// <summary>
@@ -24,17 +24,17 @@ public sealed class KnownHostsTests
     [Fact]
     public void AHostWithAnotherKeyHasChanged()
     {
-        var known = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
+        var hosts = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
 
-        Assert.Equal(HostVerdict.Changed, known.Check("example.test", 22, "ssh-ed25519", Bytes(Other)));
+        Assert.Equal(HostVerdict.Changed, hosts.Check("example.test", 22, "ssh-ed25519", Bytes(Other)));
     }
 
     [Fact]
     public void AHostNobodyWroteDownIsUnknown()
     {
-        var known = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
+        var hosts = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
 
-        Assert.Equal(HostVerdict.Unknown, known.Check("elsewhere.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Unknown, hosts.Check("elsewhere.test", 22, "ssh-ed25519", Bytes(Key)));
         Assert.Equal(HostVerdict.Unknown, KnownHosts.Parse([]).Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
     }
 
@@ -45,28 +45,28 @@ public sealed class KnownHostsTests
     [Fact]
     public void ARevokedKeyIsRefusedRatherThanAccepted()
     {
-        var known = KnownHosts.Parse([$"@revoked example.test ssh-ed25519 {Key}"]);
+        var hosts = KnownHosts.Parse([$"@revoked example.test ssh-ed25519 {Key}"]);
 
-        Assert.Equal(HostVerdict.Revoked, known.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Revoked, hosts.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
     }
 
     [Fact]
     public void OneLineMaySpeakForSeveralNames()
     {
-        var known = KnownHosts.Parse([$"first.test,second.test,10.0.0.1 ssh-ed25519 {Key}"]);
+        var hosts = KnownHosts.Parse([$"first.test,second.test,10.0.0.1 ssh-ed25519 {Key}"]);
 
-        Assert.Equal(HostVerdict.Known, known.Check("second.test", 22, "ssh-ed25519", Bytes(Key)));
-        Assert.Equal(HostVerdict.Known, known.Check("10.0.0.1", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Known, hosts.Check("second.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Known, hosts.Check("10.0.0.1", 22, "ssh-ed25519", Bytes(Key)));
     }
 
     /// <summary>A port other than 22 is part of the name, in brackets before it.</summary>
     [Fact]
     public void APortOtherThanTwentyTwoIsPartOfTheName()
     {
-        var known = KnownHosts.Parse([$"[other.test]:2222 ssh-ed25519 {Key}"]);
+        var hosts = KnownHosts.Parse([$"[other.test]:2222 ssh-ed25519 {Key}"]);
 
-        Assert.Equal(HostVerdict.Known, known.Check("other.test", 2222, "ssh-ed25519", Bytes(Key)));
-        Assert.Equal(HostVerdict.Unknown, known.Check("other.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Known, hosts.Check("other.test", 2222, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Unknown, hosts.Check("other.test", 22, "ssh-ed25519", Bytes(Key)));
     }
 
     /// <summary>
@@ -76,21 +76,21 @@ public sealed class KnownHostsTests
     [Fact]
     public void AHashedNameIsMatchedRatherThanSkipped()
     {
-        var known = KnownHosts.Parse([
+        var hosts = KnownHosts.Parse([
             $"|1|aJaFB+3VE1EVhv5o8hqc6kc9m9g=|TrBaFWfm83fKLsqZ+QPNt+3k9W8= ssh-ed25519 {Key}",
             $"|1|QPU369u+cJ3rvHU148uvBD7nfQk=|wckpR6RpDjw4iIL59CXIyhjup2o= ssh-ed25519 {Other}",
         ]);
 
-        Assert.Equal(HostVerdict.Known, known.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
-        Assert.Equal(HostVerdict.Known, known.Check("other.test", 2222, "ssh-ed25519", Bytes(Other)));
-        Assert.Equal(HostVerdict.Changed, known.Check("example.test", 22, "ssh-ed25519", Bytes(Other)));
-        Assert.Equal(HostVerdict.Unknown, known.Check("third.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Known, hosts.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(HostVerdict.Known, hosts.Check("other.test", 2222, "ssh-ed25519", Bytes(Other)));
+        Assert.Equal(HostVerdict.Changed, hosts.Check("example.test", 22, "ssh-ed25519", Bytes(Other)));
+        Assert.Equal(HostVerdict.Unknown, hosts.Check("third.test", 22, "ssh-ed25519", Bytes(Key)));
     }
 
     [Fact]
     public void CommentsAndBlanksAndRubbishAreSkipped()
     {
-        var known = KnownHosts.Parse([
+        var hosts = KnownHosts.Parse([
             "# a comment",
             "",
             "   ",
@@ -98,17 +98,17 @@ public sealed class KnownHostsTests
             $"example.test ssh-ed25519 {Key}",
         ]);
 
-        Assert.Equal(1, known.Count);
-        Assert.Equal(HostVerdict.Known, known.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
+        Assert.Equal(1, hosts.Count);
+        Assert.Equal(HostVerdict.Known, hosts.Check("example.test", 22, "ssh-ed25519", Bytes(Key)));
     }
 
     /// <summary>A key of one type says nothing about a host's key of another.</summary>
     [Fact]
     public void AKeyOfAnotherTypeIsNotTheOneWrittenDown()
     {
-        var known = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
+        var hosts = KnownHosts.Parse([$"example.test ssh-ed25519 {Key}"]);
 
-        Assert.Equal(HostVerdict.Unknown, known.Check("example.test", 22, "rsa-sha2-512", Bytes(Key)));
+        Assert.Equal(HostVerdict.Unknown, hosts.Check("example.test", 22, "rsa-sha2-512", Bytes(Key)));
     }
 
     [Fact]
@@ -132,13 +132,13 @@ public sealed class KnownHostsTests
     [Fact]
     public void ARefusalSaysWhatToDoAboutIt()
     {
-        var changed = new HostCheck();
+        var second = new HostCheck();
         var unknown = new HostCheck();
 
-        changed.Refuse(HostVerdict.Changed, "example.test", "ssh-ed25519", "abc");
+        second.Refuse(HostVerdict.Changed, "example.test", "ssh-ed25519", "abc");
         unknown.Refuse(HostVerdict.Unknown, "example.test", "ssh-ed25519", "abc");
 
-        Assert.Contains("ssh-keygen -R example.test", changed.Refusal, StringComparison.Ordinal);
+        Assert.Contains("ssh-keygen -R example.test", second.Refusal, StringComparison.Ordinal);
         Assert.Contains("ssh example.test", unknown.Refusal, StringComparison.Ordinal);
         Assert.Empty(new HostCheck().Refusal);
     }

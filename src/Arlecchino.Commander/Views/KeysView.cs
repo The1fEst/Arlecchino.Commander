@@ -23,7 +23,7 @@ namespace Arlecchino.Commander.Views;
 public sealed class KeysView : IArlecchinoView
 {
     private const int Column = 34;
-    private const int Between = 3;
+    private const int Gap = 3;
     private const int Chip = 2;
 
     private readonly Surface _surface;
@@ -111,13 +111,13 @@ public sealed class KeysView : IArlecchinoView
     /// <param name="region">The rows the scrolling pane handed over.</param>
     private void Paint(SurfaceRegion region)
     {
-        _doubled = region.Width >= (Column * 2) + Between;
-        _room = _doubled ? (region.Width - Between) / 2 : region.Width;
+        _doubled = region.Width >= (Column * 2) + Gap;
+        _room = _doubled ? (region.Width - Gap) / 2 : region.Width;
 
         if (_doubled)
         {
             Write(region, _everywhere, 0, 0);
-            Write(region, _panels, 0, _room + Between);
+            Write(region, _panels, 0, _room + Gap);
 
             return;
         }

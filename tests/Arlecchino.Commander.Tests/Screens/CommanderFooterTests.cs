@@ -104,7 +104,7 @@ public sealed class CommanderFooterTests : IDisposable
         _app.State.Output = "Reloaded";
 
         Assert.Contains("Reloaded", _app.Frame(), StringComparison.Ordinal);
-        Assert.Equal(Skin.Overlay.Done.Ansi, _app.StyleOf("Reloaded"));
+        Assert.Equal(Skin.Overlay.Success.Ansi, _app.StyleOf("Reloaded"));
     }
 
     [Fact]

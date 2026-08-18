@@ -20,7 +20,7 @@ public sealed class Remote : IArlecchinoStore
 
     public Atom<string> KeyFile { get; } = new LocalAtom<string>("");
 
-    public Atom<string> Saved { get; } = new LocalAtom<string>("");
+    public Atom<string> Alias { get; } = new LocalAtom<string>("");
 
     public Atom<bool> Connecting { get; } = new LocalAtom<bool>(false);
 
@@ -37,7 +37,7 @@ public sealed class Remote : IArlecchinoStore
         KeyFile.Value = host.KeyFile;
     }
 
-    public Connection Wanted() => new(
+    public Connection ToConnection() => new(
         Scheme.Value == "ftp" ? Protocol.Ftp : Protocol.Sftp,
         Host.Value.Trim(),
         (int)Port.Value,

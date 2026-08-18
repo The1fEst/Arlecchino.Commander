@@ -34,14 +34,14 @@ public sealed class CommandWords : ISuggestsWords
     public async ValueTask<IReadOnlyList<string>> SuggestAsync(CompletionAsk ask, CancellationToken token)
     {
         var word = Bare(ask.Word);
-        var before = ask.Before.Trim();
+        var prefix = ask.Prefix.Trim();
 
-        if (before.Length == 0 && word.IndexOfAny(Separators) < 0 && !word.StartsWith('~'))
+        if (prefix.Length == 0 && word.IndexOfAny(Separators) < 0 && !word.StartsWith('~'))
         {
             return Ran(word, await Task.Run(() => Programs.Starting(word), token).ConfigureAwait(false));
         }
 
-        return await Named(word, before == "cd", token).ConfigureAwait(false);
+        return await Named(word, prefix == "cd", token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -53,29 +53,29 @@ public sealed class CommandWords : ISuggestsWords
     /// <returns>The names to offer, without repeats.</returns>
     private List<string> Ran(string word, IReadOnlyList<string> onPath)
     {
-        var found = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var match = new List<string>();
+        var names = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var command in _history)
         {
             var space = command.IndexOf(' ', StringComparison.Ordinal);
             var name = space < 0 ? command : command[..space];
 
-            if (name.StartsWith(word, StringComparison.OrdinalIgnoreCase) && seen.Add(name))
+            if (name.StartsWith(word, StringComparison.OrdinalIgnoreCase) && names.Add(name))
             {
-                found.Add(name);
+                match.Add(name);
             }
         }
 
         foreach (var name in onPath)
         {
-            if (seen.Add(name))
+            if (names.Add(name))
             {
-                found.Add(name);
+                match.Add(name);
             }
         }
 
-        return found;
+        return match;
     }
 
     /// <summary>
@@ -91,15 +91,15 @@ public sealed class CommandWords : ISuggestsWords
         var panel = _panels.Active;
         var source = panel.Source;
         var cut = word.LastIndexOfAny(Separators);
-        var typed = cut < 0 ? "" : word[..(cut + 1)];
+        var text = cut < 0 ? "" : word[..(cut + 1)];
         var start = cut < 0 ? word : word[(cut + 1)..];
         var separator = source.Combine("a", "b").Contains('\\', StringComparison.Ordinal) ? '\\' : '/';
-        var found = new List<string>();
+        var match = new List<string>();
 
         try
         {
             var entries = await source
-                .ListAsync(Where(source, panel.Folder, typed), start.StartsWith('.'), token)
+                .ListAsync(Where(source, panel.Folder, text), start.StartsWith('.'), token)
                 .ConfigureAwait(false);
 
             foreach (var entry in entries)
@@ -111,7 +111,7 @@ public sealed class CommandWords : ISuggestsWords
                     continue;
                 }
 
-                found.Add(Quoted(typed + entry.Name + (entry.IsFolder ? separator : "")));
+                match.Add(Quoted(text + entry.Name + (entry.IsFolder ? separator : "")));
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or
@@ -120,9 +120,9 @@ public sealed class CommandWords : ISuggestsWords
             return [];
         }
 
-        found.Sort(NaturalSort.Compare);
+        match.Sort(NaturalSort.Compare);
 
-        return found;
+        return match;
     }
 
     /// <summary>
@@ -131,25 +131,25 @@ public sealed class CommandWords : ISuggestsWords
     /// </summary>
     /// <param name="source">Where the names come from.</param>
     /// <param name="folder">Where the panel is looking.</param>
-    /// <param name="typed">What was typed of the folder, with the separator still on the end.</param>
+    /// <param name="text">What was typed of the folder, with the separator still on the end.</param>
     /// <returns>The folder to list.</returns>
-    private static string Where(IFileSource source, string folder, string typed)
+    private static string Where(IFileSource source, string folder, string text)
     {
-        if (typed.Length == 0)
+        if (text.Length == 0)
         {
             return folder;
         }
 
-        var trimmed = typed.Length > 1 ? typed.TrimEnd(Separators) : typed;
+        var trimmedText = text.Length > 1 ? text.TrimEnd(Separators) : text;
 
-        if (trimmed.StartsWith('~'))
+        if (trimmedText.StartsWith('~'))
         {
-            return trimmed.Length == 1 ? source.Home : source.Combine(source.Home, trimmed[2..]);
+            return trimmedText.Length == 1 ? source.Home : source.Combine(source.Home, trimmedText[2..]);
         }
 
-        return trimmed[0] == '/' || trimmed[0] == '\\' || (trimmed.Length > 1 && trimmed[1] == ':')
-            ? trimmed
-            : source.Combine(folder, trimmed);
+        return trimmedText[0] == '/' || trimmedText[0] == '\\' || (trimmedText.Length > 1 && trimmedText[1] == ':')
+            ? trimmedText
+            : source.Combine(folder, trimmedText);
     }
 
     /// <summary>

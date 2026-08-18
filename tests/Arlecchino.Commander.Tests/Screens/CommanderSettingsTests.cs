@@ -120,7 +120,7 @@ public sealed class CommanderSettingsTests : IDisposable
 
         Assert.Equal(TimeSpan.FromSeconds(10), _app.Settings.Watch);
 
-        _app.Type($"!{Settings.WatchName} {Settings.WatchOff}");
+        _app.Type($"!{Settings.WatchName} {Settings.NoWatch}");
         _app.Press(ConsoleKey.Enter);
         _app.Frame();
 

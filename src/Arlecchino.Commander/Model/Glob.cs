@@ -58,11 +58,11 @@ public static class Glob
 
     private static string Translate(string pattern)
     {
-        var built = new StringBuilder("^");
+        var builder = new StringBuilder("^");
 
         foreach (var character in pattern)
         {
-            built.Append(character switch
+            builder.Append(character switch
             {
                 '*' => ".*",
                 '?' => ".",
@@ -70,6 +70,6 @@ public static class Glob
             });
         }
 
-        return built.Append('$').ToString();
+        return builder.Append('$').ToString();
     }
 }

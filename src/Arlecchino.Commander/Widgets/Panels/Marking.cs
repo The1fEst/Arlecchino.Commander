@@ -77,14 +77,14 @@ public static class Marking
     /// The three keys Midnight Commander gives to marking by pattern. They are read as characters
     /// rather than bound, because terminals disagree about which key a <c>+</c> came from.
     /// </summary>
-    /// <param name="typed">The character that arrived.</param>
+    /// <param name="character">The character that arrived.</param>
     /// <param name="state">Where the marks are kept.</param>
     /// <param name="entries">What the panel is showing.</param>
     /// <param name="asking">What opens the box a pattern is typed into.</param>
     /// <returns><c>true</c> when it was one of them.</returns>
-    public static bool Typed(char typed, PanelState state, IReadOnlyList<FileEntry> entries, Action<bool>? asking)
+    public static bool Text(char character, PanelState state, IReadOnlyList<FileEntry> entries, Action<bool>? asking)
     {
-        switch (typed)
+        switch (character)
         {
             case '+':
                 asking?.Invoke(true);

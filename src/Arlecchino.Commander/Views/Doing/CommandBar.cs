@@ -55,11 +55,11 @@ public sealed class CommandBar
     public void Draw(SurfaceRegion line)
     {
         var panel = _panels.Active;
-        var where = Paths.Shortened(panel.Source, panel.Folder, PromptRoom);
+        var place = Paths.Shortened(panel.Source, panel.Folder, PromptRoom);
 
         _line.Draw(
             line,
-            panel.Source.IsRemote ? $"{panel.Source.Label}:{where}" : where,
+            panel.Source.IsRemote ? $"{panel.Source.Label}:{place}" : place,
             Loc(_line.IsTyping ? LocString.CommandLineTail : LocString.CommandLineAsleep));
     }
 
@@ -76,8 +76,8 @@ public sealed class CommandBar
     /// Draws what the half-typed word could still turn into, which stands over the panels. Nothing is drawn
     /// until Tab has been pressed, and what was found is dropped again by the next letter typed.
     /// </summary>
-    /// <param name="over">The room above the foot.</param>
-    public void DrawHints(SurfaceRegion over)
+    /// <param name="region">The room above the foot.</param>
+    public void DrawHints(SurfaceRegion region)
     {
         var words = _completer.Words;
         var rows = new List<HintRow>(words.Count);
@@ -87,7 +87,7 @@ public sealed class CommandBar
             rows.Add(new(word, "", ""));
         }
 
-        HintRows.Draw(over, Loc(LocString.MenuCommand), rows, _completer.Chosen);
+        HintRows.Draw(region, Loc(LocString.MenuCommand), rows, _completer.ChosenIndex);
     }
 
     /// <summary>
@@ -145,14 +145,14 @@ public sealed class CommandBar
             return;
         }
 
-        var filled = Placeholders.Expand(
+        var cells = Placeholders.Expand(
             command,
             panel.Source,
             panel.Folder,
             panel.Targets(),
             panel.Current);
 
-        _runner.Run(filled, panel.Folder, panel.Source, panel.Reload);
+        _runner.Run(cells, panel.Folder, panel.Source, panel.Reload);
     }
 
     /// <summary>Moves the panel when what was typed was a <c>cd</c>.</summary>
@@ -166,19 +166,19 @@ public sealed class CommandBar
             return false;
         }
 
-        var wanted = command.Length > 3 ? command[3..].Trim().Trim('"') : "";
+        var argument = command.Length > 3 ? command[3..].Trim().Trim('"') : "";
 
-        Answers.From(() => Where(panel, wanted),
-            where =>
+        Answers.From(() => Where(panel, argument),
+            place =>
             {
-                if (where is null)
+                if (place is null)
                 {
-                    _state.Output = Loc(LocString.SaidNoFolder, wanted);
+                    _state.Output = Loc(LocString.SaidNoFolder, argument);
 
                     return;
                 }
 
-                panel.GoTo(where);
+                panel.GoTo(place);
             });
 
         return true;
@@ -189,21 +189,21 @@ public sealed class CommandBar
     /// own or one below the panel. Both questions are round trips on a server.
     /// </summary>
     /// <param name="panel">The panel being moved.</param>
-    /// <param name="wanted">What was typed after the command.</param>
+    /// <param name="argument">What was typed after the command.</param>
     /// <returns>Where to go, or <c>null</c> when there is no such folder.</returns>
-    private static async Task<string?> Where(FilePanel panel, string wanted)
+    private static async Task<string?> Where(FilePanel panel, string argument)
     {
-        var where = wanted switch
+        var place = argument switch
         {
             "" or "~" => panel.Source.Home,
             ".." => panel.Source.Parent(panel.Folder) ?? panel.Folder,
-            _ => await panel.Source.FolderExistsAsync(wanted, CancellationToken.None).ConfigureAwait(false)
-                ? wanted
-                : panel.Source.Combine(panel.Folder, wanted),
+            _ => await panel.Source.FolderExistsAsync(argument, CancellationToken.None).ConfigureAwait(false)
+                ? argument
+                : panel.Source.Combine(panel.Folder, argument),
         };
 
-        return await panel.Source.FolderExistsAsync(where, CancellationToken.None).ConfigureAwait(false)
-            ? where
+        return await panel.Source.FolderExistsAsync(place, CancellationToken.None).ConfigureAwait(false)
+            ? place
             : null;
     }
 }

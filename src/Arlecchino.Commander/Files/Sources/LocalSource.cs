@@ -118,7 +118,7 @@ public sealed class LocalSource : IFileSource, IWatchesFolder
     }
 
     /// <inheritdoc/>
-    public bool HasTrash => Trash.Trash.Here.Works;
+    public bool HasTrash => Trash.Trash.Current.Works;
 
     /// <summary>
     /// Puts something in the trash of this machine. It runs off the drawing thread because a folder of
@@ -129,7 +129,7 @@ public sealed class LocalSource : IFileSource, IWatchesFolder
     /// <returns><c>false</c> when it could not be put there and is still where it was.</returns>
     public Task<bool> TryTrashAsync(FileEntry entry, CancellationToken token)
     {
-        return Task.Run(() => Trash.Trash.Here.TryPut(entry.Path), token);
+        return Task.Run(() => Trash.Trash.Current.TryPut(entry.Path), token);
     }
 
     /// <inheritdoc/>

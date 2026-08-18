@@ -40,13 +40,13 @@ public static class Placeholders
             return command;
         }
 
-        var built = new StringBuilder(command.Length);
+        var builder = new StringBuilder(command.Length);
 
         for (var at = 0; at < command.Length; at++)
         {
             if (command[at] != '%' || at + 1 == command.Length)
             {
-                built.Append(command[at]);
+                builder.Append(command[at]);
 
                 continue;
             }
@@ -54,49 +54,49 @@ public static class Placeholders
             switch (command[at + 1])
             {
                 case '%':
-                    built.Append('%');
+                    builder.Append('%');
                     at++;
 
                     break;
                 case 'f':
-                    built.Append(current is null ? "" : source.Quote(current.Path));
+                    builder.Append(current is null ? "" : source.Quote(current.Path));
                     at++;
 
                     break;
                 case 'd':
-                    built.Append(source.Quote(folder));
+                    builder.Append(source.Quote(folder));
                     at++;
 
                     break;
                 case 's':
-                    Spread(built, source, targets);
+                    Spread(builder, source, targets);
                     at++;
 
                     break;
                 default:
-                    built.Append(command[at]);
+                    builder.Append(command[at]);
 
                     break;
             }
         }
 
-        return built.ToString();
+        return builder.ToString();
     }
 
     /// <summary>Writes every path out, escaped and a space apart.</summary>
-    /// <param name="built">What is being built.</param>
+    /// <param name="builder">What is being built.</param>
     /// <param name="source">The end that will read them.</param>
     /// <param name="targets">The paths.</param>
-    private static void Spread(StringBuilder built, IFileSource source, IReadOnlyList<FileEntry> targets)
+    private static void Spread(StringBuilder builder, IFileSource source, IReadOnlyList<FileEntry> targets)
     {
         for (var at = 0; at < targets.Count; at++)
         {
             if (at > 0)
             {
-                built.Append(' ');
+                builder.Append(' ');
             }
 
-            built.Append(source.Quote(targets[at].Path));
+            builder.Append(source.Quote(targets[at].Path));
         }
     }
 }

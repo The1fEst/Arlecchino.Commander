@@ -20,24 +20,24 @@ public sealed class Dialogs
     /// <summary>Opens a list to pick one thing out of.</summary>
     /// <param name="title">What the list is called.</param>
     /// <param name="items">What is in it.</param>
-    /// <param name="chose">What to do with what was picked.</param>
-    public void Pick(string title, IReadOnlyList<string> items, Action<string> chose)
+    /// <param name="onChoice">What to do with what was picked.</param>
+    public void Pick(string title, IReadOnlyList<string> items, Action<string> onChoice)
     {
-        Pick(title, [.. items.Select(static item => new Pick(item))], chose);
+        Pick(title, [.. items.Select(static item => new Pick(item))], onChoice);
     }
 
     /// <summary>Opens a list whose rows say something about themselves as well as their name.</summary>
     /// <param name="title">What the list is called.</param>
     /// <param name="items">What is in it.</param>
-    /// <param name="chose">What to do with what was picked.</param>
+    /// <param name="onChoice">What to do with what was picked.</param>
     /// <param name="footer">What is written along the bottom.</param>
-    public void Pick(string title, IReadOnlyList<Pick> items, Action<string> chose, string? footer = null) =>
+    public void Pick(string title, IReadOnlyList<Pick> items, Action<string> onChoice, string? footer = null) =>
         _state.Modal = new ChoiceListModal(
             new()
             {
                 Title = title,
                 Items = items,
-                Chose = chose,
+                OnChoice = onChoice,
                 Footer = footer ?? Loc(LocString.ChoosingHints),
             });
 
@@ -57,7 +57,7 @@ public sealed class Dialogs
     /// <param name="label">What the field is for.</param>
     /// <param name="value">What is in it to begin with.</param>
     /// <param name="verb">The word on the button.</param>
-    /// <param name="answered">What to do with the answer.</param>
+    /// <param name="onAnswer">What to do with the answer.</param>
     /// <param name="hint">What to say beside the field.</param>
     /// <param name="secret">Whether what is typed is a secret.</param>
     public void AskFor(
@@ -65,7 +65,7 @@ public sealed class Dialogs
         string label,
         string value,
         string verb,
-        Action<string> answered,
+        Action<string> onAnswer,
         string hint = "",
         bool secret = false)
     {
@@ -79,7 +79,7 @@ public sealed class Dialogs
             Value = value,
             FieldHint = hint,
             Secret = secret,
-            Confirm = asking => answered(asking.Value),
+            Confirm = asking => onAnswer(asking.Value),
         });
     }
 

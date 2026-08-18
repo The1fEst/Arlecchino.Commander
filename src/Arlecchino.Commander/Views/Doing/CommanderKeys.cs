@@ -131,7 +131,7 @@ public static class CommanderKeys
                 doings.Beside),
             Bind.To(Go(ConsoleKey.N),
                 LocString.MenuOpenSavedHost,
-                () => doings.Dialling.Saved(panels.Active)),
+                () => doings.Dialling.OpenSavedHosts(panels.Active)),
 
             Bind.To(Tab(ConsoleKey.K),
                 LocString.TabsNew,
@@ -229,11 +229,11 @@ public static class CommanderKeys
             return "";
         }
 
-        var held = panel.Targets().Count;
+        var buffer = panel.Targets().Count;
 
-        return held == 1
+        return buffer == 1
             ? Loc(LocString.BarOneItem)
-            : Loc(LocString.BarManyItems, held);
+            : Loc(LocString.BarManyItems, buffer);
     }
 
     /// <summary>A key behind the <c>t</c> leader, which is the one the tabs live behind.</summary>

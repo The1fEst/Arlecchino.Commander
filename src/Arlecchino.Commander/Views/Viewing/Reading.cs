@@ -47,14 +47,14 @@ public static class Reading
         {
             await using var stream = await source.OpenReadAsync(path, CancellationToken.None)
                 .ConfigureAwait(false);
-            var held = new MemoryStream();
-            var head = await TakeAsync(stream, held, ReadLimit).ConfigureAwait(false);
+            var buffer = new MemoryStream();
+            var head = await TakeAsync(stream, buffer, ReadLimit).ConfigureAwait(false);
 
             if (PictureFormats.For(head) is { } format)
             {
                 var whole = head.Length >= size
                     ? head
-                    : await TakeAsync(stream, held, ImageLimit).ConfigureAwait(false);
+                    : await TakeAsync(stream, buffer, ImageLimit).ConfigureAwait(false);
                 var picture = new Picture();
 
                 if (format.Read(whole, PictureLimits.For(picture.Detail)) is { } raster)
@@ -100,43 +100,43 @@ public static class Reading
             .ToString()
             .ToLowerInvariant();
 
-    private static string Truncated(string kind, int read, long size) =>
-        read < size ? Loc(LocString.ViewerFirst, kind, Sizes.Brief(read)) : kind;
+    private static string Truncated(string kind, int readCount, long size) =>
+        readCount < size ? Loc(LocString.ViewerFirst, kind, Sizes.Brief(readCount)) : kind;
 
     /// <summary>
     /// Reads the file up to a limit, carrying on from where the last read left off. Over a network,
     /// reading the front of it a second time would be the file twice.
     /// </summary>
     /// <param name="stream">The file, still open.</param>
-    /// <param name="held">What has been read so far, which this adds to.</param>
+    /// <param name="buffer">What has been read so far, which this adds to.</param>
     /// <param name="limit">How much of the file to have read by the end.</param>
     /// <returns>The bytes.</returns>
-    private static async Task<byte[]> TakeAsync(Stream stream, MemoryStream held, long limit)
+    private static async Task<byte[]> TakeAsync(Stream stream, MemoryStream buffer, long limit)
     {
         var chunk = new byte[ChunkBytes];
 
-        while (held.Length < limit)
+        while (buffer.Length < limit)
         {
-            var wanted = (int)Math.Min(chunk.Length, limit - held.Length);
-            var read = await stream.ReadAsync(chunk.AsMemory(0, wanted), CancellationToken.None)
+            var target = (int)Math.Min(chunk.Length, limit - buffer.Length);
+            var readCount = await stream.ReadAsync(chunk.AsMemory(0, target), CancellationToken.None)
                 .ConfigureAwait(false);
 
-            if (read <= 0)
+            if (readCount <= 0)
             {
                 break;
             }
 
-            await held.WriteAsync(chunk.AsMemory(0, read), CancellationToken.None).ConfigureAwait(false);
+            await buffer.WriteAsync(chunk.AsMemory(0, readCount), CancellationToken.None).ConfigureAwait(false);
         }
 
-        return held.ToArray();
+        return buffer.ToArray();
     }
 
     private static bool IsBinary(byte[] bytes)
     {
-        var probed = Math.Min(TextProbe, bytes.Length);
+        var sample = Math.Min(TextProbe, bytes.Length);
 
-        for (var index = 0; index < probed; index++)
+        for (var index = 0; index < sample; index++)
         {
             if (bytes[index] == 0)
             {

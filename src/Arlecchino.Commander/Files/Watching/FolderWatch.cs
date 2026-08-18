@@ -14,7 +14,7 @@ public sealed class FolderWatch : IDisposable
 {
     private const int SettleMilliseconds = 400;
 
-    private readonly Func<TimeSpan> _every;
+    private readonly Func<TimeSpan> _interval;
     private readonly Func<bool> _carrying;
     private readonly Action _changed;
     private readonly Timer _settling;
@@ -24,11 +24,11 @@ public sealed class FolderWatch : IDisposable
     private bool _hidden;
     private IDisposable? _watching;
     private PollWatch? _polling;
-    private int _armed;
+    private int _pending;
     private bool _stopped;
 
     /// <summary>Sets a watch up over one panel.</summary>
-    /// <param name="every">
+    /// <param name="interval">
     /// How often a source with nothing to watch with should be read again, asked afresh every time so that
     /// changing the setting is in force at once. Nothing at all turns the watching off.
     /// </param>
@@ -40,9 +40,9 @@ public sealed class FolderWatch : IDisposable
     /// Called on another thread when the folder is no longer what it was. Whoever is told must get onto the
     /// drawing thread before acting.
     /// </param>
-    public FolderWatch(Func<TimeSpan> every, Func<bool> carrying, Action changed)
+    public FolderWatch(Func<TimeSpan> interval, Func<bool> carrying, Action changed)
     {
-        _every = every;
+        _interval = interval;
         _carrying = carrying;
         _changed = changed;
         _settling = new(_ => Settled(), null, Timeout.Infinite, Timeout.Infinite);
@@ -63,9 +63,9 @@ public sealed class FolderWatch : IDisposable
             return;
         }
 
-        var every = _every();
+        var interval = _interval();
 
-        if (every <= TimeSpan.Zero)
+        if (interval <= TimeSpan.Zero)
         {
             Stop();
 
@@ -92,7 +92,7 @@ public sealed class FolderWatch : IDisposable
             return;
         }
 
-        _polling = PollWatch.Over(source, folder, hidden, every, PollWatch.Print(entries), _carrying, Told);
+        _polling = PollWatch.Over(source, folder, hidden, interval, PollWatch.Print(entries), _carrying, Told);
     }
 
     /// <summary>Stops watching, leaving the watch able to start again, as a tab stepped away from does.</summary>
@@ -135,7 +135,7 @@ public sealed class FolderWatch : IDisposable
     /// </summary>
     private void Told()
     {
-        if (!_stopped && Interlocked.Exchange(ref _armed, 1) == 0)
+        if (!_stopped && Interlocked.Exchange(ref _pending, 1) == 0)
         {
             _settling.Change(SettleMilliseconds, Timeout.Infinite);
         }
@@ -144,7 +144,7 @@ public sealed class FolderWatch : IDisposable
     /// <summary>The moment is up: the news goes on, and the next word starts another moment.</summary>
     private void Settled()
     {
-        Volatile.Write(ref _armed, 0);
+        Volatile.Write(ref _pending, 0);
 
         if (!_stopped)
         {

@@ -41,7 +41,7 @@ internal sealed class SearchLine
     public TextEntry Entry { get; } = new();
 
     /// <summary>Whatever has been typed into it, which the foot of the panel shows.</summary>
-    public string Typed => Entry.Text;
+    public string Text => Entry.Text;
 
     /// <summary>Starts it, with nothing spelled yet.</summary>
     public void Start()
@@ -93,15 +93,15 @@ internal sealed class SearchLine
         if (key.Modifiers.HasFlag(KeyModifiers.Control) ||
             key.Modifiers.HasFlag(KeyModifiers.Alt) ||
             key.Modifiers.HasFlag(KeyModifiers.Super) ||
-            _keys.Resolve(key) is not { } typed ||
-            char.IsControl(typed))
+            _keys.Resolve(key) is not { } text ||
+            char.IsControl(text))
         {
             _running = false;
 
             return key.Key is ConsoleKey.Escape;
         }
 
-        TextEditing.Insert(Entry, typed);
+        TextEditing.Insert(Entry, text);
         _look(Entry.Text);
 
         return true;

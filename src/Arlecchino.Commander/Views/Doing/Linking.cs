@@ -24,8 +24,8 @@ public sealed class Linking : PanelWork
     /// <param name="hard">Whether to make a hard link rather than a symbolic one.</param>
     public void Make(bool hard)
     {
-        var panel = Here;
-        var other = There;
+        var panel = Active;
+        var other = Passive;
 
         if (panel.Current is not { IsParent: false } current)
         {
@@ -48,9 +48,9 @@ public sealed class Linking : PanelWork
                     current.Path,
                     hard,
                     CancellationToken.None),
-                made =>
+                color =>
                 {
-                    if (made)
+                    if (color)
                     {
                         State.Output = Loc(LocString.SaidLinkMade, kind, name.Trim());
                         beside.Reload();

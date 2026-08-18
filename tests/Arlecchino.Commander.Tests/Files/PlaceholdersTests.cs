@@ -47,17 +47,17 @@ public sealed class PlaceholdersTests : IDisposable
     [Fact]
     public void MarkedFilesGoInSpacedApart()
     {
-        var expanded = Expand("wc -l %s", Entries("a.txt", "b.txt"));
+        var text = Expand("wc -l %s", Entries("a.txt", "b.txt"));
 
-        Assert.Equal($"wc -l {_source.Quote(Path("a.txt"))} {_source.Quote(Path("b.txt"))}", expanded);
+        Assert.Equal($"wc -l {_source.Quote(Path("a.txt"))} {_source.Quote(Path("b.txt"))}", text);
     }
 
     [Fact]
     public void TheCursorGoesInOnItsOwn()
     {
-        var expanded = Expand("file %f", Entries("a.txt", "b.txt"), Entry("b.txt"));
+        var text = Expand("file %f", Entries("a.txt", "b.txt"), Entry("b.txt"));
 
-        Assert.Equal($"file {_source.Quote(Path("b.txt"))}", expanded);
+        Assert.Equal($"file {_source.Quote(Path("b.txt"))}", text);
     }
 
     [Fact]
@@ -73,12 +73,12 @@ public sealed class PlaceholdersTests : IDisposable
     [Fact]
     public void AnApostropheInANameCannotEndUpAsSyntax()
     {
-        var expanded = Expand("wc -l %s", Entries("don't go.txt"));
+        var text = Expand("wc -l %s", Entries("don't go.txt"));
 
-        Assert.StartsWith("wc -l ", expanded, StringComparison.Ordinal);
-        Assert.Contains("don", expanded, StringComparison.Ordinal);
-        Assert.NotEqual($"wc -l {Path("don't go.txt")}", expanded);
-        Assert.Equal($"wc -l {_source.Quote(Path("don't go.txt"))}", expanded);
+        Assert.StartsWith("wc -l ", text, StringComparison.Ordinal);
+        Assert.Contains("don", text, StringComparison.Ordinal);
+        Assert.NotEqual($"wc -l {Path("don't go.txt")}", text);
+        Assert.Equal($"wc -l {_source.Quote(Path("don't go.txt"))}", text);
     }
 
     [Fact]

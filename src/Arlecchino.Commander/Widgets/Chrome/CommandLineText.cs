@@ -56,16 +56,16 @@ internal sealed class CommandLineText : ITextEntry
     /// One typed character. The control codes are refused, since a terminal sends them for keys that mean
     /// something else entirely.
     /// </summary>
-    /// <param name="typed">The character the key types.</param>
+    /// <param name="character">The character the key types.</param>
     /// <returns><c>true</c> when it went in.</returns>
-    public bool Put(char typed)
+    public bool Put(char character)
     {
-        if (char.IsControl(typed))
+        if (char.IsControl(character))
         {
             return false;
         }
 
-        TextEditing.Insert(this, typed);
+        TextEditing.Insert(this, character);
 
         return true;
     }

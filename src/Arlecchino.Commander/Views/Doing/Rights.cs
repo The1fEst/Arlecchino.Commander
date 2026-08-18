@@ -33,7 +33,7 @@ public sealed class Rights : PanelWork
     /// </summary>
     public void Mode()
     {
-        var panel = Here;
+        var panel = Active;
         var targets = panel.Targets();
 
         if (Nothing(targets))
@@ -69,11 +69,11 @@ public sealed class Rights : PanelWork
                     ? new(Loc(LocString.PermissionsWrong), true)
                     : new(Modes.Letters(asking.Value)),
                 Confirm = asking => Answers.From(() => Changing(panel, targets, asking.Value),
-                    refused =>
+                    failure =>
                     {
-                        State.Output = refused == 0
+                        State.Output = failure == 0
                             ? Loc(LocString.SaidModeChanged, Counted(targets), asking.Value)
-                            : Loc(LocString.SaidModeRefused, refused, targets.Count, asking.Value);
+                            : Loc(LocString.SaidModeRefused, failure, targets.Count, asking.Value);
 
                         panel.Reload();
                     }),
@@ -87,7 +87,7 @@ public sealed class Rights : PanelWork
     /// </summary>
     public void Owner()
     {
-        var panel = Here;
+        var panel = Active;
         var targets = panel.Targets();
 
         if (Nothing(targets))
@@ -130,17 +130,17 @@ public sealed class Rights : PanelWork
     /// <returns>How many were refused.</returns>
     private static async Task<int> Changing(FilePanel panel, IReadOnlyList<FileEntry> targets, string mode)
     {
-        var refused = 0;
+        var failure = 0;
 
         foreach (var entry in targets)
         {
-            refused += await panel.Source.TryChangeModeAsync(entry, mode, CancellationToken.None)
+            failure += await panel.Source.TryChangeModeAsync(entry, mode, CancellationToken.None)
                 .ConfigureAwait(false)
                 ? 0
                 : 1;
         }
 
-        return refused;
+        return failure;
     }
 
     /// <summary>What was acted on, named when there is one of them and counted when there are more.</summary>

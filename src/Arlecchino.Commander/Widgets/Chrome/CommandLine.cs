@@ -67,7 +67,7 @@ public sealed class CommandLine
     /// What is on the line as it stands, for whoever has to answer while it is still being typed — hints
     /// that narrow with every letter, and the completion behind Tab.
     /// </summary>
-    public string Typed => _text.Text;
+    public string Text => _text.Text;
 
     /// <summary>
     /// The text as something that can be edited from outside, for whatever is hung on a line being typed
@@ -151,9 +151,9 @@ public sealed class CommandLine
     /// <param name="piece">What to put in.</param>
     public void Insert(string piece)
     {
-        var quoted = piece.Contains(' ', StringComparison.Ordinal) ? $"\"{piece}\"" : piece;
+        var safe = piece.Contains(' ', StringComparison.Ordinal) ? $"\"{piece}\"" : piece;
 
-        _text.Insert(quoted + " ");
+        _text.Insert(safe + " ");
 
         Open();
     }
@@ -202,21 +202,21 @@ public sealed class CommandLine
     /// <returns><c>true</c> when the key was one of these and has been dealt with.</returns>
     private bool Clipped(KeyPress key)
     {
-        var selected = TextEditing.Selected(_text);
+        var selection = TextEditing.Selected(_text);
 
         if (_keymap.Copy.Matches(key))
         {
-            _terminal.CopyToClipboard(selected.Length > 0 ? selected : _text.Text);
+            _terminal.CopyToClipboard(selection.Length > 0 ? selection : _text.Text);
 
             return true;
         }
 
-        if (!_keymap.Cut.Matches(key) || selected.Length == 0)
+        if (!_keymap.Cut.Matches(key) || selection.Length == 0)
         {
             return false;
         }
 
-        _terminal.CopyToClipboard(selected);
+        _terminal.CopyToClipboard(selection);
         TextEditing.EraseSelection(_text);
 
         return true;

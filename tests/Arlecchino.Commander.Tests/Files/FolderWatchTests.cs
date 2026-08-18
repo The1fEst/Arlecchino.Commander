@@ -14,13 +14,13 @@ namespace Arlecchino.Commander.Tests.Files;
 /// </summary>
 public sealed class FolderWatchTests : IDisposable
 {
-    private const int Patience = 5000;
-    private const int LongEnough = 700;
+    private const int TimeoutMilliseconds = 5000;
+    private const int WaitMilliseconds = 700;
 
     private static readonly TimeSpan Briskly = TimeSpan.FromMilliseconds(50);
 
     private readonly string _folder = Directory.CreateTempSubdirectory("commander-watch").FullName;
-    private readonly TaskCompletionSource _told = new();
+    private readonly TaskCompletionSource _signal = new();
     private readonly PipingSource _source = new();
 
     public void Dispose()
@@ -43,7 +43,7 @@ public sealed class FolderWatchTests : IDisposable
 
         await File.WriteAllTextAsync(Path.Combine(_folder, "made.txt"), "one").ConfigureAwait(true);
 
-        Assert.Same(_told.Task, await Task.WhenAny(_told.Task, Task.Delay(Patience)).ConfigureAwait(true));
+        Assert.Same(_signal.Task, await Task.WhenAny(_signal.Task, Task.Delay(TimeoutMilliseconds)).ConfigureAwait(true));
     }
 
     /// <summary>
@@ -56,9 +56,9 @@ public sealed class FolderWatchTests : IDisposable
         using var watch = Watching(Briskly);
 
         await FollowingAsync(watch).ConfigureAwait(true);
-        await Task.Delay(LongEnough).ConfigureAwait(true);
+        await Task.Delay(WaitMilliseconds).ConfigureAwait(true);
 
-        Assert.False(_told.Task.IsCompleted);
+        Assert.False(_signal.Task.IsCompleted);
     }
 
     /// <summary>The setting turned off is watched with nothing at all, server or disk.</summary>
@@ -71,9 +71,9 @@ public sealed class FolderWatchTests : IDisposable
 
         await File.WriteAllTextAsync(Path.Combine(_folder, "made.txt"), "one").ConfigureAwait(true);
 
-        await Task.Delay(LongEnough).ConfigureAwait(true);
+        await Task.Delay(WaitMilliseconds).ConfigureAwait(true);
 
-        Assert.False(_told.Task.IsCompleted);
+        Assert.False(_signal.Task.IsCompleted);
     }
 
     /// <summary>
@@ -89,9 +89,9 @@ public sealed class FolderWatchTests : IDisposable
 
         await File.WriteAllTextAsync(Path.Combine(_folder, "made.txt"), "one").ConfigureAwait(true);
 
-        await Task.Delay(LongEnough).ConfigureAwait(true);
+        await Task.Delay(WaitMilliseconds).ConfigureAwait(true);
 
-        Assert.False(_told.Task.IsCompleted);
+        Assert.False(_signal.Task.IsCompleted);
     }
 
     /// <summary>
@@ -108,25 +108,25 @@ public sealed class FolderWatchTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(_folder, "made.txt"), "one").ConfigureAwait(true);
 
         await FollowingAsync(watch).ConfigureAwait(true);
-        await Task.Delay(LongEnough).ConfigureAwait(true);
+        await Task.Delay(WaitMilliseconds).ConfigureAwait(true);
 
-        Assert.False(_told.Task.IsCompleted);
+        Assert.False(_signal.Task.IsCompleted);
     }
 
     /// <summary>A watch that reports by finishing the task the test waits on.</summary>
-    /// <param name="every">How often to read the folder again.</param>
+    /// <param name="interval">How often to read the folder again.</param>
     /// <param name="carrying">Whether to claim that files are being carried.</param>
     /// <returns>The watch, for the test to dispose.</returns>
-    private FolderWatch Watching(TimeSpan every, bool carrying = false) =>
-        new(() => every, () => carrying, () => _told.TrySetResult());
+    private FolderWatch Watching(TimeSpan interval, bool carrying = false) =>
+        new(() => interval, () => carrying, () => _signal.TrySetResult());
 
     /// <summary>Reads the folder the way a panel does and hands the watch what came back.</summary>
     /// <param name="watch">The watch to arm.</param>
     /// <returns>A task that finishes once the watch is following.</returns>
     private async Task FollowingAsync(FolderWatch watch)
     {
-        var read = await Listing.ReadAsync(_source, _folder, false).ConfigureAwait(true);
+        var lines = await Listing.ReadAsync(_source, _folder, false).ConfigureAwait(true);
 
-        watch.Follow(_source, _folder, false, read.Entries);
+        watch.Follow(_source, _folder, false, lines.Entries);
     }
 }

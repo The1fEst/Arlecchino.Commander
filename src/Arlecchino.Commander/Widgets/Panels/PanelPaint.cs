@@ -187,9 +187,9 @@ public sealed class PanelPaint
 
         var entries = panel.Entries;
         var items = entries.Count > 0 && entries[0].IsParent ? entries.Count - 1 : entries.Count;
-        var counted = items == 1 ? Loc(LocString.OneItem) : Loc(LocString.ManyItems, items);
+        var total = items == 1 ? Loc(LocString.OneItem) : Loc(LocString.ManyItems, items);
 
-        return Free.Length == 0 ? counted : Loc(LocString.Joined, counted, Free);
+        return Free.Length == 0 ? total : Loc(LocString.Joined, total, Free);
     }
 
     /// <summary>
@@ -211,8 +211,8 @@ public sealed class PanelPaint
                 0,
                 TextWidth.Of(label),
                 Math.Max(0, row.Width - TextWidth.Of(label)),
-                panel.Typed,
-                Skin.Typed(coat.Accent, Skin.Crimson));
+                panel.Text,
+                Skin.Entry(coat.Accent, Skin.Crimson));
 
             return;
         }
@@ -226,14 +226,14 @@ public sealed class PanelPaint
 
         if (Loading)
         {
-            row.Write(0, 0, Loc(LocString.PanelReadingFolder), coat.Faded);
+            row.Write(0, 0, Loc(LocString.PanelReadingFolder), coat.Hint);
 
             return;
         }
 
-        var said = panel.Current is { } current ? Describe(current) : Loc(LocString.PanelNothingHere);
+        var about = panel.Current is { } current ? Describe(current) : Loc(LocString.PanelNothingHere);
 
-        row.Write(0, 0, TextWidth.Truncate(said, row.Width), coat.Meta);
+        row.Write(0, 0, TextWidth.Truncate(about, row.Width), coat.Meta);
     }
 
     /// <summary>The foot while something is marked.</summary>
@@ -250,13 +250,13 @@ public sealed class PanelPaint
         }
 
         var marks = panel.State.Marks.Count;
-        var held = bytes > 0
+        var buffer = bytes > 0
             ? Loc(LocString.PanelMarkedSize, marks, Sizes.Brief(bytes))
             : Loc(LocString.Marked, marks);
 
-        row.Fill(coat.MarkedRow);
-        row.Write(0, 0, TextWidth.Truncate(held, row.Width), coat.Marked);
-        row.WriteLine(0, Loc(LocString.PanelMarkHints), coat.MarkedMeta, Align.Right);
+        row.Fill(coat.MarkRow);
+        row.Write(0, 0, TextWidth.Truncate(buffer, row.Width), coat.MarkName);
+        row.WriteLine(0, Loc(LocString.PanelMarkHints), coat.MarkMeta, Align.Right);
     }
 
     /// <summary>What one file is, for the foot.</summary>
@@ -264,9 +264,9 @@ public sealed class PanelPaint
     /// <returns>The words.</returns>
     private static string Describe(FileEntry entry)
     {
-        var what = entry.IsFolder ? Loc(LocString.KindFolder) : Sizes.Brief(entry.Size);
-        var said = Loc(LocString.Joined, entry.Name, what);
+        var caption = entry.IsFolder ? Loc(LocString.KindFolder) : Sizes.Brief(entry.Size);
+        var label = Loc(LocString.Joined, entry.Name, caption);
 
-        return entry.IsReadOnly ? Loc(LocString.PanelReadOnly, entry.Name, what) : said;
+        return entry.IsReadOnly ? Loc(LocString.PanelReadOnly, entry.Name, caption) : label;
     }
 }

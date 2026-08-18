@@ -134,9 +134,9 @@ public abstract class WindowsShell : Shell
     /// <returns>The same path with a drive letter and backslashes.</returns>
     protected static string Local(string path)
     {
-        var trimmed = path.StartsWith('/') && path.Length > 2 && path[2] == ':' ? path[1..] : path;
+        var trimmedText = path.StartsWith('/') && path.Length > 2 && path[2] == ':' ? path[1..] : path;
 
-        return trimmed.Replace('/', '\\');
+        return trimmedText.Replace('/', '\\');
     }
 }
 

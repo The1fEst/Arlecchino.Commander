@@ -69,9 +69,9 @@ public sealed class GlobTests
     [InlineData("notes, *.txt", "*notes*,*.txt")]
     [InlineData("", "*")]
     [InlineData(" , ", "*")]
-    public void APieceWithNoWildcardsInItStandsForThatMuchOfAName(string typed, string pattern)
+    public void APieceWithNoWildcardsInItStandsForThatMuchOfAName(string text, string pattern)
     {
-        Assert.Equal(pattern, Glob.Anywhere(typed));
+        Assert.Equal(pattern, Glob.Anywhere(text));
     }
 
     [Fact]

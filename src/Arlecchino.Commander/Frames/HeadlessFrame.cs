@@ -31,11 +31,11 @@ public static class HeadlessFrame
     /// <param name="left">Folder the left panel opens on.</param>
     /// <param name="right">Folder the right panel opens on.</param>
     /// <param name="connect">A link or a <c>~/.ssh/config</c> host to open the left panel on.</param>
-    /// <param name="wait">How long to let the network and the background work answer, in milliseconds.</param>
-    public static void Render(string size, string script, string left, string right, string connect, int wait)
+    /// <param name="waitMilliseconds">How long to let the network and the background work answer, in milliseconds.</param>
+    public static void Render(string size, string script, string left, string right, string connect, int waitMilliseconds)
     {
         using var provider = Open(size, left, right, connect);
-        var settle = Settling(wait, connect);
+        var settle = Settling(waitMilliseconds, connect);
 
         Settle(settle);
         Play(provider, script);
@@ -55,12 +55,12 @@ public static class HeadlessFrame
     /// <param name="left">Folder the left panel opens on.</param>
     /// <param name="right">Folder the right panel opens on.</param>
     /// <param name="connect">A link or a <c>~/.ssh/config</c> host to open the left panel on.</param>
-    /// <param name="wait">How long to let the network answer before the script starts, in milliseconds.</param>
-    public static void Record(string size, string script, string left, string right, string connect, int wait)
+    /// <param name="waitMilliseconds">How long to let the network answer before the script starts, in milliseconds.</param>
+    public static void Record(string size, string script, string left, string right, string connect, int waitMilliseconds)
     {
         using var provider = Open(size, left, right, connect);
 
-        Settle(Settling(wait, connect));
+        Settle(Settling(waitMilliseconds, connect));
         Play(provider, script);
         Shot(provider, ClosingMilliseconds);
     }
@@ -102,19 +102,19 @@ public static class HeadlessFrame
     /// How long to let the work behind a frame answer. A folder is read off the drawing thread wherever it
     /// lives, so a frame drawn the instant it is asked for catches two panels saying <c>loading…</c>.
     /// </summary>
-    /// <param name="wait">What was asked for, when anything was.</param>
+    /// <param name="waitMilliseconds">What was asked for, when anything was.</param>
     /// <param name="connect">The link the left panel opens on, when there is one.</param>
     /// <returns>The wait, in milliseconds.</returns>
-    private static int Settling(int wait, string connect) =>
-        wait > 0 ? wait : connect.Length > 0 ? RemoteSettleMilliseconds : LocalSettleMilliseconds;
+    private static int Settling(int waitMilliseconds, string connect) =>
+        waitMilliseconds > 0 ? waitMilliseconds : connect.Length > 0 ? RemoteSettleMilliseconds : LocalSettleMilliseconds;
 
-    private static void Shot(IServiceProvider provider, int hold)
+    private static void Shot(IServiceProvider provider, int waitMilliseconds)
     {
-        Console.Out.Write($"{Separator}{hold}\n");
+        Console.Out.Write($"{Separator}{waitMilliseconds}\n");
         provider.GetRequiredService<Screen>().DrawOnce();
         Console.Out.Write('\n');
 
-        Settle(hold);
+        Settle(waitMilliseconds);
     }
 
     private static void Colour()
@@ -150,17 +150,17 @@ public static class HeadlessFrame
     /// <param name="link">Where to connect.</param>
     private static void Attach(Sessions sessions, Remote remote, string link)
     {
-        var wanted = Links.Parse(link);
-        var source = wanted.Protocol == Protocol.Sftp
-            ? SftpSource.Connect(wanted)
-            : (IFileSource)FtpSource.ConnectAsync(wanted, CancellationToken.None).GetAwaiter().GetResult();
+        var connection = Links.Parse(link);
+        var source = connection.Protocol == Protocol.Sftp
+            ? SftpSource.Connect(connection)
+            : (IFileSource)FtpSource.ConnectAsync(connection, CancellationToken.None).GetAwaiter().GetResult();
 
-        if (wanted.Protocol == Protocol.Sftp)
+        if (connection.Protocol == Protocol.Sftp)
         {
-            remote.Ssh = wanted;
+            remote.Ssh = connection;
         }
 
-        sessions.Left.Connect(source, wanted.Path.Length > 0 ? wanted.Path : source.Home);
+        sessions.Left.Connect(source, connection.Path.Length > 0 ? connection.Path : source.Home);
     }
 
     private static void Play(IServiceProvider provider, string script)
@@ -182,9 +182,9 @@ public static class HeadlessFrame
             }
 
             if (piece.StartsWith("shot", StringComparison.OrdinalIgnoreCase) &&
-                int.TryParse(piece[4..], out var hold))
+                int.TryParse(piece[4..], out var waitMilliseconds))
             {
-                Shot(provider, hold);
+                Shot(provider, waitMilliseconds);
                 continue;
             }
 

@@ -12,20 +12,20 @@ public static class NaturalSort
     /// <returns>Negative, zero or positive, as string comparisons go.</returns>
     public static int Compare(string first, string second)
     {
-        var here = 0;
-        var there = 0;
+        var firstAt = 0;
+        var secondAt = 0;
 
         while (true)
         {
-            var left = At(first, here);
-            var right = At(second, there);
+            var left = At(first, firstAt);
+            var right = At(second, secondAt);
 
             if (char.IsAsciiDigit(left) && char.IsAsciiDigit(right))
             {
                 var padded = left == '0' || right == '0';
                 var order = padded
-                    ? Padded(first, second, ref here, ref there)
-                    : Counted(first, second, ref here, ref there);
+                    ? Padded(first, second, ref firstAt, ref secondAt)
+                    : Counted(first, second, ref firstAt, ref secondAt);
 
                 if (order != 0)
                 {
@@ -48,8 +48,8 @@ public static class NaturalSort
                 return one < other ? -1 : 1;
             }
 
-            here++;
-            there++;
+            firstAt++;
+            secondAt++;
         }
     }
 
@@ -59,17 +59,17 @@ public static class NaturalSort
     /// </summary>
     /// <param name="first">One name.</param>
     /// <param name="second">The other.</param>
-    /// <param name="here">Where the run starts in the first, left at where it ends.</param>
-    /// <param name="there">The same for the second.</param>
+    /// <param name="firstAt">Where the run starts in the first, left at where it ends.</param>
+    /// <param name="secondAt">The same for the second.</param>
     /// <returns>Negative, zero or positive.</returns>
-    private static int Counted(string first, string second, ref int here, ref int there)
+    private static int Counted(string first, string second, ref int firstAt, ref int secondAt)
     {
         var bias = 0;
 
         while (true)
         {
-            var left = At(first, here);
-            var right = At(second, there);
+            var left = At(first, firstAt);
+            var right = At(second, secondAt);
             var digits = (char.IsAsciiDigit(left), char.IsAsciiDigit(right));
 
             switch (digits)
@@ -86,8 +86,8 @@ public static class NaturalSort
                         bias = left < right ? -1 : 1;
                     }
 
-                    here++;
-                    there++;
+                    firstAt++;
+                    secondAt++;
 
                     break;
             }
@@ -100,15 +100,15 @@ public static class NaturalSort
     /// </summary>
     /// <param name="first">One name.</param>
     /// <param name="second">The other.</param>
-    /// <param name="here">Where the run starts in the first, left at where it ends.</param>
-    /// <param name="there">The same for the second.</param>
+    /// <param name="firstAt">Where the run starts in the first, left at where it ends.</param>
+    /// <param name="secondAt">The same for the second.</param>
     /// <returns>Negative, zero or positive.</returns>
-    private static int Padded(string first, string second, ref int here, ref int there)
+    private static int Padded(string first, string second, ref int firstAt, ref int secondAt)
     {
         while (true)
         {
-            var left = At(first, here);
-            var right = At(second, there);
+            var left = At(first, firstAt);
+            var right = At(second, secondAt);
             var digits = (char.IsAsciiDigit(left), char.IsAsciiDigit(right));
 
             switch (digits)
@@ -125,8 +125,8 @@ public static class NaturalSort
                         return left < right ? -1 : 1;
                     }
 
-                    here++;
-                    there++;
+                    firstAt++;
+                    secondAt++;
 
                     break;
             }

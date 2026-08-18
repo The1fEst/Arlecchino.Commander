@@ -32,13 +32,13 @@ public sealed class WindowsTrash : Trash
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
 
-        var listed = IntPtr.Zero;
+        var item = IntPtr.Zero;
 
         try
         {
-            listed = Marshal.StringToHGlobalUni(Path.GetFullPath(path) + '\0');
+            item = Marshal.StringToHGlobalUni(Path.GetFullPath(path) + '\0');
 
-            return Environment.Is64BitProcess ? PutAligned(listed) : PutPacked(listed);
+            return Environment.Is64BitProcess ? PutAligned(item) : PutPacked(item);
         }
         catch (Exception error) when (error is IOException or ArgumentException or NotSupportedException)
         {
@@ -46,42 +46,42 @@ public sealed class WindowsTrash : Trash
         }
         finally
         {
-            if (listed != IntPtr.Zero)
+            if (item != IntPtr.Zero)
             {
-                Marshal.FreeHGlobal(listed);
+                Marshal.FreeHGlobal(item);
             }
         }
     }
 
-    private static bool PutAligned(IntPtr listed)
+    private static bool PutAligned(IntPtr item)
     {
-        var asked = new Operation
+        var request = new Operation
         {
             Function = Delete,
-            From = listed,
+            From = item,
             Flags = Quietly,
         };
 
-        return Ask(ref asked) == 0 && asked.Aborted == 0;
+        return Ask(ref request) == 0 && request.AbortCode == 0;
     }
 
-    private static bool PutPacked(IntPtr listed)
+    private static bool PutPacked(IntPtr item)
     {
-        var asked = new PackedOperation
+        var request = new PackedOperation
         {
             Function = Delete,
-            From = listed,
+            From = item,
             Flags = Quietly,
         };
 
-        return Ask(ref asked) == 0 && asked.Aborted == 0;
+        return Ask(ref request) == 0 && request.AbortCode == 0;
     }
 
     [DllImport("shell32.dll", EntryPoint = "SHFileOperationW", ExactSpelling = true)]
-    private static extern int Ask(ref Operation asked);
+    private static extern int Ask(ref Operation request);
 
     [DllImport("shell32.dll", EntryPoint = "SHFileOperationW", ExactSpelling = true)]
-    private static extern int Ask(ref PackedOperation asked);
+    private static extern int Ask(ref PackedOperation request);
 
     /// <summary>
     /// What the shell is asked with in a 64-bit process. The fields are in the order the call reads them
@@ -95,7 +95,7 @@ public sealed class WindowsTrash : Trash
         public IntPtr From;
         public IntPtr To;
         public ushort Flags;
-        public int Aborted;
+        public int AbortCode;
         public IntPtr NameMappings;
         public IntPtr ProgressTitle;
     }
@@ -109,7 +109,7 @@ public sealed class WindowsTrash : Trash
         public IntPtr From;
         public IntPtr To;
         public ushort Flags;
-        public int Aborted;
+        public int AbortCode;
         public IntPtr NameMappings;
         public IntPtr ProgressTitle;
     }

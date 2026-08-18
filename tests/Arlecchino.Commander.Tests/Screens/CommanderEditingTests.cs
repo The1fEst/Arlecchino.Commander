@@ -71,7 +71,7 @@ public sealed class CommanderEditingTests : IDisposable
         _app.Press(ConsoleKey.Insert, control: true);
         _app.Frame();
 
-        Assert.Equal("carried", _app.Copied);
+        Assert.Equal("carried", _app.CopiedText);
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public sealed class CommanderEditingTests : IDisposable
         _app.Press(ConsoleKey.Insert, control: true);
         _app.Frame();
 
-        Assert.Equal("abc", _app.Copied);
+        Assert.Equal("abc", _app.CopiedText);
     }
 
     /// <summary>The search that runs while you type takes the caret keys once something is spelled.</summary>
@@ -116,6 +116,6 @@ public sealed class CommanderEditingTests : IDisposable
         _app.Press(ConsoleKey.Insert, control: true);
         _app.Frame();
 
-        Assert.Equal("alp", _app.Copied);
+        Assert.Equal("alp", _app.CopiedText);
     }
 }

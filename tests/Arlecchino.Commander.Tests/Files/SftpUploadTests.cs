@@ -23,12 +23,12 @@ public sealed class SftpUploadTests
     [InlineData((512 * 1024 * 9) + 12345)]
     public async Task WhatArrivesIsWhatWasSent(int length)
     {
-        var sent = Bytes(length);
+        var upload = Bytes(length);
         var server = new Server();
 
-        await SftpUpload.SendAsync(server.OpenAsync, new MemoryStream(sent), CancellationToken.None);
+        await SftpUpload.SendAsync(server.OpenAsync, new MemoryStream(upload), CancellationToken.None);
 
-        Assert.Equal(sent, server.Written());
+        Assert.Equal(upload, server.Written());
     }
 
     /// <summary>
@@ -38,12 +38,12 @@ public sealed class SftpUploadTests
     [Fact]
     public async Task ASourceThatDribblesStillArrivesWhole()
     {
-        var sent = Bytes((512 * 1024 * 3) + 77);
+        var upload = Bytes((512 * 1024 * 3) + 77);
         var server = new Server();
 
-        await SftpUpload.SendAsync(server.OpenAsync, new Dribbling(sent), CancellationToken.None);
+        await SftpUpload.SendAsync(server.OpenAsync, new Dribbling(upload), CancellationToken.None);
 
-        Assert.Equal(sent, server.Written());
+        Assert.Equal(upload, server.Written());
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class SftpUploadTests
     [Fact]
     public async Task AHandleThatFailsEndsIt()
     {
-        var server = new Server { FailAfter = 2 };
+        var server = new Server { FailAt = 2 };
 
         await Assert.ThrowsAnyAsync<IOException>(() =>
             SftpUpload.SendAsync(server.OpenAsync, new MemoryStream(Bytes(512 * 1024 * 12)), CancellationToken.None));
@@ -96,11 +96,11 @@ public sealed class SftpUploadTests
     {
         private readonly Lock _gate = new();
         private byte[] _file = [];
-        private int _written;
+        private int _count;
 
         public List<FileMode> Modes { get; } = [];
 
-        public int FailAfter { get; init; }
+        public int FailAt { get; init; }
 
         public Task<Stream> OpenAsync(FileMode mode, CancellationToken token)
         {
@@ -129,7 +129,7 @@ public sealed class SftpUploadTests
         {
             lock (_gate)
             {
-                if (FailAfter > 0 && ++_written > FailAfter)
+                if (FailAt > 0 && ++_count > FailAt)
                 {
                     throw new IOException("the server gave up");
                 }
@@ -218,12 +218,12 @@ public sealed class SftpUploadTests
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            var taken = Math.Min(Math.Min(count, 8191), bytes.Length - _position);
+            var outcome = Math.Min(Math.Min(count, 8191), bytes.Length - _position);
 
-            Array.Copy(bytes, _position, buffer, offset, taken);
-            _position += taken;
+            Array.Copy(bytes, _position, buffer, offset, outcome);
+            _position += outcome;
 
-            return taken;
+            return outcome;
         }
 
         public override async ValueTask<int> ReadAsync(
@@ -232,12 +232,12 @@ public sealed class SftpUploadTests
         {
             await Task.Yield();
 
-            var taken = Math.Min(Math.Min(buffer.Length, 8191), bytes.Length - _position);
+            var outcome = Math.Min(Math.Min(buffer.Length, 8191), bytes.Length - _position);
 
-            bytes.AsMemory(_position, taken).CopyTo(buffer);
-            _position += taken;
+            bytes.AsMemory(_position, outcome).CopyTo(buffer);
+            _position += outcome;
 
-            return taken;
+            return outcome;
         }
 
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();

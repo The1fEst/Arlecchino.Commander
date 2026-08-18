@@ -19,12 +19,12 @@ public sealed class Settings : IArlecchinoStore
     public const string WatchName = "watch";
 
     /// <summary>The word that turns the watching off, typed in place of a number of seconds.</summary>
-    public const string WatchOff = "off";
+    public const string NoWatch = "off";
 
     private static readonly string[] KnownEditors =
         ["vim", "nvim", "helix", "hx", "micro", "nano", "kak", "emacs", "vi", "code", "subl"];
 
-    private static readonly string[] KnownWatches = [WatchOff, "2", "5", "10", "30"];
+    private static readonly string[] KnownWatches = [NoWatch, "2", "5", "10", "30"];
 
     private static readonly TimeSpan WatchByDefault = TimeSpan.FromSeconds(5);
 
@@ -40,9 +40,9 @@ public sealed class Settings : IArlecchinoStore
         Place = SettingsFile.Place();
         _values = SettingsFile.Read(Place);
 
-        if (!_values.ContainsKey(EditorName) && FromEnvironment() is { Length: > 0 } named)
+        if (!_values.ContainsKey(EditorName) && FromEnvironment() is { Length: > 0 } entry)
         {
-            _values[EditorName] = named;
+            _values[EditorName] = entry;
         }
 
         All =
@@ -80,7 +80,7 @@ public sealed class Settings : IArlecchinoStore
                 return WatchByDefault;
             }
 
-            if (value.Equals(WatchOff, StringComparison.OrdinalIgnoreCase))
+            if (value.Equals(NoWatch, StringComparison.OrdinalIgnoreCase))
             {
                 return TimeSpan.Zero;
             }

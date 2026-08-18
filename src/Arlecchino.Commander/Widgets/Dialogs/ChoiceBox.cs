@@ -22,7 +22,7 @@ public readonly record struct ChoiceSpots(SurfaceRegion Box, SurfaceRegion Rows,
 /// </summary>
 public static class ChoiceBox
 {
-    private const int Wanted = 56;
+    private const int Width = 56;
     private const int Padding = 2;
     private const int MostRows = 12;
 
@@ -44,9 +44,9 @@ public static class ChoiceBox
     /// <returns>Where it landed, for the clicks.</returns>
     public static ChoiceSpots Draw(SurfaceRegion screen, Choosing choosing)
     {
-        var shown = Math.Min(MostRows, Math.Max(1, choosing.Matching.Count));
-        var rows = shown + Chrome;
-        var width = Math.Min(Wanted, screen.Width - 4);
+        var showing = Math.Min(MostRows, Math.Max(1, choosing.Matching.Count));
+        var rows = showing + Chrome;
+        var width = Math.Min(Width, screen.Width - 4);
 
         if (width < 30 || screen.Height < rows + 2)
         {
@@ -62,21 +62,21 @@ public static class ChoiceBox
         box.Fill(coat.Text);
         box.Rows(0, 1).Fill(Skin.Paint(Skin.Crimson, Skin.Crimson));
 
-        var inside = box.Rows(1, rows - 1).Inset(new Margin(Padding, 0, Padding, 0));
+        var content = box.Rows(1, rows - 1).Inset(new Margin(Padding, 0, Padding, 0));
 
-        inside.Write(1, 0, choosing.Title, coat.Strong);
-        inside.WriteLine(1, Counted(choosing), coat.Label, Align.Right);
+        content.Write(1, 0, choosing.Title, coat.Strong);
+        content.WriteLine(1, Counted(choosing), coat.Label, Align.Right);
 
-        Query(inside, choosing, coat);
+        Query(content, choosing, coat);
 
-        var first = Rows(inside, choosing, coat, shown);
+        var first = Rows(content, choosing, coat, showing);
 
-        inside.Write(inside.Height - 2, 0, choosing.Footer, coat.Label);
+        content.Write(content.Height - 2, 0, choosing.Footer, coat.Label);
 
-        return new(box, inside.Rows(4, shown), first);
+        return new(box, content.Rows(4, showing), first);
     }
 
-    private static string Counted(Choosing choosing) => choosing.Typed.Length == 0
+    private static string Counted(Choosing choosing) => choosing.Text.Length == 0
         ? choosing.Items.Count == 1 ? "1" : $"{choosing.Items.Count}"
         : Loc(LocString.ChoosingCount, choosing.Matching.Count, choosing.Items.Count);
 
@@ -84,49 +84,49 @@ public static class ChoiceBox
     /// The line what is typed lands on. It is drawn whether anything has been typed or not, so the prompt
     /// itself says that the list narrows.
     /// </summary>
-    /// <param name="inside">Where to draw.</param>
+    /// <param name="content">Where to draw.</param>
     /// <param name="choosing">What is being picked from.</param>
     /// <param name="coat">The surface underneath.</param>
-    private static void Query(SurfaceRegion inside, Choosing choosing, Skin.Coat coat)
+    private static void Query(SurfaceRegion content, Choosing choosing, Skin.Coat coat)
     {
-        inside.Write(2, 0, "❯", coat.Accent);
+        content.Write(2, 0, "❯", coat.Accent);
 
-        var written = EntryRow.Draw(
-            inside,
+        var run = EntryRow.Draw(
+            content,
             2,
             2,
-            Math.Max(0, inside.Width - 4),
+            Math.Max(0, content.Width - 4),
             choosing.Filter,
-            Skin.Typed(coat.Text, Skin.Crimson));
+            Skin.Entry(coat.Text, Skin.Crimson));
 
-        if (choosing.Typed.Length == 0)
+        if (choosing.Text.Length == 0)
         {
-            inside.Write(2, 2 + written + 1, Loc(LocString.ChoosingNarrow), coat.Ghost);
+            content.Write(2, 2 + run + 1, Loc(LocString.ChoosingNarrow), coat.Ghost);
         }
     }
 
     /// <summary>Draws the rows that fit, scrolled to keep the chosen one in view.</summary>
-    /// <param name="inside">Where to draw.</param>
+    /// <param name="content">Where to draw.</param>
     /// <param name="choosing">What is being picked from.</param>
     /// <param name="coat">The surface underneath.</param>
-    /// <param name="shown">How many rows there is room for.</param>
+    /// <param name="showing">How many rows there is room for.</param>
     /// <returns>Which entry the topmost row is, which is what turns a click into an entry.</returns>
-    private static int Rows(SurfaceRegion inside, Choosing choosing, Skin.Coat coat, int shown)
+    private static int Rows(SurfaceRegion content, Choosing choosing, Skin.Coat coat, int showing)
     {
         if (choosing.Matching.Count == 0)
         {
-            inside.Write(4, 0, Loc(LocString.ChoosingNothing), coat.Label);
+            content.Write(4, 0, Loc(LocString.ChoosingNothing), coat.Label);
 
             return 0;
         }
 
-        var first = Math.Max(0, Math.Min(choosing.Chosen - (shown / 2), choosing.Matching.Count - shown));
+        var first = Math.Max(0, Math.Min(choosing.ChosenIndex - (showing / 2), choosing.Matching.Count - showing));
 
-        for (var index = 0; index < shown && first + index < choosing.Matching.Count; index++)
+        for (var index = 0; index < showing && first + index < choosing.Matching.Count; index++)
         {
             var pick = choosing.Matching[first + index];
-            var here = first + index == choosing.Chosen;
-            var row = inside.Rows(4 + index, 1);
+            var here = first + index == choosing.ChosenIndex;
+            var row = content.Rows(4 + index, 1);
             var qualified = pick.Hint.Length + pick.Key.Length > 0;
             var name = qualified
                 ? Math.Min(Naming, row.Width - pick.Hint.Length - pick.Key.Length - 4)
@@ -152,7 +152,7 @@ public static class ChoiceBox
 
             if (pick.Key.Length > 0)
             {
-                row.WriteLine(0, pick.Key, here ? Skin.ChosenMeta : coat.Faded, Align.Right);
+                row.WriteLine(0, pick.Key, here ? Skin.ChosenMeta : coat.Hint, Align.Right);
             }
             else if (pick.Hint.Length > 0 && name <= 0)
             {

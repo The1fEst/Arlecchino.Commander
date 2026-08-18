@@ -12,7 +12,7 @@ namespace Arlecchino.Commander.Model;
 /// </summary>
 public static class Programs
 {
-    private static readonly ConcurrentDictionary<string, bool> Known = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, bool> Cache = new(StringComparer.Ordinal);
 
     private static readonly Lazy<IReadOnlyList<string>> All = new(Everything, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -24,17 +24,17 @@ public static class Programs
     /// <returns>The names, in the order they sort in.</returns>
     public static List<string> Starting(string start)
     {
-        var found = new List<string>();
+        var match = new List<string>();
 
         foreach (var name in All.Value)
         {
             if (name.StartsWith(start, StringComparison.OrdinalIgnoreCase))
             {
-                found.Add(name);
+                match.Add(name);
             }
         }
 
-        return found;
+        return match;
     }
 
     /// <summary>Which of these are on this machine, in the order they were offered.</summary>
@@ -42,17 +42,17 @@ public static class Programs
     /// <returns>The ones that are there.</returns>
     public static IReadOnlyList<string> Present(IReadOnlyList<string> names)
     {
-        var found = new List<string>(names.Count);
+        var match = new List<string>(names.Count);
 
         foreach (var name in names)
         {
-            if (Known.GetOrAdd(name, Look))
+            if (Cache.GetOrAdd(name, Look))
             {
-                found.Add(name);
+                match.Add(name);
             }
         }
 
-        return found;
+        return match;
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public static class Programs
     /// <returns>The names.</returns>
     private static IReadOnlyList<string> Everything()
     {
-        var found = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var match = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var folder in (Environment.GetEnvironmentVariable("PATH") ?? "")
                  .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -78,7 +78,7 @@ public static class Programs
                 {
                     if (Runnable(file) is { Length: > 0 } name)
                     {
-                        found.Add(name);
+                        match.Add(name);
                     }
                 }
             }
@@ -86,7 +86,7 @@ public static class Programs
                                               ArgumentException) { }
         }
 
-        return [.. found];
+        return [.. match];
     }
 
     /// <summary>What one file on the path is worth offering as, or nothing when it cannot be run.</summary>

@@ -13,29 +13,29 @@ public static class RemotePaths
 
     public static string? Parent(string folder)
     {
-        var trimmed = folder.TrimEnd('/');
+        var trimmedText = folder.TrimEnd('/');
 
-        if (trimmed.Length == 0)
+        if (trimmedText.Length == 0)
         {
             return null;
         }
 
-        var cut = trimmed.LastIndexOf('/');
+        var cut = trimmedText.LastIndexOf('/');
 
         return cut switch
         {
             < 0 => null,
             0 => Root,
-            _ => trimmed[..cut],
+            _ => trimmedText[..cut],
         };
     }
 
     public static string NameOf(string path)
     {
-        var trimmed = path.TrimEnd('/');
-        var cut = trimmed.LastIndexOf('/');
+        var trimmedText = path.TrimEnd('/');
+        var cut = trimmedText.LastIndexOf('/');
 
-        return cut < 0 ? trimmed : trimmed[(cut + 1)..];
+        return cut < 0 ? trimmedText : trimmedText[(cut + 1)..];
     }
 
     public static bool IsHidden(string name) => name.StartsWith('.');

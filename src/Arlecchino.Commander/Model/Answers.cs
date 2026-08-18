@@ -12,7 +12,7 @@ public static class Answers
     /// <summary>Asks, and answers on the drawing thread when the answer arrives.</summary>
     /// <typeparam name="T">What was asked for.</typeparam>
     /// <param name="asking">The question.</param>
-    /// <param name="answered">What to do with the answer.</param>
-    public static void From<T>(Func<Task<T>> asking, Action<T> answered) =>
-        FrameThread.Post(async () => answered(await asking()));
+    /// <param name="onAnswer">What to do with the answer.</param>
+    public static void From<T>(Func<Task<T>> asking, Action<T> onAnswer) =>
+        FrameThread.Post(async () => onAnswer(await asking()));
 }

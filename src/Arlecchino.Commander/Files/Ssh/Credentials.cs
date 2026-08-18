@@ -91,11 +91,11 @@ public static class Credentials
         ]);
     }
 
-    private static void Keep<T>(IDictionary<string, T> offered, string[] wanted)
+    private static void Keep<T>(IDictionary<string, T> values, string[] names)
     {
-        foreach (var name in offered.Keys.Where(name => !wanted.Contains(name, StringComparer.Ordinal)).ToArray())
+        foreach (var name in values.Keys.Where(name => !names.Contains(name, StringComparer.Ordinal)).ToArray())
         {
-            offered.Remove(name);
+            values.Remove(name);
         }
     }
 
@@ -109,11 +109,11 @@ public static class Credentials
     public static HostCheck Watch(BaseClient client, Connection connection)
     {
         var check = new HostCheck();
-        var known = KnownHosts.Read(KnownHosts.Path);
+        var knownNames = KnownHosts.Read(KnownHosts.Path);
 
         client.HostKeyReceived += (_, presented) =>
         {
-            var verdict = known.Check(
+            var verdict = knownNames.Check(
                 connection.Host,
                 connection.Port,
                 presented.HostKeyName,
@@ -137,7 +137,7 @@ public static class Credentials
             return File.Exists(connection.KeyFile) ? [connection.KeyFile] : [];
         }
 
-        var found = new List<string>();
+        var match = new List<string>();
         var folder = Path.Combine(Listing.Home(), ".ssh");
 
         foreach (var name in DefaultKeys)
@@ -146,11 +146,11 @@ public static class Credentials
 
             if (File.Exists(path))
             {
-                found.Add(path);
+                match.Add(path);
             }
         }
 
-        return found;
+        return match;
     }
 
     private static PrivateKeyFile? Load(string file, string passphrase)

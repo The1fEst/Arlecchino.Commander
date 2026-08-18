@@ -22,7 +22,7 @@ public sealed record Hit(string Folder, FileEntry Entry);
 /// </summary>
 public sealed class Finder : IArlecchinoStore
 {
-    private const int Most = 5000;
+    private const int MostHits = 5000;
     private const int Batch = 32;
 
     private readonly ArlecchinoState _state;
@@ -35,12 +35,12 @@ public sealed class Finder : IArlecchinoStore
     /// What the walk has found so far. A list atom rather than a list, so that a batch landing on the
     /// drawing thread marks the frame stale by itself and the results appear as they are found.
     /// </summary>
-    public LocalAtomsList<Hit> Found { get; } = new();
+    public LocalAtomsList<Hit> Hits { get; } = new();
 
     public bool IsRunning { get; private set; }
 
     /// <summary>What was asked for, as it is shown at the top of the results.</summary>
-    public string What { get; private set; } = "";
+    public string Pattern { get; private set; } = "";
 
     /// <summary>The folder the walk started from, which the results are shown relative to.</summary>
     public string Root { get; private set; } = "";
@@ -49,7 +49,7 @@ public sealed class Finder : IArlecchinoStore
     public IFileSource? Source { get; private set; }
 
     /// <summary>How many folders have been looked in so far.</summary>
-    public int Looked { get; private set; }
+    public int FolderCount { get; private set; }
 
     /// <summary>
     /// Starts a search. Everything it needs is copied out first, so the panel is free to move on
@@ -68,22 +68,22 @@ public sealed class Finder : IArlecchinoStore
         }
 
         var cancelling = new CancellationTokenSource();
-        var wanted = Glob.Anywhere(pattern);
+        var glob = Glob.Anywhere(pattern);
 
         _cancelling = cancelling;
         IsRunning = true;
-        Looked = 0;
+        FolderCount = 0;
         Root = folder;
         Source = source;
-        What = wanted;
+        Pattern = glob;
 
-        Found.Clear();
+        Hits.Clear();
 
         FrameThread.Post(async () =>
         {
             try
             {
-                await Task.Run(() => WalkAsync(source, folder, wanted, cancelling.Token), cancelling.Token);
+                await Task.Run(() => WalkAsync(source, folder, glob, cancelling.Token), cancelling.Token);
             }
             finally
             {
@@ -112,19 +112,19 @@ public sealed class Finder : IArlecchinoStore
     {
         var pending = new Queue<string>();
         var batch = new List<Hit>();
-        var looked = 0;
+        var folders = 0;
         var hits = 0;
 
         pending.Enqueue(folder);
 
-        while (pending.Count > 0 && !token.IsCancellationRequested && hits < Most)
+        while (pending.Count > 0 && !token.IsCancellationRequested && hits < MostHits)
         {
-            var here = pending.Dequeue();
-            var seen = ++looked;
+            var current = pending.Dequeue();
+            var names = ++folders;
 
-            FrameThread.Post(() => Looked = seen);
+            FrameThread.Post(() => FolderCount = names);
 
-            foreach (var entry in await ListedAsync(source, here, token).ConfigureAwait(false))
+            foreach (var entry in await ListedAsync(source, current, token).ConfigureAwait(false))
             {
                 if (entry.IsParent)
                 {
@@ -142,7 +142,7 @@ public sealed class Finder : IArlecchinoStore
                     continue;
                 }
 
-                batch.Add(new(here, entry));
+                batch.Add(new(current, entry));
                 hits++;
             }
 
@@ -159,11 +159,11 @@ public sealed class Finder : IArlecchinoStore
             return;
         }
 
-        var carried = batch.ToArray();
+        var hits = batch.ToArray();
 
         batch.Clear();
 
-        FrameThread.Post(() => Found.Add(carried));
+        FrameThread.Post(() => Hits.Add(hits));
     }
 
     private static async Task<IReadOnlyList<FileEntry>> ListedAsync(

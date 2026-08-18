@@ -9,7 +9,7 @@ public static class Links
     {
         if (!link.Contains("://", StringComparison.Ordinal))
         {
-            return Saved(link);
+            return SavedHost(link);
         }
 
         var address = new Uri(link);
@@ -26,7 +26,7 @@ public static class Links
             KeyFrom(address.Query));
     }
 
-    private static Connection Saved(string alias)
+    private static Connection SavedHost(string alias)
     {
         foreach (var host in SshConfig.Hosts())
         {

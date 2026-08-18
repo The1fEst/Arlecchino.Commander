@@ -21,9 +21,9 @@ public static class Menu
 
         foreach (var section in sections)
         {
-            var which = section;
+            var choice = section;
 
-            headings.Add(new(Loc(section.Title), Run: () => Section(doings, which)));
+            headings.Add(new(Loc(section.Title), Run: () => Section(doings, choice)));
         }
 
         doings.Dialogs.Pick(Loc(LocString.Menu), headings, static _ => { });
@@ -67,7 +67,7 @@ public static class Menu
         new(LocString.MenuFindFile, () => doings.Navigation.Apply(doings.Find())),
         new(LocString.MenuShowHidden, () => doings.ToggleHidden(panel)),
         new(LocString.MenuChooseDrive, () => doings.ChooseDrive(panel)),
-        new(LocString.MenuOpenSavedHost, () => doings.Dialling.Saved(panel)),
+        new(LocString.MenuOpenSavedHost, () => doings.Dialling.OpenSavedHosts(panel)),
         new(LocString.MenuConnectToServer, () => doings.Connect(panel)),
         new(LocString.MenuDisconnect, () => doings.Dialling.Disconnect(panel)),
         new(LocString.MenuReload, panel.Reload),
@@ -148,11 +148,11 @@ public static class Menu
 
         foreach (var section in Sections(doings))
         {
-            var where = Loc(section.Title).ToLowerInvariant();
+            var group = Loc(section.Title).ToLowerInvariant();
 
             foreach (var item in section.Items)
             {
-                everything.Add(new(Loc(item.Name), where, "", item.Run));
+                everything.Add(new(Loc(item.Name), group, "", item.Run));
             }
         }
 

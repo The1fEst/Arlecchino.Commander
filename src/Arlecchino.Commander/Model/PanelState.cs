@@ -7,7 +7,7 @@ namespace Arlecchino.Commander.Model;
 
 public sealed class PanelState
 {
-    private readonly List<string> _visited = [];
+    private readonly List<string> _history = [];
 
     private int _place;
 
@@ -15,7 +15,7 @@ public sealed class PanelState
     {
         Source = source;
         Folder = folder;
-        _visited.Add(folder);
+        _history.Add(folder);
     }
 
     public IFileSource Source { get; private set; }
@@ -41,18 +41,18 @@ public sealed class PanelState
     {
         Land(folder);
 
-        if (_place < _visited.Count - 1)
+        if (_place < _history.Count - 1)
         {
-            _visited.RemoveRange(_place + 1, _visited.Count - _place - 1);
+            _history.RemoveRange(_place + 1, _history.Count - _place - 1);
         }
 
-        if (string.Equals(_visited[_place], folder, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(_history[_place], folder, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        _visited.Add(folder);
-        _place = _visited.Count - 1;
+        _history.Add(folder);
+        _place = _history.Count - 1;
     }
 
     /// <summary>Steps back to the folder the panel was in before this one.</summary>
@@ -61,23 +61,23 @@ public sealed class PanelState
 
     /// <summary>Steps forward again after <see cref="Back"/>.</summary>
     /// <returns>Where it landed, or <c>null</c> when it is already at the newest folder.</returns>
-    public string? Forward() => _place < _visited.Count - 1 ? Landed(_place + 1) : null;
+    public string? Forward() => _place < _history.Count - 1 ? Landed(_place + 1) : null;
 
     public void Connect(IFileSource source, string folder)
     {
-        var replaced = Source;
+        var tail = Source;
 
         Source = source;
 
-        _visited.Clear();
-        _visited.Add(folder);
+        _history.Clear();
+        _history.Add(folder);
         _place = 0;
 
         Land(folder);
 
-        if (replaced.IsRemote)
+        if (tail.IsRemote)
         {
-            replaced.Dispose();
+            tail.Dispose();
         }
     }
 
@@ -85,9 +85,9 @@ public sealed class PanelState
     {
         _place = place;
 
-        Land(_visited[place]);
+        Land(_history[place]);
 
-        return _visited[place];
+        return _history[place];
     }
 
     private void Land(string folder)

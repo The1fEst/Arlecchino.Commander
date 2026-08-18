@@ -32,7 +32,7 @@ public sealed class Choosing
     public required IReadOnlyList<Pick> Items { get; init; }
 
     /// <summary>What to do with what was picked.</summary>
-    public required Action<string> Chose { get; init; }
+    public required Action<string> OnChoice { get; init; }
 
     /// <summary>What is written along the bottom.</summary>
     public string Footer { get; init; } = Loc(LocString.ChoosingHints);
@@ -44,10 +44,10 @@ public sealed class Choosing
     public TextEntry Filter { get; } = new();
 
     /// <summary>Whatever has been typed to narrow the list.</summary>
-    public string Typed => Filter.Text;
+    public string Text => Filter.Text;
 
     /// <summary>Which row the cursor is on, among the ones still showing.</summary>
-    public int Chosen { get; set; }
+    public int ChosenIndex { get; set; }
 
     /// <summary>The rows still showing, worked out again whenever what is typed has changed.</summary>
     public IReadOnlyList<Pick> Matching
@@ -67,16 +67,16 @@ public sealed class Choosing
     /// Puts the cursor back on the first row, which is what a change to the filter comes to: the rows
     /// showing after it are a different set.
     /// </summary>
-    public void Reset() => Chosen = 0;
+    public void Reset() => ChosenIndex = 0;
 
     /// <summary>The row the cursor is on, or nothing when everything was narrowed away.</summary>
     public Pick? Current => Matching.Count == 0
         ? null
-        : Matching[Math.Clamp(Chosen, 0, Matching.Count - 1)];
+        : Matching[Math.Clamp(ChosenIndex, 0, Matching.Count - 1)];
 
     /// <summary>Moves the cursor, stopping at either end.</summary>
     /// <param name="by">How far, and which way.</param>
-    public void Move(int by) => Chosen = Math.Clamp(Chosen + by, 0, Math.Max(0, Matching.Count - 1));
+    public void Move(int by) => ChosenIndex = Math.Clamp(ChosenIndex + by, 0, Math.Max(0, Matching.Count - 1));
 
     /// <summary>
     /// Fills the query out to as much as every remaining row agrees on, which is the shell gesture.
@@ -88,44 +88,44 @@ public sealed class Choosing
             return;
         }
 
-        var shared = Matching[0].Label;
+        var stem = Matching[0].Label;
 
         foreach (var pick in Matching)
         {
-            shared = Common(shared, pick.Label);
+            stem = Common(stem, pick.Label);
         }
 
-        if (shared.Length > Filter.Text.Length)
+        if (stem.Length > Filter.Text.Length)
         {
-            Filter.Text = shared;
+            Filter.Text = stem;
             Reset();
         }
     }
 
     private static string Common(string first, string second)
     {
-        var shared = 0;
+        var stem = 0;
 
-        while (shared < first.Length &&
-               shared < second.Length &&
-               char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
+        while (stem < first.Length &&
+               stem < second.Length &&
+               char.ToLowerInvariant(first[stem]) == char.ToLowerInvariant(second[stem]))
         {
-            shared++;
+            stem++;
         }
 
-        return first[..shared];
+        return first[..stem];
     }
 
     private void Narrow()
     {
-        var typed = Filter.Text;
+        var text = Filter.Text;
 
         _matching.Clear();
-        _narrowedFor = typed;
+        _narrowedFor = text;
 
         foreach (var item in Items)
         {
-            if (typed.Length == 0 || item.Label.Contains(typed, StringComparison.OrdinalIgnoreCase))
+            if (text.Length == 0 || item.Label.Contains(text, StringComparison.OrdinalIgnoreCase))
             {
                 _matching.Add(item);
             }

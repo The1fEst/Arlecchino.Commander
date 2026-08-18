@@ -106,12 +106,12 @@ public sealed class RemoteRun : IShellRun
     /// <inheritdoc/>
     public async Task<List<string>> CollectAsync(CancellationToken token)
     {
-        if (await _source.RunAsync(_command, _folder, token).ConfigureAwait(false) is not { } said)
+        if (await _source.RunAsync(_command, _folder, token).ConfigureAwait(false) is not { } label)
         {
             return ["[failed] the server offered no shell"];
         }
 
-        return [.. Shells.Split(said.Output), $"[exit {said.Status}]"];
+        return [.. Shells.Split(label.Output), $"[exit {label.Status}]"];
     }
 
     /// <inheritdoc/>

@@ -32,10 +32,10 @@ public abstract class PanelWork
     protected ArlecchinoState State { get; }
 
     /// <summary>The panel being worked in.</summary>
-    protected FilePanel Here => _panels.Active;
+    protected FilePanel Active => _panels.Active;
 
     /// <summary>The other one.</summary>
-    protected FilePanel There => _panels.Passive;
+    protected FilePanel Passive => _panels.Passive;
 
     /// <summary>
     /// Whether there is nothing to act on, said out loud when there is not. Every operation begins by

@@ -20,12 +20,12 @@ public static class Breadcrumb
     /// <param name="row">The row to draw on.</param>
     /// <param name="state">What the panel is showing.</param>
     /// <param name="coat">The surface underneath.</param>
-    /// <param name="beneath">The color of that surface, for the pieces that set their own.</param>
+    /// <param name="background">The color of that surface, for the pieces that set their own.</param>
     /// <param name="right">What goes at the right, which the trail makes room for.</param>
-    public static void Draw(SurfaceRegion row, PanelState state, Skin.Coat coat, Rgb beneath, string right)
+    public static void Draw(SurfaceRegion row, PanelState state, Skin.Coat coat, Rgb background, string right)
     {
         var room = Math.Max(0, row.Width - TextWidth.Of(right) - PanelColumns.Gap);
-        var trail = Trail(state, coat, beneath);
+        var trail = Trail(state, coat, background);
         var column = 0;
 
         while (trail.Count > Least && Spans(trail) > room)
@@ -58,14 +58,14 @@ public static class Breadcrumb
     /// <returns>The cells they take.</returns>
     private static int Spans(List<(string Text, TermColor Style)> trail)
     {
-        var wanted = 0;
+        var target = 0;
 
         foreach (var (text, _) in trail)
         {
-            wanted += TextWidth.Of(text);
+            target += TextWidth.Of(text);
         }
 
-        return wanted;
+        return target;
     }
 
     /// <summary>
@@ -74,9 +74,9 @@ public static class Breadcrumb
     /// </summary>
     /// <param name="state">What the panel is showing.</param>
     /// <param name="coat">The surface underneath.</param>
-    /// <param name="beneath">The color of that surface.</param>
+    /// <param name="background">The color of that surface.</param>
     /// <returns>The pieces, in the order they are written, in pairs of separator and name.</returns>
-    private static List<(string Text, TermColor Style)> Trail(PanelState state, Skin.Coat coat, Rgb beneath)
+    private static List<(string Text, TermColor Style)> Trail(PanelState state, Skin.Coat coat, Rgb background)
     {
         var pieces = new List<(string, TermColor)>();
         var folder = Paths.Homed(state.Source, state.Folder);
@@ -84,7 +84,7 @@ public static class Breadcrumb
 
         if (state.Source.IsRemote)
         {
-            pieces.Add((state.Source.Label, Skin.Paint(Skin.Sea, beneath, TextStyle.Bold)));
+            pieces.Add((state.Source.Label, Skin.Paint(Skin.Sea, background, TextStyle.Bold)));
             pieces.Add((" ", coat.Text));
         }
         else

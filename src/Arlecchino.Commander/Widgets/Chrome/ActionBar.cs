@@ -12,7 +12,7 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 public sealed class ActionBar
 {
     private const int SideRoom = 2;
-    private const int Around = 4;
+    private const int Padding = 4;
 
     private readonly Keyboard _keyboard;
 
@@ -54,8 +54,8 @@ public sealed class ActionBar
 
             var key = action.Binding.Key.ToString();
             var label = action.Label();
-            var wanted = key.Length + label.Length + Around;
-            if (column + wanted > bar.Width - SideRoom)
+            var target = key.Length + label.Length + Padding;
+            if (column + target > bar.Width - SideRoom)
             {
                 column = SideRoom;
                 row++;
@@ -65,7 +65,7 @@ public sealed class ActionBar
             bar.Write(row, column, $" {key} ", Skin.Paint(Skin.Sea, Skin.Chip));
             bar.Write(row, column + key.Length + 3, label, coat.Second);
 
-            column += wanted;
+            column += target;
         }
     }
 }

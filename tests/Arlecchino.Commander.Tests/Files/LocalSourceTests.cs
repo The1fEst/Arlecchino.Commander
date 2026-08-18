@@ -89,10 +89,10 @@ public sealed class LocalSourceTests : IDisposable
     [Fact]
     public void PathsAreJoinedAndTakenApartTheWayThePlatformDoes()
     {
-        var joined = _source.Combine(_root, "alpha.txt");
+        var path = _source.Combine(_root, "alpha.txt");
 
-        Assert.Equal(Path.Combine(_root, "alpha.txt"), joined);
-        Assert.Equal("alpha.txt", _source.NameOf(joined));
+        Assert.Equal(Path.Combine(_root, "alpha.txt"), path);
+        Assert.Equal("alpha.txt", _source.NameOf(path));
         Assert.Equal(_root, _source.Parent(Path.Combine(_root, "nested")));
     }
 
@@ -106,9 +106,9 @@ public sealed class LocalSourceTests : IDisposable
     [Fact]
     public void TwoPlacesOnTheSameDiskAreSaidToBe()
     {
-        var nested = Directory.CreateDirectory(Path.Combine(_root, "nested")).FullName;
+        var folder = Directory.CreateDirectory(Path.Combine(_root, "nested")).FullName;
 
-        Assert.True(_source.SameVolume(_root, nested));
+        Assert.True(_source.SameVolume(_root, folder));
     }
 
     [Fact]

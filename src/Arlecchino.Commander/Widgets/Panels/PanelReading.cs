@@ -131,13 +131,13 @@ public sealed class PanelReading : IDisposable
     /// <param name="source">Who was asked.</param>
     /// <param name="folder">Which folder.</param>
     /// <param name="hidden">Whether the hidden files were asked for.</param>
-    /// <param name="read">What came back.</param>
+    /// <param name="readCount">What came back.</param>
     /// <param name="cursor">The name the cursor was on before.</param>
     private void Landed(
         IFileSource source,
         string folder,
         bool hidden,
-        (IReadOnlyList<FileEntry> Entries, string Error) read,
+        (IReadOnlyList<FileEntry> Entries, string Error) readCount,
         string cursor)
     {
         if (!ReferenceEquals(source, _state.Source) || folder != _state.Folder)
@@ -146,17 +146,17 @@ public sealed class PanelReading : IDisposable
         }
 
         _paint.Loading = false;
-        _paint.Error = read.Error;
+        _paint.Error = readCount.Error;
         _entries.Clear();
 
-        foreach (var entry in read.Entries)
+        foreach (var entry in readCount.Entries)
         {
             _entries.Add(entry);
         }
 
         Sort();
         Point(cursor);
-        Watching(source, folder, hidden, read);
+        Watching(source, folder, hidden, readCount);
     }
 
     /// <summary>
@@ -166,26 +166,26 @@ public sealed class PanelReading : IDisposable
     /// <param name="source">Where the panel is looking.</param>
     /// <param name="folder">Which folder.</param>
     /// <param name="hidden">Whether the hidden files were asked for.</param>
-    /// <param name="read">What came back.</param>
+    /// <param name="readCount">What came back.</param>
     private void Watching(
         IFileSource source,
         string folder,
         bool hidden,
-        (IReadOnlyList<FileEntry> Entries, string Error) read)
+        (IReadOnlyList<FileEntry> Entries, string Error) readCount)
     {
         if (!_shown)
         {
             return;
         }
 
-        if (read.Error.Length > 0)
+        if (readCount.Error.Length > 0)
         {
             _watch.Stop();
 
             return;
         }
 
-        _watch.Follow(source, folder, hidden, read.Entries);
+        _watch.Follow(source, folder, hidden, readCount.Entries);
     }
 
     /// <summary>Puts the cursor back on a name, and leaves it where it landed when that name has gone.</summary>
@@ -196,7 +196,7 @@ public sealed class PanelReading : IDisposable
         {
             if (string.Equals(_entries[index].Name, name, StringComparison.OrdinalIgnoreCase))
             {
-                _table.Selected = index;
+                _table.SelectedIndex = index;
 
                 return;
             }

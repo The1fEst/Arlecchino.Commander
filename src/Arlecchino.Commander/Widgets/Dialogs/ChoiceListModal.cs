@@ -107,21 +107,21 @@ public sealed class ChoiceListModal : Modal
     /// <param name="key">The key that arrived.</param>
     private void Filtering(ModalFrame frame, KeyPress key)
     {
-        var typedSoFar = Picking.Typed;
+        var typedSoFar = Picking.Text;
 
-        if (!Edited(frame, key) && frame.Keys.Resolve(key) is { } typed && !char.IsControl(typed))
+        if (!Edited(frame, key) && frame.Keys.Resolve(key) is { } text && !char.IsControl(text))
         {
-            TextEditing.Insert(Picking.Filter, typed);
+            TextEditing.Insert(Picking.Filter, text);
         }
 
-        if (Picking.Typed != typedSoFar)
+        if (Picking.Text != typedSoFar)
         {
             Picking.Reset();
         }
     }
 
     private bool Edited(ModalFrame frame, KeyPress key) =>
-        Picking.Typed.Length > 0 && EntryKeys.Handled(Picking.Filter, frame.Keymap, frame.Copy, key);
+        Picking.Text.Length > 0 && EntryKeys.Handled(Picking.Filter, frame.Keymap, frame.Copy, key);
 
     /// <summary>
     /// Clicks. A click on a row selects it and a second click on the row already selected picks it, while a
@@ -144,37 +144,37 @@ public sealed class ChoiceListModal : Modal
         }
 
         var (row, _) = _spots.Rows.ToLocal(mouse.Row, mouse.Column);
-        var wanted = _spots.First + row;
+        var target = _spots.First + row;
 
-        if (wanted >= Picking.Matching.Count)
+        if (target >= Picking.Matching.Count)
         {
             return;
         }
 
-        if (wanted != Picking.Chosen)
+        if (target != Picking.ChosenIndex)
         {
-            Picking.Chosen = wanted;
+            Picking.ChosenIndex = target;
 
             return;
         }
 
-        Take(frame, Picking.Matching[wanted]);
+        Take(frame, Picking.Matching[target]);
     }
 
     /// <summary>Closes the list and does what the row says, which is the same as Enter on it.</summary>
     /// <param name="frame">How to close.</param>
-    /// <param name="picked">The row.</param>
-    private void Take(ModalFrame frame, Pick picked)
+    /// <param name="choice">The row.</param>
+    private void Take(ModalFrame frame, Pick choice)
     {
         frame.Close();
 
-        if (picked.Run is { } run)
+        if (choice.Run is { } run)
         {
             run();
 
             return;
         }
 
-        Picking.Chose(picked.Label);
+        Picking.OnChoice(choice.Label);
     }
 }

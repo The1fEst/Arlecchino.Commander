@@ -93,7 +93,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// <summary>
     /// What is being searched for, with its caret and selection, which the foot of the panel shows.
     /// </summary>
-    public ITextEntry Typed => _searchLine.Entry;
+    public ITextEntry Text => _searchLine.Entry;
 
     /// <summary>What the panel is showing, in the order it is shown.</summary>
     public IReadOnlyList<FileEntry> Entries => _reading.Entries;
@@ -111,17 +111,17 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
             return Current is { IsParent: false } current ? [current] : [];
         }
 
-        var marked = new List<FileEntry>();
+        var marks = new List<FileEntry>();
 
         foreach (var entry in _reading.Entries)
         {
             if (!entry.IsParent && _state.Marks.Contains(entry.Name))
             {
-                marked.Add(entry);
+                marks.Add(entry);
             }
         }
 
-        return marked;
+        return marks;
     }
 
     /// <summary>
@@ -163,11 +163,11 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// <summary>Leaves for the folder above, the way Ctrl+PageUp does.</summary>
     public void Ascend() => Up();
 
-    public void Top() => _table.Selected = 0;
+    public void Top() => _table.SelectedIndex = 0;
 
-    public void Middle() => _table.Selected = _reading.Entries.Count / 2;
+    public void Middle() => _table.SelectedIndex = _reading.Entries.Count / 2;
 
-    public void Bottom() => _table.Selected = Math.Max(0, _reading.Entries.Count - 1);
+    public void Bottom() => _table.SelectedIndex = Math.Max(0, _reading.Entries.Count - 1);
 
     /// <summary>
     /// Starts the search that runs while you type, which moves the cursor to the first name that
@@ -231,19 +231,19 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     }
 
     /// <summary>Moves the cursor to the first name the typed letters begin, keeping it where it is otherwise.</summary>
-    /// <param name="typed">The letters spelled so far.</param>
-    private void Nearest(string typed)
+    /// <param name="text">The letters spelled so far.</param>
+    private void Nearest(string text)
     {
         var entries = _reading.Entries;
 
         for (var index = 0; index < entries.Count; index++)
         {
-            if (!entries[index].Name.StartsWith(typed, StringComparison.OrdinalIgnoreCase))
+            if (!entries[index].Name.StartsWith(text, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            _table.Selected = index;
+            _table.SelectedIndex = index;
 
             return;
         }
@@ -306,7 +306,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
 
         if (key.Modifiers == 0 &&
             _keys.Resolve(key) is { } marking &&
-            Marking.Typed(marking, _state, _reading.Entries, OnGroup))
+            Marking.Text(marking, _state, _reading.Entries, OnGroup))
         {
             return FocusResult.Handled;
         }
@@ -322,12 +322,12 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// <returns>What became of it, or nothing when the key was neither.</returns>
     private FocusResult? Steered(KeyPress key)
     {
-        if (key.Modifiers != 0 || _keys.Resolve(key) is not { } typed)
+        if (key.Modifiers != 0 || _keys.Resolve(key) is not { } text)
         {
             return null;
         }
 
-        return char.ToLowerInvariant(typed) switch
+        return char.ToLowerInvariant(text) switch
         {
             'j' => _table.Handle(new(ConsoleKey.DownArrow)),
             'k' => _table.Handle(new(ConsoleKey.UpArrow)),
@@ -367,7 +367,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     {
         if (Marking.One(_state, Current))
         {
-            _table.Selected++;
+            _table.SelectedIndex++;
         }
     }
 
@@ -382,7 +382,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
 
         if (!leaving)
         {
-            _table.Selected = 0;
+            _table.SelectedIndex = 0;
         }
     }
 }

@@ -61,12 +61,12 @@ public sealed class SettingBar
         _line.Draw(row, Loc(LocString.MenuSettings), Loc(LocString.SettingsTail));
 
     /// <summary>Draws the box of what could be typed next, or nothing while the line is closed.</summary>
-    /// <param name="over">Everything above the line.</param>
-    public void DrawHints(SurfaceRegion over)
+    /// <param name="region">Everything above the line.</param>
+    public void DrawHints(SurfaceRegion region)
     {
         if (_line.IsTyping)
         {
-            HintRows.Draw(over, Loc(LocString.MenuSettings), Hints(), -1);
+            HintRows.Draw(region, Loc(LocString.MenuSettings), Hints(), -1);
         }
     }
 
@@ -128,7 +128,7 @@ public sealed class SettingBar
     /// </summary>
     private void Enter()
     {
-        var (name, value) = Split(_line.Typed);
+        var (name, value) = Split(_line.Text);
 
         if (_settings.Named(name) is not { } setting)
         {
@@ -144,12 +144,12 @@ public sealed class SettingBar
             return;
         }
 
-        var kept = _settings.Set(setting.Name, value);
+        var rest = _settings.Set(setting.Name, value);
 
         _history.Add($"{setting.Name} {value}");
         _line.Close();
 
-        _state.Output = kept
+        _state.Output = rest
             ? Loc(LocString.SaidSettingKept, setting.Name, value)
             : Loc(LocString.SaidSettingNotWritten, setting.Name, value, _settings.Place);
     }
@@ -162,9 +162,9 @@ public sealed class SettingBar
             return;
         }
 
-        var (name, value) = Split(_line.Typed);
+        var (name, value) = Split(_line.Text);
 
-        _line.Set(_line.Typed.Contains(' ', StringComparison.Ordinal) || value.Length > 0
+        _line.Set(_line.Text.Contains(' ', StringComparison.Ordinal) || value.Length > 0
             ? $"{name} {first.Word}"
             : $"{first.Word} ");
     }
@@ -176,14 +176,14 @@ public sealed class SettingBar
     /// <returns>The rows, or nothing when what is typed can go nowhere.</returns>
     private List<HintRow> Hints()
     {
-        var typed = _line.Typed;
+        var text = _line.Text;
         var rows = new List<HintRow>();
 
-        if (!typed.Contains(' ', StringComparison.Ordinal))
+        if (!text.Contains(' ', StringComparison.Ordinal))
         {
             foreach (var setting in _settings.All)
             {
-                if (setting.Name.StartsWith(typed.Trim(), StringComparison.OrdinalIgnoreCase))
+                if (setting.Name.StartsWith(text.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     rows.Add(new(setting.Name, Shown(setting.Name), Loc(setting.About)));
                 }
@@ -192,14 +192,14 @@ public sealed class SettingBar
             return rows;
         }
 
-        var (name, half) = Split(typed);
+        var (name, half) = Split(text);
 
-        if (_settings.Named(name) is not { } named)
+        if (_settings.Named(name) is not { } entry)
         {
             return rows;
         }
 
-        foreach (var suggestion in named.Suggest())
+        foreach (var suggestion in entry.Suggest())
         {
             if (suggestion.StartsWith(half, StringComparison.OrdinalIgnoreCase))
             {
@@ -217,12 +217,12 @@ public sealed class SettingBar
         _settings.Value(name) is { Length: > 0 } value ? value : Loc(LocString.SettingsUnset);
 
     /// <summary>What was typed, as the name and whatever follows it.</summary>
-    /// <param name="typed">The line.</param>
+    /// <param name="text">The line.</param>
     /// <returns>The name and the value, with the space between them gone.</returns>
-    private static (string Name, string Value) Split(string typed)
+    private static (string Name, string Value) Split(string text)
     {
-        var space = typed.IndexOf(' ', StringComparison.Ordinal);
+        var space = text.IndexOf(' ', StringComparison.Ordinal);
 
-        return space < 0 ? (typed.Trim(), "") : (typed[..space].Trim(), typed[(space + 1)..].Trim());
+        return space < 0 ? (text.Trim(), "") : (text[..space].Trim(), text[(space + 1)..].Trim());
     }
 }

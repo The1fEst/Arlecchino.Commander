@@ -27,9 +27,9 @@ public sealed class SettingsFileTests : IDisposable
     [Fact]
     public void CommentsAndHeadingsAreSkipped()
     {
-        var read = SettingsFile.Read(Written("# what this is\n[settings]\n\neditor = \"nvim\"\n"));
+        var text = SettingsFile.Read(Written("# what this is\n[settings]\n\neditor = \"nvim\"\n"));
 
-        Assert.Equal("nvim", Assert.Contains("editor", read));
+        Assert.Equal("nvim", Assert.Contains("editor", text));
     }
 
     /// <summary>A value written without quotes means what it says, since a file is edited by hand too.</summary>
@@ -56,10 +56,10 @@ public sealed class SettingsFileTests : IDisposable
 
         Assert.True(SettingsFile.Write(path, values));
 
-        var read = SettingsFile.Read(path);
+        var text = SettingsFile.Read(path);
 
-        Assert.Equal("code --wait", Assert.Contains("editor", read));
-        Assert.Equal("a \"quoted\" thing", Assert.Contains("something", read));
+        Assert.Equal("code --wait", Assert.Contains("editor", text));
+        Assert.Equal("a \"quoted\" thing", Assert.Contains("something", text));
     }
 
     /// <summary>The folder is made when it was never there, since nothing else is going to make it.</summary>

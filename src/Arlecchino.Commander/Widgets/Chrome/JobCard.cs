@@ -46,17 +46,17 @@ public sealed class JobCard
     ///     Draws the stack, or nothing at all when there is nothing to say. The cards are laid from the
     ///     bottom of the region upwards, and one that would reach the top is left out rather than cut.
     /// </summary>
-    /// <param name="over">Everything above the footer, which the cards place themselves in.</param>
-    public void Draw(SurfaceRegion over)
+    /// <param name="region">Everything above the footer, which the cards place themselves in.</param>
+    public void Draw(SurfaceRegion region)
     {
-        var width = Math.Min(CardWidth, over.Width - 4);
+        var width = Math.Min(CardWidth, region.Width - 4);
         if (width < Least)
         {
             return;
         }
 
         var showing = Showing();
-        var bottom = over.Height;
+        var bottom = region.Height;
 
         _spinner.Advance();
 
@@ -69,7 +69,7 @@ public sealed class JobCard
                 return;
             }
 
-            DrawJob(over.Inset(new Margin(over.Width - width - 2, 0, 2, over.Height - bottom)), entry, card);
+            DrawJob(region.Inset(new Margin(region.Width - width - 2, 0, 2, region.Height - bottom)), entry, card);
 
             bottom -= card.Height + Gap;
         }
@@ -113,7 +113,7 @@ public sealed class JobCard
         return new(
             entry.Line,
             Ends(detail),
-            entry.Filled(),
+            entry.Fraction(),
             entry.IsRunning,
             entry.IsRunning ? Skin.Crimson : failed ? Skin.AmberRule : Skin.Calm);
     }
@@ -219,7 +219,7 @@ public sealed class JobCard
             return coat.Strong;
         }
 
-        return job.Rule.Equals(Skin.AmberRule) ? coat.Warning : coat.Done;
+        return job.Rule.Equals(Skin.AmberRule) ? coat.Warning : coat.Success;
     }
 
     /// <summary>One card: what it says, how far along it is, and the color of its rule.</summary>

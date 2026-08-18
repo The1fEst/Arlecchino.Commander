@@ -15,16 +15,16 @@ internal sealed class PollWatch : IDisposable
 {
     private readonly CancellationTokenSource _stopping = new();
 
-    private long _seen;
+    private long _stamp;
 
-    private PollWatch(long seen) => _seen = seen;
+    private PollWatch(long stamp) => _stamp = stamp;
 
     /// <summary>Starts reading a folder over and over, from what the panel has just read as the first word.</summary>
     /// <param name="source">Who to ask.</param>
     /// <param name="folder">Which folder.</param>
     /// <param name="hidden">Whether the hidden files count, which is what the panel is showing.</param>
-    /// <param name="every">How long to wait between readings.</param>
-    /// <param name="seen">What the panel already has, from <see cref="Print"/>.</param>
+    /// <param name="interval">How long to wait between readings.</param>
+    /// <param name="stamp">What the panel already has, from <see cref="Print"/>.</param>
     /// <param name="carrying">Whether files are being carried, in which case the reading is passed over.</param>
     /// <param name="changed">Called on another thread when the folder is no longer that.</param>
     /// <returns>The watch, which stops when it is disposed.</returns>
@@ -32,14 +32,14 @@ internal sealed class PollWatch : IDisposable
         IFileSource source,
         string folder,
         bool hidden,
-        TimeSpan every,
-        long seen,
+        TimeSpan interval,
+        long stamp,
         Func<bool> carrying,
         Action changed)
     {
-        var watch = new PollWatch(seen);
+        var watch = new PollWatch(stamp);
 
-        _ = watch.ReadingAsync(source, folder, hidden, every, carrying, changed);
+        _ = watch.ReadingAsync(source, folder, hidden, interval, carrying, changed);
 
         return watch;
     }
@@ -70,7 +70,7 @@ internal sealed class PollWatch : IDisposable
     /// reported back to it as news.
     /// </summary>
     /// <param name="print">The listing, from <see cref="Print"/>.</param>
-    public void Saw(long print) => Interlocked.Exchange(ref _seen, print);
+    public void Saw(long print) => Interlocked.Exchange(ref _stamp, print);
 
     /// <summary>Stops the reading, after however long the one in flight takes to come back.</summary>
     public void Dispose()
@@ -86,7 +86,7 @@ internal sealed class PollWatch : IDisposable
     /// <param name="source">Who to ask.</param>
     /// <param name="folder">Which folder.</param>
     /// <param name="hidden">Whether the hidden files count.</param>
-    /// <param name="every">How long to wait between readings.</param>
+    /// <param name="interval">How long to wait between readings.</param>
     /// <param name="carrying">
     /// Whether files are being carried, in which case the reading is passed over. FTP answers over the one
     /// connection a transfer is talking on, and the work finishing reads the panels again anyway.
@@ -96,7 +96,7 @@ internal sealed class PollWatch : IDisposable
         IFileSource source,
         string folder,
         bool hidden,
-        TimeSpan every,
+        TimeSpan interval,
         Func<bool> carrying,
         Action changed)
     {
@@ -106,23 +106,23 @@ internal sealed class PollWatch : IDisposable
         {
             while (!token.IsCancellationRequested)
             {
-                await Task.Delay(every, token).ConfigureAwait(false);
+                await Task.Delay(interval, token).ConfigureAwait(false);
 
                 if (carrying())
                 {
                     continue;
                 }
 
-                var read = await Listing.ReadAsync(source, folder, hidden).ConfigureAwait(false);
+                var readCount = await Listing.ReadAsync(source, folder, hidden).ConfigureAwait(false);
 
-                if (read.Error.Length > 0 || token.IsCancellationRequested)
+                if (readCount.Error.Length > 0 || token.IsCancellationRequested)
                 {
                     continue;
                 }
 
-                var print = Print(read.Entries);
+                var print = Print(readCount.Entries);
 
-                if (Interlocked.Exchange(ref _seen, print) != print)
+                if (Interlocked.Exchange(ref _stamp, print) != print)
                 {
                     changed();
                 }

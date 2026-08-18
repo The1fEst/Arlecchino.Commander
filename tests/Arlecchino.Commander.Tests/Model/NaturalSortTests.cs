@@ -14,10 +14,10 @@ public sealed class NaturalSortTests
 {
     private static IReadOnlyList<string> Sorted(params string[] names)
     {
-        var sorted = names.ToList();
-        sorted.Sort(NaturalSort.Compare);
+        var list = names.ToList();
+        list.Sort(NaturalSort.Compare);
 
-        return sorted;
+        return list;
     }
 
     [Fact]

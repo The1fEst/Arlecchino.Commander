@@ -58,11 +58,11 @@ public static class SettingsFile
     /// <returns><c>true</c> when it was written.</returns>
     public static bool Write(string path, IReadOnlyDictionary<string, string> values)
     {
-        var written = new StringBuilder().AppendLine(Head).AppendLine();
+        var lines = new StringBuilder().AppendLine(Head).AppendLine();
 
         foreach (var (name, value) in values)
         {
-            written.Append(name).Append(" = \"").Append(Escaped(value)).AppendLine("\"");
+            lines.Append(name).Append(" = \"").Append(Escaped(value)).AppendLine("\"");
         }
 
         try
@@ -72,7 +72,7 @@ public static class SettingsFile
                 Directory.CreateDirectory(folder);
             }
 
-            File.WriteAllText(path, written.ToString());
+            File.WriteAllText(path, lines.ToString());
 
             return true;
         }
@@ -125,7 +125,7 @@ public static class SettingsFile
     /// <summary>The folder a program's settings belong under on this machine.</summary>
     /// <returns>The folder, which may not exist yet.</returns>
     private static string Home() =>
-        Environment.GetEnvironmentVariable("XDG_CONFIG_HOME") is { Length: > 0 } named
-            ? named
+        Environment.GetEnvironmentVariable("XDG_CONFIG_HOME") is { Length: > 0 } entry
+            ? entry
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config");
 }

@@ -13,25 +13,25 @@ public sealed class CommandLineWrapTests
     [Fact]
     public void WhatFitsStaysOnOneRow()
     {
-        CommandLineRow[] wanted = [new(0, "git status")];
+        CommandLineRow[] rows = [new(0, "git status")];
 
-        Assert.Equal(wanted, CommandLineWrap.Rows("git status", 20));
+        Assert.Equal(rows, CommandLineWrap.Rows("git status", 20));
     }
 
     [Fact]
     public void ItBreaksAtTheLastSpaceThatFits()
     {
-        CommandLineRow[] wanted = [new(0, "git "), new(4, "commit "), new(11, "-m hello")];
+        CommandLineRow[] rows = [new(0, "git "), new(4, "commit "), new(11, "-m hello")];
 
-        Assert.Equal(wanted, CommandLineWrap.Rows("git commit -m hello", 8));
+        Assert.Equal(rows, CommandLineWrap.Rows("git commit -m hello", 8));
     }
 
     [Fact]
     public void AWordWiderThanTheRowIsBrokenWhereItRunsOut()
     {
-        CommandLineRow[] wanted = [new(0, "aaaaa"), new(5, "aaaaa"), new(10, "aa")];
+        CommandLineRow[] rows = [new(0, "aaaaa"), new(5, "aaaaa"), new(10, "aa")];
 
-        Assert.Equal(wanted, CommandLineWrap.Rows("aaaaaaaaaaaa", 5));
+        Assert.Equal(rows, CommandLineWrap.Rows("aaaaaaaaaaaa", 5));
     }
 
     /// <summary>
@@ -41,17 +41,17 @@ public sealed class CommandLineWrapTests
     [Fact]
     public void TheRowsTogetherSpellWhatWasTyped()
     {
-        const string typed = "grep -rn \"the words being looked for\" src --include \"*.cs\"";
+        const string text = "grep -rn \"the words being looked for\" src --include \"*.cs\"";
 
-        Assert.Equal(typed, string.Concat(CommandLineWrap.Rows(typed, 13).Select(row => row.Text)));
+        Assert.Equal(text, string.Concat(CommandLineWrap.Rows(text, 13).Select(row => row.Text)));
     }
 
     [Fact]
     public void AWideSymbolIsCountedInTheColumnsItTakes()
     {
-        CommandLineRow[] wanted = [new(0, "世界"), new(2, "世界")];
+        CommandLineRow[] rows = [new(0, "世界"), new(2, "世界")];
 
-        Assert.Equal(wanted, CommandLineWrap.Rows("世界世界", 4));
+        Assert.Equal(rows, CommandLineWrap.Rows("世界世界", 4));
     }
 
     /// <summary>
@@ -61,11 +61,11 @@ public sealed class CommandLineWrapTests
     [Fact]
     public void TheCaretLandsOnTheCharacterTheCursorCountsTo()
     {
-        const string typed = "git commit -m hello";
+        const string text = "git commit -m hello";
 
-        var rows = CommandLineWrap.Rows(typed, 8);
+        var rows = CommandLineWrap.Rows(text, 8);
 
-        for (var cursor = 0; cursor <= typed.Length; cursor++)
+        for (var cursor = 0; cursor <= text.Length; cursor++)
         {
             var (row, column) = CommandLineWrap.Caret(rows, cursor);
 

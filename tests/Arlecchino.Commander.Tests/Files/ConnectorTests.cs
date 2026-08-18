@@ -24,20 +24,20 @@ public sealed class ConnectorTests
     public void StartingAConnectionDoesNotBlockTheCaller()
     {
         using var mute = new MuteServer();
-        var answered = new ManualResetEventSlim();
-        var wanted = new Connection(Protocol.Sftp, "127.0.0.1", mute.Port, "someone", "secret", "/");
+        var result = new ManualResetEventSlim();
+        var connection = new Connection(Protocol.Sftp, "127.0.0.1", mute.Port, "someone", "secret", "/");
 
         var clock = Stopwatch.StartNew();
 
-        Connector.Start(wanted, (_, _) => answered.Set(), (_, _) => answered.Set());
+        Connector.Start(connection, (_, _) => result.Set(), (_, _) => result.Set());
 
-        var handedBack = clock.ElapsedMilliseconds;
+        var duration = clock.ElapsedMilliseconds;
 
         Assert.True(
-            handedBack < Patience,
-            $"Start held its caller for {handedBack}ms while the handshake was still going");
+            duration < Patience,
+            $"Start held its caller for {duration}ms while the handshake was still going");
 
-        Assert.False(answered.IsSet, "the connection was still in flight, so nothing can have answered yet");
+        Assert.False(result.IsSet, "the connection was still in flight, so nothing can have answered yet");
     }
 
     /// <summary>A socket that accepts and then keeps quiet, so whoever connects waits on a banner.</summary>

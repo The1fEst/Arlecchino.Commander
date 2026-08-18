@@ -59,7 +59,7 @@ internal static class SftpUpload
         Stream reading,
         CancellationToken token)
     {
-        using var failed = CancellationTokenSource.CreateLinkedTokenSource(token);
+        using var failure = CancellationTokenSource.CreateLinkedTokenSource(token);
 
         var pieces = Channel.CreateBounded<Piece>(new BoundedChannelOptions(Handles)
         {
@@ -74,10 +74,10 @@ internal static class SftpUpload
 
             for (var i = 0; i < handles.Length; i++)
             {
-                running[i] = WriteAsync(handles[i], pieces.Reader, failed);
+                running[i] = WriteAsync(handles[i], pieces.Reader, failure);
             }
 
-            running[^1] = ReadAsync(reading, pieces.Writer, failed.Token);
+            running[^1] = ReadAsync(reading, pieces.Writer, failure.Token);
 
             var all = Task.WhenAll(running);
 
@@ -118,19 +118,19 @@ internal static class SftpUpload
         CancellationToken token)
     {
         var handles = new Stream[Handles];
-        var opened = 0;
+        var stream = 0;
 
         try
         {
-            for (; opened < handles.Length; opened++)
+            for (; stream < handles.Length; stream++)
             {
-                handles[opened] = await opening(opened == 0 ? FileMode.Create : FileMode.OpenOrCreate, token)
+                handles[stream] = await opening(stream == 0 ? FileMode.Create : FileMode.OpenOrCreate, token)
                     .ConfigureAwait(false);
             }
         }
         catch
         {
-            for (var i = 0; i < opened; i++)
+            for (var i = 0; i < stream; i++)
             {
                 await handles[i].DisposeAsync().ConfigureAwait(false);
             }
@@ -158,22 +158,22 @@ internal static class SftpUpload
             while (true)
             {
                 var buffer = ArrayPool<byte>.Shared.Rent(Chunk);
-                var filled = 0;
+                var cells = 0;
 
                 try
                 {
-                    while (filled < Chunk)
+                    while (cells < Chunk)
                     {
-                        var read = await reading
-                            .ReadAsync(buffer.AsMemory(filled, Chunk - filled), token)
+                        var readCount = await reading
+                            .ReadAsync(buffer.AsMemory(cells, Chunk - cells), token)
                             .ConfigureAwait(false);
 
-                        if (read == 0)
+                        if (readCount == 0)
                         {
                             break;
                         }
 
-                        filled += read;
+                        cells += readCount;
                     }
                 }
                 catch
@@ -183,15 +183,15 @@ internal static class SftpUpload
                     throw;
                 }
 
-                if (filled == 0)
+                if (cells == 0)
                 {
                     ArrayPool<byte>.Shared.Return(buffer);
 
                     break;
                 }
 
-                await pieces.WriteAsync(new(offset, buffer, filled), token).ConfigureAwait(false);
-                offset += filled;
+                await pieces.WriteAsync(new(offset, buffer, cells), token).ConfigureAwait(false);
+                offset += cells;
             }
 
             pieces.Complete();
@@ -210,25 +210,25 @@ internal static class SftpUpload
     /// </summary>
     /// <param name="handle">This handle.</param>
     /// <param name="pieces">Where the pieces come from.</param>
-    /// <param name="failed">Cancelled when any handle gives up.</param>
+    /// <param name="failure">Cancelled when any handle gives up.</param>
     /// <returns>A task that finishes when there are no more pieces.</returns>
     private static async Task WriteAsync(
         Stream handle,
         ChannelReader<Piece> pieces,
-        CancellationTokenSource failed)
+        CancellationTokenSource failure)
     {
         try
         {
-            await foreach (var piece in pieces.ReadAllAsync(failed.Token).ConfigureAwait(false))
+            await foreach (var piece in pieces.ReadAllAsync(failure.Token).ConfigureAwait(false))
             {
                 try
                 {
-                    await handle.FlushAsync(failed.Token).ConfigureAwait(false);
+                    await handle.FlushAsync(failure.Token).ConfigureAwait(false);
 
                     handle.Seek(piece.Offset, SeekOrigin.Begin);
 
                     await handle
-                        .WriteAsync(piece.Buffer.AsMemory(0, piece.Count), failed.Token)
+                        .WriteAsync(piece.Buffer.AsMemory(0, piece.Count), failure.Token)
                         .ConfigureAwait(false);
                 }
                 finally
@@ -239,7 +239,7 @@ internal static class SftpUpload
         }
         catch
         {
-            await failed.CancelAsync().ConfigureAwait(false);
+            await failure.CancelAsync().ConfigureAwait(false);
 
             throw;
         }

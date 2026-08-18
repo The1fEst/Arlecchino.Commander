@@ -30,7 +30,7 @@ public static class Difference
     /// <returns>How many were marked.</returns>
     private static int Odd(FilePanel panel, FilePanel other)
     {
-        var marked = 0;
+        var marks = 0;
 
         foreach (var entry in panel.Entries)
         {
@@ -40,10 +40,10 @@ public static class Difference
             }
 
             panel.State.Marks.Add(entry.Name);
-            marked++;
+            marks++;
         }
 
-        return marked;
+        return marks;
     }
 
     /// <summary>What the other panel calls by the same name.</summary>

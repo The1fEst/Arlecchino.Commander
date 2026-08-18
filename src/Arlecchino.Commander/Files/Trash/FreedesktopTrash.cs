@@ -15,7 +15,7 @@ public sealed class FreedesktopTrash : Trash
     /// Characters left as themselves in the recorded path. The sidecar holds a URL-encoded path, and
     /// everything outside this set goes over as percent-escapes.
     /// </summary>
-    private const string Unreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()/";
+    private const string Safe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()/";
 
     private readonly string _root;
 
@@ -150,21 +150,21 @@ public sealed class FreedesktopTrash : Trash
     /// <returns>The path, escaped.</returns>
     private static string Escaped(string path)
     {
-        var built = new StringBuilder(path.Length);
+        var builder = new StringBuilder(path.Length);
 
         foreach (var b in Encoding.UTF8.GetBytes(path))
         {
-            if (b < 0x80 && Unreserved.Contains((char)b, StringComparison.Ordinal))
+            if (b < 0x80 && Safe.Contains((char)b, StringComparison.Ordinal))
             {
-                built.Append((char)b);
+                builder.Append((char)b);
 
                 continue;
             }
 
-            built.Append('%').Append(b.ToString("X2", CultureInfo.InvariantCulture));
+            builder.Append('%').Append(b.ToString("X2", CultureInfo.InvariantCulture));
         }
 
-        return built.ToString();
+        return builder.ToString();
     }
 
     /// <summary>

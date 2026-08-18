@@ -76,13 +76,13 @@ public sealed class FreedesktopTrashTests : IDisposable
 
         Assert.True(_trash.TryPut(path));
 
-        var recorded = File.ReadAllLines(Sidecar("a b&c%d.txt"))
+        var info = File.ReadAllLines(Sidecar("a b&c%d.txt"))
             .Single(line => line.StartsWith("Path=", StringComparison.Ordinal));
 
-        Assert.Contains("%20", recorded, StringComparison.Ordinal);
-        Assert.Contains("%26", recorded, StringComparison.Ordinal);
-        Assert.Contains("%25", recorded, StringComparison.Ordinal);
-        Assert.DoesNotContain(" ", recorded, StringComparison.Ordinal);
+        Assert.Contains("%20", info, StringComparison.Ordinal);
+        Assert.Contains("%26", info, StringComparison.Ordinal);
+        Assert.Contains("%25", info, StringComparison.Ordinal);
+        Assert.DoesNotContain(" ", info, StringComparison.Ordinal);
     }
 
     /// <summary>

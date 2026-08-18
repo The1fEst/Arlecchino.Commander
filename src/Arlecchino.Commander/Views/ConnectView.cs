@@ -36,7 +36,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     private readonly ArlecchinoState _state;
 
     private readonly Surface _surface;
-    private readonly IDisposable _watchingSaved;
+    private readonly IDisposable _watchingHosts;
     private readonly IDisposable _watchingScheme;
 
     /// <summary>Builds the screen over whatever was last typed into it.</summary>
@@ -60,8 +60,8 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
         _state = state;
         _navigation = navigation;
 
-        var saved = SshConfig.Hosts();
-        var form = ConnectFields.For(session, new(state), options.Keymap, saved, Start);
+        var hosts = SshConfig.Hosts();
+        var form = ConnectFields.For(session, new(state), options.Keymap, hosts, Start);
 
         _layout = Branch(
             Rows,
@@ -70,7 +70,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
             Branch(Rows, PaneSize.CellsFromEnd(Sheet.Foot), Leaf(form), Leaf(DrawFooter)));
 
         _focus = _layout.AsFocusRing(options.Keymap);
-        _watchingSaved = session.Saved.Subscribe(() => ConnectFields.Fill(saved, session));
+        _watchingHosts = session.Host.Subscribe(() => ConnectFields.Fill(hosts, session));
         _watchingScheme = session.Scheme.Subscribe(() =>
             session.Port.Value = Connection.PortFor(session.Scheme.Value == "ftp" ? Protocol.Ftp : Protocol.Sftp));
     }
@@ -106,7 +106,7 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
     public void Dispose()
     {
         _watchingScheme.Dispose();
-        _watchingSaved.Dispose();
+        _watchingHosts.Dispose();
     }
 
     private void DrawHeader(SurfaceRegion header)
@@ -141,12 +141,12 @@ public sealed class ConnectView : IArlecchinoView, IDisposable
 
     private void Start()
     {
-        var wanted = _session.Wanted();
+        var connection = _session.ToConnection();
 
         _session.Connecting.Value = true;
         _session.Failure.Value = "";
 
-        Connector.Start(wanted, (source, folder) => Landed(wanted, source, folder), Failed);
+        Connector.Start(connection, (source, folder) => Landed(connection, source, folder), Failed);
     }
 
     private void Landed(Connection connection, IFileSource source, string folder)

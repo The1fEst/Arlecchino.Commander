@@ -32,36 +32,36 @@ public sealed class Dialling
 
     /// <summary>Opens the hosts the SSH config already knows about.</summary>
     /// <param name="panel">The panel that would be connected.</param>
-    public void Saved(FilePanel panel)
+    public void OpenSavedHosts(FilePanel panel)
     {
-        var saved = SshConfig.Hosts();
+        var hosts = SshConfig.Hosts();
 
-        if (saved.Count == 0)
+        if (hosts.Count == 0)
         {
             _state.Output = Loc(LocString.SaidNoHosts, SshConfig.Location);
 
             return;
         }
 
-        var listed = new List<string>(saved.Count);
+        var items = new List<string>(hosts.Count);
 
-        foreach (var host in saved)
+        foreach (var host in hosts)
         {
-            listed.Add(host.Describe());
+            items.Add(host.Describe());
         }
 
         _dialogs.Pick(Loc(LocString.PickSavedHosts),
-            listed,
+            items,
             chosen =>
             {
-                for (var index = 0; index < listed.Count; index++)
+                for (var index = 0; index < items.Count; index++)
                 {
-                    if (listed[index] != chosen)
+                    if (items[index] != chosen)
                     {
                         continue;
                     }
 
-                    Dial(panel, saved[index], saved[index].AsConnection(""));
+                    Dial(panel, hosts[index], hosts[index].AsConnection(""));
 
                     return;
                 }
@@ -89,20 +89,20 @@ public sealed class Dialling
     /// <summary>Opens a connection, asking for a password only if the server turns out to want one.</summary>
     /// <param name="panel">Where it lands.</param>
     /// <param name="host">The host as the config describes it.</param>
-    /// <param name="wanted">What is being connected with.</param>
-    private void Dial(FilePanel panel, SshHost host, Connection wanted)
+    /// <param name="connection">What is being connected with.</param>
+    private void Dial(FilePanel panel, SshHost host, Connection connection)
     {
         _state.Output = Loc(LocString.SaidConnecting, host.Alias);
 
         Connector.Start(
-            wanted,
+            connection,
             (source, folder) =>
             {
-                _remote.Ssh = wanted;
+                _remote.Ssh = connection;
                 panel.Connect(source, folder);
                 _state.Output = Loc(LocString.Joined, host.Alias, folder);
             },
-            (message, denied) => AskPassword(panel, host, wanted, message, denied));
+            (message, denied) => AskPassword(panel, host, connection, message, denied));
     }
 
     /// <summary>
@@ -111,12 +111,12 @@ public sealed class Dialling
     /// </summary>
     /// <param name="panel">Where the connection would land.</param>
     /// <param name="host">The host.</param>
-    /// <param name="wanted">What was being connected with.</param>
+    /// <param name="connection">What was being connected with.</param>
     /// <param name="message">What the server said.</param>
     /// <param name="denied">Whether it was a refusal rather than a failure.</param>
-    private void AskPassword(FilePanel panel, SshHost host, Connection wanted, string message, bool denied)
+    private void AskPassword(FilePanel panel, SshHost host, Connection connection, string message, bool denied)
     {
-        if (!denied || wanted.Password.Length > 0)
+        if (!denied || connection.Password.Length > 0)
         {
             _dialogs.Say(Loc(LocString.SaidCouldNotOpen, host.Alias), message);
 
@@ -130,7 +130,7 @@ public sealed class Dialling
             Loc(LocString.OperationPassword),
             "",
             Loc(LocString.ConnectVerb),
-            password => Dial(panel, host, wanted with { Password = password }),
+            password => Dial(panel, host, connection with { Password = password }),
             secret: true);
     }
 }

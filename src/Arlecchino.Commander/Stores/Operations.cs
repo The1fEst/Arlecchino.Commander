@@ -39,11 +39,11 @@ public sealed class Operations : IArlecchinoStore
     public bool IsMeasured => _running?.IsMeasured ?? false;
 
     /// <summary>How full that bar should be, from <c>0</c> to <c>1</c>.</summary>
-    public double Share => _running?.Share ?? 0;
+    public double Progress => _running?.Progress ?? 0;
 
     /// <summary>What to show while the work runs: what it is doing and how far it has got.</summary>
     /// <returns>The line, or an empty string when nothing is running.</returns>
-    public string Progress() => _running is { } outcome ? $"{_busy} {outcome.Progress()}" : "";
+    public string ProgressText() => _running is { } outcome ? $"{_busy} {outcome.ProgressText()}" : "";
 
     /// <summary>Asks the running operation to stop; what it already did stays done.</summary>
     public void Cancel() => _cancelling?.Cancel();
@@ -144,9 +144,9 @@ public sealed class Operations : IArlecchinoStore
         _cancelling = cancelling;
         _reporting = _state.Notifications.Raise(new(DateTimeOffset.Now, NotificationLevel.Information, busy)
         {
-            ProgressText = Progress,
-            Progress = () => outcome.IsMeasured ? outcome.Share : null,
-            Detail = Progress,
+            ProgressText = ProgressText,
+            Progress = () => outcome.IsMeasured ? outcome.Progress : null,
+            Detail = ProgressText,
             Actions = [new(static () => Loc(LocString.WorkStop), Cancel)],
         });
 
@@ -185,7 +185,7 @@ public sealed class Operations : IArlecchinoStore
     private void Finish(Outcome outcome, string verb, bool stopped)
     {
         var errors = outcome.Errors;
-        var said = stopped ? $"{outcome.Describe(verb)} — stopped" : outcome.Describe(verb);
+        var label = stopped ? $"{outcome.Describe(verb)} — stopped" : outcome.Describe(verb);
 
         _running = null;
         _cancelling?.Dispose();
@@ -197,7 +197,7 @@ public sealed class Operations : IArlecchinoStore
 
             _state.Notifications.Settle(
                 reporting,
-                said,
+                label,
                 errors.Count > 0 ? NotificationLevel.Failure : NotificationLevel.Information);
 
             _reporting = null;

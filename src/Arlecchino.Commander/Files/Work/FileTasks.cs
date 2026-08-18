@@ -59,14 +59,14 @@ public static class FileTasks
 
                     Interlocked.Increment(ref folders);
 
-                    var below = await MeasureAsync(source,
+                    var inner = await MeasureAsync(source,
                             await ChildrenAsync(source, entry, token).ConfigureAwait(false),
                             token)
                         .ConfigureAwait(false);
 
-                    Interlocked.Add(ref files, below.Files);
-                    Interlocked.Add(ref folders, below.Folders);
-                    Interlocked.Add(ref bytes, below.Bytes);
+                    Interlocked.Add(ref files, inner.Files);
+                    Interlocked.Add(ref folders, inner.Folders);
+                    Interlocked.Add(ref bytes, inner.Bytes);
                 },
                 token)
             .ConfigureAwait(false);
@@ -108,20 +108,20 @@ public static class FileTasks
         FileEntry folder,
         CancellationToken token)
     {
-        IReadOnlyList<FileEntry> listed;
+        IReadOnlyList<FileEntry> items;
 
         try
         {
-            listed = await source.ListAsync(folder.Path, true, token).ConfigureAwait(false);
+            items = await source.ListAsync(folder.Path, true, token).ConfigureAwait(false);
         }
         catch (Exception error) when (IsExpected(error))
         {
             return [];
         }
 
-        var children = new List<FileEntry>(listed.Count);
+        var children = new List<FileEntry>(items.Count);
 
-        foreach (var child in listed)
+        foreach (var child in items)
         {
             if (!child.IsParent)
             {
@@ -415,12 +415,12 @@ public static class FileTasks
     {
         if (!ReferenceEquals(from, to) || !from.SameVolume(source.Path, target))
         {
-            var copied = new Outcome();
+            var copy = new Outcome();
 
-            await CopyOneAsync(from, source, to, target, copied, token).ConfigureAwait(false);
-            outcome.Absorb(copied);
+            await CopyOneAsync(from, source, to, target, copy, token).ConfigureAwait(false);
+            outcome.Absorb(copy);
 
-            if (!copied.Failed && !token.IsCancellationRequested)
+            if (!copy.Failed && !token.IsCancellationRequested)
             {
                 await DeleteOneAsync(from, source, toTrash: false, new(), token).ConfigureAwait(false);
             }
@@ -532,15 +532,15 @@ public static class FileTasks
 
             while (true)
             {
-                var read = await reading.ReadAsync(buffer.AsMemory(0, Block), token).ConfigureAwait(false);
+                var readCount = await reading.ReadAsync(buffer.AsMemory(0, Block), token).ConfigureAwait(false);
 
-                if (read == 0)
+                if (readCount == 0)
                 {
                     break;
                 }
 
-                await writing.WriteAsync(buffer.AsMemory(0, read), token).ConfigureAwait(false);
-                outcome.Moved(read);
+                await writing.WriteAsync(buffer.AsMemory(0, readCount), token).ConfigureAwait(false);
+                outcome.Moved(readCount);
             }
         }
         finally

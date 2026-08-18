@@ -93,8 +93,8 @@ public sealed class FileTasksTests : IDisposable
         await FileTasks.CopyAsync(_source, Entries(file), piping, to, outcome, CancellationToken.None);
 
         Assert.False(outcome.Failed);
-        Assert.Equal(1, piping.Sent);
-        Assert.Equal(0, piping.Fetched);
+        Assert.Equal(1, piping.SentCount);
+        Assert.Equal(0, piping.FetchCount);
         Assert.Equal("what was written", await System.IO.File.ReadAllTextAsync(Path.Combine(to, "notes.txt")));
     }
 
@@ -112,8 +112,8 @@ public sealed class FileTasksTests : IDisposable
         await FileTasks.CopyAsync(piping, Entries(file), _source, to, outcome, CancellationToken.None);
 
         Assert.False(outcome.Failed);
-        Assert.Equal(1, piping.Fetched);
-        Assert.Equal(0, piping.Sent);
+        Assert.Equal(1, piping.FetchCount);
+        Assert.Equal(0, piping.SentCount);
         Assert.Equal("what was written", await System.IO.File.ReadAllTextAsync(Path.Combine(to, "notes.txt")));
     }
 
@@ -135,7 +135,7 @@ public sealed class FileTasksTests : IDisposable
 
         await FileTasks.CopyAsync(_source, Entries(file), piping, to, outcome, CancellationToken.None);
 
-        Assert.Equal(1d, outcome.Share);
+        Assert.Equal(1d, outcome.Progress);
     }
 
     [Fact]
@@ -143,11 +143,11 @@ public sealed class FileTasksTests : IDisposable
     {
         var from = Folder("from");
         var tree = Directory.CreateDirectory(Path.Combine(from, "tree")).FullName;
-        var under = Directory.CreateDirectory(Path.Combine(tree, "under")).FullName;
+        var inner = Directory.CreateDirectory(Path.Combine(tree, "under")).FullName;
         var to = Folder("to");
 
         File(tree, "one.txt", "one");
-        File(under, "two.txt", "two");
+        File(inner, "two.txt", "two");
 
         var outcome = new Outcome();
 
@@ -162,10 +162,10 @@ public sealed class FileTasksTests : IDisposable
     public async Task DeletingTakesTheWholeTreeAway()
     {
         var tree = Folder("tree");
-        var under = Directory.CreateDirectory(Path.Combine(tree, "under")).FullName;
+        var inner = Directory.CreateDirectory(Path.Combine(tree, "under")).FullName;
 
         File(tree, "one.txt", "one");
-        File(under, "two.txt", "two");
+        File(inner, "two.txt", "two");
 
         var outcome = new Outcome();
 
@@ -216,10 +216,10 @@ public sealed class FileTasksTests : IDisposable
     public async Task MeasuringCountsWhatIsThere()
     {
         var tree = Folder("tree");
-        var under = Directory.CreateDirectory(Path.Combine(tree, "under")).FullName;
+        var inner = Directory.CreateDirectory(Path.Combine(tree, "under")).FullName;
 
         File(tree, "one.txt", "12345");
-        File(under, "two.txt", "123");
+        File(inner, "two.txt", "123");
 
         var tally = await FileTasks.MeasureAsync(_source, Entries(tree), CancellationToken.None);
 
@@ -232,9 +232,9 @@ public sealed class FileTasksTests : IDisposable
     [Fact]
     public async Task MakingAFolderHandsBackWhereItWasMade()
     {
-        var made = await FileTasks.CreateFolderAsync(_source, _root, "fresh", CancellationToken.None);
+        var folder = await FileTasks.CreateFolderAsync(_source, _root, "fresh", CancellationToken.None);
 
-        Assert.Equal(Path.Combine(_root, "fresh"), made);
+        Assert.Equal(Path.Combine(_root, "fresh"), folder);
         Assert.True(Directory.Exists(Path.Combine(_root, "fresh")));
     }
 
@@ -242,21 +242,21 @@ public sealed class FileTasksTests : IDisposable
     [Fact]
     public async Task MakingAFolderMakesTheOnesAboveItAsWell()
     {
-        var made = await FileTasks.CreateFolderAsync(_source,
+        var folder = await FileTasks.CreateFolderAsync(_source,
             Path.Combine(_root, "above"),
             "fresh",
             CancellationToken.None);
 
-        Assert.NotNull(made);
+        Assert.NotNull(folder);
         Assert.True(Directory.Exists(Path.Combine(_root, "above", "fresh")));
     }
 
     [Fact]
     public async Task MakingAFolderThatCannotBeMadeSaysNothingWasMade()
     {
-        var taken = File(Folder("busy"), "in-the-way", "");
+        var outcome = File(Folder("busy"), "in-the-way", "");
 
-        Assert.Null(await FileTasks.CreateFolderAsync(_source, taken, "fresh", CancellationToken.None));
+        Assert.Null(await FileTasks.CreateFolderAsync(_source, outcome, "fresh", CancellationToken.None));
     }
 
     [Fact]
@@ -266,8 +266,8 @@ public sealed class FileTasksTests : IDisposable
 
         File(from, "notes.txt", "what was written");
 
-        using var calledOff = new CancellationTokenSource();
-        await calledOff.CancelAsync();
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
 
         var outcome = new Outcome();
 
@@ -276,7 +276,7 @@ public sealed class FileTasksTests : IDisposable
             Entries(Path.Combine(from, "notes.txt")),
             toTrash: false,
             outcome,
-            calledOff.Token);
+            cancellation.Token);
 
         Assert.True(System.IO.File.Exists(Path.Combine(from, "notes.txt")));
     }
@@ -288,11 +288,11 @@ public sealed class FileTasksTests : IDisposable
     [Fact]
     public async Task CopyingAFileOntoItselfDoesNotDestroyIt()
     {
-        var here = Folder("here");
-        var file = File(here, "notes.txt", "what was written");
+        var sameFolder = Folder("here");
+        var file = File(sameFolder, "notes.txt", "what was written");
         var outcome = new Outcome();
 
-        await FileTasks.CopyAsync(_source, Entries(file), _source, here, outcome, CancellationToken.None);
+        await FileTasks.CopyAsync(_source, Entries(file), _source, sameFolder, outcome, CancellationToken.None);
 
         Assert.Equal("what was written", await System.IO.File.ReadAllTextAsync(file));
         Assert.True(outcome.Failed, "the copy was refused, and saying so is the point");
@@ -306,18 +306,18 @@ public sealed class FileTasksTests : IDisposable
     public async Task CopyingAFolderIntoItselfEnds()
     {
         var tree = Folder("tree");
-        var into = Directory.CreateDirectory(Path.Combine(tree, "into")).FullName;
+        var target = Directory.CreateDirectory(Path.Combine(tree, "into")).FullName;
 
         File(tree, "notes.txt", "what was written");
 
         using var clock = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var outcome = new Outcome();
 
-        await FileTasks.CopyAsync(_source, Entries(tree), _source, into, outcome, clock.Token);
+        await FileTasks.CopyAsync(_source, Entries(tree), _source, target, outcome, clock.Token);
 
         Assert.False(clock.IsCancellationRequested, "the copy was still going when the clock ran out");
-        Assert.False(Directory.Exists(Path.Combine(into, "tree", "into", "tree")));
-        Assert.Empty(Directory.GetFileSystemEntries(into));
+        Assert.False(Directory.Exists(Path.Combine(target, "tree", "into", "tree")));
+        Assert.Empty(Directory.GetFileSystemEntries(target));
         Assert.True(outcome.Failed, "the copy was refused, and saying so is the point");
     }
 }

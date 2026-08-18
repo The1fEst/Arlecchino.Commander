@@ -23,7 +23,7 @@ public sealed class CommanderLayout : IDisposable
     private readonly Gutter _gutter;
     private readonly ArlecchinoKeymap _keymap;
     private readonly Pair _panels;
-    private readonly IDisposable[] _resized;
+    private readonly IDisposable[] _watches;
     private FocusRing _focus;
 
     private PaneTree _tree;
@@ -40,7 +40,7 @@ public sealed class CommanderLayout : IDisposable
         _keymap = keymap;
         _gutter = new(sessions, panels);
 
-        _resized = footer.WhenResized(() => _tree = Lay());
+        _watches = footer.WhenResized(() => _tree = Lay());
         _tree = Lay();
         _focus = _tree.AsFocusRing(keymap);
     }
@@ -48,7 +48,7 @@ public sealed class CommanderLayout : IDisposable
     /// <summary>Gives up what watching the heights of the bar and the two lines took out.</summary>
     public void Dispose()
     {
-        foreach (var resized in _resized)
+        foreach (var resized in _watches)
         {
             resized.Dispose();
         }

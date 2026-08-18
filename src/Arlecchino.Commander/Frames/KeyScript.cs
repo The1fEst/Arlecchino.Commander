@@ -17,7 +17,7 @@ public static class KeyScript
             name = split.Tail;
         }
 
-        return Named(name) is { } key ? new(key, modifiers, Character(key)) : Typed(name, modifiers);
+        return Named(name) is { } key ? new(key, modifiers, Character(key)) : Text(name, modifiers);
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public static class KeyScript
         };
     }
 
-    private static KeyPress Typed(string name, KeyModifiers modifiers)
+    private static KeyPress Text(string name, KeyModifiers modifiers)
     {
         var character = name.Length > 0 ? name[0] : ' ';
         var key = char.IsAsciiLetter(character)

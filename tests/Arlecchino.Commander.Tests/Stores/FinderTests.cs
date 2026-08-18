@@ -19,11 +19,11 @@ public sealed class FinderTests : IDisposable
 
     public FinderTests()
     {
-        var under = Directory.CreateDirectory(Path.Combine(_app.Folder, "under")).FullName;
+        var inner = Directory.CreateDirectory(Path.Combine(_app.Folder, "under")).FullName;
 
         _app.Write("alpha.txt", "the needle is here");
         _app.Write("beta.md", "nothing of interest");
-        File.WriteAllText(Path.Combine(under, "gamma.txt"), "nothing of interest");
+        File.WriteAllText(Path.Combine(inner, "gamma.txt"), "nothing of interest");
     }
 
     public void Dispose() => _app.Dispose();
@@ -42,11 +42,11 @@ public sealed class FinderTests : IDisposable
     {
         Assert.True(Search("*.txt"));
 
-        var found = _app.Finder.Found.Value.Select(static hit => hit.Entry.Name).ToList();
+        var names = _app.Finder.Hits.Value.Select(static hit => hit.Entry.Name).ToList();
 
-        Assert.Contains("alpha.txt", found);
-        Assert.Contains("gamma.txt", found);
-        Assert.DoesNotContain("beta.md", found);
+        Assert.Contains("alpha.txt", names);
+        Assert.Contains("gamma.txt", names);
+        Assert.DoesNotContain("beta.md", names);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public sealed class FinderTests : IDisposable
     {
         Assert.True(Search("*.txt"));
 
-        Assert.True(_app.Finder.Looked >= 2, $"looked through {_app.Finder.Looked} folders");
+        Assert.True(_app.Finder.FolderCount >= 2, $"looked through {_app.Finder.FolderCount} folders");
         Assert.Equal(_app.Folder, _app.Finder.Root);
     }
 
@@ -66,9 +66,9 @@ public sealed class FinderTests : IDisposable
     {
         Assert.True(Search("alph"));
 
-        var found = _app.Finder.Found.Value.Select(static hit => hit.Entry.Name).ToList();
+        var names = _app.Finder.Hits.Value.Select(static hit => hit.Entry.Name).ToList();
 
-        Assert.Equal(["alpha.txt"], found);
+        Assert.Equal(["alpha.txt"], names);
     }
 
     [Fact]
@@ -76,11 +76,11 @@ public sealed class FinderTests : IDisposable
     {
         Assert.True(Search(""));
 
-        var found = _app.Finder.Found.Value.Select(static hit => hit.Entry.Name).ToList();
+        var names = _app.Finder.Hits.Value.Select(static hit => hit.Entry.Name).ToList();
 
-        Assert.Contains("alpha.txt", found);
-        Assert.Contains("beta.md", found);
-        Assert.Contains("gamma.txt", found);
+        Assert.Contains("alpha.txt", names);
+        Assert.Contains("beta.md", names);
+        Assert.Contains("gamma.txt", names);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public sealed class FinderTests : IDisposable
     {
         Assert.True(Search("*.txt"));
 
-        Assert.Contains("*.txt", _app.Finder.What, StringComparison.Ordinal);
+        Assert.Contains("*.txt", _app.Finder.Pattern, StringComparison.Ordinal);
         Assert.Equal(_source, _app.Finder.Source);
     }
 
@@ -97,7 +97,7 @@ public sealed class FinderTests : IDisposable
     {
         Assert.True(Search("*.nothing-is-called-this"));
 
-        Assert.Empty(_app.Finder.Found.Value);
+        Assert.Empty(_app.Finder.Hits.Value);
         Assert.False(_app.Finder.IsRunning);
     }
 

@@ -36,7 +36,7 @@ public sealed class ViewerView : IArlecchinoView
     private FocusRing _focus;
 
     private string _kind = Loc(LocString.ViewerReading);
-    private long _read;
+    private long _bytes;
 
     /// <summary>
     /// Opens the viewer. The file is not read here: what is built is the chrome with an empty body, which
@@ -60,10 +60,10 @@ public sealed class ViewerView : IArlecchinoView
 
         FrameThread.Post(async () =>
         {
-            var (body, kind, read) = await Reading.OpenAsync(_source, _path, size, options);
+            var (body, kind, readCount) = await Reading.OpenAsync(_source, _path, size, options);
 
             _kind = kind;
-            _read = read;
+            _bytes = readCount;
             _layout = Chrome(body);
             _focus = _layout.AsFocusRing(options.Keymap);
         });
@@ -95,7 +95,7 @@ public sealed class ViewerView : IArlecchinoView
     private void DrawHeader(SurfaceRegion header) => Sheet.Title(
         header,
         _source.IsRemote ? RemotePaths.NameOf(_path) : Path.GetFileName(_path),
-        Loc(LocString.ViewerBytes, Sizes.Grouped(_read), _kind));
+        Loc(LocString.ViewerBytes, Sizes.Grouped(_bytes), _kind));
 
     /// <summary>
     /// The band along the bottom: which folder the file was opened from, and the keys that leave or

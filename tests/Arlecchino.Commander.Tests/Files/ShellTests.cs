@@ -132,10 +132,10 @@ public sealed class ShellTests
     }
 
     private static Func<string, Task<(string Output, int Status)>> Answers(
-        params (string Command, (string Output, int Status) Answer)[] scripted) =>
+        params (string Command, (string Output, int Status) Answer)[] script) =>
         question =>
         {
-            foreach (var (command, answer) in scripted)
+            foreach (var (command, answer) in script)
             {
                 if (question == command)
                 {

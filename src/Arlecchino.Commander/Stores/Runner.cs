@@ -16,7 +16,7 @@ namespace Arlecchino.Commander.Stores;
 /// </summary>
 public sealed class Runner : IArlecchinoStore
 {
-    private const int Kept = 2000;
+    private const int MostLines = 2000;
 
     private readonly ArlecchinoState _state;
 
@@ -60,12 +60,12 @@ public sealed class Runner : IArlecchinoStore
 
         FrameThread.Post(async () =>
         {
-            var said = await SayAsync(source, command, folder);
+            var label = await SayAsync(source, command, folder);
 
             IsRunning = false;
             _running = null;
 
-            Lines.Add(said);
+            Lines.Add(label);
             Trim();
 
             _state.Output = Loc(LocString.SaidCommandDone, command);
@@ -85,9 +85,9 @@ public sealed class Runner : IArlecchinoStore
             return;
         }
 
-        var refused = running.Interrupt();
+        var failure = running.Interrupt();
 
-        _state.Output = refused.Length == 0 ? Loc(LocString.SaidStopped) : refused;
+        _state.Output = failure.Length == 0 ? Loc(LocString.SaidStopped) : failure;
     }
 
     public void Clear() => Lines.Clear();
@@ -123,9 +123,9 @@ public sealed class Runner : IArlecchinoStore
 
     private void Trim()
     {
-        if (Lines.Count > Kept)
+        if (Lines.Count > MostLines)
         {
-            Lines.RemoveRange(0, Lines.Count - Kept);
+            Lines.RemoveRange(0, Lines.Count - MostLines);
         }
     }
 }

@@ -33,8 +33,8 @@ public static class Sheet
     /// <summary>Draws the band at the top.</summary>
     /// <param name="header">The rows to draw on.</param>
     /// <param name="title">What the screen is.</param>
-    /// <param name="said">What it is doing, under the title.</param>
-    public static void Title(SurfaceRegion header, string title, string said)
+    /// <param name="label">What it is doing, under the title.</param>
+    public static void Title(SurfaceRegion header, string title, string label)
     {
         var coat = Skin.Terminal;
 
@@ -46,15 +46,15 @@ public static class Sheet
         }
 
         header.Write(0, 0, TextWidth.Truncate(title, header.Width), coat.Accent);
-        header.Write(1, 0, TextWidth.Truncate(said, header.Width), coat.Meta);
+        header.Write(1, 0, TextWidth.Truncate(label, header.Width), coat.Meta);
         header.Rows(2, 1).Fill(coat.Rule, '─');
     }
 
     /// <summary>Draws the band along the bottom.</summary>
     /// <param name="footer">The rows to draw on.</param>
-    /// <param name="said">What is going on, at the left.</param>
+    /// <param name="label">What is going on, at the left.</param>
     /// <param name="hints">Which keys leave, at the right.</param>
-    public static void Hints(SurfaceRegion footer, string said, string hints)
+    public static void Hints(SurfaceRegion footer, string label, string hints)
     {
         var coat = Skin.Terminal;
 
@@ -66,7 +66,7 @@ public static class Sheet
         }
 
         footer.Rows(0, 1).Fill(coat.Rule, '─');
-        footer.Write(1, 0, TextWidth.Truncate(said, footer.Width), coat.Second);
+        footer.Write(1, 0, TextWidth.Truncate(label, footer.Width), coat.Second);
         footer.WriteLine(1, hints, coat.Label, Align.Right);
     }
 }

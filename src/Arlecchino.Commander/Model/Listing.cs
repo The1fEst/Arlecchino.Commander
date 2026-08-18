@@ -61,27 +61,27 @@ public static class Listing
             entries.Add(new("..", parent, true, true, 0, default, false, false, false));
         }
 
-        foreach (var found in new DirectoryInfo(path).EnumerateFileSystemInfos())
+        foreach (var match in new DirectoryInfo(path).EnumerateFileSystemInfos())
         {
-            var hidden = Hidden(found);
+            var hidden = Hidden(match);
 
             if (hidden && !showHidden)
             {
                 continue;
             }
 
-            var isFolder = found.Attributes.HasFlag(FileAttributes.Directory);
+            var isFolder = match.Attributes.HasFlag(FileAttributes.Directory);
 
             entries.Add(new(
-                found.Name,
-                found.FullName,
+                match.Name,
+                match.FullName,
                 isFolder,
                 false,
-                found is FileInfo file ? file.Length : 0,
-                Written(found),
+                match is FileInfo file ? file.Length : 0,
+                Written(match),
                 hidden,
-                found.Attributes.HasFlag(FileAttributes.ReadOnly),
-                !isFolder && Runnable(found)));
+                match.Attributes.HasFlag(FileAttributes.ReadOnly),
+                !isFolder && Runnable(match)));
         }
 
         return entries;
@@ -130,14 +130,14 @@ public static class Listing
     /// <returns>The folder, or the working directory when nothing names one.</returns>
     public static string Home()
     {
-        string[] wanted =
+        string[] candidates =
         [
             Environment.GetEnvironmentVariable("USERPROFILE") ?? "",
             Environment.GetEnvironmentVariable("HOME") ?? "",
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         ];
 
-        foreach (var home in wanted)
+        foreach (var home in candidates)
         {
             if (home.Length > 0 && Directory.Exists(home))
             {
@@ -198,19 +198,19 @@ public static class Listing
     /// Whether a name is one to keep back. Windows says so in the attributes, while the rest of the world
     /// says so with a leading dot, which is what a shell and every other file manager there go by.
     /// </summary>
-    /// <param name="found">What was read off the disk.</param>
+    /// <param name="match">What was read off the disk.</param>
     /// <returns><c>true</c> when it is hidden.</returns>
-    private static bool Hidden(FileSystemInfo found) => OperatingSystem.IsWindows()
-        ? found.Attributes.HasFlag(FileAttributes.Hidden) || found.Attributes.HasFlag(FileAttributes.System)
-        : found.Name.StartsWith('.');
+    private static bool Hidden(FileSystemInfo match) => OperatingSystem.IsWindows()
+        ? match.Attributes.HasFlag(FileAttributes.Hidden) || match.Attributes.HasFlag(FileAttributes.System)
+        : match.Name.StartsWith('.');
 
     /// <summary>
     /// Whether the disk will run it. The bit comes off the same call that read the name, so asking costs
     /// nothing; Windows keeps no such bit, and the tag there is read off the extension instead.
     /// </summary>
-    /// <param name="found">What was read off the disk.</param>
+    /// <param name="match">What was read off the disk.</param>
     /// <returns><c>true</c> when any of the three thirds may run it.</returns>
-    private static bool Runnable(FileSystemInfo found)
+    private static bool Runnable(FileSystemInfo match)
     {
         const UnixFileMode Executable = UnixFileMode.UserExecute |
                                         UnixFileMode.GroupExecute |
@@ -223,7 +223,7 @@ public static class Listing
 
         try
         {
-            return (found.UnixFileMode & Executable) != 0;
+            return (match.UnixFileMode & Executable) != 0;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -231,11 +231,11 @@ public static class Listing
         }
     }
 
-    private static DateTime Written(FileSystemInfo found)
+    private static DateTime Written(FileSystemInfo match)
     {
         try
         {
-            return found.LastWriteTime;
+            return match.LastWriteTime;
         }
         catch (IOException)
         {

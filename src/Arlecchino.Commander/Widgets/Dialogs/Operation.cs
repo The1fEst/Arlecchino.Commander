@@ -102,13 +102,13 @@ public sealed class Operation
     /// <summary>
     /// Where the field's answer lives, when the answer is a path. Tab completes against it.
     /// </summary>
-    public IFileSource? Over { get; init; }
+    public IFileSource? Target { get; init; }
 
     /// <summary>What to do when it is gone through with.</summary>
     public required Action<Operation> Confirm { get; init; }
 
     /// <summary>Which switch the cursor is on, or <c>-1</c> when it is in the field.</summary>
-    public int Chosen { get; set; } = -1;
+    public int ChosenIndex { get; set; } = -1;
 
     /// <summary>Whether a switch is on, by the words on it.</summary>
     /// <param name="label">Which switch.</param>
@@ -130,9 +130,9 @@ public sealed class Operation
     /// <returns>The fill, the text on it, and the band a note sits on.</returns>
     public (Rgb Fill, Rgb Text, Rgb Band) Tone() => Weight switch
     {
-        Weight.Destroys => (Skin.Danger, new(0xFF, 0xF1, 0xEF), Skin.Blend(Skin.Danger, 0.16, Skin.Over)),
-        Weight.Reversible => (Skin.Calm, new(0xF0, 0xF7, 0xF3), Skin.Blend(Skin.Calm, 0.15, Skin.Over)),
-        _ => (Skin.Crimson, Skin.OnCrimson, Skin.Blend(Skin.Crimson, 0.13, Skin.Over)),
+        Weight.Destroys => (Skin.Danger, new(0xFF, 0xF1, 0xEF), Skin.Blend(Skin.Danger, 0.16, Skin.OverlayInk)),
+        Weight.Reversible => (Skin.Calm, new(0xF0, 0xF7, 0xF3), Skin.Blend(Skin.Calm, 0.15, Skin.OverlayInk)),
+        _ => (Skin.Crimson, Skin.OnCrimson, Skin.Blend(Skin.Crimson, 0.13, Skin.OverlayInk)),
     };
 
     /// <summary>Moves the cursor between the field and the switches.</summary>
@@ -147,19 +147,19 @@ public sealed class Operation
         }
 
         var first = FieldLabel is null ? 0 : -1;
-        var at = Chosen - first + (forward ? 1 : -1);
+        var at = ChosenIndex - first + (forward ? 1 : -1);
 
-        Chosen = ((at % stops) + stops) % stops + first;
+        ChosenIndex = ((at % stops) + stops) % stops + first;
     }
 
     /// <summary>Turns the switch under the cursor over, or does nothing when the cursor is off them.</summary>
     public void Toggle()
     {
-        if (Chosen < 0 || Chosen >= Options.Count)
+        if (ChosenIndex < 0 || ChosenIndex >= Options.Count)
         {
             return;
         }
 
-        Options[Chosen].On = !Options[Chosen].On;
+        Options[ChosenIndex].On = !Options[ChosenIndex].On;
     }
 }

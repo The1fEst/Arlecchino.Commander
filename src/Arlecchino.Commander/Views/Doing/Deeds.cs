@@ -29,8 +29,8 @@ public sealed class Deeds : PanelWork
     /// <summary>Copies what is marked to where the other panel is looking.</summary>
     public void Copy()
     {
-        var from = Here;
-        var to = There;
+        var from = Active;
+        var to = Passive;
         var sources = from.Targets();
 
         if (Nothing(sources))
@@ -49,7 +49,7 @@ public sealed class Deeds : PanelWork
             Host = to.Source.IsRemote ? to.Source.Label : "",
             Value = to.Folder,
             FieldHint = Carrying(sources, to),
-            Over = to.Source,
+            Target = to.Source,
             Confirm = asking => _operations.Copy(from.Source, sources, to.Source, asking.Value),
         });
     }
@@ -60,8 +60,8 @@ public sealed class Deeds : PanelWork
     /// </summary>
     public void Move()
     {
-        var from = Here;
-        var to = There;
+        var from = Active;
+        var to = Passive;
         var sources = from.Targets();
 
         if (Nothing(sources))
@@ -83,7 +83,7 @@ public sealed class Deeds : PanelWork
             Host = to.Source.IsRemote ? to.Source.Label : "",
             Value = to.Folder,
             FieldHint = across ? Loc(LocString.MoveAcross) : Loc(LocString.MoveWithin),
-            Over = to.Source,
+            Target = to.Source,
             Confirm = asking => _operations.Move(from.Source, sources, to.Source, asking.Value),
         });
     }
@@ -91,7 +91,7 @@ public sealed class Deeds : PanelWork
     /// <summary>Renames what is under the cursor, in the folder it is already in.</summary>
     public void Rename()
     {
-        var panel = Here;
+        var panel = Active;
 
         if (panel.Current is not { IsParent: false } current)
         {
@@ -122,7 +122,7 @@ public sealed class Deeds : PanelWork
     /// <summary>Makes a folder where the panel is looking.</summary>
     public void MakeFolder()
     {
-        var panel = Here;
+        var panel = Active;
 
         Dialogs.Ask(new()
         {
@@ -145,14 +145,14 @@ public sealed class Deeds : PanelWork
     /// Gets rid of what is marked, putting it in the trash where there is one. The trash is offered only
     /// where something could actually be fetched back out of it.
     /// </summary>
-    public void Delete() => Removing(Here.Source.HasTrash);
+    public void Delete() => Removing(Active.Source.HasTrash);
 
     /// <summary>Deletes what is marked outright, trash or no trash.</summary>
     public void DeleteForGood() => Removing(toTrash: false);
 
     private void Removing(bool toTrash)
     {
-        var panel = Here;
+        var panel = Active;
         var sources = panel.Targets();
 
         if (Nothing(sources))
@@ -209,14 +209,14 @@ public sealed class Deeds : PanelWork
             return Loc(toTrash ? LocString.TrashPlain : LocString.DeletePlain, Sizes.Brief(bytes));
         }
 
-        var these = folders == 1 ? Loc(LocString.DeleteOneFolder) : Loc(LocString.DeleteManyFolders);
+        var entries = folders == 1 ? Loc(LocString.DeleteOneFolder) : Loc(LocString.DeleteManyFolders);
 
         if (bytes == 0)
         {
-            return Loc(toTrash ? LocString.TrashFolders : LocString.DeleteFolders, these);
+            return Loc(toTrash ? LocString.TrashFolders : LocString.DeleteFolders, entries);
         }
 
-        return Loc(toTrash ? LocString.TrashNamed : LocString.DeleteNamed, Sizes.Brief(bytes), these);
+        return Loc(toTrash ? LocString.TrashNamed : LocString.DeleteNamed, Sizes.Brief(bytes), entries);
     }
 
     /// <summary>Makes the folder that was asked for, and lands the cursor on it when that was asked too.</summary>
@@ -277,9 +277,9 @@ public sealed class Deeds : PanelWork
             : folders == 1
                 ? Loc(LocString.CarryingFolder)
                 : Loc(LocString.CarryingFolders, folders);
-        var both = size.Length > 0 && trees.Length > 0 ? Loc(LocString.CarryingBoth, size, trees) : size + trees;
+        var pair = size.Length > 0 && trees.Length > 0 ? Loc(LocString.CarryingBoth, size, trees) : size + trees;
 
-        return to.Source.IsRemote ? Loc(LocString.CarryingOverSftp, both) : both;
+        return to.Source.IsRemote ? Loc(LocString.CarryingOverSftp, pair) : pair;
     }
 
     /// <summary>
@@ -287,19 +287,19 @@ public sealed class Deeds : PanelWork
     /// count against itself, or a dialog opened on a file would warn about the file it is renaming.
     /// </summary>
     /// <param name="panel">The folder.</param>
-    /// <param name="was">What it is called now.</param>
-    /// <param name="wanted">What it is being called.</param>
+    /// <param name="current">What it is called now.</param>
+    /// <param name="name">What it is being called.</param>
     /// <returns><c>true</c> when the name is taken by something else.</returns>
-    private static bool Taken(FilePanel panel, string was, string wanted)
+    private static bool Taken(FilePanel panel, string current, string name)
     {
-        if (wanted == was || wanted.Trim().Length == 0)
+        if (name == current || name.Trim().Length == 0)
         {
             return false;
         }
 
         foreach (var entry in panel.Entries)
         {
-            if (!entry.IsParent && string.Equals(entry.Name, wanted, StringComparison.OrdinalIgnoreCase))
+            if (!entry.IsParent && string.Equals(entry.Name, name, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

@@ -13,11 +13,11 @@ public sealed class ShellWords : ICutsWords
     public CompletionAsk Cut(string text, int caret)
     {
         var end = Math.Clamp(caret, 0, text.Length);
-        var opened = Opened(text, end);
+        var stream = Opened(text, end);
 
-        if (opened >= 0)
+        if (stream >= 0)
         {
-            return new(text, opened, end - opened);
+            return new(text, stream, end - stream);
         }
 
         var start = end;
@@ -36,16 +36,16 @@ public sealed class ShellWords : ICutsWords
     /// <returns>Where it is, or <c>-1</c> when every quote was closed.</returns>
     private static int Opened(string text, int end)
     {
-        var opened = -1;
+        var stream = -1;
 
         for (var at = 0; at < end; at++)
         {
             if (text[at] == '"')
             {
-                opened = opened < 0 ? at : -1;
+                stream = stream < 0 ? at : -1;
             }
         }
 
-        return opened;
+        return stream;
     }
 }

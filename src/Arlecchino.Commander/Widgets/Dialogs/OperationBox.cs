@@ -28,7 +28,7 @@ public readonly record struct OperationSpots(
 /// </summary>
 public static class OperationBox
 {
-    private const int Wanted = 62;
+    private const int Width = 62;
     private const int Padding = 2;
     private const int MostItems = 5;
     private const int MostLines = 3;
@@ -39,7 +39,7 @@ public static class OperationBox
     /// <returns>Where it landed, for the clicks.</returns>
     public static OperationSpots Draw(SurfaceRegion screen, Operation operation)
     {
-        var width = Math.Min(Wanted, screen.Width - 4);
+        var width = Math.Min(Width, screen.Width - 4);
         var rows = Rows(operation);
 
         if (width < 30 || screen.Height < rows + 2)
@@ -56,31 +56,31 @@ public static class OperationBox
         box.Fill(coat.Text);
         box.Rows(0, 1).Fill(Skin.Paint(fill, fill));
 
-        var inside = box.Rows(1, rows - 1).Inset(new Margin(Padding, 0, Padding, 0));
+        var content = box.Rows(1, rows - 1).Inset(new Margin(Padding, 0, Padding, 0));
         var row = 1;
 
-        inside.Write(row, 0, operation.Title, coat.Strong);
-        inside.WriteLine(row, operation.Key, Skin.Paint(fill, Skin.Over), Align.Right);
+        content.Write(row, 0, operation.Title, coat.Strong);
+        content.WriteLine(row, operation.Key, Skin.Paint(fill, Skin.OverlayInk), Align.Right);
 
         if (operation.Subtitle.Length > 0)
         {
-            inside.Write(row + 1, 0, TextWidth.Truncate(operation.Subtitle, inside.Width), coat.Faded);
+            content.Write(row + 1, 0, TextWidth.Truncate(operation.Subtitle, content.Width), coat.Hint);
             row++;
         }
 
         row += 2;
-        row = What(inside, operation, coat, row);
-        row = OperationField.Draw(inside, operation, coat, fill, row);
+        row = What(content, operation, coat, row);
+        row = OperationField.Draw(content, operation, coat, fill, row);
 
         var switches = operation.Options.Count == 0
             ? default
-            : inside.Rows(row, operation.Options.Count);
+            : content.Rows(row, operation.Options.Count);
 
-        row = Options(inside, operation, coat, fill, row);
+        row = Options(content, operation, coat, fill, row);
 
-        Note(inside, operation, band, row);
+        Note(content, operation, band, row);
 
-        var (confirm, cancel) = Buttons(inside, operation, coat, fill, on, row + Lines(operation));
+        var (confirm, cancel) = Buttons(content, operation, coat, fill, on, row + Lines(operation));
 
         return new(box, confirm, cancel, switches);
     }
@@ -116,8 +116,8 @@ public static class OperationBox
     /// <summary>How many rows the note takes, and none when there is no note.</summary>
     /// <param name="operation">What is being asked.</param>
     /// <returns>The rows.</returns>
-    private static int Lines(Operation operation) => Said(operation) is { } said
-        ? Math.Min(MostLines, Wrapped(said.Text, Wanted - (Padding * 2) - 4).Count) + 1
+    private static int Lines(Operation operation) => Said(operation) is { } label
+        ? Math.Min(MostLines, Wrapped(label.Text, Width - (Padding * 2) - 4).Count) + 1
         : 0;
 
     /// <summary>What the note says, if it says anything at all just now.</summary>
@@ -125,55 +125,55 @@ public static class OperationBox
     /// <returns>The remark, or nothing.</returns>
     private static Remark? Said(Operation operation) => operation.Note?.Invoke(operation);
 
-    private static int What(SurfaceRegion inside, Operation operation, Skin.Coat coat, int row)
+    private static int What(SurfaceRegion content, Operation operation, Skin.Coat coat, int row)
     {
         if (operation.Items.Count == 0)
         {
             return row;
         }
 
-        inside.Write(row, 0, operation.ItemsLabel.ToUpperInvariant(), coat.Label);
+        content.Write(row, 0, operation.ItemsLabel.ToUpperInvariant(), coat.Label);
 
-        var shown = Math.Min(MostItems, operation.Items.Count);
+        var showing = Math.Min(MostItems, operation.Items.Count);
 
-        for (var index = 0; index < shown; index++)
+        for (var index = 0; index < showing; index++)
         {
             var entry = operation.Items[index];
             var meta = entry.IsFolder ? Loc(LocString.KindFolder) : Sizes.Brief(entry.Size);
 
-            inside.Write(row + 1 + index, 0, Kinds.Tag(entry), coat.Faded);
-            inside.Write(row + 1 + index,
+            content.Write(row + 1 + index, 0, Kinds.Tag(entry), coat.Hint);
+            content.Write(row + 1 + index,
                 Kinds.TagWidth,
-                TextWidth.Truncate(entry.Name, inside.Width - Kinds.TagWidth - 12),
+                TextWidth.Truncate(entry.Name, content.Width - Kinds.TagWidth - 12),
                 coat.Text);
-            inside.WriteLine(row + 1 + index, meta, coat.Label, Align.Right);
+            content.WriteLine(row + 1 + index, meta, coat.Label, Align.Right);
         }
 
-        if (operation.Items.Count > shown)
+        if (operation.Items.Count > showing)
         {
-            inside.WriteLine(row + shown, Loc(LocString.OperationAndMore, operation.Items.Count - shown), coat.Label, Align.Right);
+            content.WriteLine(row + showing, Loc(LocString.OperationAndMore, operation.Items.Count - showing), coat.Label, Align.Right);
         }
 
-        return row + shown + 2;
+        return row + showing + 2;
     }
 
-    private static int Options(SurfaceRegion inside, Operation operation, Skin.Coat coat, Rgb fill, int row)
+    private static int Options(SurfaceRegion content, Operation operation, Skin.Coat coat, Rgb fill, int row)
     {
         for (var index = 0; index < operation.Options.Count; index++)
         {
             var option = operation.Options[index];
-            var here = operation.Chosen == index;
+            var here = operation.ChosenIndex == index;
 
-            inside.Write(row + index,
+            content.Write(row + index,
                 0,
                 option.On ? "[×]" : "[ ]",
-                option.On ? Skin.Paint(fill, Skin.Over) : coat.Label);
+                option.On ? Skin.Paint(fill, Skin.OverlayInk) : coat.Label);
 
-            inside.Write(row + index, 4, option.Label, here ? coat.Strong : coat.Second);
+            content.Write(row + index, 4, option.Label, here ? coat.Strong : coat.Second);
 
             if (here)
             {
-                inside.Write(row + index, inside.Width - 6, Loc(LocString.OperationSpace), coat.Ghost);
+                content.Write(row + index, content.Width - 6, Loc(LocString.OperationSpace), coat.Ghost);
             }
         }
 
@@ -184,31 +184,31 @@ public static class OperationBox
     /// The band that says what will actually happen. It is the one section no operation may leave out:
     /// the point of asking at all is that the answer is not obvious from the verb.
     /// </summary>
-    /// <param name="inside">Where to draw.</param>
+    /// <param name="content">Where to draw.</param>
     /// <param name="operation">What is being asked.</param>
     /// <param name="band">The tinted background it sits on.</param>
     /// <param name="row">Which row to start at.</param>
-    private static void Note(SurfaceRegion inside, Operation operation, Rgb band, int row)
+    private static void Note(SurfaceRegion content, Operation operation, Rgb band, int row)
     {
-        if (Said(operation) is not { } said)
+        if (Said(operation) is not { } label)
         {
             return;
         }
 
-        var lines = Wrapped(said.Text, inside.Width - 4);
+        var lines = Wrapped(label.Text, content.Width - 4);
         var text = Skin.Paint(Skin.Bone, band);
 
-        for (var index = 0; index < Math.Min(MostLines, lines.Count) && row + index < inside.Height; index++)
+        for (var index = 0; index < Math.Min(MostLines, lines.Count) && row + index < content.Height; index++)
         {
-            inside.Rows(row + index, 1).Fill(text);
-            inside.Write(row + index, 2, lines[index], text);
+            content.Rows(row + index, 1).Fill(text);
+            content.Write(row + index, 2, lines[index], text);
         }
 
-        inside.Write(row, 0, said.Warns ? "!" : "i", Skin.Paint(said.Warns ? Skin.Amber : Skin.Sea, band));
+        content.Write(row, 0, label.Warns ? "!" : "i", Skin.Paint(label.Warns ? Skin.Amber : Skin.Sea, band));
     }
 
     /// <summary>Draws the two buttons and says where they went, so a click can find them.</summary>
-    /// <param name="inside">Where to draw.</param>
+    /// <param name="content">Where to draw.</param>
     /// <param name="operation">What is being asked.</param>
     /// <param name="coat">The surface underneath.</param>
     /// <param name="fill">The color of the operation.</param>
@@ -216,14 +216,14 @@ public static class OperationBox
     /// <param name="row">Which row they go on.</param>
     /// <returns>The two buttons.</returns>
     private static (SurfaceRegion Confirm, SurfaceRegion Cancel) Buttons(
-        SurfaceRegion inside,
+        SurfaceRegion content,
         Operation operation,
         Skin.Coat coat,
         Rgb fill,
         Rgb on,
         int row)
     {
-        if (row >= inside.Height)
+        if (row >= content.Height)
         {
             return default;
         }
@@ -231,10 +231,10 @@ public static class OperationBox
         var go = "  " + Loc(LocString.OperationConfirm, operation.Verb) + "  ";
         var no = "  " + Loc(LocString.OperationCancel) + "  ";
 
-        inside.Write(row, 0, go, Skin.Paint(on, fill, TextStyle.Bold));
-        inside.Write(row, go.Length + 2, no, Skin.Paint(Skin.Secondary, Skin.Chip));
+        content.Write(row, 0, go, Skin.Paint(on, fill, TextStyle.Bold));
+        content.Write(row, go.Length + 2, no, Skin.Paint(Skin.Secondary, Skin.Chip));
 
-        var tab = operation.Over is not null
+        var tab = operation.Target is not null
             ? Loc(LocString.OperationTabCompletes)
             : operation.Options.Count > 0
                 ? Loc(LocString.OperationTabSwitches)
@@ -242,14 +242,14 @@ public static class OperationBox
 
         if (tab.Length > 0)
         {
-            inside.WriteLine(row, tab, coat.Label, Align.Right);
+            content.WriteLine(row, tab, coat.Label, Align.Right);
         }
 
-        var top = inside.Top + row;
+        var top = content.Top + row;
 
         return (
-            new(inside.Surface, inside.Left, top, go.Length, 1),
-            new(inside.Surface, inside.Left + go.Length + 2, top, no.Length, 1));
+            new(content.Surface, content.Left, top, go.Length, 1),
+            new(content.Surface, content.Left + go.Length + 2, top, no.Length, 1));
     }
 
     /// <summary>Breaks a sentence over lines without breaking a word.</summary>

@@ -16,7 +16,7 @@ public static class TabFace
     public const int Chrome = 5;
 
     /// <summary>What the cross costs on top of that: a space to keep it off the name, and itself.</summary>
-    public const int Crossed = 2;
+    public const int CloseColumn = 2;
 
     /// <summary>What a name may take when there is room for every tab to be written out in full.</summary>
     public const int Whole = -1;
@@ -31,37 +31,37 @@ public static class TabFace
 
     /// <summary>How wide a tab comes out, once its name has been shortened to what it may take.</summary>
     /// <param name="session">The tab.</param>
-    /// <param name="most">The widest a name may be.</param>
+    /// <param name="mostRoom">The widest a name may be.</param>
     /// <param name="closable">Whether it wears a cross.</param>
     /// <returns>The cells it takes.</returns>
-    public static int Width(Session session, int most, bool closable)
+    public static int Width(Session session, int mostRoom, bool closable)
     {
-        var (near, far) = Shortened(session, most);
+        var (near, far) = Shortened(session, mostRoom);
 
-        return near.Length + far.Length + 3 + Chrome + (closable ? Crossed : 0);
+        return near.Length + far.Length + 3 + Chrome + (closable ? CloseColumn : 0);
     }
 
     /// <summary>Draws one tab.</summary>
     /// <param name="strip">Where to draw.</param>
     /// <param name="column">Where the tab goes.</param>
     /// <param name="session">The tab.</param>
-    /// <param name="most">The widest a name may be.</param>
+    /// <param name="mostRoom">The widest a name may be.</param>
     /// <param name="look">How it is to be drawn.</param>
     /// <returns>Where the name ends, which is where the cross would go.</returns>
-    public static int Draw(SurfaceRegion strip, int column, Session session, int most, TabLook look)
+    public static int Draw(SurfaceRegion strip, int column, Session session, int mostRoom, TabLook look)
     {
-        var (near, far) = Shortened(session, most);
+        var (near, far) = Shortened(session, mostRoom);
         var label = near.Length + far.Length + 3;
-        var width = label + Chrome + (look.Closable ? Crossed : 0);
-        var under = look.Live ? Skin.Chip : Skin.Lit;
-        var lit = new Skin.Coat(under);
+        var width = label + Chrome + (look.Closable ? CloseColumn : 0);
+        var background = look.Live ? Skin.Chip : Skin.LitInk;
+        var coat = new Skin.Coat(background);
 
-        strip.Write(Row, column, new(' ', width), Skin.Paint(Skin.Bone, under));
-        Sides(strip, column + 1, session, near, far, look, lit);
+        strip.Write(Row, column, new(' ', width), Skin.Paint(Skin.Bone, background));
+        Sides(strip, column + 1, session, near, far, look, coat);
 
         if (look.Closable)
         {
-            strip.Write(Row, column + label + 4, "×", look.Live ? lit.Text : lit.Trace);
+            strip.Write(Row, column + label + 4, "×", look.Live ? coat.Text : coat.Trace);
         }
 
         return label;
@@ -77,7 +77,7 @@ public static class TabFace
     /// <param name="near">What the left side is called, as it is to be written.</param>
     /// <param name="far">The same for the right.</param>
     /// <param name="look">How it is to be drawn.</param>
-    /// <param name="lit">The surface of the tab.</param>
+    /// <param name="coat">The surface of the tab.</param>
     private static void Sides(
         SurfaceRegion strip,
         int column,
@@ -85,9 +85,9 @@ public static class TabFace
         string near,
         string far,
         TabLook look,
-        Skin.Coat lit)
+        Skin.Coat coat)
     {
-        var dot = look.Live ? lit.Accent : lit.Trace;
+        var dot = look.Live ? coat.Accent : coat.Trace;
         var at = column;
 
         if (!look.Right)
@@ -96,10 +96,10 @@ public static class TabFace
             at += 2;
         }
 
-        strip.Write(Row, at, near, Named(session.Left, look is { Live: true, Right: false }, lit));
+        strip.Write(Row, at, near, Named(session.Left, look is { Live: true, Right: false }, coat));
         at += near.Length + 1;
 
-        strip.Write(Row, at, "⇄", lit.Trace);
+        strip.Write(Row, at, "⇄", coat.Trace);
         at += 2;
 
         if (look.Right)
@@ -108,7 +108,7 @@ public static class TabFace
             at += 2;
         }
 
-        strip.Write(Row, at, far, Named(session.Right, look is { Live: true, Right: true }, lit));
+        strip.Write(Row, at, far, Named(session.Right, look is { Live: true, Right: true }, coat));
     }
 
     /// <summary>
@@ -116,18 +116,18 @@ public static class TabFace
     /// sides are cut rather than one, since a tab says what it is by naming both.
     /// </summary>
     /// <param name="session">The tab.</param>
-    /// <param name="most">The widest the whole name may be.</param>
+    /// <param name="mostRoom">The widest the whole name may be.</param>
     /// <returns>What to write on each side.</returns>
-    private static (string Near, string Far) Shortened(Session session, int most)
+    private static (string Near, string Far) Shortened(Session session, int mostRoom)
     {
-        if (most == Whole || session.Label.Length <= most)
+        if (mostRoom == Whole || session.Label.Length <= mostRoom)
         {
             return (session.Near, session.Far);
         }
 
-        var each = Math.Max(1, (most - 3) / 2);
+        var step = Math.Max(1, (mostRoom - 3) / 2);
 
-        return (Cut(session.Near, each), Cut(session.Far, each));
+        return (Cut(session.Near, step), Cut(session.Far, step));
     }
 
     /// <summary>One side, cut to fit, with an ellipsis where it was cut.</summary>
@@ -140,13 +140,13 @@ public static class TabFace
     /// <summary>What color one side of a tab is written in.</summary>
     /// <param name="state">The panel that side holds.</param>
     /// <param name="working">Whether it is the side being worked in.</param>
-    /// <param name="lit">The surface of the tab.</param>
+    /// <param name="coat">The surface of the tab.</param>
     /// <returns>The style.</returns>
-    private static TermColor Named(PanelState state, bool working, Skin.Coat lit) => state.Source.IsRemote
-        ? lit.Remote
+    private static TermColor Named(PanelState state, bool working, Skin.Coat coat) => state.Source.IsRemote
+        ? coat.Remote
         : working
-            ? lit.Text
-            : lit.Meta;
+            ? coat.Text
+            : coat.Meta;
 }
 
 /// <summary>How a tab is to be drawn.</summary>

@@ -27,26 +27,26 @@ public static class ConnectFields
     /// <param name="session">Where every answer is kept.</param>
     /// <param name="dialogs">How each of them is asked.</param>
     /// <param name="keymap">Keys the rows are walked by.</param>
-    /// <param name="saved">The hosts <c>~/.ssh/config</c> names, which the first row picks from.</param>
+    /// <param name="hosts">The hosts <c>~/.ssh/config</c> names, which the first row picks from.</param>
     /// <param name="connect">What the button at the foot does.</param>
     /// <returns>The rows.</returns>
     public static FormRows For(
         Remote session,
         Dialogs dialogs,
         ArlecchinoKeymap keymap,
-        IReadOnlyList<SshHost> saved,
+        IReadOnlyList<SshHost> hosts,
         Action connect) => new(keymap)
     {
         Rows =
         [
-            Chosen(LocString.ConnectSaved, LocString.ConnectSavedHint, session.Saved, dialogs, () => Aliases(saved)),
-            Chosen(LocString.ConnectProtocol, LocString.ConnectProtocolHint, session.Scheme, dialogs, static () => Schemes),
-            Typed(LocString.ConnectHost, LocString.ConnectHostHint, session.Host, dialogs),
+            ChosenIndex(LocString.ConnectSaved, LocString.ConnectSavedHint, session.Host, dialogs, () => Aliases(hosts)),
+            ChosenIndex(LocString.ConnectProtocol, LocString.ConnectProtocolHint, session.Scheme, dialogs, static () => Schemes),
+            Text(LocString.ConnectHost, LocString.ConnectHostHint, session.Host, dialogs),
             Port(session, dialogs),
-            Typed(LocString.ConnectUser, LocString.ConnectUserHint, session.User, dialogs),
+            Text(LocString.ConnectUser, LocString.ConnectUserHint, session.User, dialogs),
             Secret(session, dialogs),
             Key(session, dialogs),
-            Typed(LocString.ConnectFolder, LocString.ConnectFolderHint, session.Folder, dialogs),
+            Text(LocString.ConnectFolder, LocString.ConnectFolderHint, session.Folder, dialogs),
             new FormButton(
                 static () => Loc(LocString.ConnectVerb),
                 static () => Loc(LocString.ConnectReady),
@@ -62,13 +62,13 @@ public static class ConnectFields
         session.Host.Value.Trim().Length > 0 && session.User.Value.Trim().Length > 0;
 
     /// <summary>Fills in the rest of the form from the host that was picked out of the saved ones.</summary>
-    /// <param name="saved">Every host <c>~/.ssh/config</c> names.</param>
+    /// <param name="hosts">Every host <c>~/.ssh/config</c> names.</param>
     /// <param name="session">Where the answers are kept.</param>
-    public static void Fill(IReadOnlyList<SshHost> saved, Remote session)
+    public static void Fill(IReadOnlyList<SshHost> hosts, Remote session)
     {
-        foreach (var host in saved)
+        foreach (var host in hosts)
         {
-            if (host.Alias == session.Saved.Value)
+            if (host.Alias == session.Host.Value)
             {
                 session.Fill(host);
 
@@ -77,7 +77,7 @@ public static class ConnectFields
         }
     }
 
-    private static FormField Typed(LocString label, LocString hint, Atom<string> value, Dialogs dialogs) =>
+    private static FormField Text(LocString label, LocString hint, Atom<string> value, Dialogs dialogs) =>
         new(
             () => Loc(label),
             () => value.Value,
@@ -87,7 +87,7 @@ public static class ConnectFields
                 Loc(label),
                 value.Value,
                 Loc(LocString.ConnectKeep),
-                typed => value.Value = typed.Trim(),
+                text => value.Value = text.Trim(),
                 Loc(hint)),
             () => value.Value = "");
 
@@ -101,7 +101,7 @@ public static class ConnectFields
                 Loc(LocString.ConnectPassword),
                 session.Password.Value,
                 Loc(LocString.ConnectKeep),
-                typed => session.Password.Value = typed,
+                text => session.Password.Value = text,
                 Loc(LocString.ConnectPasswordHint),
                 secret: true),
             () => session.Password.Value = "");
@@ -123,9 +123,9 @@ public static class ConnectFields
                 Loc(LocString.ConnectPort),
                 ((int)session.Port.Value).ToString(CultureInfo.InvariantCulture),
                 Loc(LocString.ConnectKeep),
-                typed => Numbered(session, typed),
+                text => Numbered(session, text),
                 Loc(LocString.ConnectPortHint)),
-            () => session.Port.Value = Connection.PortFor(Wanted(session)));
+            () => session.Port.Value = Connection.PortFor(ResolveProtocol(session)));
 
     /// <summary>
     /// The key file, picked out of what is in <c>~/.ssh</c>, since that is where one lives. The last row
@@ -139,10 +139,10 @@ public static class ConnectFields
             static () => Loc(LocString.ConnectKeyFile),
             () => session.KeyFile.Value,
             static () => Loc(LocString.ConnectKeyFileHint),
-            () => dialogs.Pick(Loc(LocString.ConnectKeyFile), Keys(), picked => Picked(session, dialogs, picked)),
+            () => dialogs.Pick(Loc(LocString.ConnectKeyFile), Keys(), choice => Picked(session, dialogs, choice)),
             () => session.KeyFile.Value = "");
 
-    private static FormField Chosen(
+    private static FormField ChosenIndex(
         LocString label,
         LocString hint,
         Atom<string> value,
@@ -152,23 +152,23 @@ public static class ConnectFields
             () => Loc(label),
             () => value.Value,
             () => Loc(hint),
-            () => dialogs.Pick(Loc(label), options(), picked => value.Value = picked),
+            () => dialogs.Pick(Loc(label), options(), choice => value.Value = choice),
             () => value.Value = "");
 
-    private static void Numbered(Remote session, string typed)
+    private static void Numbered(Remote session, string text)
     {
-        if (int.TryParse(typed.Trim(), CultureInfo.InvariantCulture, out var port) &&
+        if (int.TryParse(text.Trim(), CultureInfo.InvariantCulture, out var port) &&
             port is >= LowestPort and <= HighestPort)
         {
             session.Port.Value = port;
         }
     }
 
-    private static void Picked(Remote session, Dialogs dialogs, string picked)
+    private static void Picked(Remote session, Dialogs dialogs, string choice)
     {
-        if (picked != Loc(LocString.ConnectKeyOther))
+        if (choice != Loc(LocString.ConnectKeyOther))
         {
-            session.KeyFile.Value = Path.Combine(Folder(), picked);
+            session.KeyFile.Value = Path.Combine(Folder(), choice);
 
             return;
         }
@@ -178,7 +178,7 @@ public static class ConnectFields
             Loc(LocString.ConnectKeyFile),
             session.KeyFile.Value,
             Loc(LocString.ConnectKeep),
-            typed => session.KeyFile.Value = typed.Trim(),
+            text => session.KeyFile.Value = text.Trim(),
             Loc(LocString.ConnectKeyFileHint));
     }
 
@@ -216,14 +216,14 @@ public static class ConnectFields
 
     private static string Folder() => Path.Combine(Listing.Home(), ".ssh");
 
-    private static Protocol Wanted(Remote session) =>
+    private static Protocol ResolveProtocol(Remote session) =>
         session.Scheme.Value == "ftp" ? Protocol.Ftp : Protocol.Sftp;
 
-    private static List<string> Aliases(IReadOnlyList<SshHost> saved)
+    private static List<string> Aliases(IReadOnlyList<SshHost> hosts)
     {
-        var names = new List<string>(saved.Count);
+        var names = new List<string>(hosts.Count);
 
-        foreach (var host in saved)
+        foreach (var host in hosts)
         {
             names.Add(host.Alias);
         }

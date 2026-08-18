@@ -28,7 +28,7 @@ internal static class CommandLinePaint
         var coat = Skin.Quiet;
 
         region.Fill(coat.Text);
-        region.Write(0, SideRoom, prompt, typing ? coat.Faded : coat.Sleeping);
+        region.Write(0, SideRoom, prompt, typing ? coat.Hint : coat.Sleeping);
 
         var mark = SideRoom + prompt.Length + 1;
 
@@ -36,7 +36,7 @@ internal static class CommandLinePaint
             0,
             mark,
             "❯",
-            typing ? Skin.Paint(Skin.Flame, Skin.Unlit, TextStyle.Bold) : coat.Sleeping);
+            typing ? Skin.Paint(Skin.Flame, Skin.UnlitInk, TextStyle.Bold) : coat.Sleeping);
 
         var at = mark + 2;
         var room = region.Width - at - tail.Length - SideRoom - 2;
@@ -54,16 +54,16 @@ internal static class CommandLinePaint
         var rows = CommandLineWrap.Rows(text.Text, room);
         var (caret, _) = CommandLineWrap.Caret(rows, text.Caret);
         var first = Math.Max(0, caret - MostRows + 1);
-        var shown = Math.Min(MostRows, rows.Count - first);
+        var showing = Math.Min(MostRows, rows.Count - first);
 
         var selection = TextEditing.Selection(text);
 
-        for (var row = 0; row < shown; row++)
+        for (var row = 0; row < showing; row++)
         {
             Row(region, rows[first + row], row, at, selection, typing && first + row == caret ? text.Caret : -1);
         }
 
-        return shown;
+        return showing;
     }
 
     /// <summary>
@@ -85,18 +85,18 @@ internal static class CommandLinePaint
         int caret)
     {
         var coat = Skin.Quiet;
-        var written = column;
+        var run = column;
 
         EntryRuns.Of(
             row.Text,
             caret < 0 ? -1 : Math.Clamp(caret - row.Start, 0, row.Text.Length),
             (Math.Clamp(selection.Start - row.Start, 0, row.Text.Length),
                 Math.Clamp(selection.End - row.Start, 0, row.Text.Length)),
-            Skin.Typed(coat.Text, Skin.Crimson),
+            Skin.Entry(coat.Text, Skin.Crimson),
             (piece, style) =>
             {
-                region.Write(at, written, piece, style);
-                written += TextWidth.Of(piece);
+                region.Write(at, run, piece, style);
+                run += TextWidth.Of(piece);
             });
     }
 }

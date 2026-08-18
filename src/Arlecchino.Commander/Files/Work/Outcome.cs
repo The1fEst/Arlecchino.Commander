@@ -14,7 +14,7 @@ public sealed class Outcome
     private int _folders;
     private long _bytes;
     private string _current = "";
-    private Tally _planned;
+    private Tally _plan;
     private bool _measured;
     private bool _swept;
 
@@ -52,13 +52,13 @@ public sealed class Outcome
     public bool IsMeasured => Volatile.Read(ref _measured);
 
     /// <summary>What there is to do in total, counted before the work started.</summary>
-    private Tally Planned
+    private Tally Plan
     {
         get
         {
             lock (_gate)
             {
-                return _planned;
+                return _plan;
             }
         }
     }
@@ -68,11 +68,11 @@ public sealed class Outcome
     /// being moved and counts carry it otherwise, so a deletion — which shifts no bytes — still fills
     /// the bar as it works through the tree.
     /// </summary>
-    public double Share
+    public double Progress
     {
         get
         {
-            var total = Planned;
+            var total = Plan;
 
             if (total.Bytes > 0 && Bytes > 0)
             {
@@ -87,7 +87,7 @@ public sealed class Outcome
     {
         lock (_gate)
         {
-            _planned = total;
+            _plan = total;
         }
 
         Volatile.Write(ref _measured, true);
@@ -120,11 +120,11 @@ public sealed class Outcome
         Volatile.Write(ref _swept, true);
     }
 
-    public void Failing(string what, string why)
+    public void Failing(string problem, string reason)
     {
         lock (_gate)
         {
-            _errors.Add($"{what}: {why}");
+            _errors.Add($"{problem}: {reason}");
         }
     }
 
@@ -142,32 +142,32 @@ public sealed class Outcome
 
     /// <summary>What has been done so far, for a status line that is redrawn while the work runs.</summary>
     /// <returns>The counts and the item being worked on, when there is one.</returns>
-    public string Progress()
+    public string ProgressText()
     {
         if (!IsMeasured)
         {
             return "counting…";
         }
 
-        var total = Planned;
-        var done = total.Items > 0 ? $"{Files + Folders} of {total.Items}" : Counts();
+        var total = Plan;
+        var outcome = total.Items > 0 ? $"{Files + Folders} of {total.Items}" : Counts();
 
-        return Current.Length == 0 ? done : $"{done} · {Current}";
+        return Current.Length == 0 ? outcome : $"{outcome} · {Current}";
     }
 
     public string Describe(string verb)
     {
-        var counted = Counts();
+        var total = Counts();
         var failures = Errors.Count;
 
-        if (counted.Length == 0)
+        if (total.Length == 0)
         {
             return failures == 0 ? "Nothing to do" : $"{verb} nothing, {failures} failed";
         }
 
-        var done = Volatile.Read(ref _swept) ? $"{verb} {counted} with everything under them" : $"{verb} {counted}";
+        var outcome = Volatile.Read(ref _swept) ? $"{verb} {total} with everything under them" : $"{verb} {total}";
 
-        return failures == 0 ? done : $"{done}; {failures} failed";
+        return failures == 0 ? outcome : $"{outcome}; {failures} failed";
     }
 
     private string Counts()

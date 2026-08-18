@@ -96,10 +96,10 @@ public sealed class CountedStream : Stream
         _moved(buffer.Length);
     }
 
-    private int Told(int read)
+    private int Told(int readCount)
     {
-        _moved(read);
+        _moved(readCount);
 
-        return read;
+        return readCount;
     }
 }

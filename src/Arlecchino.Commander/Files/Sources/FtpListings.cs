@@ -45,22 +45,22 @@ public static class FtpListings
                     continue;
                 }
 
-                var named = fact[..at];
+                var entry = fact[..at];
                 var value = fact[(at + 1)..];
 
-                if (named.Equals("type", StringComparison.OrdinalIgnoreCase))
+                if (entry.Equals("type", StringComparison.OrdinalIgnoreCase))
                 {
                     kind = value;
                 }
-                else if (named.Equals("size", StringComparison.OrdinalIgnoreCase))
+                else if (entry.Equals("size", StringComparison.OrdinalIgnoreCase))
                 {
                     _ = long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out size);
                 }
-                else if (named.Equals("modify", StringComparison.OrdinalIgnoreCase))
+                else if (entry.Equals("modify", StringComparison.OrdinalIgnoreCase))
                 {
                     modified = Stamp(value);
                 }
-                else if (named.Equals("UNIX.mode", StringComparison.OrdinalIgnoreCase))
+                else if (entry.Equals("UNIX.mode", StringComparison.OrdinalIgnoreCase))
                 {
                     mode = Octal(value);
                 }
@@ -93,9 +93,9 @@ public static class FtpListings
 
         foreach (var line in Lines(text))
         {
-            var read = Unix(line) ?? Dos(line);
+            var readCount = Unix(line) ?? Dos(line);
 
-            if (read is { Name: not ("." or ".." or "") } entry)
+            if (readCount is { Name: not ("." or ".." or "") } entry)
             {
                 entries.Add(entry);
             }
@@ -120,9 +120,9 @@ public static class FtpListings
             return 0;
         }
 
-        var inside = text[(open + 1)..close];
-        var mark = inside[0];
-        var parts = inside.Split(mark, StringSplitOptions.RemoveEmptyEntries);
+        var content = text[(open + 1)..close];
+        var mark = content[0];
+        var parts = content.Split(mark, StringSplitOptions.RemoveEmptyEntries);
 
         return parts.Length == 0 ? 0 : Port(parts[^1]);
     }
@@ -219,10 +219,10 @@ public static class FtpListings
             return default;
         }
 
-        var now = DateTime.Now;
-        var dated = new DateTime(now.Year, recent.Month, recent.Day, recent.Hour, recent.Minute, 0);
+        var today = DateTime.Now;
+        var stamp = new DateTime(today.Year, recent.Month, recent.Day, recent.Hour, recent.Minute, 0);
 
-        return dated > now.AddDays(1) ? dated.AddYears(-1) : dated;
+        return stamp > today.AddDays(1) ? stamp.AddYears(-1) : stamp;
     }
 
     private static FtpEntry? Dos(string line)
@@ -327,10 +327,10 @@ public static class FtpListings
     {
         foreach (var line in text.ReplaceLineEndings("\n").Split('\n'))
         {
-            var trimmed = line.TrimEnd();
-            if (trimmed.Length > 0)
+            var trimmedText = line.TrimEnd();
+            if (trimmedText.Length > 0)
             {
-                yield return trimmed;
+                yield return trimmedText;
             }
         }
     }

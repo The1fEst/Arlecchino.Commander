@@ -222,14 +222,14 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
 
         try
         {
-            await foreach (var found in client.ListDirectoryAsync(folder, token).ConfigureAwait(false))
+            await foreach (var match in client.ListDirectoryAsync(folder, token).ConfigureAwait(false))
             {
-                if (found.Name is "." or "..")
+                if (match.Name is "." or "..")
                 {
                     continue;
                 }
 
-                var hidden = RemotePaths.IsHidden(found.Name);
+                var hidden = RemotePaths.IsHidden(match.Name);
 
                 if (hidden && !showHidden)
                 {
@@ -237,16 +237,16 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
                 }
 
                 entries.Add(new(
-                    found.Name,
-                    found.FullName,
-                    found.IsDirectory,
+                    match.Name,
+                    match.FullName,
+                    match.IsDirectory,
                     false,
-                    found.IsDirectory ? 0 : found.Length,
-                    found.LastWriteTime,
+                    match.IsDirectory ? 0 : match.Length,
+                    match.LastWriteTime,
                     hidden,
                     false,
-                    !found.IsDirectory &&
-                    (found.OwnerCanExecute || found.GroupCanExecute || found.OthersCanExecute)));
+                    !match.IsDirectory &&
+                    (match.OwnerCanExecute || match.GroupCanExecute || match.OthersCanExecute)));
             }
         }
         catch (Exception error) when (error is SshException or ObjectDisposedException or SocketException)

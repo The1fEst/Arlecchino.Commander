@@ -17,26 +17,26 @@ public static class Completion
     /// <param name="asking">What is being asked.</param>
     public static void Finish(Operation asking)
     {
-        if (asking.Over is not { } source)
+        if (asking.Target is not { } source)
         {
             return;
         }
 
-        var typed = asking.Value;
-        var cut = typed.LastIndexOfAny(['/', '\\']);
-        var folder = cut < 0 ? typed : cut == 0 ? typed[..1] : typed[..cut];
-        var start = cut < 0 ? "" : typed[(cut + 1)..];
+        var text = asking.Value;
+        var cut = text.LastIndexOfAny(['/', '\\']);
+        var folder = cut < 0 ? text : cut == 0 ? text[..1] : text[..cut];
+        var start = cut < 0 ? "" : text[(cut + 1)..];
 
         Answers.From(
             () => Names(source, folder, start),
-            found =>
+            match =>
             {
-                if (found.Length == 0 || asking.Value != typed)
+                if (match.Length == 0 || asking.Value != text)
                 {
                     return;
                 }
 
-                asking.Value = source.Combine(folder, found);
+                asking.Value = source.Combine(folder, match);
             });
     }
 
@@ -54,7 +54,7 @@ public static class Completion
         {
             var entries = await source.ListAsync(folder, showHidden: true, CancellationToken.None)
                 .ConfigureAwait(false);
-            var shared = "";
+            var stem = "";
 
             foreach (var entry in entries)
             {
@@ -65,10 +65,10 @@ public static class Completion
                     continue;
                 }
 
-                shared = shared.Length == 0 ? entry.Name : Common(shared, entry.Name);
+                stem = stem.Length == 0 ? entry.Name : Common(stem, entry.Name);
             }
 
-            return shared;
+            return stem;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or
                                           InvalidOperationException)
@@ -83,15 +83,15 @@ public static class Completion
     /// <returns>The beginning they share.</returns>
     private static string Common(string first, string second)
     {
-        var shared = 0;
+        var stem = 0;
 
-        while (shared < first.Length &&
-               shared < second.Length &&
-               char.ToLowerInvariant(first[shared]) == char.ToLowerInvariant(second[shared]))
+        while (stem < first.Length &&
+               stem < second.Length &&
+               char.ToLowerInvariant(first[stem]) == char.ToLowerInvariant(second[stem]))
         {
-            shared++;
+            stem++;
         }
 
-        return first[..shared];
+        return first[..stem];
     }
 }

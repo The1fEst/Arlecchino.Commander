@@ -17,16 +17,16 @@ public static class Modes
     /// <returns>The number, or <c>null</c> when that is not what was typed.</returns>
     public static int? Read(string mode)
     {
-        var trimmed = mode.Trim();
+        var trimmedText = mode.Trim();
 
-        if (trimmed.Length is 0 or > 4)
+        if (trimmedText.Length is 0 or > 4)
         {
             return null;
         }
 
         var value = 0;
 
-        foreach (var digit in trimmed)
+        foreach (var digit in trimmedText)
         {
             if (digit is < '0' or > '7')
             {

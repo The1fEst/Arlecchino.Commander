@@ -93,9 +93,9 @@ public sealed class FtpListingTests
     [Fact]
     public void ADateWithoutAYearIsPutInThePast()
     {
-        var soon = DateTime.Now.AddMonths(2);
+        var future = DateTime.Now.AddMonths(2);
         var entries = FtpListings.Plain(
-            $"-rw-r--r--   1 ftp ftp 1 {soon:MMM} {soon.Day:00} 12:00 later.txt");
+            $"-rw-r--r--   1 ftp ftp 1 {future:MMM} {future.Day:00} 12:00 later.txt");
 
         Assert.True(Assert.Single(entries).Modified < DateTime.Now.AddDays(1));
     }

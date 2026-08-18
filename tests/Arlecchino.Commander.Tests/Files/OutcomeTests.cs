@@ -16,7 +16,7 @@ public sealed class OutcomeTests
         var outcome = new Outcome();
 
         Assert.False(outcome.IsMeasured);
-        Assert.Equal(0, outcome.Share);
+        Assert.Equal(0, outcome.Progress);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public sealed class OutcomeTests
         outcome.Counted(25);
 
         Assert.True(outcome.IsMeasured);
-        Assert.Equal(0.25, outcome.Share, 3);
+        Assert.Equal(0.25, outcome.Progress, 3);
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public sealed class OutcomeTests
         outcome.CountedFolder();
         outcome.CountedFolder();
 
-        Assert.Equal(0.5, outcome.Share, 3);
+        Assert.Equal(0.5, outcome.Progress, 3);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public sealed class OutcomeTests
         outcome.Planning(new(1, 0, 10));
         outcome.Counted(999);
 
-        Assert.Equal(1, outcome.Share);
+        Assert.Equal(1, outcome.Progress);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class OutcomeTests
 
         Assert.True(whole.Failed);
         Assert.Equal(["beta.txt: gone"], whole.Errors);
-        Assert.Equal(1, whole.Share);
+        Assert.Equal(1, whole.Progress);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public sealed class OutcomeTests
         outcome.Reached("alpha.txt");
         outcome.Counted(10);
 
-        Assert.Contains("alpha.txt", outcome.Progress(), System.StringComparison.Ordinal);
+        Assert.Contains("alpha.txt", outcome.ProgressText(), System.StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -113,7 +113,7 @@ public sealed class OutcomeTests
 
         await Task.WhenAll(Reporting(), Reporting(), Reporting(), Reporting());
 
-        Assert.Equal(1, outcome.Share);
+        Assert.Equal(1, outcome.Progress);
         Assert.False(outcome.Failed);
 
         Task Reporting() => Task.Run(() =>

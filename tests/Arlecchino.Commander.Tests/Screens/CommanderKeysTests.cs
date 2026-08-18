@@ -97,7 +97,7 @@ public sealed class CommanderKeysTests : IDisposable
 
         Assert.Contains("GOING AWAY", screen, StringComparison.Ordinal);
         Assert.Contains(
-            Trash.Here.Works ? "out of the trash" : "no undoing it",
+            Trash.Current.Works ? "out of the trash" : "no undoing it",
             screen,
             StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(_app.Folder, "alpha.txt")));
@@ -309,9 +309,9 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Type("new tab");
 
         var lines = _app.FrameLines();
-        var offered = lines.Count(line => line.Contains("New tab", StringComparison.Ordinal));
+        var count = lines.Count(line => line.Contains("New tab", StringComparison.Ordinal));
 
-        Assert.Equal(1, offered);
+        Assert.Equal(1, count);
     }
 
     /// <summary>
@@ -362,7 +362,7 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void ReloadingKeepsThePanelWhereItWas()
     {
-        var where = _app.Sessions.Left.Folder;
+        var folder = _app.Sessions.Left.Folder;
 
         _app.Write("appeared.txt", "three");
         _app.Press(ConsoleKey.X);
@@ -370,7 +370,7 @@ public sealed class CommanderKeysTests : IDisposable
 
         var screen = _app.Frame();
 
-        Assert.Equal(where, _app.Sessions.Left.Folder);
+        Assert.Equal(folder, _app.Sessions.Left.Folder);
         Assert.Contains("appeared.txt", screen, StringComparison.Ordinal);
     }
 
@@ -381,9 +381,9 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void GoingUpLeavesTheFolder()
     {
-        var nested = Path.Combine(_app.Folder, "nested");
+        var folder = Path.Combine(_app.Folder, "nested");
 
-        _app.Sessions.Left.GoTo(nested);
+        _app.Sessions.Left.GoTo(folder);
         _app.Sessions.Moved();
         _app.Settled();
 
@@ -397,16 +397,16 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void BackspaceIsLeftToTheCommandLine()
     {
-        var nested = Path.Combine(_app.Folder, "nested");
+        var folder = Path.Combine(_app.Folder, "nested");
 
-        _app.Sessions.Left.GoTo(nested);
+        _app.Sessions.Left.GoTo(folder);
         _app.Sessions.Moved();
         _app.Settled();
 
         _app.Type(":ls x");
         _app.Press(ConsoleKey.Backspace);
 
-        Assert.Equal(nested, _app.Sessions.Left.Folder);
+        Assert.Equal(folder, _app.Sessions.Left.Folder);
         Assert.Contains("ls ", _app.Frame(), StringComparison.Ordinal);
         Assert.DoesNotContain("ls x", _app.Frame(), StringComparison.Ordinal);
     }
@@ -419,16 +419,16 @@ public sealed class CommanderKeysTests : IDisposable
     public void EveryKeyTheBarAdvertisesIsOneTheViewKnows()
     {
         var bar = _app.BarLine();
-        var known = _app.Navigator.CurrentCommands.Select(static command => command.Label()).ToList();
+        var hosts = _app.Navigator.CurrentCommands.Select(static command => command.Label()).ToList();
 
         foreach (var key in new[] { "F3", "F5", "F8" })
         {
             Assert.Contains(key, bar, StringComparison.Ordinal);
         }
 
-        Assert.Contains(Loc(LocString.Edit), known);
-        Assert.Contains(Loc(LocString.Copy), known);
-        Assert.Contains(Loc(LocString.Delete), known);
+        Assert.Contains(Loc(LocString.Edit), hosts);
+        Assert.Contains(Loc(LocString.Copy), hosts);
+        Assert.Contains(Loc(LocString.Delete), hosts);
     }
 
     /// <summary>
@@ -577,14 +577,14 @@ public sealed class CommanderKeysTests : IDisposable
         _app.Press(ConsoleKey.J);
         _app.Press(ConsoleKey.J);
 
-        var lettered = _app.Frame();
+        var screen = _app.Frame();
 
         _app.Press(ConsoleKey.K);
         _app.Press(ConsoleKey.K);
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.DownArrow);
 
-        Assert.Equal(lettered, _app.Frame());
+        Assert.Equal(screen, _app.Frame());
     }
 
     /// <summary>
@@ -594,17 +594,17 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void TheOuterLettersLeaveAndEnterAFolder()
     {
-        var where = _app.Sessions.Left.Folder;
+        var folder = _app.Sessions.Left.Folder;
 
         _app.Press(ConsoleKey.H);
         _app.Settled();
 
-        Assert.NotEqual(where, _app.Sessions.Left.Folder);
+        Assert.NotEqual(folder, _app.Sessions.Left.Folder);
 
         _app.Press(ConsoleKey.L);
         _app.Settled();
 
-        Assert.Equal(where, _app.Sessions.Left.Folder);
+        Assert.Equal(folder, _app.Sessions.Left.Folder);
     }
 
     /// <summary>
@@ -664,14 +664,14 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void EnterEndsTheSearchAndOpensWhatItFound()
     {
-        var where = _app.Sessions.Left.Folder;
+        var folder = _app.Sessions.Left.Folder;
 
         _app.Press(ConsoleKey.Oem2);
         _app.Type("nes");
         _app.Press(ConsoleKey.Enter);
         _app.Settled();
 
-        Assert.Equal(Path.Combine(where, "nested"), _app.Sessions.Left.Folder);
+        Assert.Equal(Path.Combine(folder, "nested"), _app.Sessions.Left.Folder);
         Assert.DoesNotContain("jump to", _app.Frame(), StringComparison.Ordinal);
     }
 
@@ -679,14 +679,14 @@ public sealed class CommanderKeysTests : IDisposable
     [Fact]
     public void NoKeyNeedsAPageKeyToBeReached()
     {
-        var paged = _app.Navigator.CurrentCommands
+        var pageKeyCommands = _app.Navigator.CurrentCommands
             .Where(command => command.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Control)) ||
                               command.Binding.Matches(new(ConsoleKey.PageDown, KeyModifiers.Control)) ||
                               command.Binding.Matches(new(ConsoleKey.PageUp, KeyModifiers.Alt)) ||
                               command.Binding.Matches(new(ConsoleKey.PageDown, KeyModifiers.Alt)));
 
         Assert.All(
-            paged,
+            pageKeyCommands,
             command => Assert.True(command.Binding.IsChord || command.Binding.First.Key is >= ConsoleKey.A and <= ConsoleKey.Z));
     }
 

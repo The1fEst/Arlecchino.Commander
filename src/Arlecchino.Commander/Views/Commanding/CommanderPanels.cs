@@ -22,8 +22,8 @@ public sealed class CommanderPanels : IDisposable
     private readonly Settings _settings;
     private readonly KeyText _typing;
     private readonly IArlecchinoTerminal _terminal;
-    private int _moved;
-    private int _seen;
+    private int _moves;
+    private int _width;
 
     private Session _showing;
 
@@ -49,8 +49,8 @@ public sealed class CommanderPanels : IDisposable
         _typing = typing;
         _terminal = terminal;
 
-        _seen = operations.Revision.Value;
-        _moved = sessions.Revision.Value;
+        _width = operations.Revision.Value;
+        _moves = sessions.Revision.Value;
         _showing = sessions.Current;
 
         var (left, right) = Panes(_showing);
@@ -120,21 +120,21 @@ public sealed class CommanderPanels : IDisposable
     /// </summary>
     public void Refresh()
     {
-        if (_seen != _operations.Revision.Value)
+        if (_width != _operations.Revision.Value)
         {
-            _seen = _operations.Revision.Value;
+            _width = _operations.Revision.Value;
 
             Panels.Active.State.Marks.Clear();
             Panels.Left.Reload();
             Panels.Right.Reload();
         }
 
-        if (_moved == _sessions.Revision.Value)
+        if (_moves == _sessions.Revision.Value)
         {
             return;
         }
 
-        _moved = _sessions.Revision.Value;
+        _moves = _sessions.Revision.Value;
 
         Panels.Left.Reload();
         Panels.Right.Reload();
@@ -145,12 +145,12 @@ public sealed class CommanderPanels : IDisposable
     /// <returns>The pair.</returns>
     private (FilePanel Left, FilePanel Right) Panes(Session session)
     {
-        if (_panes.TryGetValue(session, out var made))
+        if (_panes.TryGetValue(session, out var color))
         {
-            return made;
+            return color;
         }
 
-        FilePanel Over(PanelState state)
+        FilePanel Built(PanelState state)
         {
             return new(state, _keymap, _typing, _terminal, _settings, _operations)
             {
@@ -159,9 +159,9 @@ public sealed class CommanderPanels : IDisposable
             };
         }
 
-        made = (Over(session.Left), Over(session.Right));
-        _panes[session] = made;
+        color = (Built(session.Left), Built(session.Right));
+        _panes[session] = color;
 
-        return made;
+        return color;
     }
 }

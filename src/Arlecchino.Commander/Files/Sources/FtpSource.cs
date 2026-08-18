@@ -71,11 +71,11 @@ public sealed class FtpSource : IFileSource
         {
             var folder = RemotePaths.Parent(entry.Path) ?? RemotePaths.Root;
 
-            foreach (var found in await _client.ListAsync(folder, token).ConfigureAwait(false))
+            foreach (var match in await _client.ListAsync(folder, token).ConfigureAwait(false))
             {
-                if (found.Name == RemotePaths.NameOf(entry.Path) && found.Mode > 0)
+                if (match.Name == RemotePaths.NameOf(entry.Path) && match.Mode > 0)
                 {
-                    return found.Mode.ToString(CultureInfo.InvariantCulture);
+                    return match.Mode.ToString(CultureInfo.InvariantCulture);
                 }
             }
 
@@ -194,9 +194,9 @@ public sealed class FtpSource : IFileSource
                 entries.Add(new("..", parent, true, true, 0, default, false, false, false));
             }
 
-            foreach (var found in await _client.ListAsync(folder, token).ConfigureAwait(false))
+            foreach (var match in await _client.ListAsync(folder, token).ConfigureAwait(false))
             {
-                var hidden = RemotePaths.IsHidden(found.Name);
+                var hidden = RemotePaths.IsHidden(match.Name);
 
                 if (hidden && !showHidden)
                 {
@@ -204,15 +204,15 @@ public sealed class FtpSource : IFileSource
                 }
 
                 entries.Add(new(
-                    found.Name,
-                    RemotePaths.Combine(folder, found.Name),
-                    found.IsFolder,
+                    match.Name,
+                    RemotePaths.Combine(folder, match.Name),
+                    match.IsFolder,
                     false,
-                    Math.Max(0, found.Size),
-                    found.Modified,
+                    Math.Max(0, match.Size),
+                    match.Modified,
                     hidden,
                     false,
-                    !found.IsFolder && Modes.Runs(found.Mode)));
+                    !match.IsFolder && Modes.Runs(match.Mode)));
             }
 
             return entries;

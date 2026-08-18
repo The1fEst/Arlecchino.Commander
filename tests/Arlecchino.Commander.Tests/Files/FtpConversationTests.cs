@@ -28,7 +28,7 @@ public sealed class FtpConversationTests : IDisposable
 
         Assert.Equal(
             ["USER demo", "PASS secret", "OPTS UTF8 ON", "TYPE I", "QUIT"],
-            _server.Heard);
+            _server.Commands);
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public sealed class FtpConversationTests : IDisposable
 
         using var ftp = await Connect();
 
-        Assert.Equal("USER demo", _server.Heard[0]);
+        Assert.Equal("USER demo", _server.Commands[0]);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class FtpConversationTests : IDisposable
         Assert.Equal(2, entries.Count);
         Assert.True(entries[0].IsFolder);
         Assert.Equal(5, entries[1].Size);
-        Assert.Contains("MLSD /pub", _server.Heard);
+        Assert.Contains("MLSD /pub", _server.Commands);
     }
 
     /// <summary>
@@ -73,10 +73,10 @@ public sealed class FtpConversationTests : IDisposable
 
         Assert.Equal("docs", Assert.Single(await ftp.ListAsync("/pub", CancellationToken.None)).Name);
 
-        _server.Heard.Clear();
+        _server.Commands.Clear();
 
         Assert.Single(await ftp.ListAsync("/pub", CancellationToken.None));
-        Assert.DoesNotContain("MLSD /pub", _server.Heard);
+        Assert.DoesNotContain("MLSD /pub", _server.Commands);
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public sealed class FtpConversationTests : IDisposable
 
         await ftp.CreateFolderAsync("/made", CancellationToken.None);
 
-        Assert.Contains("MKD /made", _server.Heard);
+        Assert.Contains("MKD /made", _server.Commands);
     }
 
     [Fact]
@@ -122,8 +122,8 @@ public sealed class FtpConversationTests : IDisposable
             await writing.WriteAsync("written"u8.ToArray(), CancellationToken.None);
         }
 
-        Assert.Contains("STOR /put.txt", _server.Heard);
-        Assert.Equal("written", _server.Received);
+        Assert.Contains("STOR /put.txt", _server.Commands);
+        Assert.Equal("written", _server.Request);
     }
 
     [Fact]
@@ -133,8 +133,8 @@ public sealed class FtpConversationTests : IDisposable
 
         await ftp.RenameAsync("/from", "/to", CancellationToken.None);
 
-        Assert.Contains("RNFR /from", _server.Heard);
-        Assert.Contains("RNTO /to", _server.Heard);
+        Assert.Contains("RNFR /from", _server.Commands);
+        Assert.Contains("RNTO /to", _server.Commands);
     }
 
     [Fact]
@@ -144,9 +144,9 @@ public sealed class FtpConversationTests : IDisposable
 
         using var ftp = await Connect();
 
-        var thrown = await Assert.ThrowsAsync<IOException>(() => ftp.CreateFolderAsync("/made", CancellationToken.None));
+        var failure = await Assert.ThrowsAsync<IOException>(() => ftp.CreateFolderAsync("/made", CancellationToken.None));
 
-        Assert.Contains("MKD", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("MKD", failure.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ internal sealed class FakeFtpServer : IDisposable
 
     public int Port { get; }
 
-    public List<string> Heard { get; } = [];
+    public List<string> Commands { get; } = [];
 
     public IReadOnlyList<string> Greeting { get; set; } = ["220 ready"];
 
@@ -190,7 +190,7 @@ internal sealed class FakeFtpServer : IDisposable
 
     public string File { get; set; } = "";
 
-    public string Received { get; private set; } = "";
+    public string Request { get; private set; } = "";
 
     public bool KnowsMachineListing { get; set; } = true;
 
@@ -237,7 +237,7 @@ internal sealed class FakeFtpServer : IDisposable
 
         while (reader.ReadLine() is { } line)
         {
-            Heard.Add(line);
+            Commands.Add(line);
 
             var name = line.Split(' ')[0].ToUpperInvariant();
 
@@ -326,7 +326,7 @@ internal sealed class FakeFtpServer : IDisposable
 
         using (var taking = data!.AcceptTcpClient())
         {
-            Received = new StreamReader(taking.GetStream(), Encoding.UTF8).ReadToEnd();
+            Request = new StreamReader(taking.GetStream(), Encoding.UTF8).ReadToEnd();
         }
 
         data.Stop();

@@ -12,14 +12,14 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 internal static class KeyHints
 {
     private const int MostRows = 12;
-    private const int Between = 2;
+    private const int Gap = 2;
     private const int Chip = 2;
 
     /// <summary>Draws them, or nothing at all when no chord is waiting.</summary>
-    /// <param name="over">Everything above the line, which the box places itself at the foot of.</param>
+    /// <param name="region">Everything above the line, which the box places itself at the foot of.</param>
     /// <param name="title">What the box is called.</param>
     /// <param name="keys">Each key that would finish the chord, and what it would do.</param>
-    public static void Draw(SurfaceRegion over, string title, IReadOnlyList<(string Key, string Description)> keys)
+    public static void Draw(SurfaceRegion region, string title, IReadOnlyList<(string Key, string Description)> keys)
     {
         if (keys.Count == 0)
         {
@@ -36,7 +36,7 @@ internal static class KeyHints
             labels = Math.Max(labels, TextWidth.Of(keys[at].Description));
         }
 
-        var rows = HintBox.Open(over, title, chips + Between + labels, showing);
+        var rows = HintBox.Open(region, title, chips + Gap + labels, showing);
 
         if (rows.IsEmpty)
         {
@@ -44,7 +44,7 @@ internal static class KeyHints
         }
 
         var coat = Skin.Overlay;
-        var room = rows.Width - chips - Between;
+        var room = rows.Width - chips - Gap;
 
         for (var at = 0; at < showing; at++)
         {
@@ -54,7 +54,7 @@ internal static class KeyHints
 
             if (room > 0)
             {
-                rows.Write(at, chips + Between, TextWidth.Truncate(description, room), coat.Second);
+                rows.Write(at, chips + Gap, TextWidth.Truncate(description, room), coat.Second);
             }
         }
     }

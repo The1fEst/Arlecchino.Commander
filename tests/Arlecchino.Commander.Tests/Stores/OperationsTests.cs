@@ -43,7 +43,7 @@ public sealed class OperationsTests : IDisposable
     public void NothingIsBusyBeforeAnythingIsAskedFor()
     {
         Assert.False(_app.Operations.IsBusy);
-        Assert.Equal("", _app.Operations.Progress());
+        Assert.Equal("", _app.Operations.ProgressText());
     }
 
     [Fact]
@@ -116,12 +116,12 @@ public sealed class OperationsTests : IDisposable
 
         File.WriteAllText(Path.Combine(from, "notes.txt"), "kept");
 
-        var before = _app.Operations.Revision.Value;
+        var revision = _app.Operations.Revision.Value;
 
         _app.Operations.Copy(_source, Entries(Path.Combine(from, "notes.txt")), _source, to);
 
         Assert.True(Settled());
-        Assert.True(_app.Operations.Revision.Value > before);
+        Assert.True(_app.Operations.Revision.Value > revision);
     }
 
     [Fact]

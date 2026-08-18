@@ -16,7 +16,7 @@ public sealed class Banner
     private const int TabRow = 0;
 
     /// <summary>What is kept between the last thing the tabs draw and the line about the palette.</summary>
-    private const int Apart = 2;
+    private const int Gap = 2;
 
     private readonly TabStrip _strip;
 
@@ -51,12 +51,12 @@ public sealed class Banner
         header.Write(TabRow, column, name, coat.Strong);
 
         column += name.Length + 1;
-        header.Write(TabRow, column, kind, coat.Faded);
+        header.Write(TabRow, column, kind, coat.Hint);
 
         column += kind.Length + 1;
 
-        header.WriteLine(TabRow, palette, coat.Faded, Align.Right);
-        _strip.Draw(header.Inset(new Margin(column, 0, palette.Length + Apart, 0)));
+        header.WriteLine(TabRow, palette, coat.Hint, Align.Right);
+        _strip.Draw(header.Inset(new Margin(column, 0, palette.Length + Gap, 0)));
     }
 
     /// <summary>

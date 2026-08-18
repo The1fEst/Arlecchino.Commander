@@ -15,22 +15,22 @@ namespace Arlecchino.Commander.Widgets.Dialogs;
 internal static class OperationField
 {
     /// <summary>Draws the label, the host in front of the field, and the field itself.</summary>
-    /// <param name="inside">The region inside the box.</param>
+    /// <param name="content">The region inside the box.</param>
     /// <param name="operation">What is being asked.</param>
     /// <param name="coat">The colors the box is written in.</param>
     /// <param name="fill">The color of the operation, which the caret stands on.</param>
     /// <param name="row">The row the label goes on.</param>
     /// <returns>The row after the field.</returns>
-    public static int Draw(SurfaceRegion inside, Operation operation, Skin.Coat coat, Rgb fill, int row)
+    public static int Draw(SurfaceRegion content, Operation operation, Skin.Coat coat, Rgb fill, int row)
     {
         if (operation.FieldLabel is not { } label)
         {
             return row;
         }
 
-        inside.Write(row, 0, label.ToUpperInvariant(), coat.Label);
+        content.Write(row, 0, label.ToUpperInvariant(), coat.Label);
 
-        var line = inside.Rows(row + 1, 1);
+        var line = content.Rows(row + 1, 1);
         var chip = Skin.Inlaid;
 
         line.Fill(chip.Text);
@@ -47,9 +47,9 @@ internal static class OperationField
 
         if (operation.FieldHint.Length > 0)
         {
-            inside.WriteLine(
+            content.WriteLine(
                 row,
-                TextWidth.Truncate(operation.FieldHint, inside.Width - label.Length - 2),
+                TextWidth.Truncate(operation.FieldHint, content.Width - label.Length - 2),
                 coat.Label,
                 Align.Right);
         }
@@ -62,14 +62,14 @@ internal static class OperationField
         var room = Math.Max(1, line.Width - at - 2);
         var (text, caret, selection) = Shown(operation);
 
-        if (operation.Chosen >= 0)
+        if (operation.ChosenIndex >= 0)
         {
             line.Write(0, at, TextWidth.Truncate(text, room), chip.Text);
 
             return;
         }
 
-        EntryRow.Draw(line, 0, at, room, text, caret, selection, Skin.Typed(chip.Text, fill));
+        EntryRow.Draw(line, 0, at, room, text, caret, selection, Skin.Entry(chip.Text, fill));
     }
 
     /// <summary>
@@ -80,14 +80,14 @@ internal static class OperationField
     /// <returns>The text to write, where the caret is in it, and where the selection is.</returns>
     private static (string Text, int Caret, (int Start, int End) Selection) Shown(Operation operation)
     {
-        var typed = operation.Value;
-        var caret = TextWidth.SnapToCluster(typed, operation.Field.Caret);
+        var text = operation.Value;
+        var caret = TextWidth.SnapToCluster(text, operation.Field.Caret);
         var (start, end) = TextEditing.Selection(operation.Field);
 
         return operation.Secret
-            ? (new string('•', TextWidth.CountClusters(typed)),
-                TextWidth.CountClusters(typed[..caret]),
-                (TextWidth.CountClusters(typed[..start]), TextWidth.CountClusters(typed[..end])))
-            : (typed, caret, (start, end));
+            ? (new string('•', TextWidth.CountClusters(text)),
+                TextWidth.CountClusters(text[..caret]),
+                (TextWidth.CountClusters(text[..start]), TextWidth.CountClusters(text[..end])))
+            : (text, caret, (start, end));
     }
 }

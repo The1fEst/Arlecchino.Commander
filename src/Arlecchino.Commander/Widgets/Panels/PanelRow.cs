@@ -24,30 +24,30 @@ public static class PanelRow
     {
         var coat = focused ? Skin.Lively : Skin.Quiet;
         var cursor = chosen && focused;
-        var marked = state.Marks.Contains(entry.Name);
+        var marks = state.Marks.Contains(entry.Name);
         var (name, size, date) = PanelColumns.Widths(row.Width);
 
         row.Fill(cursor ? Skin.CursorRow
             : chosen ? Skin.Paint(Skin.Bone, Skin.Chip)
-            : marked ? coat.MarkedRow
+            : marks ? coat.MarkRow
             : coat.Text);
 
         var tone = Kinds.ToneOf(entry);
 
-        row.Write(0, 0, Kinds.Tag(entry), Tag(tone, cursor, chosen, marked, coat));
+        row.Write(0, 0, Kinds.Tag(entry), Tag(tone, cursor, chosen, marks, coat));
         row.Write(0,
             Kinds.TagWidth,
             TextWidth.Truncate(entry.Name, name),
-            Name(tone, cursor, chosen, marked, coat));
+            Name(tone, cursor, chosen, marks, coat));
 
         if (size > 0)
         {
-            var what = entry.IsFolder ? Loc(LocString.PanelFolderKind) : Sizes.Brief(entry.Size);
+            var caption = entry.IsFolder ? Loc(LocString.PanelFolderKind) : Sizes.Brief(entry.Size);
 
             row.Write(0,
-                Kinds.TagWidth + name + PanelColumns.Gap + size - TextWidth.Of(what),
-                what,
-                Quiet(cursor, chosen, marked, coat));
+                Kinds.TagWidth + name + PanelColumns.Gap + size - TextWidth.Of(caption),
+                caption,
+                Quiet(cursor, chosen, marks, coat));
         }
 
         if (date <= 0)
@@ -55,28 +55,28 @@ public static class PanelRow
             return;
         }
 
-        var when = Sizes.When(entry.Modified);
+        var stamp = Sizes.When(entry.Modified);
 
         row.Write(
             0,
-            Kinds.TagWidth + name + PanelColumns.Gap + size + PanelColumns.Gap + date - TextWidth.Of(when),
-            when,
-            cursor ? Skin.CursorDate : chosen || !marked ? coat.Trace : coat.MarkedMeta);
+            Kinds.TagWidth + name + PanelColumns.Gap + size + PanelColumns.Gap + date - TextWidth.Of(stamp),
+            stamp,
+            cursor ? Skin.CursorDate : chosen || !marks ? coat.Trace : coat.MarkMeta);
     }
 
     /// <summary>What the surface under a row is, which the spans on it are mixed against.</summary>
     /// <param name="coat">The panel's surface.</param>
     /// <returns>The color.</returns>
-    public static Rgb Under(Skin.Coat coat) => ReferenceEquals(coat, Skin.Lively) ? Skin.Lit : Skin.Unlit;
+    public static Rgb Under(Skin.Coat coat) => ReferenceEquals(coat, Skin.Lively) ? Skin.LitInk : Skin.UnlitInk;
 
-    private static TermColor Tag(Tone tone, bool cursor, bool chosen, bool marked, Skin.Coat coat)
+    private static TermColor Tag(Tone tone, bool cursor, bool chosen, bool marks, Skin.Coat coat)
     {
         if (cursor)
         {
             return Skin.CursorTag;
         }
 
-        var back = Back(chosen, marked, coat);
+        var back = Back(chosen, marks, coat);
 
         return tone switch
         {
@@ -88,16 +88,16 @@ public static class PanelRow
         };
     }
 
-    private static TermColor Name(Tone tone, bool cursor, bool chosen, bool marked, Skin.Coat coat)
+    private static TermColor Name(Tone tone, bool cursor, bool chosen, bool marks, Skin.Coat coat)
     {
         if (cursor)
         {
             return Skin.CursorName;
         }
 
-        var back = Back(chosen, marked, coat);
+        var back = Back(chosen, marks, coat);
 
-        if (marked)
+        if (marks)
         {
             return Skin.Paint(Skin.Coral, back);
         }
@@ -111,17 +111,17 @@ public static class PanelRow
         };
     }
 
-    private static TermColor Quiet(bool cursor, bool chosen, bool marked, Skin.Coat coat) => cursor
+    private static TermColor Quiet(bool cursor, bool chosen, bool marks, Skin.Coat coat) => cursor
         ? Skin.CursorMeta
         : chosen
-            ? Skin.Paint(Skin.Muted, Skin.Chip)
-            : marked
-                ? coat.MarkedMeta
+            ? Skin.Paint(Skin.Secondary, Skin.Chip)
+            : marks
+                ? coat.MarkMeta
                 : coat.Meta;
 
-    private static Rgb Back(bool chosen, bool marked, Skin.Coat coat) => chosen
+    private static Rgb Back(bool chosen, bool marks, Skin.Coat coat) => chosen
         ? Skin.Chip
-        : marked
+        : marks
             ? Skin.Blend(Skin.Crimson, MarkTint, Under(coat))
             : Under(coat);
 }

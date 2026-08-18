@@ -71,11 +71,11 @@ public static class SshConfig
             Take(current, keyword, value);
         }
 
-        var found = new List<SshHost>(hosts.Count);
+        var match = new List<SshHost>(hosts.Count);
 
         foreach (var draft in hosts)
         {
-            found.Add(new(
+            match.Add(new(
                 draft.Alias,
                 draft.HostName.Length > 0 ? draft.HostName : draft.Alias,
                 Pick(draft.User, defaults.User, Environment.UserName),
@@ -83,7 +83,7 @@ public static class SshConfig
                 Expand(Pick(draft.KeyFile, defaults.KeyFile, ""))));
         }
 
-        return found;
+        return match;
     }
 
     private static void Take(Draft draft, string keyword, string value)
@@ -109,16 +109,16 @@ public static class SshConfig
 
     private static (string Keyword, string Value) Split(string line)
     {
-        var trimmed = line.Trim();
+        var trimmedText = line.Trim();
 
-        if (trimmed.Length == 0 || trimmed.StartsWith('#'))
+        if (trimmedText.Length == 0 || trimmedText.StartsWith('#'))
         {
             return ("", "");
         }
 
-        var cut = trimmed.IndexOfAny([' ', '\t', '=']);
+        var cut = trimmedText.IndexOfAny([' ', '\t', '=']);
 
-        return cut < 0 ? (trimmed, "") : (trimmed[..cut], trimmed[(cut + 1)..].Trim().Trim('='));
+        return cut < 0 ? (trimmedText, "") : (trimmedText[..cut], trimmedText[(cut + 1)..].Trim().Trim('='));
     }
 
     private static string Expand(string path)
@@ -128,11 +128,11 @@ public static class SshConfig
             return "";
         }
 
-        var expanded = Environment.ExpandEnvironmentVariables(path);
+        var full = Environment.ExpandEnvironmentVariables(path);
 
-        return expanded.StartsWith('~')
-            ? Path.Combine(Listing.Home(), expanded[1..].TrimStart('/', '\\'))
-            : expanded;
+        return full.StartsWith('~')
+            ? Path.Combine(Listing.Home(), full[1..].TrimStart('/', '\\'))
+            : full;
     }
 
     private static string Pick(string first, string second, string fallback) =>

@@ -14,12 +14,12 @@ public static class TabList
     public static void Open(Doings doings)
     {
         var sessions = doings.Sessions;
-        var where = Loc(LocString.TabsTitle).ToLowerInvariant();
-        var rows = new List<Pick> { new(Loc(LocString.TabsNew), where, "Alt+T", sessions.Add) };
+        var group = Loc(LocString.TabsTitle).ToLowerInvariant();
+        var rows = new List<Pick> { new(Loc(LocString.TabsNew), group, "Alt+T", sessions.Add) };
 
         if (sessions.All.Count > 1)
         {
-            rows.Add(new(Loc(LocString.TabsClose), where, "Alt+W", () => sessions.Close(sessions.Current)));
+            rows.Add(new(Loc(LocString.TabsClose), group, "Alt+W", () => sessions.Close(sessions.Current)));
         }
 
         rows.AddRange(Rows(doings));
@@ -37,17 +37,17 @@ public static class TabList
     {
         var sessions = doings.Sessions;
         var rows = new List<Pick>(sessions.All.Count);
-        var where = Loc(LocString.TabsTitle).ToLowerInvariant();
+        var group = Loc(LocString.TabsTitle).ToLowerInvariant();
 
         for (var index = 0; index < sessions.All.Count; index++)
         {
-            var which = index;
+            var choice = index;
 
             rows.Add(new(
                 Loc(LocString.Joined, index + 1, sessions.All[index].Label),
-                index == sessions.Open.Value ? Loc(LocString.TabsOnScreen) : where,
+                index == sessions.Open.Value ? Loc(LocString.TabsOnScreen) : group,
                 "",
-                () => sessions.Show(which)));
+                () => sessions.Show(choice)));
         }
 
         return rows;

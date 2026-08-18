@@ -17,15 +17,15 @@ public sealed class PipingSource : IFileSource, IMovesWholeFiles
     private readonly LocalSource _disk = new();
 
     /// <summary>How many whole files were written here.</summary>
-    public int Sent { get; private set; }
+    public int SentCount { get; private set; }
 
     /// <summary>How many whole files were read from here.</summary>
-    public int Fetched { get; private set; }
+    public int FetchCount { get; private set; }
 
     /// <inheritdoc/>
     public async Task SendAsync(Stream reading, string target, CancellationToken token)
     {
-        Sent++;
+        SentCount++;
 
         await using var writing = await _disk.CreateAsync(target, token).ConfigureAwait(false);
 
@@ -35,7 +35,7 @@ public sealed class PipingSource : IFileSource, IMovesWholeFiles
     /// <inheritdoc/>
     public async Task FetchAsync(string source, Stream writing, CancellationToken token)
     {
-        Fetched++;
+        FetchCount++;
 
         await using var reading = await _disk.OpenReadAsync(source, token).ConfigureAwait(false);
 

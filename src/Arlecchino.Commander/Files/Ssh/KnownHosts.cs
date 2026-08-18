@@ -112,19 +112,19 @@ public sealed class KnownHosts
     /// <returns>The verdict.</returns>
     public HostVerdict Check(string host, int port, string kind, byte[] key)
     {
-        var about = _entries.Where(entry => entry.IsAbout(host, port)).ToArray();
+        var matching = _entries.Where(entry => entry.IsAbout(host, port)).ToArray();
 
-        if (about.Any(entry => entry.Revoked && entry.Holds(key)))
+        if (matching.Any(entry => entry.Revoked && entry.Holds(key)))
         {
             return HostVerdict.Revoked;
         }
 
-        if (about.Any(entry => !entry.Revoked && entry.Kind == kind && entry.Holds(key)))
+        if (matching.Any(entry => !entry.Revoked && entry.Kind == kind && entry.Holds(key)))
         {
             return HostVerdict.Known;
         }
 
-        return about.Any(entry => !entry.Revoked && entry.Kind == kind)
+        return matching.Any(entry => !entry.Revoked && entry.Kind == kind)
             ? HostVerdict.Changed
             : HostVerdict.Unknown;
     }
@@ -140,9 +140,9 @@ public sealed class KnownHosts
     /// <returns>The line, without its newline.</returns>
     public static string Line(string host, int port, string kind, byte[] key)
     {
-        var named = port is 22 or 0 ? host : $"[{host}]:{port.ToString(CultureInfo.InvariantCulture)}";
+        var entry = port is 22 or 0 ? host : $"[{host}]:{port.ToString(CultureInfo.InvariantCulture)}";
 
-        return $"{named} {kind} {Convert.ToBase64String(key)}";
+        return $"{entry} {kind} {Convert.ToBase64String(key)}";
     }
 
     private sealed record Entry(string[] Names, string Kind, byte[] Key, bool Revoked)
@@ -157,14 +157,14 @@ public sealed class KnownHosts
 
         public static Entry? Of(string line)
         {
-            var trimmed = line.Trim();
+            var trimmedText = line.Trim();
 
-            if (trimmed.Length == 0 || trimmed[0] == '#')
+            if (trimmedText.Length == 0 || trimmedText[0] == '#')
             {
                 return null;
             }
 
-            var parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var parts = trimmedText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var revoked = false;
             var at = 0;
 
@@ -242,9 +242,9 @@ public sealed class KnownHosts
             {
                 using var hmac = new HMACSHA1(Convert.FromBase64String(parts[2]));
 
-                var made = hmac.ComputeHash(Encoding.UTF8.GetBytes(host));
+                var color = hmac.ComputeHash(Encoding.UTF8.GetBytes(host));
 
-                return CryptographicOperations.FixedTimeEquals(made, Convert.FromBase64String(parts[3]));
+                return CryptographicOperations.FixedTimeEquals(color, Convert.FromBase64String(parts[3]));
             }
             catch (FormatException)
             {

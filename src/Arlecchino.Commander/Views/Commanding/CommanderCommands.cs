@@ -19,7 +19,7 @@ public sealed class CommanderCommands
     private readonly CommanderFooter _footer;
     private readonly Pair _panels;
     private readonly Keyboard _keyboard;
-    private readonly IReadOnlyList<ViewCommand> _typed;
+    private readonly IReadOnlyList<ViewCommand> _commands;
 
     /// <summary>Builds the table and the shorter one taken from it.</summary>
     /// <param name="doings">Everything the screen can do, which every key is a call to.</param>
@@ -54,7 +54,7 @@ public sealed class CommanderCommands
             footer.Setting,
             lifetime);
 
-        _typed = [.. _keyboard.Keys.Where(command => !WantedByTheLine(command.Binding))];
+        _commands = [.. _keyboard.Keys.Where(command => !WantedByTheLine(command.Binding))];
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public sealed class CommanderCommands
     /// <returns>The commands to match this key against.</returns>
     public IReadOnlyList<ViewCommand> Now()
     {
-        return _footer.IsTyping || _panels.Active.IsSearching ? _typed : _keyboard.Keys;
+        return _footer.IsTyping || _panels.Active.IsSearching ? _commands : _keyboard.Keys;
     }
 
     /// <summary>

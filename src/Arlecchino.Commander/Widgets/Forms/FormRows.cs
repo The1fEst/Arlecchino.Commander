@@ -15,13 +15,13 @@ namespace Arlecchino.Commander.Widgets.Forms;
 /// </summary>
 public sealed class FormRows : IArlecchinoInteractiveWidget
 {
-    private const int Between = 1;
+    private const int Gap = 1;
 
     private readonly ArlecchinoKeymap _keymap;
 
-    private SurfaceRegion _drawn;
+    private SurfaceRegion _drawnRegion;
     private int _first;
-    private int _step = 1 + Between;
+    private int _step = 1 + Gap;
 
     /// <summary>Builds the column.</summary>
     /// <param name="keymap">Keys to obey, which are the ones a list is walked by.</param>
@@ -31,13 +31,13 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
     public required IReadOnlyList<FormRow> Rows { get; init; }
 
     /// <summary>Which row the cursor is on.</summary>
-    public int Selected { get; private set; }
+    public int SelectedIndex { get; private set; }
 
     /// <summary>Whether the column has the keyboard, which the framework's focus ring sets.</summary>
     public bool IsFocused { get; set; } = true;
 
     /// <summary>The row the cursor is on, or nothing when the form holds none.</summary>
-    public FormRow? Current => Rows.Count == 0 ? null : Rows[Math.Clamp(Selected, 0, Rows.Count - 1)];
+    public FormRow? Current => Rows.Count == 0 ? null : Rows[Math.Clamp(SelectedIndex, 0, Rows.Count - 1)];
 
     /// <summary>
     /// Draws the rows, one blank row between them while there is room for that. A form taller than the
@@ -52,14 +52,14 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
             return region;
         }
 
-        Selected = Math.Clamp(Selected, 0, Rows.Count - 1);
+        SelectedIndex = Math.Clamp(SelectedIndex, 0, Rows.Count - 1);
 
-        _drawn = region;
-        _step = Spread(region.Height) ? 1 + Between : 1;
+        _drawnRegion = region;
+        _step = Spread(region.Height) ? 1 + Gap : 1;
 
         var showing = Math.Max(1, ((region.Height - 1) / _step) + 1);
 
-        _first = Math.Clamp(Selected - (showing / 2), 0, Math.Max(0, Rows.Count - showing));
+        _first = Math.Clamp(SelectedIndex - (showing / 2), 0, Math.Max(0, Rows.Count - showing));
 
         var labels = 0;
 
@@ -75,7 +75,7 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
 
         for (var index = _first; index < Rows.Count && at < region.Height; index++)
         {
-            Rows[index].Draw(region.Rows(at, 1), labels, index == Selected);
+            Rows[index].Draw(region.Rows(at, 1), labels, index == SelectedIndex);
             at += _step;
         }
 
@@ -85,7 +85,7 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
     /// <summary>Whether every row fits with a blank row between them.</summary>
     /// <param name="height">The rows there are to draw in.</param>
     /// <returns><c>true</c> when the form may be spread out.</returns>
-    private bool Spread(int height) => ((Rows.Count - 1) * (1 + Between)) + 1 <= height;
+    private bool Spread(int height) => ((Rows.Count - 1) * (1 + Gap)) + 1 <= height;
 
     /// <summary>Walks the rows, answers one, or empties it.</summary>
     /// <param name="key">The key that arrived.</param>
@@ -99,14 +99,14 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
 
         if (_keymap.MoveUp.Matches(key))
         {
-            Selected = Math.Max(0, Selected - 1);
+            SelectedIndex = Math.Max(0, SelectedIndex - 1);
 
             return FocusResult.Handled;
         }
 
         if (_keymap.MoveDown.Matches(key))
         {
-            Selected = Math.Min(Rows.Count - 1, Selected + 1);
+            SelectedIndex = Math.Min(Rows.Count - 1, SelectedIndex + 1);
 
             return FocusResult.Handled;
         }
@@ -136,7 +136,7 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
     /// <returns>What was done with it.</returns>
     public FocusResult HandleMouse(MouseEvent mouse)
     {
-        if (_drawn.IsEmpty || !_drawn.Contains(mouse.Row, mouse.Column))
+        if (_drawnRegion.IsEmpty || !_drawnRegion.Contains(mouse.Row, mouse.Column))
         {
             return FocusResult.Ignored;
         }
@@ -144,11 +144,11 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
         switch (mouse.Action)
         {
             case MouseAction.ScrolledUp:
-                Selected = Math.Max(0, Selected - 1);
+                SelectedIndex = Math.Max(0, SelectedIndex - 1);
 
                 return FocusResult.Handled;
             case MouseAction.ScrolledDown:
-                Selected = Math.Min(Rows.Count - 1, Selected + 1);
+                SelectedIndex = Math.Min(Rows.Count - 1, SelectedIndex + 1);
 
                 return FocusResult.Handled;
             case MouseAction.Pressed when mouse.Button == MouseButton.Left:
@@ -169,7 +169,7 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
 
     private FocusResult Clicked(MouseEvent mouse)
     {
-        var (row, _) = _drawn.ToLocal(mouse.Row, mouse.Column);
+        var (row, _) = _drawnRegion.ToLocal(mouse.Row, mouse.Column);
         var index = _first + (row / _step);
 
         if (row % _step != 0 || index >= Rows.Count)
@@ -177,12 +177,12 @@ public sealed class FormRows : IArlecchinoInteractiveWidget
             return FocusResult.Handled;
         }
 
-        if (index == Selected)
+        if (index == SelectedIndex)
         {
             Rows[index].Open();
         }
 
-        Selected = index;
+        SelectedIndex = index;
 
         return FocusResult.Handled;
     }
