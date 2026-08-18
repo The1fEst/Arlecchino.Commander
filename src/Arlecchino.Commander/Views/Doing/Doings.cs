@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Dialogs;
@@ -119,9 +121,45 @@ public sealed class Doings
 
     /// <summary>
     ///     Puts the full path of everything marked on the clipboard, one to a line, or the path under the
-    ///     cursor when nothing is marked. It goes through the terminal, and reports how many were copied.
+    ///     cursor when nothing is marked.
     /// </summary>
-    public void CopyPaths()
+    public void CopyPaths() => CopyOfEach(static entry => entry.Path, LocString.SaidPathsCopied);
+
+    /// <summary>
+    ///     Puts the name of everything marked on the clipboard, extension and all, one to a line. It is the
+    ///     name the file has rather than the one the column had room to draw.
+    /// </summary>
+    public void CopyNames() => CopyOfEach(static entry => entry.Name, LocString.SaidNamesCopied);
+
+    /// <summary>
+    ///     Puts the name of everything marked on the clipboard with the extension cut off, one to a line.
+    ///     A folder has no extension to cut, so its name goes over whole.
+    /// </summary>
+    public void CopyBareNames() =>
+        CopyOfEach(
+            static entry => entry.IsFolder ? entry.Name : Path.GetFileNameWithoutExtension(entry.Name),
+            LocString.SaidNamesCopied);
+
+    /// <summary>
+    ///     Puts the folder the panel is showing on the clipboard. It answers whether anything is marked,
+    ///     the folder being what the panel is looking at rather than what is picked out inside it.
+    /// </summary>
+    public void CopyFolder()
+    {
+        var folder = Panels.Active.Folder;
+
+        _terminal.CopyToClipboard(folder);
+
+        _state.Output = Loc(LocString.SaidPathCopied, folder);
+    }
+
+    /// <summary>
+    ///     Puts one line for each marked file on the clipboard, or one for the file under the cursor when
+    ///     nothing is marked. It goes through the terminal, and reports how many lines were copied.
+    /// </summary>
+    /// <param name="read">What to take from each file.</param>
+    /// <param name="manyName">What to say when more than one was copied.</param>
+    private void CopyOfEach(Func<FileEntry, string> read, LocString manyName)
     {
         var panel = Panels.Active;
         var targets = panel.Targets();
@@ -133,18 +171,18 @@ public sealed class Doings
             return;
         }
 
-        var paths = new string[targets.Count];
+        var lines = new string[targets.Count];
 
         for (var at = 0; at < targets.Count; at++)
         {
-            paths[at] = targets[at].Path;
+            lines[at] = read(targets[at]);
         }
 
-        _terminal.CopyToClipboard(string.Join('\n', paths));
+        _terminal.CopyToClipboard(string.Join('\n', lines));
 
         _state.Output = targets.Count == 1
-            ? Loc(LocString.SaidPathCopied, paths[0])
-            : Loc(LocString.SaidPathsCopied, targets.Count);
+            ? Loc(LocString.SaidPathCopied, lines[0])
+            : Loc(manyName, targets.Count);
     }
 
     /// <summary>Opens a file for reading, which is what a panel asks for when Enter lands on one.</summary>

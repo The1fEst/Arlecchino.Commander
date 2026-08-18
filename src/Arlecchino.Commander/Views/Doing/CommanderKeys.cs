@@ -165,6 +165,19 @@ public static class CommanderKeys
                 LocString.MenuSortReversed,
                 () => panels.Active.Reverse()),
 
+            Bind.To(Copying(ConsoleKey.C),
+                LocString.MenuCopyPaths,
+                doings.CopyPaths),
+            Bind.To(Copying(ConsoleKey.F),
+                LocString.MenuCopyNames,
+                doings.CopyNames),
+            Bind.To(Copying(ConsoleKey.N),
+                LocString.MenuCopyBareNames,
+                doings.CopyBareNames),
+            Bind.To(Copying(ConsoleKey.D),
+                LocString.MenuCopyFolder,
+                doings.CopyFolder),
+
             Bind.To(Execute(ConsoleKey.C),
                 LocString.Permissions,
                 doings.Rights.Mode),
@@ -189,9 +202,6 @@ public static class CommanderKeys
             Bind.To(Execute(ConsoleKey.T),
                 LocString.KeyNamesOntoLine,
                 () => Names(panels, commandBar)),
-            Bind.To(Execute(ConsoleKey.Y),
-                LocString.MenuCopyPaths,
-                doings.CopyPaths),
             Bind.To(Execute(ConsoleKey.R),
                 LocString.MenuReload,
                 doings.Reload),
@@ -273,6 +283,14 @@ public static class CommanderKeys
         new KeyBinding(ConsoleKey.L)
             .AddAlternative(ConsoleKey.RightArrow)
             .AddAlternative(ConsoleKey.PageDown, KeyModifiers.Control);
+
+    /// <summary>
+    /// A key behind the <c>c</c> leader, which is the one that reaches the clipboard. It is a leader
+    /// rather than a modifier because the terminal keeps every modifier this would want.
+    /// </summary>
+    /// <param name="key">The key that finishes it.</param>
+    /// <returns>The chord.</returns>
+    private static KeyBinding Copying(ConsoleKey key) => new KeyBinding(ConsoleKey.C).ThenKey(key);
 
     /// <summary>
     /// A key behind the <c>x</c> leader, which is the one that does something to what the panel is

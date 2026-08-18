@@ -98,8 +98,16 @@ and the number says how old the binary in hand is.
 - **Doing something to what is on the panel, behind `x`.** `x c` sets permissions — through SFTP's own
   request, FTP's `SITE CHMOD`, or the file mode on a Unix disk — `x o` hands a `chown` to the shell where
   the panel is looking, `x s` and `x l` make a symbolic or a hard link into the other panel, `x d` marks
-  in both panels every file the other one does not have the same of, `x y` puts the marked paths on the
-  clipboard, `x i` shows the invisible files, and `x r` reads both panels again.
+  in both panels every file the other one does not have the same of, `x i` shows the invisible files, and
+  `x r` reads both panels again.
+- **The clipboard, behind `c`.** `c c` puts the marked paths on it, whole and one to a line, `c f` the
+  names with their extensions, `c n` the names without them, and `c d` the folder the panel is looking at.
+  None of it is what a selection dragged over the panel would give you: the panel draws names cut to the
+  width of a column, and what is copied is what the file is called. It is a leader rather than a modifier
+  because every modifier worth reaching for belongs to the terminal — `Ctrl+Shift+C` is the terminal's own
+  copying and never arrives, and `Ctrl+C` stops things. What is copied goes out through the terminal as
+  OSC 52 and through `wl-copy`, `xclip` or whichever of their kind is installed, since a terminal with the
+  sequence switched off drops it without a word.
 - **Panels that keep up by themselves.** A file made, written or deleted by something else — another
   window, a build, a download — turns up in the panel with no key pressed. On a disk the operating system
   says so; on a server, which says nothing, the folder on screen is read again every few seconds and

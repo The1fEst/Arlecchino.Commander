@@ -464,7 +464,10 @@ public sealed class CommanderKeysTests : IDisposable
         Assert.False(stop.Binding.Matches(new(ConsoleKey.Escape)));
     }
 
-    /// <summary>The pair opens what the letter behind it stands for, and neither half does it alone.</summary>
+    /// <summary>
+    /// The pair opens what the letter behind it stands for, and neither half does it alone. The finishing
+    /// letter is a leader of its own, so what it starts is called off before the pair is typed.
+    /// </summary>
     [Fact]
     public void APairOpensWhatTheLetterBehindItStandsFor()
     {
@@ -474,10 +477,27 @@ public sealed class CommanderKeysTests : IDisposable
 
         Assert.DoesNotContain(Loc(LocString.Permissions), _app.Frame(), StringComparison.Ordinal);
 
+        _app.Press(ConsoleKey.Escape);
         _app.Press(ConsoleKey.X);
         _app.Press(ConsoleKey.C);
 
         Assert.Contains(Loc(LocString.Permissions), _app.Frame(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The clipboard is behind its own leader rather than on a modifier, the terminal keeping every
+    /// modifier this would want.
+    /// </summary>
+    [Fact]
+    public void CopyingPathsIsBehindTheClipboardLeader()
+    {
+        var copying = _app.Navigator.CurrentCommands
+            .Single(command => command.Label() == Loc(LocString.MenuCopyPaths));
+
+        Assert.True(copying.Binding.IsChord);
+        Assert.True(copying.Binding.Opens(new(ConsoleKey.C)));
+        Assert.True(copying.Binding.Closes(new(ConsoleKey.C)));
+        Assert.False(copying.Binding.Opens(new(ConsoleKey.X)));
     }
 
     /// <summary>

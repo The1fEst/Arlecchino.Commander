@@ -74,8 +74,8 @@ public sealed class CommanderPanelTests : IDisposable
 
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.DownArrow);
-        _app.Press(ConsoleKey.X);
-        _app.Press(ConsoleKey.Y);
+        _app.Press(ConsoleKey.C);
+        _app.Press(ConsoleKey.C);
         _app.Frame();
 
         Assert.Equal(Path.Combine(_app.Folder, "alpha.txt"), _app.CopiedText);
@@ -94,13 +94,87 @@ public sealed class CommanderPanelTests : IDisposable
         _app.Press(ConsoleKey.DownArrow);
         _app.Press(ConsoleKey.Spacebar);
         _app.Press(ConsoleKey.Spacebar);
-        _app.Press(ConsoleKey.X);
-        _app.Press(ConsoleKey.Y);
+        _app.Press(ConsoleKey.C);
+        _app.Press(ConsoleKey.C);
         _app.Frame();
 
         Assert.Equal(
             $"{Path.Combine(_app.Folder, "alpha.txt")}\n{Path.Combine(_app.Folder, "beta.txt")}",
             _app.CopiedText);
+    }
+
+    /// <summary>
+    ///     The name goes over as the file has it, extension and all, rather than as the column had room to
+    ///     draw it.
+    /// </summary>
+    [Fact]
+    public void CopyingNamesTakesTheNameAndNotThePath()
+    {
+        _app.Frame();
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.C);
+        _app.Press(ConsoleKey.F);
+        _app.Frame();
+
+        Assert.Equal("alpha.txt", _app.CopiedText);
+    }
+
+    /// <summary>The extension is cut off the name, which is what a rename is usually reaching for.</summary>
+    [Fact]
+    public void CopyingBareNamesCutsTheExtensionOff()
+    {
+        _app.Frame();
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.C);
+        _app.Press(ConsoleKey.N);
+        _app.Frame();
+
+        Assert.Equal("alpha", _app.CopiedText);
+    }
+
+    /// <summary>
+    ///     A folder has no extension to cut, so its name goes over whole. Cutting at the last dot would make
+    ///     a folder called <c>2026.08</c> into <c>2026</c>.
+    /// </summary>
+    [Fact]
+    public void CopyingABareNameLeavesAFolderWhole()
+    {
+        Directory.CreateDirectory(Path.Combine(_app.Folder, "2026.08"));
+
+        _app.Press(ConsoleKey.X);
+        _app.Press(ConsoleKey.R);
+        _app.Settled();
+
+        _app.Press(ConsoleKey.Home);
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Frame();
+        _app.Press(ConsoleKey.C);
+        _app.Press(ConsoleKey.N);
+        _app.Frame();
+
+        Assert.Equal("2026.08", _app.CopiedText);
+    }
+
+    /// <summary>
+    ///     The folder is what the panel is looking at rather than what is picked out inside it, so the marks
+    ///     make no difference to it.
+    /// </summary>
+    [Fact]
+    public void CopyingTheFolderTakesWhereThePanelIsLooking()
+    {
+        _app.Frame();
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.Spacebar);
+        _app.Press(ConsoleKey.C);
+        _app.Press(ConsoleKey.D);
+        _app.Frame();
+
+        Assert.Equal(_app.Folder, _app.CopiedText);
     }
 
     [Fact]
