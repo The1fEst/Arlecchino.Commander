@@ -98,7 +98,7 @@ public static class Skin
         }
 
         Ink = background;
-        AccentTurn = Shade.Turn(background, Accent.Hue, Harmony);
+        AccentTurn = Shade.Turn(background, AccentTone.Hue, Harmony);
 
         UnlitInk = Shade.Lifted(background, -0.005d);
         LitInk = Shade.Lifted(background, 0.011d);
@@ -108,16 +108,16 @@ public static class Skin
         Hairline = Shade.Lifted(background, 0.105d);
         HairlineOverlay = Shade.Lifted(background, 0.153d);
 
-        Bone = Ladder(background, Text);
+        Bone = Ladder(background, TextTone);
         Secondary = Ladder(background, SideText);
         Stone = Ladder(background, Qualifier);
-        Faint = Ladder(background, Hint);
-        LabelInk = Ladder(background, Label);
-        TraceInk = Ladder(background, Trace);
-        GhostInk = Ladder(background, Ghost);
+        Faint = Ladder(background, HintTone);
+        LabelInk = Ladder(background, LabelTone);
+        TraceInk = Ladder(background, TraceTone);
+        GhostInk = Ladder(background, GhostTone);
         Idle = Ladder(background, Gutter);
 
-        Crimson = Ladder(background, Accent);
+        Crimson = Ladder(background, AccentTone);
         Flame = Ladder(background, AccentLoud);
         Coral = Ladder(background, AccentSoft);
         Sea = Ladder(background, Distance);
@@ -128,9 +128,9 @@ public static class Skin
         Danger = Ladder(background, Alarm);
 
         OnCrimson = Ladder(Crimson, OnAccent, OnAccentSoft.Contrast, OnAccent.Contrast);
-        OnBoneName = Ladder(Bone, Text, AccentOnLight.Contrast, Text.Contrast);
-        OnBoneMeta = Ladder(Bone, OnLightMeta, AccentOnLight.Contrast, Text.Contrast);
-        OnBoneDate = Ladder(Bone, OnLightDate, AccentOnLight.Contrast, Text.Contrast);
+        OnBoneName = Ladder(Bone, TextTone, AccentOnLight.Contrast, TextTone.Contrast);
+        OnBoneMeta = Ladder(Bone, OnLightMeta, AccentOnLight.Contrast, TextTone.Contrast);
+        OnBoneDate = Ladder(Bone, OnLightDate, AccentOnLight.Contrast, TextTone.Contrast);
 
         Named();
 
@@ -143,7 +143,7 @@ public static class Skin
         CursorName = Paint(OnBoneName, Bone, TextStyle.Bold);
         CursorMeta = Paint(OnBoneMeta, Bone);
         CursorDate = Paint(OnBoneDate, Bone);
-        CursorTag = Paint(Ladder(Bone, AccentOnLight, AccentOnLight.Contrast, Text.Contrast), Bone);
+        CursorTag = Paint(Ladder(Bone, AccentOnLight, AccentOnLight.Contrast, TextTone.Contrast), Bone);
         CursorRow = Paint(OnBoneName, Bone);
         ChosenName = Paint(OnCrimson, Crimson, TextStyle.Bold);
         ChosenMeta = Paint(Ladder(Crimson, OnAccentSoft, OnAccentSoft.Contrast, OnAccent.Contrast), Crimson);
@@ -160,8 +160,8 @@ public static class Skin
             Accent = Paint(Flame, null),
             Info = Paint(Secondary, null),
             Secondary = Paint(Stone, null),
-            Input = Paint(Ladder(Chip, Text), Chip),
-            Selection = Paint(Ladder(Chip, Text), Chip),
+            Input = Paint(Ladder(Chip, TextTone), Chip),
+            Selection = Paint(Ladder(Chip, TextTone), Chip),
             Active = Paint(Flame, null),
             ActiveSelection = Paint(OnCrimson, Crimson, TextStyle.Bold),
             Warning = Paint(Amber, null),
@@ -200,7 +200,7 @@ public static class Skin
     /// <param name="caret">What is behind the symbol the caret stands on.</param>
     /// <returns>The three colors, for <see cref="EntryRow"/> and <see cref="EntryRuns"/>.</returns>
     public static EntryLook Entry(IArlecchinoColor text, Rgb caret) =>
-        new(text, Paint(Ladder(Sea, Text), Sea), Paint(Ladder(caret, Text), caret));
+        new(text, Paint(Ladder(Sea, TextTone), Sea), Paint(Ladder(caret, TextTone), caret));
 
     /// <summary>
     /// A color, remembered. Styles are compared by what they are made of rather than by reference, so
@@ -276,16 +276,16 @@ public static class Skin
     /// <summary>How far from the background's own hue the accent is put, where the background has one.</summary>
     private const double Harmony = 40d;
 
-    private static readonly Tone Text = new(83.1d, 0.019d, 14.91d, TerminalColor.White);
+    private static readonly Tone TextTone = new(83.1d, 0.019d, 14.91d, TerminalColor.White);
     private static readonly Tone SideText = new(84.6d, 0.006d, 10.51d, TerminalColor.White);
     private static readonly Tone Qualifier = new(91.5d, 0.009d, 8.63d, TerminalColor.White);
-    private static readonly Tone Hint = new(87.5d, 0.011d, 7.00d, TerminalColor.White);
-    private static readonly Tone Label = new(84.6d, 0.013d, 5.82d, TerminalColor.BrightBlack);
-    private static readonly Tone Trace = new(84.6d, 0.016d, 4.91d, TerminalColor.BrightBlack);
-    private static readonly Tone Ghost = new(82.4d, 0.015d, 4.22d, TerminalColor.BrightBlack);
+    private static readonly Tone HintTone = new(87.5d, 0.011d, 7.00d, TerminalColor.White);
+    private static readonly Tone LabelTone = new(84.6d, 0.013d, 5.82d, TerminalColor.BrightBlack);
+    private static readonly Tone TraceTone = new(84.6d, 0.016d, 4.91d, TerminalColor.BrightBlack);
+    private static readonly Tone GhostTone = new(82.4d, 0.015d, 4.22d, TerminalColor.BrightBlack);
     private static readonly Tone Gutter = new(76.5d, 0.013d, 3.30d, TerminalColor.BrightBlack);
 
-    private static readonly Tone Accent = new(29.3d, 0.184d, 3.60d, TerminalColor.BrightRed, Turns: true);
+    private static readonly Tone AccentTone = new(29.3d, 0.184d, 3.60d, TerminalColor.BrightRed, Turns: true);
     private static readonly Tone AccentLoud = new(27.5d, 0.171d, 4.54d, TerminalColor.BrightRed, Turns: true);
     private static readonly Tone AccentSoft = new(29.4d, 0.100d, 9.01d, TerminalColor.BrightRed, Turns: true);
     private static readonly Tone Distance = new(175.5d, 0.026d, 13.34d, TerminalColor.Cyan, Turns: true);
@@ -319,7 +319,7 @@ public static class Skin
             }
         }
 
-        var contrast = Shade.Scaled(tone.Contrast, Gutter.Contrast, Text.Contrast, surface);
+        var contrast = Shade.Scaled(tone.Contrast, Gutter.Contrast, TextTone.Contrast, surface);
         var hue = tone.Turns ? (tone.Hue + AccentTurn + 360d) % 360d : tone.Hue;
         var answer = Shade.Against(surface, hue, tone.Chroma, contrast);
 
@@ -449,10 +449,10 @@ public static class Skin
     public sealed class Coat(Rgb background, bool own = false)
     {
         /// <summary>Primary text: a file name, a dialog title, what was typed.</summary>
-        public TermColor Text => field ??= Paint(On(Skin.Text), Fill);
+        public TermColor Text => field ??= Paint(On(TextTone), Fill);
 
         /// <summary>The same, said louder — the folder you are in, the title of a dialog.</summary>
-        public TermColor Strong => field ??= Paint(On(Skin.Text), Fill, TextStyle.Bold);
+        public TermColor Strong => field ??= Paint(On(TextTone), Fill, TextStyle.Bold);
 
         /// <summary>Text that is not the point but is still read.</summary>
         public TermColor Second => field ??= Paint(On(SideText), Fill);
@@ -461,16 +461,16 @@ public static class Skin
         public TermColor Meta => field ??= Paint(On(Qualifier), Fill);
 
         /// <summary>Hints, the parent row, a plain file's tag.</summary>
-        public TermColor Hint => field ??= Paint(On(Skin.Hint), Fill);
+        public TermColor Hint => field ??= Paint(On(HintTone), Fill);
 
         /// <summary>Column heads and the small capitals that label a section.</summary>
-        public TermColor Label => field ??= Paint(On(Skin.Label), Fill);
+        public TermColor Label => field ??= Paint(On(LabelTone), Fill);
 
         /// <summary>A date, or a count on the panel that is not being worked in.</summary>
-        public TermColor Trace => field ??= Paint(On(Skin.Trace), Fill);
+        public TermColor Trace => field ??= Paint(On(TraceTone), Fill);
 
         /// <summary>Line numbers, the tag of a file worth ignoring, a hint not needed yet.</summary>
-        public TermColor Ghost => field ??= Paint(On(Skin.Ghost), Fill);
+        public TermColor Ghost => field ??= Paint(On(GhostTone), Fill);
 
         /// <summary>The gutter at rest.</summary>
         public TermColor Sleeping => field ??= Paint(On(Gutter), Fill);
@@ -500,7 +500,7 @@ public static class Skin
         public TermColor MarkMeta => field ??= Paint(OnBand(Qualifier), Band);
 
         /// <summary>The band itself, for the width the row does not write on.</summary>
-        public TermColor MarkRow => field ??= Paint(OnBand(Skin.Text), Band);
+        public TermColor MarkRow => field ??= Paint(OnBand(TextTone), Band);
 
         /// <summary>The rule between two bands of this surface.</summary>
         public TermColor Rule => field ??= Paint(RuleInk, Fill);
@@ -529,7 +529,7 @@ public static class Skin
 
         private Rgb On(Tone tone) => Ladder(background, tone);
 
-        private Rgb OnBand(Tone tone) => Ladder(Band, tone, Qualifier.Contrast, Skin.Text.Contrast);
+        private Rgb OnBand(Tone tone) => Ladder(Band, tone, Qualifier.Contrast, TextTone.Contrast);
 
         private Rgb RuleInk => background == UnlitInk
             ? HairlineDim
