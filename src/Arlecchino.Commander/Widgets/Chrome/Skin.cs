@@ -7,76 +7,159 @@ using Arlecchino.Widgets.Text;
 namespace Arlecchino.Commander.Widgets.Chrome;
 
 /// <summary>
-/// The colors the redesign is drawn in: warm near-black neutrals, bone text, one crimson accent. Each is
-/// paired with one of the terminal's own sixteen, for a terminal that cannot draw 24-bit color.
+/// The colors the redesign is drawn in, worked out against whatever the terminal turned out to be. What is
+/// written down is how far apart things should read; the colors themselves are arrived at by
+/// <see cref="Wear"/>.
 /// </summary>
 public static class Skin
 {
-    public static readonly Rgb Ink = new(0x14, 0x13, 0x17);
-    public static readonly Rgb LitInk = new(0x17, 0x15, 0x1B);
-    public static readonly Rgb UnlitInk = new(0x13, 0x12, 0x16);
-    public static readonly Rgb OverlayInk = new(0x1D, 0x1A, 0x18);
-    public static readonly Rgb Chip = new(0x27, 0x23, 0x20);
-    public static readonly Rgb Bone = new(0xED, 0xE6, 0xD9);
-    public static readonly Rgb Crimson = new(0xC9, 0x38, 0x2B);
-    public static readonly Rgb Flame = new(0xD7, 0x51, 0x47);
-    public static readonly Rgb OnCrimson = new(0xFF, 0xF3, 0xEE);
-    public static readonly Rgb Coral = new(0xF2, 0xA0, 0x93);
-    public static readonly Rgb Sea = new(0xC9, 0xE0, 0xD9);
-    public static readonly Rgb Danger = new(0xB4, 0x34, 0x2F);
-    public static readonly Rgb Calm = new(0x4E, 0x7A, 0x63);
-    public static readonly Rgb CalmText = new(0x9C, 0xC7, 0xAF);
-    public static readonly Rgb Amber = new(0xD9, 0xA0, 0x5B);
-    public static readonly Rgb AmberRule = new(0x8A, 0x5A, 0x2B);
-    public static readonly Rgb Secondary = new(0xC5, 0xC3, 0xBF);
-    public static readonly Rgb Stone = new(0xB3, 0xB1, 0xAB);
-    public static readonly Rgb Faint = new(0xA2, 0x9F, 0x98);
-    public static readonly Rgb LabelInk = new(0x94, 0x90, 0x88);
-    public static readonly Rgb TraceInk = new(0x88, 0x83, 0x79);
-    public static readonly Rgb GhostInk = new(0x7D, 0x78, 0x6F);
-    public static readonly Rgb Idle = new(0x6C, 0x67, 0x60);
-    private static readonly Rgb Hairline = new(0x2F, 0x2C, 0x28);
-    private static readonly Rgb HairlineDim = new(0x27, 0x25, 0x21);
-    private static readonly Rgb HairlineOverlay = new(0x3C, 0x38, 0x33);
-    private static readonly Rgb OnBoneMeta = new(0x42, 0x3E, 0x38);
-    private static readonly Rgb OnBoneDate = new(0x59, 0x54, 0x4C);
+    /// <summary>The near-black this design was drawn on, kept for a terminal that will not say.</summary>
+    private static readonly Rgb DrawnInk = new(0x14, 0x13, 0x17);
 
-    private static readonly Dictionary<(Rgb Front, Rgb Back, TextStyle Style), TermColor> Cache = [];
+    private static readonly Dictionary<(Rgb Front, Rgb? Back, TextStyle Style), TermColor> Cache = [];
+    private static readonly Dictionary<Rgb, TerminalColor> Sixteen = [];
     private static readonly Lock Gate = new();
 
-    public static Coat Terminal { get; } = new(Ink);
-    public static Coat Lively { get; } = new(LitInk);
-    public static Coat Quiet { get; } = new(UnlitInk);
-    public static Coat Overlay { get; } = new(OverlayInk);
-    public static Coat Inlaid { get; } = new(Chip);
+    static Skin() => Wear(DrawnInk);
 
-    public static ThemePalette Palette { get; } = new()
+    /// <summary>The terminal's own background, which the base surface leaves alone rather than paints.</summary>
+    public static Rgb Ink { get; private set; }
+
+    public static Rgb LitInk { get; private set; }
+    public static Rgb UnlitInk { get; private set; }
+    public static Rgb OverlayInk { get; private set; }
+    public static Rgb Chip { get; private set; }
+    public static Rgb Bone { get; private set; }
+    public static Rgb Crimson { get; private set; }
+    public static Rgb Flame { get; private set; }
+    public static Rgb OnCrimson { get; private set; }
+    public static Rgb Coral { get; private set; }
+    public static Rgb Sea { get; private set; }
+    public static Rgb Danger { get; private set; }
+    public static Rgb Calm { get; private set; }
+    public static Rgb CalmText { get; private set; }
+    public static Rgb Amber { get; private set; }
+    public static Rgb AmberRule { get; private set; }
+    public static Rgb Secondary { get; private set; }
+    public static Rgb Stone { get; private set; }
+    public static Rgb Faint { get; private set; }
+    public static Rgb LabelInk { get; private set; }
+    public static Rgb TraceInk { get; private set; }
+    public static Rgb GhostInk { get; private set; }
+    public static Rgb Idle { get; private set; }
+
+    private static Rgb Hairline { get; set; }
+    private static Rgb HairlineDim { get; set; }
+    private static Rgb HairlineOverlay { get; set; }
+    private static Rgb OnBoneMeta { get; set; }
+    private static Rgb OnBoneDate { get; set; }
+    private static Rgb OnBoneName { get; set; }
+
+    /// <summary>The base surface, which is the terminal's own and is therefore never filled in.</summary>
+    public static Coat Terminal { get; private set; } = null!;
+
+    public static Coat Lively { get; private set; } = null!;
+    public static Coat Quiet { get; private set; } = null!;
+    public static Coat Overlay { get; private set; } = null!;
+    public static Coat Inlaid { get; private set; } = null!;
+
+    public static ThemePalette Palette { get; private set; } = null!;
+
+    public static TermColor CursorName { get; private set; } = null!;
+    public static TermColor CursorMeta { get; private set; } = null!;
+    public static TermColor CursorDate { get; private set; } = null!;
+    public static TermColor CursorTag { get; private set; } = null!;
+    public static TermColor CursorRow { get; private set; } = null!;
+    public static TermColor ChosenName { get; private set; } = null!;
+    public static TermColor ChosenMeta { get; private set; } = null!;
+    public static TermColor ChosenRow { get; private set; } = null!;
+    public static TermColor CrimsonFill { get; private set; } = null!;
+    public static TermColor BorderActiveColor { get; private set; } = null!;
+    public static TermColor BorderInactiveColor { get; private set; } = null!;
+
+    /// <summary>
+    /// Works every color out against one background and puts them in place. It is called as the
+    /// application starts, once the terminal has said what color it is.
+    /// </summary>
+    /// <param name="background">What the terminal draws behind the text.</param>
+    public static void Wear(Rgb background)
     {
-        Default = Paint(Bone, Ink),
-        Header = Paint(Flame, Ink, TextStyle.Bold),
-        TableHeader = Paint(LabelInk, Ink),
-        Accent = Paint(Flame, Ink),
-        Info = Paint(Secondary, Ink),
-        Secondary = Paint(Stone, Ink),
-        Input = Paint(Bone, Chip),
-        Selection = Paint(Bone, Chip),
-        Active = Paint(Flame, Ink),
-        ActiveSelection = Paint(OnCrimson, Crimson, TextStyle.Bold),
-        Warning = Paint(Amber, Ink),
-        Error = Paint(Coral, Ink),
-    };
+        lock (Gate)
+        {
+            Cache.Clear();
+            Sixteen.Clear();
+        }
 
-    public static TermColor CursorName => field ??= Paint(Ink, Bone, TextStyle.Bold);
-    public static TermColor CursorMeta => field ??= Paint(OnBoneMeta, Bone);
-    public static TermColor CursorDate => field ??= Paint(OnBoneDate, Bone);
-    public static TermColor CursorTag => field ??= Paint(Crimson, Bone);
-    public static TermColor CursorRow => field ??= Paint(Ink, Bone);
-    public static TermColor ChosenName => field ??= Paint(OnCrimson, Crimson, TextStyle.Bold);
-    public static TermColor ChosenMeta => field ??= Paint(new(0xF0, 0xBD, 0xB5), Crimson);
-    public static TermColor ChosenRow => field ??= Paint(OnCrimson, Crimson);
-    public static TermColor CrimsonFill => field ??= Paint(Crimson, Crimson);
-    public static TermColor BorderActiveColor => field ??= Paint(UnlitInk, LitInk);
-    public static TermColor BorderInactiveColor => field ??= Paint(UnlitInk, UnlitInk);
+        Ink = background;
+
+        UnlitInk = Shade.Lifted(background, -0.005d);
+        LitInk = Shade.Lifted(background, 0.011d);
+        OverlayInk = Shade.Lifted(background, 0.031d);
+        Chip = Shade.Lifted(background, 0.070d);
+        HairlineDim = Shade.Lifted(background, 0.075d);
+        Hairline = Shade.Lifted(background, 0.105d);
+        HairlineOverlay = Shade.Lifted(background, 0.153d);
+
+        Bone = Ladder(background, Text);
+        Secondary = Ladder(background, SideText);
+        Stone = Ladder(background, Qualifier);
+        Faint = Ladder(background, Hint);
+        LabelInk = Ladder(background, Label);
+        TraceInk = Ladder(background, Trace);
+        GhostInk = Ladder(background, Ghost);
+        Idle = Ladder(background, Gutter);
+
+        Crimson = Ladder(background, Accent);
+        Flame = Ladder(background, AccentLoud);
+        Coral = Ladder(background, AccentSoft);
+        Sea = Ladder(background, Distance);
+        Calm = Ladder(background, Peace);
+        CalmText = Ladder(background, PeaceText);
+        Amber = Ladder(background, Caution);
+        AmberRule = Ladder(background, CautionRule);
+        Danger = Ladder(background, Alarm);
+
+        OnCrimson = Ladder(Crimson, OnAccent);
+        OnBoneName = Ladder(Bone, Text);
+        OnBoneMeta = Ladder(Bone, OnLightMeta);
+        OnBoneDate = Ladder(Bone, OnLightDate);
+
+        Named();
+
+        Terminal = new(background, own: true);
+        Lively = new(LitInk, own: false);
+        Quiet = new(UnlitInk, own: false);
+        Overlay = new(OverlayInk, own: false);
+        Inlaid = new(Chip, own: false);
+
+        CursorName = Paint(OnBoneName, Bone, TextStyle.Bold);
+        CursorMeta = Paint(OnBoneMeta, Bone);
+        CursorDate = Paint(OnBoneDate, Bone);
+        CursorTag = Paint(Ladder(Bone, AccentOnLight), Bone);
+        CursorRow = Paint(OnBoneName, Bone);
+        ChosenName = Paint(OnCrimson, Crimson, TextStyle.Bold);
+        ChosenMeta = Paint(Ladder(Crimson, OnAccentSoft), Crimson);
+        ChosenRow = Paint(OnCrimson, Crimson);
+        CrimsonFill = Paint(Crimson, Crimson);
+        BorderActiveColor = Paint(UnlitInk, LitInk);
+        BorderInactiveColor = Paint(UnlitInk, UnlitInk);
+
+        Palette = new()
+        {
+            Default = Paint(Bone, null),
+            Header = Paint(Flame, null, TextStyle.Bold),
+            TableHeader = Paint(LabelInk, null),
+            Accent = Paint(Flame, null),
+            Info = Paint(Secondary, null),
+            Secondary = Paint(Stone, null),
+            Input = Paint(Ladder(Chip, Text), Chip),
+            Selection = Paint(Ladder(Chip, Text), Chip),
+            Active = Paint(Flame, null),
+            ActiveSelection = Paint(OnCrimson, Crimson, TextStyle.Bold),
+            Warning = Paint(Amber, null),
+            Error = Paint(Coral, null),
+        };
+    }
 
     /// <summary>
     /// How a line being typed into is written, wherever the application draws one: the selection on the
@@ -86,7 +169,7 @@ public static class Skin
     /// <param name="caret">What is behind the symbol the caret stands on.</param>
     /// <returns>The three colors, for <see cref="EntryRow"/> and <see cref="EntryRuns"/>.</returns>
     public static EntryLook Entry(IArlecchinoColor text, Rgb caret) =>
-        new(text, Paint(Ink, Sea), Paint(Ink, caret));
+        new(text, Paint(Ladder(Sea, Text), Sea), Paint(Ladder(caret, Text), caret));
 
     /// <summary>
     /// A color, remembered. Styles are compared by what they are made of rather than by reference, so
@@ -94,10 +177,10 @@ public static class Skin
     /// sequence is built once.
     /// </summary>
     /// <param name="front">The glyphs.</param>
-    /// <param name="back">What is behind them.</param>
+    /// <param name="back">What is behind them, or nothing to leave the terminal's own showing.</param>
     /// <param name="style">Bold, which is the only weight besides plain that this design uses.</param>
     /// <returns>The style.</returns>
-    public static TermColor Paint(Rgb front, Rgb back, TextStyle style = TextStyle.None)
+    public static TermColor Paint(Rgb front, Rgb? back, TextStyle style = TextStyle.None)
     {
         lock (Gate)
         {
@@ -110,7 +193,7 @@ public static class Skin
             {
                 Foreground = Nearest(front),
                 ExactForeground = front,
-                Background = Nearest(back),
+                Background = back is null ? TerminalColor.Default : Nearest(back.Value),
                 ExactBackground = back,
                 Style = style,
             };
@@ -138,78 +221,204 @@ public static class Skin
         (byte)Math.Clamp(Math.Round((front * alpha) + (back * (1 - alpha))), 0, 255);
 
     /// <summary>
-    /// The one of the terminal's sixteen to fall back on. Every neutral goes to bright black, since they
-    /// differ by a few percent of lightness and the sixteen have no way of saying that.
+    /// One color of the design, said as what it is for rather than as what it comes to. It keeps a hue,
+    /// reads a set distance from its background, and names one of the sixteen to stand in for it.
+    /// </summary>
+    /// <param name="Hue">Degrees around the wheel.</param>
+    /// <param name="Chroma">How far from gray.</param>
+    /// <param name="Contrast">How far from the surface it is read on.</param>
+    /// <param name="Ansi">The one of the sixteen to fall back on.</param>
+    private readonly record struct Tone(double Hue, double Chroma, double Contrast, TerminalColor Ansi);
+
+    private static readonly Tone Text = new(83.1d, 0.019d, 14.91d, TerminalColor.White);
+    private static readonly Tone SideText = new(84.6d, 0.006d, 10.51d, TerminalColor.White);
+    private static readonly Tone Qualifier = new(91.5d, 0.009d, 8.63d, TerminalColor.White);
+    private static readonly Tone Hint = new(87.5d, 0.011d, 7.00d, TerminalColor.White);
+    private static readonly Tone Label = new(84.6d, 0.013d, 5.82d, TerminalColor.BrightBlack);
+    private static readonly Tone Trace = new(84.6d, 0.016d, 4.91d, TerminalColor.BrightBlack);
+    private static readonly Tone Ghost = new(82.4d, 0.015d, 4.22d, TerminalColor.BrightBlack);
+    private static readonly Tone Gutter = new(76.5d, 0.013d, 3.30d, TerminalColor.BrightBlack);
+
+    private static readonly Tone Accent = new(29.3d, 0.184d, 3.60d, TerminalColor.BrightRed);
+    private static readonly Tone AccentLoud = new(27.5d, 0.171d, 4.54d, TerminalColor.BrightRed);
+    private static readonly Tone AccentSoft = new(29.4d, 0.100d, 9.01d, TerminalColor.BrightRed);
+    private static readonly Tone Distance = new(175.5d, 0.026d, 13.34d, TerminalColor.Cyan);
+    private static readonly Tone Peace = new(160.6d, 0.061d, 3.78d, TerminalColor.Green);
+    private static readonly Tone PeaceText = new(160.3d, 0.057d, 9.87d, TerminalColor.Green);
+    private static readonly Tone Caution = new(70.0d, 0.110d, 8.04d, TerminalColor.Yellow);
+    private static readonly Tone CautionRule = new(62.8d, 0.089d, 3.15d, TerminalColor.Yellow);
+    private static readonly Tone Alarm = new(26.9d, 0.165d, 3.06d, TerminalColor.Red);
+
+    private static readonly Tone OnAccent = new(44.2d, 0.015d, 4.73d, TerminalColor.BrightWhite);
+    private static readonly Tone OnAccentSoft = new(28.7d, 0.060d, 3.10d, TerminalColor.BrightWhite);
+    private static readonly Tone AccentOnLight = new(29.3d, 0.184d, 4.14d, TerminalColor.BrightRed);
+    private static readonly Tone OnLightMeta = new(78.2d, 0.011d, 8.56d, TerminalColor.Black);
+    private static readonly Tone OnLightDate = new(79.7d, 0.014d, 6.05d, TerminalColor.Black);
+
+    private static readonly Tone[] Ladders =
+    [
+        Text, SideText, Qualifier, Hint, Label, Trace, Ghost, Gutter,
+        Accent, AccentLoud, AccentSoft, Distance, Peace, PeaceText, Caution, CautionRule, Alarm,
+        OnAccent, OnAccentSoft, AccentOnLight, OnLightMeta, OnLightDate,
+    ];
+
+    /// <summary>
+    /// One color of the design worked out against the surface it is read on. On the terminal's own
+    /// background the whole ladder is brought down to the room there is, so its steps stay apart.
+    /// </summary>
+    /// <param name="surface">What it is read on.</param>
+    /// <param name="tone">What the color is for.</param>
+    /// <returns>The color to draw in.</returns>
+    private static Rgb Ladder(Rgb surface, Tone tone)
+    {
+        var contrast = surface == Ink
+            ? Shade.Scaled(tone.Contrast, Gutter.Contrast, Text.Contrast, surface)
+            : tone.Contrast;
+
+        return Shade.Against(surface, tone.Hue, tone.Chroma, contrast);
+    }
+
+    /// <summary>
+    /// Writes down which of the sixteen each color of the design stands for, so a terminal without
+    /// 24-bit color is handed the choice the design made rather than the nearest arithmetic answer.
+    /// </summary>
+    private static void Named()
+    {
+        lock (Gate)
+        {
+            foreach (var tone in Ladders)
+            {
+                Sixteen.TryAdd(Ladder(Ink, tone), tone.Ansi);
+                Sixteen.TryAdd(Ladder(Bone, tone), tone.Ansi);
+                Sixteen.TryAdd(Ladder(Crimson, tone), tone.Ansi);
+            }
+
+            foreach (var surface in new[] { Ink, UnlitInk, LitInk, OverlayInk, Chip, Hairline })
+            {
+                Sixteen.TryAdd(surface, TerminalColor.Default);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The one of the terminal's sixteen to fall back on: what the design chose where it chose, and the
+    /// nearest by eye where a color was mixed rather than named.
     /// </summary>
     /// <param name="colour">The exact color.</param>
-    /// <returns>The nearest one that was chosen.</returns>
-    private static TerminalColor Nearest(Rgb colour) => colour switch
+    /// <returns>The one of the sixteen to stand in for it.</returns>
+    private static TerminalColor Nearest(Rgb colour)
     {
-        _ when colour == Bone => TerminalColor.White,
-        _ when colour == OnCrimson => TerminalColor.BrightWhite,
-        _ when colour == Crimson || colour == Coral || colour == Flame => TerminalColor.BrightRed,
-        _ when colour == Danger => TerminalColor.Red,
-        _ when colour == Sea => TerminalColor.Cyan,
-        _ when colour == Calm || colour == CalmText => TerminalColor.Green,
-        _ when colour == Amber || colour == AmberRule => TerminalColor.Yellow,
-        _ when colour == Secondary || colour == Stone || colour == Faint => TerminalColor.White,
-        _ when colour == OnBoneMeta || colour == OnBoneDate => TerminalColor.Black,
-        _ when colour == LabelInk ||
-               colour == TraceInk ||
-               colour == GhostInk ||
-               colour == Idle =>
-            TerminalColor.BrightBlack,
-        _ => TerminalColor.Default,
-    };
+        if (Sixteen.TryGetValue(colour, out var chosen))
+        {
+            return chosen;
+        }
+
+        var sample = Oklch.Of(colour);
+        var closest = TerminalColor.Default;
+        var least = double.MaxValue;
+
+        foreach (var (candidate, name) in Plain)
+        {
+            var against = Oklch.Of(candidate);
+            var lightness = sample.Lightness - against.Lightness;
+            var chroma = sample.Chroma - against.Chroma;
+            var distance = (lightness * lightness * 4d) + (chroma * chroma) + Turn(sample, against);
+
+            if (distance < least)
+            {
+                least = distance;
+                closest = name;
+            }
+        }
+
+        return closest;
+    }
+
+    /// <summary>How far apart two hues are, counted for nothing where either color is near enough gray.</summary>
+    /// <param name="one">The color being matched.</param>
+    /// <param name="other">The candidate.</param>
+    /// <returns>A number to add to the distance between them.</returns>
+    private static double Turn(Oklch one, Oklch other)
+    {
+        if (one.Chroma < 0.03d || other.Chroma < 0.03d)
+        {
+            return 0d;
+        }
+
+        var distance = Math.Abs(one.Hue - other.Hue) % 360d;
+
+        return Math.Min(distance, 360d - distance) / 360d;
+    }
+
+    private static readonly (Rgb Color, TerminalColor Name)[] Plain =
+    [
+        (new(0x00, 0x00, 0x00), TerminalColor.Black),
+        (new(0x80, 0x00, 0x00), TerminalColor.Red),
+        (new(0x00, 0x80, 0x00), TerminalColor.Green),
+        (new(0x80, 0x80, 0x00), TerminalColor.Yellow),
+        (new(0x00, 0x00, 0x80), TerminalColor.Blue),
+        (new(0x80, 0x00, 0x80), TerminalColor.Magenta),
+        (new(0x00, 0x80, 0x80), TerminalColor.Cyan),
+        (new(0xC0, 0xC0, 0xC0), TerminalColor.White),
+        (new(0x80, 0x80, 0x80), TerminalColor.BrightBlack),
+        (new(0xFF, 0x00, 0x00), TerminalColor.BrightRed),
+        (new(0x00, 0xFF, 0x00), TerminalColor.BrightGreen),
+        (new(0xFF, 0xFF, 0x00), TerminalColor.BrightYellow),
+        (new(0x00, 0x00, 0xFF), TerminalColor.BrightBlue),
+        (new(0xFF, 0x00, 0xFF), TerminalColor.BrightMagenta),
+        (new(0x00, 0xFF, 0xFF), TerminalColor.BrightCyan),
+        (new(0xFF, 0xFF, 0xFF), TerminalColor.BrightWhite),
+    ];
 
     /// <summary>
     /// One surface and the text on it. A span drawn against the wrong background leaves a hole in the
     /// fill, so the surface is chosen once and every color on it comes from here.
     /// </summary>
     /// <param name="background">The background this coat is worn over.</param>
-    public sealed class Coat(Rgb background)
+    /// <param name="own">Whether that background is the terminal's own, which is left unpainted.</param>
+    public sealed class Coat(Rgb background, bool own = false)
     {
         /// <summary>Primary text: a file name, a dialog title, what was typed.</summary>
-        public TermColor Text => Paint(Bone, background);
+        public TermColor Text => Paint(Bone, Fill);
 
         /// <summary>The same, said louder — the folder you are in, the title of a dialog.</summary>
-        public TermColor Strong => Paint(Bone, background, TextStyle.Bold);
+        public TermColor Strong => Paint(Bone, Fill, TextStyle.Bold);
 
         /// <summary>Text that is not the point but is still read.</summary>
-        public TermColor Second => Paint(Secondary, background);
+        public TermColor Second => Paint(Secondary, Fill);
 
         /// <summary>Sizes, counts, everything that qualifies a name.</summary>
-        public TermColor Meta => Paint(Stone, background);
+        public TermColor Meta => Paint(Stone, Fill);
 
         /// <summary>Hints, the parent row, a plain file's tag.</summary>
-        public TermColor Hint => Paint(Faint, background);
+        public TermColor Hint => Paint(Faint, Fill);
 
         /// <summary>Column heads and the small capitals that label a section.</summary>
-        public TermColor Label => Paint(LabelInk, background);
+        public TermColor Label => Paint(LabelInk, Fill);
 
         /// <summary>A date, or a count on the panel that is not being worked in.</summary>
-        public TermColor Trace => Paint(TraceInk, background);
+        public TermColor Trace => Paint(TraceInk, Fill);
 
         /// <summary>Line numbers, the tag of a file worth ignoring, a hint not needed yet.</summary>
-        public TermColor Ghost => Paint(GhostInk, background);
+        public TermColor Ghost => Paint(GhostInk, Fill);
 
         /// <summary>The gutter at rest.</summary>
-        public TermColor Sleeping => Paint(Idle, background);
+        public TermColor Sleeping => Paint(Idle, Fill);
 
         /// <summary>The accent as text: a caret, a sort arrow, the key of the moment.</summary>
-        public TermColor Accent => Paint(Flame, background);
+        public TermColor Accent => Paint(Flame, Fill);
 
         /// <summary>The accent as text, said louder.</summary>
-        public TermColor AccentStrong => Paint(Flame, background, TextStyle.Bold);
+        public TermColor AccentStrong => Paint(Flame, Fill, TextStyle.Bold);
 
         /// <summary>A host name or a remote path.</summary>
-        public TermColor Remote => Paint(Sea, background);
+        public TermColor Remote => Paint(Sea, Fill);
 
         /// <summary>A file that is locked, or a job that finished with problems.</summary>
-        public TermColor Warning => Paint(Amber, background);
+        public TermColor Warning => Paint(Amber, Fill);
 
         /// <summary>A job that finished.</summary>
-        public TermColor Success => Paint(CalmText, background);
+        public TermColor Success => Paint(CalmText, Fill);
 
         /// <summary>The name of a marked file, on the tinted band its row gets.</summary>
         public TermColor MarkName => Paint(Coral, MarkBand);
@@ -221,7 +430,10 @@ public static class Skin
         public TermColor MarkRow => Paint(Bone, MarkBand);
 
         /// <summary>The rule between two bands of this surface.</summary>
-        public TermColor Rule => Paint(RuleInk, background);
+        public TermColor Rule => Paint(RuleInk, Fill);
+
+        /// <summary>What to fill with, which is nothing at all where the terminal's own is showing.</summary>
+        private Rgb? Fill => own ? null : background;
 
         private Rgb MarkBand => Blend(Crimson, 0.13, background);
 
