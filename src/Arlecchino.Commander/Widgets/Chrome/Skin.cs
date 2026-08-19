@@ -25,6 +25,12 @@ public static class Skin
     /// <summary>The terminal's own background, which the base surface leaves alone rather than paints.</summary>
     public static Rgb Ink { get; private set; }
 
+    /// <summary>How far the accent wheel has turned to sit well on the terminal's own color.</summary>
+    private static double AccentTurn { get; set; }
+
+    /// <summary>How much the terminal's own color has taken out of the accents.</summary>
+    private static double AccentDamping { get; set; }
+
     public static Rgb LitInk { get; private set; }
     public static Rgb UnlitInk { get; private set; }
     public static Rgb OverlayInk { get; private set; }
@@ -91,6 +97,8 @@ public static class Skin
         }
 
         Ink = background;
+        AccentTurn = Shade.Turn(background, Accent.Hue, Harmony);
+        AccentDamping = Shade.Pull(background) * Damping;
 
         UnlitInk = Shade.Lifted(background, -0.005d);
         LitInk = Shade.Lifted(background, 0.011d);
@@ -228,7 +236,19 @@ public static class Skin
     /// <param name="Chroma">How far from gray.</param>
     /// <param name="Contrast">How far from the surface it is read on.</param>
     /// <param name="Ansi">The one of the sixteen to fall back on.</param>
-    private readonly record struct Tone(double Hue, double Chroma, double Contrast, TerminalColor Ansi);
+    /// <param name="Turns">Whether it belongs to the accent wheel, which turns with the background.</param>
+    private readonly record struct Tone(
+        double Hue,
+        double Chroma,
+        double Contrast,
+        TerminalColor Ansi,
+        bool Turns = false);
+
+    /// <summary>How far from the background's own hue the accent is put, where the background has one.</summary>
+    private const double Harmony = 40d;
+
+    /// <summary>How much of an accent's chroma a vivid background takes, so the two stop fighting.</summary>
+    private const double Damping = 0.65d;
 
     private static readonly Tone Text = new(83.1d, 0.019d, 14.91d, TerminalColor.White);
     private static readonly Tone SideText = new(84.6d, 0.006d, 10.51d, TerminalColor.White);
@@ -239,19 +259,19 @@ public static class Skin
     private static readonly Tone Ghost = new(82.4d, 0.015d, 4.22d, TerminalColor.BrightBlack);
     private static readonly Tone Gutter = new(76.5d, 0.013d, 3.30d, TerminalColor.BrightBlack);
 
-    private static readonly Tone Accent = new(29.3d, 0.184d, 3.60d, TerminalColor.BrightRed);
-    private static readonly Tone AccentLoud = new(27.5d, 0.171d, 4.54d, TerminalColor.BrightRed);
-    private static readonly Tone AccentSoft = new(29.4d, 0.100d, 9.01d, TerminalColor.BrightRed);
-    private static readonly Tone Distance = new(175.5d, 0.026d, 13.34d, TerminalColor.Cyan);
-    private static readonly Tone Peace = new(160.6d, 0.061d, 3.78d, TerminalColor.Green);
-    private static readonly Tone PeaceText = new(160.3d, 0.057d, 9.87d, TerminalColor.Green);
-    private static readonly Tone Caution = new(70.0d, 0.110d, 8.04d, TerminalColor.Yellow);
-    private static readonly Tone CautionRule = new(62.8d, 0.089d, 3.15d, TerminalColor.Yellow);
-    private static readonly Tone Alarm = new(26.9d, 0.165d, 3.06d, TerminalColor.Red);
+    private static readonly Tone Accent = new(29.3d, 0.184d, 3.60d, TerminalColor.BrightRed, Turns: true);
+    private static readonly Tone AccentLoud = new(27.5d, 0.171d, 4.54d, TerminalColor.BrightRed, Turns: true);
+    private static readonly Tone AccentSoft = new(29.4d, 0.100d, 9.01d, TerminalColor.BrightRed, Turns: true);
+    private static readonly Tone Distance = new(175.5d, 0.026d, 13.34d, TerminalColor.Cyan, Turns: true);
+    private static readonly Tone Peace = new(160.6d, 0.061d, 3.78d, TerminalColor.Green, Turns: true);
+    private static readonly Tone PeaceText = new(160.3d, 0.057d, 9.87d, TerminalColor.Green, Turns: true);
+    private static readonly Tone Caution = new(70.0d, 0.110d, 8.04d, TerminalColor.Yellow, Turns: true);
+    private static readonly Tone CautionRule = new(62.8d, 0.089d, 3.15d, TerminalColor.Yellow, Turns: true);
+    private static readonly Tone Alarm = new(26.9d, 0.165d, 3.06d, TerminalColor.Red, Turns: true);
 
-    private static readonly Tone OnAccent = new(44.2d, 0.015d, 4.73d, TerminalColor.BrightWhite);
-    private static readonly Tone OnAccentSoft = new(28.7d, 0.060d, 3.10d, TerminalColor.BrightWhite);
-    private static readonly Tone AccentOnLight = new(29.3d, 0.184d, 4.14d, TerminalColor.BrightRed);
+    private static readonly Tone OnAccent = new(44.2d, 0.015d, 4.73d, TerminalColor.BrightWhite, Turns: true);
+    private static readonly Tone OnAccentSoft = new(28.7d, 0.060d, 3.10d, TerminalColor.BrightWhite, Turns: true);
+    private static readonly Tone AccentOnLight = new(29.3d, 0.184d, 4.14d, TerminalColor.BrightRed, Turns: true);
     private static readonly Tone OnLightMeta = new(78.2d, 0.011d, 8.56d, TerminalColor.Black);
     private static readonly Tone OnLightDate = new(79.7d, 0.014d, 6.05d, TerminalColor.Black);
 
@@ -275,7 +295,10 @@ public static class Skin
             ? Shade.Scaled(tone.Contrast, Gutter.Contrast, Text.Contrast, surface)
             : tone.Contrast;
 
-        return Shade.Against(surface, tone.Hue, tone.Chroma, contrast);
+        var hue = tone.Turns ? (tone.Hue + AccentTurn + 360d) % 360d : tone.Hue;
+        var chroma = tone.Turns ? tone.Chroma * (1d - AccentDamping) : tone.Chroma;
+
+        return Shade.Against(surface, hue, chroma, contrast);
     }
 
     /// <summary>
@@ -322,7 +345,7 @@ public static class Skin
             var against = Oklch.Of(candidate);
             var lightness = sample.Lightness - against.Lightness;
             var chroma = sample.Chroma - against.Chroma;
-            var distance = (lightness * lightness * 4d) + (chroma * chroma) + Turn(sample, against);
+            var distance = (lightness * lightness * 4d) + (chroma * chroma) + HueGap(sample, against);
 
             if (distance < least)
             {
@@ -338,7 +361,7 @@ public static class Skin
     /// <param name="one">The color being matched.</param>
     /// <param name="other">The candidate.</param>
     /// <returns>A number to add to the distance between them.</returns>
-    private static double Turn(Oklch one, Oklch other)
+    private static double HueGap(Oklch one, Oklch other)
     {
         if (one.Chroma < 0.03d || other.Chroma < 0.03d)
         {
