@@ -155,7 +155,7 @@ public sealed class KeysView : IArlecchinoView
                 continue;
             }
 
-            region.Write(at, left, TextWidth.PadRight($" {row.Key} ", chips), Skin.Paint(Skin.Sea, Skin.Chip));
+            region.Write(at, left, TextWidth.PadRight($" {row.Key} ", chips), Skin.On(Skin.Chip).Remote);
 
             if (room > 0)
             {

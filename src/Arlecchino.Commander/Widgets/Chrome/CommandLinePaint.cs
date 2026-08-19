@@ -1,7 +1,6 @@
 using System;
 using Arlecchino.Editing;
 using Arlecchino.Rendering;
-using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
 using Arlecchino.Widgets.Text;
 
@@ -36,7 +35,7 @@ internal static class CommandLinePaint
             0,
             mark,
             "❯",
-            typing ? Skin.Paint(Skin.Flame, Skin.UnlitInk, TextStyle.Bold) : coat.Sleeping);
+            typing ? Skin.On(Skin.UnlitInk).AccentStrong : coat.Sleeping);
 
         var at = mark + 2;
         var room = region.Width - at - tail.Length - SideRoom - 2;

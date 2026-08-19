@@ -56,7 +56,7 @@ public static class TabFace
         var background = look.Live ? Skin.Chip : Skin.LitInk;
         var coat = new Skin.Coat(background);
 
-        strip.Write(Row, column, new(' ', width), Skin.Paint(Skin.Bone, background));
+        strip.Write(Row, column, new(' ', width), Skin.On(background).Text);
         Sides(strip, column + 1, session, near, far, look, coat);
 
         if (look.Closable)

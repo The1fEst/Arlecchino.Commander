@@ -1,7 +1,6 @@
 using System;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Rendering;
-using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Text;
 
 namespace Arlecchino.Commander.Widgets.Forms;
@@ -140,8 +139,8 @@ public sealed class FormButton(Func<string> label, Func<string> hint, Action pre
             2,
             run,
             ready
-                ? Skin.Paint(Skin.OnCrimson, Skin.Crimson, TextStyle.Bold)
-                : Skin.Paint(Skin.Bone, Skin.Chip));
+                ? Skin.ChosenName
+                : Skin.On(Skin.Chip).Text);
 
         if (here)
         {

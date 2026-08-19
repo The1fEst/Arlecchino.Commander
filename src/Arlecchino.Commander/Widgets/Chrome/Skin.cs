@@ -18,6 +18,8 @@ public static class Skin
 
     private static readonly Dictionary<(Rgb Front, Rgb? Back, TextStyle Style), TermColor> Cache = [];
     private static readonly Dictionary<Rgb, TerminalColor> Sixteen = [];
+    private static readonly Dictionary<(Rgb Surface, Tone Tone), Rgb> Answers = [];
+    private static readonly Dictionary<Rgb, Coat> Coats = [];
     private static readonly Lock Gate = new();
 
     static Skin() => Wear(DrawnInk);
@@ -27,9 +29,6 @@ public static class Skin
 
     /// <summary>How far the accent wheel has turned to sit well on the terminal's own color.</summary>
     private static double AccentTurn { get; set; }
-
-    /// <summary>How much the terminal's own color has taken out of the accents.</summary>
-    private static double AccentDamping { get; set; }
 
     public static Rgb LitInk { get; private set; }
     public static Rgb UnlitInk { get; private set; }
@@ -94,11 +93,12 @@ public static class Skin
         {
             Cache.Clear();
             Sixteen.Clear();
+            Answers.Clear();
+            Coats.Clear();
         }
 
         Ink = background;
         AccentTurn = Shade.Turn(background, Accent.Hue, Harmony);
-        AccentDamping = Shade.Pull(background) * Damping;
 
         UnlitInk = Shade.Lifted(background, -0.005d);
         LitInk = Shade.Lifted(background, 0.011d);
@@ -127,10 +127,10 @@ public static class Skin
         AmberRule = Ladder(background, CautionRule);
         Danger = Ladder(background, Alarm);
 
-        OnCrimson = Ladder(Crimson, OnAccent);
-        OnBoneName = Ladder(Bone, Text);
-        OnBoneMeta = Ladder(Bone, OnLightMeta);
-        OnBoneDate = Ladder(Bone, OnLightDate);
+        OnCrimson = Ladder(Crimson, OnAccent, OnAccentSoft.Contrast, OnAccent.Contrast);
+        OnBoneName = Ladder(Bone, Text, AccentOnLight.Contrast, Text.Contrast);
+        OnBoneMeta = Ladder(Bone, OnLightMeta, AccentOnLight.Contrast, Text.Contrast);
+        OnBoneDate = Ladder(Bone, OnLightDate, AccentOnLight.Contrast, Text.Contrast);
 
         Named();
 
@@ -143,10 +143,10 @@ public static class Skin
         CursorName = Paint(OnBoneName, Bone, TextStyle.Bold);
         CursorMeta = Paint(OnBoneMeta, Bone);
         CursorDate = Paint(OnBoneDate, Bone);
-        CursorTag = Paint(Ladder(Bone, AccentOnLight), Bone);
+        CursorTag = Paint(Ladder(Bone, AccentOnLight, AccentOnLight.Contrast, Text.Contrast), Bone);
         CursorRow = Paint(OnBoneName, Bone);
         ChosenName = Paint(OnCrimson, Crimson, TextStyle.Bold);
-        ChosenMeta = Paint(Ladder(Crimson, OnAccentSoft), Crimson);
+        ChosenMeta = Paint(Ladder(Crimson, OnAccentSoft, OnAccentSoft.Contrast, OnAccent.Contrast), Crimson);
         ChosenRow = Paint(OnCrimson, Crimson);
         CrimsonFill = Paint(Crimson, Crimson);
         BorderActiveColor = Paint(UnlitInk, LitInk);
@@ -167,6 +167,29 @@ public static class Skin
             Warning = Paint(Amber, null),
             Error = Paint(Coral, null),
         };
+    }
+
+    /// <summary>
+    /// The coat for any surface the application paints, which is how a widget asks for a color without
+    /// knowing what the terminal turned out to be. One coat is kept per surface and reused.
+    /// </summary>
+    /// <param name="surface">What is behind the text.</param>
+    /// <returns>The colors that read on it.</returns>
+    public static Coat On(Rgb surface)
+    {
+        lock (Gate)
+        {
+            if (Coats.TryGetValue(surface, out var found))
+            {
+                return found;
+            }
+
+            var coat = new Coat(surface);
+
+            Coats[surface] = coat;
+
+            return coat;
+        }
     }
 
     /// <summary>
@@ -244,11 +267,14 @@ public static class Skin
         TerminalColor Ansi,
         bool Turns = false);
 
+    /// <summary>How far a marked row's band stands off the surface it is drawn on, in lightness.</summary>
+    private const double BandStep = 0.055d;
+
+    /// <summary>The least chroma a marked row's band carries, so it reads as tinted and not as gray.</summary>
+    private const double BandTint = 0.045d;
+
     /// <summary>How far from the background's own hue the accent is put, where the background has one.</summary>
     private const double Harmony = 40d;
-
-    /// <summary>How much of an accent's chroma a vivid background takes, so the two stop fighting.</summary>
-    private const double Damping = 0.65d;
 
     private static readonly Tone Text = new(83.1d, 0.019d, 14.91d, TerminalColor.White);
     private static readonly Tone SideText = new(84.6d, 0.006d, 10.51d, TerminalColor.White);
@@ -275,12 +301,6 @@ public static class Skin
     private static readonly Tone OnLightMeta = new(78.2d, 0.011d, 8.56d, TerminalColor.Black);
     private static readonly Tone OnLightDate = new(79.7d, 0.014d, 6.05d, TerminalColor.Black);
 
-    private static readonly Tone[] Ladders =
-    [
-        Text, SideText, Qualifier, Hint, Label, Trace, Ghost, Gutter,
-        Accent, AccentLoud, AccentSoft, Distance, Peace, PeaceText, Caution, CautionRule, Alarm,
-        OnAccent, OnAccentSoft, AccentOnLight, OnLightMeta, OnLightDate,
-    ];
 
     /// <summary>
     /// One color of the design worked out against the surface it is read on. On the terminal's own
@@ -291,14 +311,48 @@ public static class Skin
     /// <returns>The color to draw in.</returns>
     private static Rgb Ladder(Rgb surface, Tone tone)
     {
-        var contrast = surface == Ink
-            ? Shade.Scaled(tone.Contrast, Gutter.Contrast, Text.Contrast, surface)
-            : tone.Contrast;
+        lock (Gate)
+        {
+            if (Answers.TryGetValue((surface, tone), out var found))
+            {
+                return found;
+            }
+        }
 
+        var contrast = Shade.Scaled(tone.Contrast, Gutter.Contrast, Text.Contrast, surface);
         var hue = tone.Turns ? (tone.Hue + AccentTurn + 360d) % 360d : tone.Hue;
-        var chroma = tone.Turns ? tone.Chroma * (1d - AccentDamping) : tone.Chroma;
+        var answer = Shade.Against(surface, hue, tone.Chroma, contrast);
 
-        return Shade.Against(surface, hue, chroma, contrast);
+        lock (Gate)
+        {
+            Answers[(surface, tone)] = answer;
+            Sixteen.TryAdd(answer, tone.Ansi);
+        }
+
+        return answer;
+    }
+
+    /// <summary>
+    /// One color of a design read on a surface of its own rather than on the terminal, for the few that
+    /// sit on a color the whole ladder was not written against.
+    /// </summary>
+    /// <param name="surface">What it is read on.</param>
+    /// <param name="tone">What the color is for.</param>
+    /// <param name="lowest">The least contrast asked for on that surface.</param>
+    /// <param name="highest">The most.</param>
+    /// <returns>The color to draw in.</returns>
+    private static Rgb Ladder(Rgb surface, Tone tone, double lowest, double highest)
+    {
+        var contrast = Shade.Scaled(tone.Contrast, lowest, highest, surface);
+        var hue = tone.Turns ? (tone.Hue + AccentTurn + 360d) % 360d : tone.Hue;
+        var answer = Shade.Against(surface, hue, tone.Chroma, contrast);
+
+        lock (Gate)
+        {
+            Sixteen.TryAdd(answer, tone.Ansi);
+        }
+
+        return answer;
     }
 
     /// <summary>
@@ -309,13 +363,6 @@ public static class Skin
     {
         lock (Gate)
         {
-            foreach (var tone in Ladders)
-            {
-                Sixteen.TryAdd(Ladder(Ink, tone), tone.Ansi);
-                Sixteen.TryAdd(Ladder(Bone, tone), tone.Ansi);
-                Sixteen.TryAdd(Ladder(Crimson, tone), tone.Ansi);
-            }
-
             foreach (var surface in new[] { Ink, UnlitInk, LitInk, OverlayInk, Chip, Hairline })
             {
                 Sixteen.TryAdd(surface, TerminalColor.Default);
@@ -394,71 +441,95 @@ public static class Skin
     ];
 
     /// <summary>
-    /// One surface and the text on it. A span drawn against the wrong background leaves a hole in the
-    /// fill, so the surface is chosen once and every color on it comes from here.
+    /// One surface and the text on it. Every color here is read against this surface rather than against
+    /// the terminal, since a color worked out for one background says nothing about how it reads on another.
     /// </summary>
     /// <param name="background">The background this coat is worn over.</param>
     /// <param name="own">Whether that background is the terminal's own, which is left unpainted.</param>
     public sealed class Coat(Rgb background, bool own = false)
     {
         /// <summary>Primary text: a file name, a dialog title, what was typed.</summary>
-        public TermColor Text => Paint(Bone, Fill);
+        public TermColor Text => field ??= Paint(On(Skin.Text), Fill);
 
         /// <summary>The same, said louder — the folder you are in, the title of a dialog.</summary>
-        public TermColor Strong => Paint(Bone, Fill, TextStyle.Bold);
+        public TermColor Strong => field ??= Paint(On(Skin.Text), Fill, TextStyle.Bold);
 
         /// <summary>Text that is not the point but is still read.</summary>
-        public TermColor Second => Paint(Secondary, Fill);
+        public TermColor Second => field ??= Paint(On(SideText), Fill);
 
         /// <summary>Sizes, counts, everything that qualifies a name.</summary>
-        public TermColor Meta => Paint(Stone, Fill);
+        public TermColor Meta => field ??= Paint(On(Qualifier), Fill);
 
         /// <summary>Hints, the parent row, a plain file's tag.</summary>
-        public TermColor Hint => Paint(Faint, Fill);
+        public TermColor Hint => field ??= Paint(On(Skin.Hint), Fill);
 
         /// <summary>Column heads and the small capitals that label a section.</summary>
-        public TermColor Label => Paint(LabelInk, Fill);
+        public TermColor Label => field ??= Paint(On(Skin.Label), Fill);
 
         /// <summary>A date, or a count on the panel that is not being worked in.</summary>
-        public TermColor Trace => Paint(TraceInk, Fill);
+        public TermColor Trace => field ??= Paint(On(Skin.Trace), Fill);
 
         /// <summary>Line numbers, the tag of a file worth ignoring, a hint not needed yet.</summary>
-        public TermColor Ghost => Paint(GhostInk, Fill);
+        public TermColor Ghost => field ??= Paint(On(Skin.Ghost), Fill);
 
         /// <summary>The gutter at rest.</summary>
-        public TermColor Sleeping => Paint(Idle, Fill);
+        public TermColor Sleeping => field ??= Paint(On(Gutter), Fill);
 
         /// <summary>The accent as text: a caret, a sort arrow, the key of the moment.</summary>
-        public TermColor Accent => Paint(Flame, Fill);
+        public TermColor Accent => field ??= Paint(On(AccentLoud), Fill);
 
         /// <summary>The accent as text, said louder.</summary>
-        public TermColor AccentStrong => Paint(Flame, Fill, TextStyle.Bold);
+        public TermColor AccentStrong => field ??= Paint(On(AccentLoud), Fill, TextStyle.Bold);
 
         /// <summary>A host name or a remote path.</summary>
-        public TermColor Remote => Paint(Sea, Fill);
+        public TermColor Remote => field ??= Paint(On(Distance), Fill);
+
+        /// <summary>A host name or a remote path, said louder.</summary>
+        public TermColor RemoteStrong => field ??= Paint(On(Distance), Fill, TextStyle.Bold);
 
         /// <summary>A file that is locked, or a job that finished with problems.</summary>
-        public TermColor Warning => Paint(Amber, Fill);
+        public TermColor Warning => field ??= Paint(On(Caution), Fill);
 
         /// <summary>A job that finished.</summary>
-        public TermColor Success => Paint(CalmText, Fill);
+        public TermColor Success => field ??= Paint(On(PeaceText), Fill);
 
         /// <summary>The name of a marked file, on the tinted band its row gets.</summary>
-        public TermColor MarkName => Paint(Coral, MarkBand);
+        public TermColor MarkName => field ??= Paint(OnBand(AccentSoft), Band);
 
         /// <summary>Everything else in a marked row, which is tinted with it.</summary>
-        public TermColor MarkMeta => Paint(Stone, MarkBand);
+        public TermColor MarkMeta => field ??= Paint(OnBand(Qualifier), Band);
 
         /// <summary>The band itself, for the width the row does not write on.</summary>
-        public TermColor MarkRow => Paint(Bone, MarkBand);
+        public TermColor MarkRow => field ??= Paint(OnBand(Skin.Text), Band);
 
         /// <summary>The rule between two bands of this surface.</summary>
-        public TermColor Rule => Paint(RuleInk, Fill);
+        public TermColor Rule => field ??= Paint(RuleInk, Fill);
 
         /// <summary>What to fill with, which is nothing at all where the terminal's own is showing.</summary>
         private Rgb? Fill => own ? null : background;
 
-        private Rgb MarkBand => Blend(Crimson, 0.13, background);
+        /// <summary>
+        /// The band a marked row gets: this surface put one step of lightness away from itself and turned
+        /// to the accent's hue, so it is found by lightness wherever the terminal happens to be.
+        /// </summary>
+        public Rgb Band => field == default ? field = Banded() : field;
+
+        private Rgb Banded()
+        {
+            var surface = Oklch.Of(background);
+            var step = Contrast.IsDark(background) ? BandStep : -BandStep;
+
+            return (surface with
+            {
+                Lightness = Math.Clamp(surface.Lightness + step, 0d, 1d),
+                Hue = Oklch.Of(Crimson).Hue,
+                Chroma = Math.Max(surface.Chroma, BandTint),
+            }).ToRgb();
+        }
+
+        private Rgb On(Tone tone) => Ladder(background, tone);
+
+        private Rgb OnBand(Tone tone) => Ladder(Band, tone, Qualifier.Contrast, Skin.Text.Contrast);
 
         private Rgb RuleInk => background == UnlitInk
             ? HairlineDim

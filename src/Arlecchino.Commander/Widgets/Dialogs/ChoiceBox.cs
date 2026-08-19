@@ -60,7 +60,7 @@ public static class ChoiceBox
         var coat = Skin.Overlay;
 
         box.Fill(coat.Text);
-        box.Rows(0, 1).Fill(Skin.Paint(Skin.Crimson, Skin.Crimson));
+        box.Rows(0, 1).Fill(Skin.CrimsonFill);
 
         var content = box.Rows(1, rows - 1).Inset(new Margin(Padding, 0, Padding, 0));
 

@@ -5,6 +5,7 @@ using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Tests.Support;
 using Arlecchino.Commander.Views;
 using Arlecchino.Commander.Widgets.Chrome;
+using Arlecchino.Rendering.Colors;
 using Xunit;
 
 namespace Arlecchino.Commander.Tests.Screens;
@@ -61,6 +62,44 @@ public sealed class CommanderPanelTests : IDisposable
 
         Assert.True(_app.Sessions.Left.Marks.Contains("alpha.txt"));
         Assert.Equal(Skin.Lively.MarkName.Ansi, _app.StyleOf("alpha.txt"));
+    }
+
+    /// <summary>
+    ///     A color is read against the surface it is drawn on rather than against the terminal. The two are
+    ///     near enough the same on a near-black terminal to hide the difference, and nowhere else.
+    /// </summary>
+    /// <param name="red">Red channel of the terminal's background.</param>
+    /// <param name="green">Green channel.</param>
+    /// <param name="blue">Blue channel.</param>
+    [Theory]
+    [InlineData(0x14, 0x13, 0x17)]
+    [InlineData(0x00, 0x2B, 0x36)]
+    [InlineData(0x00, 0x00, 0x80)]
+    [InlineData(0xFF, 0xFF, 0xFF)]
+    public void TextOnARaisedSurfaceIsReadAgainstThatSurface(byte red, byte green, byte blue)
+    {
+        Skin.Wear(new(red, green, blue));
+
+        try
+        {
+            foreach (var color in new[] { Skin.Inlaid.Meta, Skin.Inlaid.Success, Skin.Overlay.Text })
+            {
+                var ratio = Contrast.Between(color.ExactForeground!.Value, color.ExactBackground!.Value);
+
+                Assert.InRange(ratio, 4.0d, 21d);
+            }
+
+            var band = Skin.Lively.MarkName;
+
+            Assert.InRange(
+                Contrast.Between(band.ExactForeground!.Value, band.ExactBackground!.Value),
+                4.0d,
+                21d);
+        }
+        finally
+        {
+            Skin.Wear(new(0x14, 0x13, 0x17));
+        }
     }
 
     /// <summary>

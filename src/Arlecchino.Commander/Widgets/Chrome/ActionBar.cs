@@ -62,7 +62,7 @@ public sealed class ActionBar
                 Height.Value++;
             }
 
-            bar.Write(row, column, $" {key} ", Skin.Paint(Skin.Sea, Skin.Chip));
+            bar.Write(row, column, $" {key} ", Skin.On(Skin.Chip).Remote);
             bar.Write(row, column + key.Length + 3, label, coat.Second);
 
             column += target;

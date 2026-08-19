@@ -196,7 +196,7 @@ public static class OperationBox
         }
 
         var lines = Wrapped(label.Text, content.Width - 4);
-        var text = Skin.Paint(Skin.Bone, band);
+        var text = Skin.On(band).Text;
 
         for (var index = 0; index < Math.Min(MostLines, lines.Count) && row + index < content.Height; index++)
         {
@@ -204,7 +204,7 @@ public static class OperationBox
             content.Write(row + index, 2, lines[index], text);
         }
 
-        content.Write(row, 0, label.Warns ? "!" : "i", Skin.Paint(label.Warns ? Skin.Amber : Skin.Sea, band));
+        content.Write(row, 0, label.Warns ? "!" : "i", label.Warns ? Skin.On(band).Warning : Skin.On(band).Remote);
     }
 
     /// <summary>Draws the two buttons and says where they went, so a click can find them.</summary>
@@ -232,7 +232,7 @@ public static class OperationBox
         var no = "  " + Loc(LocString.OperationCancel) + "  ";
 
         content.Write(row, 0, go, Skin.Paint(on, fill, TextStyle.Bold));
-        content.Write(row, go.Length + 2, no, Skin.Paint(Skin.Secondary, Skin.Chip));
+        content.Write(row, go.Length + 2, no, Skin.On(Skin.Chip).Second);
 
         var tab = operation.Target is not null
             ? Loc(LocString.OperationTabCompletes)

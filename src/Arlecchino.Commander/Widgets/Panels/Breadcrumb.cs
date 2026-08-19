@@ -84,7 +84,7 @@ public static class Breadcrumb
 
         if (state.Source.IsRemote)
         {
-            pieces.Add((state.Source.Label, Skin.Paint(Skin.Sea, background, TextStyle.Bold)));
+            pieces.Add((state.Source.Label, Skin.On(background).RemoteStrong));
             pieces.Add((" ", coat.Text));
         }
         else

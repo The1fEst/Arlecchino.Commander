@@ -12,7 +12,6 @@ namespace Arlecchino.Commander.Widgets.Panels;
 /// </summary>
 public static class PanelRow
 {
-    private const double MarkTint = 0.13;
 
     /// <summary>Draws it.</summary>
     /// <param name="row">The row to draw on.</param>
@@ -28,7 +27,7 @@ public static class PanelRow
         var (name, size, date) = PanelColumns.Widths(row.Width);
 
         row.Fill(cursor ? Skin.CursorRow
-            : chosen ? Skin.Paint(Skin.Bone, Skin.Chip)
+            : chosen ? Skin.On(Skin.Chip).Text
             : marks ? coat.MarkRow
             : coat.Text);
 
@@ -76,15 +75,15 @@ public static class PanelRow
             return Skin.CursorTag;
         }
 
-        var back = Back(chosen, marks, coat);
+        var coating = Skin.On(Back(chosen, marks, coat));
 
         return tone switch
         {
-            Tone.Folder => Skin.Paint(Skin.Sea, back),
-            Tone.Protected => Skin.Paint(Skin.AmberRule, back),
-            Tone.Ignorable => Skin.Paint(Skin.GhostInk, back),
-            Tone.Parent => Skin.Paint(Skin.TraceInk, back),
-            _ => Skin.Paint(Skin.Faint, back),
+            Tone.Folder => coating.Remote,
+            Tone.Protected => coating.Rule,
+            Tone.Ignorable => coating.Ghost,
+            Tone.Parent => coating.Trace,
+            _ => coating.Hint,
         };
     }
 
@@ -95,26 +94,26 @@ public static class PanelRow
             return Skin.CursorName;
         }
 
-        var back = Back(chosen, marks, coat);
-
         if (marks)
         {
-            return Skin.Paint(Skin.Coral, back);
+            return coat.MarkName;
         }
+
+        var coating = Skin.On(Back(chosen, marks, coat));
 
         return tone switch
         {
-            Tone.Protected => Skin.Paint(Skin.Amber, back),
-            Tone.Ignorable => Skin.Paint(Skin.LabelInk, back),
-            Tone.Parent => Skin.Paint(Skin.Faint, back),
-            _ => Skin.Paint(Skin.Bone, back),
+            Tone.Protected => coating.Warning,
+            Tone.Ignorable => coating.Label,
+            Tone.Parent => coating.Hint,
+            _ => coating.Text,
         };
     }
 
     private static TermColor Quiet(bool cursor, bool chosen, bool marks, Skin.Coat coat) => cursor
         ? Skin.CursorMeta
         : chosen
-            ? Skin.Paint(Skin.Secondary, Skin.Chip)
+            ? Skin.On(Skin.Chip).Second
             : marks
                 ? coat.MarkMeta
                 : coat.Meta;
@@ -122,6 +121,6 @@ public static class PanelRow
     private static Rgb Back(bool chosen, bool marks, Skin.Coat coat) => chosen
         ? Skin.Chip
         : marks
-            ? Skin.Blend(Skin.Crimson, MarkTint, Under(coat))
+            ? coat.Band
             : Under(coat);
 }

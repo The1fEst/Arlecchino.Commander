@@ -50,7 +50,7 @@ internal static class KeyHints
         {
             var (key, description) = keys[at];
 
-            rows.Write(at, 0, TextWidth.PadRight($" {key} ", chips), Skin.Paint(Skin.Sea, Skin.Chip));
+            rows.Write(at, 0, TextWidth.PadRight($" {key} ", chips), Skin.On(Skin.Chip).Remote);
 
             if (room > 0)
             {
