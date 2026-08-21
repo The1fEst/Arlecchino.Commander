@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Arlecchino/Repository/">
+    <File Path="lib/Arlecchino/.editorconfig" />
+    <File Path="lib/Arlecchino/.gitattributes" />
+  </Folder>
   <Folder Name="/Repository/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
