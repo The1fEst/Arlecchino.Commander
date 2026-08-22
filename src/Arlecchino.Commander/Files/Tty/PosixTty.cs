@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Arlecchino.Commander.Files.Ssh;
 
 namespace Arlecchino.Commander.Files.Tty;
@@ -25,7 +26,7 @@ public sealed class PosixTty : Tty
     /// <summary>The window a terminal is given when the real one will not say how large it is.</summary>
     private const int SomeRows = 24;
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly IntPtr _taking = Marshal.AllocHGlobal(Mouthful);
     private readonly IntPtr _giving = Marshal.AllocHGlobal(Mouthful);
     private readonly Numbers _numbers;
@@ -44,6 +45,15 @@ public sealed class PosixTty : Tty
 
     /// <summary>The near end of the pair, for waiting on it alongside the keyboard.</summary>
     internal int End => _end;
+
+    /// <summary>Nothing is painted here: a pair of ends is silent until the command speaks.</summary>
+    public override bool Blanks => false;
+
+    /// <summary>Nothing is written back either, the pair having been hushed when it was opened.</summary>
+    public override bool Echoes => false;
+
+    /// <summary>The newline, which is what the line discipline of a pair gathers a line up to.</summary>
+    public override byte Enter => (byte)'\n';
 
     /// <inheritdoc/>
     public override bool IsRunning
@@ -84,7 +94,8 @@ public sealed class PosixTty : Tty
             return null;
         }
 
-        if (Posix.Grant(end) != 0 || Posix.Unlock(end) != 0 ||
+        if (Posix.Grant(end) != 0 ||
+            Posix.Unlock(end) != 0 ||
             Marshal.PtrToStringUTF8(Posix.FarEnd(end)) is not { Length: > 0 } far)
         {
             _ = Posix.Close(end);

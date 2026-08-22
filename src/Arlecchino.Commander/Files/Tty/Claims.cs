@@ -35,6 +35,15 @@ public sealed class Claims
     private readonly List<byte> _sequence = [];
 
     private Reading _reading;
+    private bool _opening;
+
+    /// <summary>Reads what the commands at one terminal print.</summary>
+    /// <param name="blanks">
+    /// Whether that terminal paints itself blank before the command has written a word. Where it does,
+    /// the clearing and the cursor sent home at the head of everything are the terminal's own doing, and
+    /// a command that has not written a letter yet has claimed nothing by them.
+    /// </param>
+    public Claims(bool blanks) => _opening = blanks;
 
     /// <summary>
     /// The instruction read so far, whole once the screen has been claimed. It is written to the real
@@ -52,6 +61,8 @@ public sealed class Claims
             case Reading.Text:
                 if (letter != Escape)
                 {
+                    _opening = false;
+
                     return Sign.Letter;
                 }
 
@@ -114,8 +125,9 @@ public sealed class Claims
     }
 
     /// <summary>
-    /// Whether the instruction just read is a command asking for the screen. There are four ways of
-    /// asking, and a program that draws does at least one of them before it draws anything.
+    /// Whether the instruction just read is a command asking for the screen, which it does in one of
+    /// four ways. A terminal that opens blank does two of those itself, and they count only after the
+    /// command writes a letter.
     /// </summary>
     /// <returns><c>true</c> when the screen has been claimed.</returns>
     private bool Claimed()
@@ -136,8 +148,8 @@ public sealed class Claims
         return last switch
         {
             (byte)'n' => Numbers().Contains(6),
-            (byte)'H' or (byte)'f' => true,
-            (byte)'J' => Numbers().Exists(static number => number is 2 or 3),
+            (byte)'H' or (byte)'f' => !_opening,
+            (byte)'J' => !_opening && Numbers().Exists(static number => number is 2 or 3),
             _ => false,
         };
     }

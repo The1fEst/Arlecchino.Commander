@@ -15,12 +15,15 @@ public sealed class TerminalRun : IShellRun
     /// <summary>How much is taken off the terminal at once.</summary>
     private const int Mouthful = 32768;
 
-    /// <summary>What is typed at a command to tell it there is no more input coming.</summary>
+    /// <summary>
+    /// What is typed at a command to tell it there is no more input coming. A pair of ends and a console
+    /// of the machine's own making both read it as the end, whatever key the machine calls it after.
+    /// </summary>
     private const byte EndOfInput = 0x04;
 
     private readonly string _command;
     private readonly Tty? _terminal;
-    private readonly Claims _claims = new();
+    private readonly Claims _claims;
     private readonly Says _says = new();
     private readonly byte[] _taking = new byte[Mouthful];
     private readonly byte[] _letters = new byte[Mouthful];
@@ -35,6 +38,7 @@ public sealed class TerminalRun : IShellRun
     {
         _command = command;
         _terminal = Ttys.Local.Open(command, folder);
+        _claims = new(_terminal is { Blanks: true });
     }
 
     /// <summary>Whether a command can be run this way on this machine at all.</summary>
@@ -64,7 +68,7 @@ public sealed class TerminalRun : IShellRun
 
             var claim = Sift(count, talk);
 
-            if (claim < 0)
+            if (!Lends(terminal, claim))
             {
                 Asked(talk);
 
@@ -85,8 +89,26 @@ public sealed class TerminalRun : IShellRun
         talk.Prints($"[exit {terminal.Wait()}]");
     }
 
-    /// <inheritdoc/>
-    public bool Say(string line) => Typed(Encoding.UTF8.GetBytes(line + "\n"));
+    /// <summary>
+    /// Types a line at the command, ended the way this terminal ends one. At a terminal that writes
+    /// back what is typed, the line is held back from the roll as it goes.
+    /// </summary>
+    /// <param name="line">What to send, without the ending.</param>
+    /// <returns><c>true</c> when it went.</returns>
+    public bool Say(string line)
+    {
+        if (_terminal is null)
+        {
+            return false;
+        }
+
+        if (_terminal.Echoes)
+        {
+            _says.Hushes(line);
+        }
+
+        return Typed(Encoding.UTF8.GetBytes(line + (char)_terminal.Enter));
+    }
 
     /// <inheritdoc/>
     public bool EndInput() => Typed([EndOfInput]);
@@ -104,6 +126,15 @@ public sealed class TerminalRun : IShellRun
 
     /// <inheritdoc/>
     public void Dispose() => _terminal?.Dispose();
+
+    /// <summary>
+    /// Whether the screen is to be given away. A terminal that paints itself blank paints again as it
+    /// closes, and a claim in that painting lands after the command it belonged to has gone.
+    /// </summary>
+    /// <param name="terminal">The made terminal.</param>
+    /// <param name="claim">How much is waiting to be passed on, or less than nought when nothing was claimed.</param>
+    /// <returns><c>true</c> when the screen is to be lent.</returns>
+    private static bool Lends(Tty terminal, int claim) => claim >= 0 && terminal.IsRunning;
 
     /// <summary>
     /// Reads a mouthful of what the command printed: the letters of it into the roll and the instructions
@@ -129,9 +160,6 @@ public sealed class TerminalRun : IShellRun
                     _says.Takes(_letters, letters, talk.Prints);
 
                     return Onward(at + 1, count);
-
-                default:
-                    break;
             }
         }
 
@@ -183,7 +211,7 @@ public sealed class TerminalRun : IShellRun
     /// <summary>Types at the command, when there is one to type at.</summary>
     /// <param name="bytes">What to type.</param>
     /// <returns><c>true</c> when it went.</returns>
-    private bool Typed(byte[] bytes) => _terminal is { } terminal && terminal.Write(bytes, bytes.Length);
+    private bool Typed(byte[] bytes) => _terminal != null && _terminal.Write(bytes, bytes.Length);
 
     /// <summary>What to call the command in the roll, which is the word it starts with.</summary>
     /// <returns>The name.</returns>

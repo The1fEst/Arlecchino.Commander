@@ -14,7 +14,9 @@ public abstract class Ttys
     /// </summary>
     public static Ttys Local { get; } = OperatingSystem.IsLinux()
         ? PosixTtys.Linux
-        : ForeignTtys.Instance;
+        : OperatingSystem.IsWindows()
+            ? WindowsTtys.Instance
+            : ForeignTtys.Instance;
 
     /// <summary>Whether a terminal can be made here at all.</summary>
     public abstract bool Works { get; }

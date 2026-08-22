@@ -147,7 +147,9 @@ and the number says how old the binary in hand is.
   has the keyboard and the terminal to itself, and the panels come back when it ends. An editor typed on
   the command line, a pager, a list of processes, a box a package manager puts up: all of them work, and
   none of them are known about. Everything else goes on as it was — the lines land in the roll, and a
-  question opens a dialog.
+  question opens a dialog. Linux makes that terminal out of a pair of ends and Windows out of a console
+  of its own, and neither the watching nor the handing over knows the difference; macOS has no dialect
+  here yet, and runs its commands on pipes until it does.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
 - **Hosts from `~/.ssh/config`.** `g n` lists the `Host` entries and opens one, reusing its
@@ -187,6 +189,24 @@ dotnet build Arlecchino.Commander.slnx --configuration Release
 The framework builds from source with the application, so a change made in `lib/Arlecchino` is in the
 next build. Moving to a newer framework is `git -C lib/Arlecchino pull` and a commit of the new
 revision here.
+
+Most of the tests run wherever they are put; one project of them cannot. The tests in
+`tests/Arlecchino.Commander.Tests.Carries` give the screen away the way the application does, which is
+something done to the terminal the application is running in — and a test host has none worth giving.
+So each of them opens one — the console this machine opens a program in, Windows Terminal, and WezTerm,
+each under `pwsh`, `powershell` and `cmd` — with a program inside that takes the screen. A key is
+pressed at the real keyboard from outside, and what the console looked like before and after is read
+back and compared. A machine missing one of those terminals says so in the run's output and is passed
+over, as does one with nobody logged into it, where a terminal that draws a window has no one to draw
+it for; a machine that is not Windows passes over all of them. The console is on every machine of the
+kind and needs nobody logged in, which is the one the build tries.
+
+```
+dotnet test tests/Arlecchino.Commander.Tests.Carries
+```
+
+A window opens for the length of each try, which is why they live apart:
+`dotnet test tests/Arlecchino.Commander.Tests` is everything else and opens none.
 
 The screenshots are taken by `tools/shots.cs`, which draws each frame itself onto a window of its own
 making. Every scene is taken unless some are named:

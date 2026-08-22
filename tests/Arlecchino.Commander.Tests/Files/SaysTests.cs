@@ -54,7 +54,7 @@ public sealed class SaysTests
     [Fact]
     public void ALetterSplitAcrossMouthfulsIsOneLetter()
     {
-        var bytes = Encoding.UTF8.GetBytes("да\n");
+        var bytes = "да\n"u8.ToArray();
 
         _says.Takes(bytes[..2], 2, _lines.Add);
         _says.Takes(bytes[2..], bytes.Length - 2, _lines.Add);
@@ -72,6 +72,29 @@ public sealed class SaysTests
         Read("10%\r55%\r100%\n");
 
         Assert.Equal(["100%"], _lines);
+    }
+
+    /// <summary>
+    /// A terminal that writes back what is typed at it hands the answer to a question straight to the
+    /// roll, and that answer is a password more often than not. Held back, it is never written down.
+    /// </summary>
+    [Fact]
+    public void AnAnswerWrittenBackByTheTerminalIsHeldBack()
+    {
+        _says.Hushes("opened");
+        Read("opened\r\ngot opened\r\n");
+
+        Assert.Equal(["got opened"], _lines);
+    }
+
+    /// <summary>Only the one line is held, and only when it is the one that was typed.</summary>
+    [Fact]
+    public void AnythingElseTheCommandPrintsIsWrittenDown()
+    {
+        _says.Hushes("opened");
+        Read("wrong password\r\nopened\r\n");
+
+        Assert.Equal(["wrong password", "opened"], _lines);
     }
 
     [Fact]

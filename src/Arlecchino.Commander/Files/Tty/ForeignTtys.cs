@@ -1,8 +1,8 @@
 namespace Arlecchino.Commander.Files.Tty;
 
 /// <summary>
-/// A machine this application has no words for yet. Windows makes its terminals through a console of its
-/// own and macOS through numbers of its own; until each has a dialect here, commands run on pipes.
+/// A machine this application has no words for yet. macOS and the BSDs make their terminals the POSIX way
+/// but by numbers of their own; until each has a dialect here, commands there run on pipes.
 /// </summary>
 public sealed class ForeignTtys : Ttys
 {

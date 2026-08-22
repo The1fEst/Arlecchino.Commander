@@ -12,6 +12,7 @@
   </Folder>
   <Project Path="src/Arlecchino.Commander/Arlecchino.Commander.csproj" />
   <Project Path="tests/Arlecchino.Commander.Tests/Arlecchino.Commander.Tests.csproj" />
+  <Project Path="tests/Arlecchino.Commander.Tests.Carries/Arlecchino.Commander.Tests.Carries.csproj" />
   <Folder Name="/Arlecchino/">
     <Project Path="lib/Arlecchino/src/Arlecchino.Core/Arlecchino.Core.csproj" />
     <Project Path="lib/Arlecchino/src/Arlecchino.Pictures/Arlecchino.Pictures.csproj" />

@@ -67,7 +67,7 @@ public sealed class TerminalRunTests
             return;
         }
 
-        using var run = await Run("printf 'plain\\n'");
+        using var run = await Run(Asked.Prints("plain"));
 
         Assert.Contains("plain", _lines);
         Assert.Contains("[exit 0]", _lines);
@@ -86,7 +86,7 @@ public sealed class TerminalRunTests
             return;
         }
 
-        using var run = await Run("printf 'before\\n'; printf '\\033[?1049h'; sleep 30");
+        using var run = await Run(Asked.Draws);
 
         Assert.Equal(1, _lendings);
         Assert.Contains("before", _lines);
@@ -101,15 +101,15 @@ public sealed class TerminalRunTests
             return;
         }
 
-        using var run = await Run("printf '\\033[32mgreen\\033[0m\\n'");
+        using var run = await Run(Asked.Colors);
 
         Assert.Equal(0, _lendings);
         Assert.Contains("green", _lines);
     }
 
     /// <summary>
-    /// A command that stops mid-line is waiting to be told something. At a terminal it is answered by
-    /// typing at it, which is what the dialog's answer does.
+    /// A command that stops mid-line is waiting to be told something, and at a terminal it is told by
+    /// typing at it. What is typed never lands in the roll, whichever terminal it went to.
     /// </summary>
     [Fact]
     public async Task AQuestionIsPutAndWhatIsAnsweredReachesTheCommand()
@@ -119,10 +119,11 @@ public sealed class TerminalRunTests
             return;
         }
 
-        using var run = await Run("printf 'password:'; read given; printf 'got %s\\n' \"$given\"", "opened");
+        using var run = await Run(Asked.Asks, "opened");
 
         Assert.Contains("password:", _questions);
         Assert.Contains("got opened", _lines);
+        Assert.DoesNotContain("opened", _lines);
         Assert.Equal(0, _lendings);
     }
 
@@ -134,7 +135,7 @@ public sealed class TerminalRunTests
             return;
         }
 
-        using var run = await Run("exit 3");
+        using var run = await Run(Asked.EndsWith(3));
 
         Assert.Equal("[exit 3]", _lines[^1]);
     }

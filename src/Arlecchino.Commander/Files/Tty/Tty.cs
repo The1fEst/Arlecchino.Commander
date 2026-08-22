@@ -11,6 +11,24 @@ public abstract class Tty : IDisposable
     /// <summary>Whether the command is still going.</summary>
     public abstract bool IsRunning { get; }
 
+    /// <summary>
+    /// Whether this terminal paints itself blank before the command has written a word. A console the
+    /// machine makes clears the screen and sends the cursor home; a pair of ends says nothing.
+    /// </summary>
+    public abstract bool Blanks { get; }
+
+    /// <summary>
+    /// Whether this terminal writes back whatever is typed at it. A pair of ends can be told not to,
+    /// and a console of the machine's own making cannot be told anything from outside it.
+    /// </summary>
+    public abstract bool Echoes { get; }
+
+    /// <summary>
+    /// What ends a line typed at this terminal. A pair of ends takes the newline; a console takes the
+    /// return the Enter key sends, and waits on through a line ended in anything else.
+    /// </summary>
+    public abstract byte Enter { get; }
+
     /// <summary>Takes whatever the command has printed, waiting until it prints something.</summary>
     /// <param name="buffer">Where to put it.</param>
     /// <returns>How much was read, and nought or less once there is no more coming.</returns>

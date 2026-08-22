@@ -13,10 +13,11 @@ public sealed class ClaimsTests
 {
     /// <summary>Reads a whole string and answers with what came of it.</summary>
     /// <param name="text">What the command printed.</param>
+    /// <param name="blanks">Whether the terminal it came from paints itself blank to begin with.</param>
     /// <returns>The letters kept, and whether the screen was claimed along the way.</returns>
-    private static (string Letters, bool Claimed) Read(string text)
+    private static (string Letters, bool Claimed) Read(string text, bool blanks = false)
     {
-        var claims = new Claims();
+        var claims = new Claims(blanks);
         var letters = new StringBuilder();
         var claimed = false;
 
@@ -32,9 +33,6 @@ public sealed class ClaimsTests
                 case Sign.Screen:
                     claimed = true;
 
-                    break;
-
-                default:
                     break;
             }
         }
@@ -98,6 +96,41 @@ public sealed class ClaimsTests
     public void DrawingOnTheScreenItWasGivenIsAClaimToo(string sequence) => Assert.True(Read(sequence).Claimed);
 
     /// <summary>
+    /// A terminal the machine makes starts by saying its screen is blank and its cursor at the top of
+    /// it. Read as a claim, that would hand the screen to every command on such a machine.
+    /// </summary>
+    /// <param name="sequence">What came off a terminal that opens blank, before the command wrote a word.</param>
+    [Theory]
+    [InlineData("\e[2J")]
+    [InlineData("\e[H")]
+    [InlineData("\e[?25l\e[2J\e[m\e[H")]
+    public void TheBlankScreenATerminalOpensWithIsNotAClaim(string sequence) =>
+        Assert.False(Read(sequence, blanks: true).Claimed);
+
+    /// <summary>
+    /// The same instructions once the command has written something are the command's own, since the
+    /// terminal has had its say. A program that draws over the screen it was given is caught here.
+    /// </summary>
+    /// <param name="sequence">What the command printed after a line of its own.</param>
+    [Theory]
+    [InlineData("before\e[2J")]
+    [InlineData("before\e[6;1H")]
+    [InlineData("\e[?25l\e[2J\e[m\e[Hbefore\e[H")]
+    public void DrawingAfterTheTerminalHasOpenedIsAClaim(string sequence) =>
+        Assert.True(Read(sequence, blanks: true).Claimed);
+
+    /// <summary>
+    /// Only the two a terminal would do itself are excused. A program that swaps screens or asks for the
+    /// mouse before it has printed a word is claiming the screen wherever it runs.
+    /// </summary>
+    /// <param name="sequence">What the command printed straight after the terminal opened.</param>
+    [Theory]
+    [InlineData("\e[?25l\e[2J\e[m\e[H\e[?1049h")]
+    [InlineData("\e[?1000h")]
+    public void AskingForTheScreenWhileTheTerminalOpensIsStillAClaim(string sequence) =>
+        Assert.True(Read(sequence, blanks: true).Claimed);
+
+    /// <summary>
     /// A count drawn over itself hides the cursor, wipes the line and writes it again. Taken for a claim,
     /// that would take the screen away from every command showing how far along it is.
     /// </summary>
@@ -136,7 +169,7 @@ public sealed class ClaimsTests
     [Fact]
     public void AClaimSplitAcrossTwoMouthfulsIsStillRead()
     {
-        var claims = new Claims();
+        var claims = new Claims(blanks: false);
         var claimed = false;
 
         foreach (var mouthful in new List<string> { "text\e[?10", "49h" })
@@ -157,9 +190,9 @@ public sealed class ClaimsTests
     [Fact]
     public void TheClaimItselfIsKeptToBePassedOn()
     {
-        var claims = new Claims();
+        var claims = new Claims(blanks: false);
 
-        foreach (var letter in Encoding.UTF8.GetBytes("\e[?1049h"))
+        foreach (var letter in "\e[?1049h"u8)
         {
             claims.Takes(letter);
         }

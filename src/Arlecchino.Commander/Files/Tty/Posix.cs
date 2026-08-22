@@ -217,11 +217,11 @@ internal static class Posix
 
         while (at < count)
         {
-            var portion = Write(handle, buffer + at, (nuint)(count - at));
+            var part = Write(handle, buffer + at, (nuint)(count - at));
 
-            if (portion > 0)
+            if (part > 0)
             {
-                at += (int)portion;
+                at += (int)part;
 
                 continue;
             }
@@ -244,11 +244,11 @@ internal static class Posix
     {
         while (true)
         {
-            var portion = (int)Read(handle, buffer, (nuint)count);
+            var part = (int)Read(handle, buffer, (nuint)count);
 
-            if (portion >= 0 || Marshal.GetLastPInvokeError() != Interruption)
+            if (part >= 0 || Marshal.GetLastPInvokeError() != Interruption)
             {
-                return portion;
+                return part;
             }
         }
     }

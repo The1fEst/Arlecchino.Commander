@@ -14,9 +14,17 @@ public sealed class Says
 
     private char[] _room = new char[1024];
     private bool _returned;
+    private string _hushedLine = "";
 
     /// <summary>The line the command has written and not finished, which is where a question would stand.</summary>
     public string Pending => _pending.ToString();
+
+    /// <summary>
+    /// Holds the next line back if it turns out to be this one, and only that line. A terminal that
+    /// writes back what is typed at it would otherwise hand a password straight to the roll.
+    /// </summary>
+    /// <param name="line">What was typed, without the newline that ended it.</param>
+    public void Hushes(string line) => _hushedLine = line;
 
     /// <summary>Takes what the command printed and gives up whatever lines it finished.</summary>
     /// <param name="bytes">The letters, with the instructions to the terminal already taken out.</param>
@@ -81,8 +89,16 @@ public sealed class Says
                 return;
 
             case '\n':
-                line(_pending.ToString());
+                var whole = _pending.ToString();
+                var hushedLine = _hushedLine;
+
                 _pending.Clear();
+                _hushedLine = "";
+
+                if (hushedLine.Length == 0 || whole != hushedLine)
+                {
+                    line(whole);
+                }
 
                 return;
 
