@@ -59,6 +59,13 @@ internal abstract class Terminals : IDisposable
     /// <summary>Closes whatever was opened for the try, whether the try got that far or not.</summary>
     public abstract void Dispose();
 
+    /// <summary>
+    /// Whether this is a build server rather than a machine with someone at it. A terminal that draws
+    /// itself a window has nowhere to draw one here, and asking it to open one answers nothing at all.
+    /// </summary>
+    private protected static bool IsBuildServer =>
+        Environment.GetEnvironmentVariable("CI") is { Length: > 0 };
+
     /// <summary>Where a program is along the path.</summary>
     /// <param name="program">What it is called.</param>
     /// <returns>The path to it, or <c>null</c> when it is not on this machine.</returns>

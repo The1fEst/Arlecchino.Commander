@@ -35,6 +35,11 @@ internal sealed class MacTerminals : Terminals
             return $"{terminal} is not a terminal this machine opens";
         }
 
+        if (terminal != Headless && IsBuildServer)
+        {
+            return $"{terminal} draws itself a window, and a build server has no screen to draw one on";
+        }
+
         if (terminal != Headless && Processes.Answered("launchctl", "managername") != AquaSession)
         {
             return $"{terminal} draws itself a window, and no one is logged in here to be shown one";

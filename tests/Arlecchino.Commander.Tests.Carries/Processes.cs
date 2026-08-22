@@ -32,11 +32,16 @@ internal static class Processes
                 return "";
             }
 
-            var output = running.StandardOutput.ReadToEnd();
+            var reading = running.StandardOutput.ReadToEndAsync();
 
-            running.WaitForExit();
+            if (!running.WaitForExit(TimeoutMilliseconds))
+            {
+                Ended(running);
 
-            return output.Trim();
+                return "";
+            }
+
+            return reading.GetAwaiter().GetResult().Trim();
         }
         catch (Exception failure) when (failure is SystemException or InvalidOperationException)
         {

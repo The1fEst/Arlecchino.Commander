@@ -38,7 +38,7 @@ jobs:
 
           ./aot/arlc --frame 120x30 --left . --right src
 
-  terminals:
+  terminals-windows:
     runs-on: windows-latest
 
     steps:
