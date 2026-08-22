@@ -86,7 +86,7 @@ public sealed class JobCard
 
         if (_runner.IsRunning)
         {
-            showing.Add(new(_runner.Last, "", null, true, Skin.Crimson));
+            showing.Add(new(_runner.Last, _runner.Asking, null, true, Skin.Crimson));
         }
 
         foreach (var entry in _state.Notifications.Recent)

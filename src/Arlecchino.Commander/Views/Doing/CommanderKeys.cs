@@ -212,6 +212,14 @@ public static class CommanderKeys
                 LocString.KeyStop,
                 () => operations.IsBusy || runner.IsRunning,
                 () => Stop(operations, runner)),
+            Bind.When(Execute(ConsoleKey.D),
+                LocString.KeyEndInput,
+                () => runner.IsRunning,
+                () => Ended(runner)),
+            Bind.When(Execute(ConsoleKey.A),
+                LocString.KeyAnswer,
+                () => runner.IsAsking,
+                () => Answered(runner)),
         ];
     }
 
@@ -375,6 +383,26 @@ public static class CommanderKeys
         {
             operations.Cancel();
         }
+
+        return ViewRoute.None;
+    }
+
+    /// <summary>Tells the running command that nothing more will be typed at it.</summary>
+    /// <param name="runner">The commands.</param>
+    /// <returns>Nowhere.</returns>
+    private static ViewRoute Ended(Runner runner)
+    {
+        runner.EndInput();
+
+        return ViewRoute.None;
+    }
+
+    /// <summary>Puts the question the running command asked back on screen.</summary>
+    /// <param name="runner">The commands.</param>
+    /// <returns>Nowhere.</returns>
+    private static ViewRoute Answered(Runner runner)
+    {
+        runner.AskAgain();
 
         return ViewRoute.None;
     }

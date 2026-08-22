@@ -132,8 +132,8 @@ public sealed class CommandBar
     public void Paste(string text) => _line.Paste(text);
 
     /// <summary>
-    /// Runs what is on the line where the panel is looking, with <c>%s</c> and its fellows filled in first.
-    /// A <c>cd</c> is decided on what was typed and moves the panel rather than reaching a shell.
+    /// Runs what is on the line where the panel is looking, with <c>%s</c> and its fellows filled in
+    /// first. A <c>cd</c> is decided on what was typed and moves the panel rather than reaching a shell.
     /// </summary>
     private void Enter()
     {

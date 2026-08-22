@@ -396,6 +396,50 @@ public sealed class SftpSource : IFileSource, IMovesWholeFiles
     }
 
     /// <summary>
+    /// Opens a command on the server and hands it over to be talked with rather than only waited on. The
+    /// gate is held for as long as that conversation lasts, as it is for a command that is merely run.
+    /// </summary>
+    /// <param name="command">What was typed.</param>
+    /// <param name="folder">Where to run it.</param>
+    /// <param name="talking">Runs the command and reads it, with whatever it wants to send it.</param>
+    /// <param name="token">Gives up the wait.</param>
+    /// <returns><c>false</c> when the server offers no shell to run it over.</returns>
+    public async Task<bool> TalkAsync(
+        string command,
+        string folder,
+        Func<SshCommand, Task> talking,
+        CancellationToken token)
+    {
+        await _shellGate.WaitAsync(token).ConfigureAwait(false);
+
+        try
+        {
+            if (await SessionAsync(token).ConfigureAwait(false) is not { } shell)
+            {
+                return false;
+            }
+
+            var dialect = await DialectAsync(shell, token).ConfigureAwait(false);
+
+            using var running = shell.CreateCommand(dialect.Within(folder, command));
+
+            await talking(running).ConfigureAwait(false);
+
+            return true;
+        }
+        catch (Exception error) when (IsShellFailure(error))
+        {
+            _shellRefused = true;
+
+            return false;
+        }
+        finally
+        {
+            _shellGate.Release();
+        }
+    }
+
+    /// <summary>
     /// Sends one command over the session already open and waits for it to finish. A server that refuses is
     /// remembered as having no shell, so the next command walks the long way round.
     /// </summary>

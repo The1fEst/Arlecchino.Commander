@@ -129,6 +129,14 @@ and the number says how old the binary in hand is.
   moves the panel instead of a shell that would forget it, `Ctrl+P` and `Ctrl+Y` walk the history,
   `x n` puts the name under the cursor on the line, `x p` the folder, `x t` the marked names, and
   `Ctrl+O` reads back everything the commands printed.
+- **Commands that ask something back.** What a command prints arrives as it prints it, and its input is
+  left open, so a command that stops mid-line on a question is answered rather than waited on. The
+  question opens as a dialog wherever in the application you are, and the dialog is the only way to
+  answer it: what is typed there is hidden as it is typed, and nothing of it reaches the command line,
+  which goes on being for commands. `x a` brings the question back where the dialog was closed on it.
+  `sudo` is spelled `sudo -S` on the way out, since otherwise it looks for a terminal this application
+  has none of and gives up before it has asked. `x d` says there is no more input, as `Ctrl+D` does at a
+  terminal. Nothing answered is written into the roll: what went is shown as dots.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
 - **Hosts from `~/.ssh/config`.** `g n` lists the `Host` entries and opens one, reusing its
