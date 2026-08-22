@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -11,22 +10,18 @@ namespace Arlecchino.Commander.Tests.Carries;
 
 /// <summary>
 /// The handover itself, in the terminals people run this in and under the shells they start it from.
-/// Each try opens one, runs <see cref="Program"/> in it, presses a key at the real keyboard from
-/// outside, and reads the console back.
+/// Each try opens one, runs <see cref="Program"/> in it, presses a key, and reads what it found.
 /// </summary>
 public sealed class CarriesTests
 {
-    /// <summary>
-    /// The terminal every machine of this kind has: whichever one it opens a console program in. It
-    /// needs no one logged in to draw itself, and so it is the one a build server tries.
-    /// </summary>
-    private const string Console = "console";
-
     /// <summary>How long one try is given, in seconds, since a terminal and a shell both have to start.</summary>
-    private const int Patience = 60;
+    private const int TimeoutSeconds = 60;
 
     /// <summary>How often the try's log is looked at while it runs, in milliseconds.</summary>
-    private const int Glance = 100;
+    private const int PollIntervalMilliseconds = 100;
+
+    /// <summary>How long one press is given to reach the program on the screen, in seconds.</summary>
+    private const int RetryIntervalSeconds = 2;
 
     private readonly ITestOutputHelper _output;
 
@@ -38,41 +33,31 @@ public sealed class CarriesTests
     /// <param name="terminal">Which terminal to open.</param>
     /// <param name="shell">Which shell to start in it.</param>
     [Theory]
-    [InlineData(Console, "pwsh")]
-    [InlineData(Console, "powershell")]
-    [InlineData(Console, "cmd")]
+    [InlineData("console", "pwsh")]
+    [InlineData("console", "powershell")]
+    [InlineData("console", "cmd")]
     [InlineData("wt", "pwsh")]
     [InlineData("wt", "powershell")]
     [InlineData("wt", "cmd")]
     [InlineData("wezterm", "pwsh")]
     [InlineData("wezterm", "powershell")]
     [InlineData("wezterm", "cmd")]
+    [InlineData("headless", "zsh")]
+    [InlineData("headless", "bash")]
+    [InlineData("headless", "sh")]
+    [InlineData("Terminal", "zsh")]
+    [InlineData("Terminal", "bash")]
+    [InlineData("Terminal", "sh")]
+    [InlineData("kitty", "zsh")]
+    [InlineData("kitty", "bash")]
+    [InlineData("kitty", "sh")]
     public void TheScreenIsCarriedThroughAndGivenBack(string terminal, string shell)
     {
-        if (!OperatingSystem.IsWindows())
+        using var terminals = Terminals.OfThisMachine();
+
+        if (terminals.Missing(terminal, shell) is { } missing)
         {
-            Passed("the terminals tried here are made by Windows, which this machine is not");
-
-            return;
-        }
-
-        if (Found($"{shell}.exe") is null)
-        {
-            Passed($"{shell} is not on this machine");
-
-            return;
-        }
-
-        if (Opening(terminal, shell) is not { } program)
-        {
-            Passed($"{terminal} is not on this machine");
-
-            return;
-        }
-
-        if (terminal != Console && !Environment.UserInteractive)
-        {
-            Passed($"{terminal} draws itself a window, and nobody is logged in here to be shown one");
+            Passed(missing);
 
             return;
         }
@@ -88,16 +73,16 @@ public sealed class CarriesTests
 
         File.Delete(log);
 
-        Assert.True(Opened(program, terminal, shell, runner, log), $"{terminal} would not start");
+        Assert.True(terminals.Opens(terminal, shell, runner, log), $"{terminal} would not start");
+        Assert.True(Waited(log, "claimed", TimeoutSeconds) is not null, $"{terminal} with {shell} never gave the screen away");
 
-        var answers = Waited(log);
+        var answers = Pressed(terminals, terminal, log);
 
         Assert.True(answers is not null, $"{terminal} with {shell} never finished the handover");
-        Assert.True(Told(answers, "console") == "yes", $"{terminal} gave the program no console of its own");
+        Assert.Equal("yes", Told(answers, "console"));
         Assert.Equal("yes", Told(answers, "claimed"));
         Assert.Equal($"{Program.Answer}", Told(answers, "outcome"));
         Assert.Equal("put back", Told(answers, "modes"));
-        Assert.Equal("put back", Told(answers, "pages"));
     }
 
     /// <summary>
@@ -108,90 +93,47 @@ public sealed class CarriesTests
     private void Passed(string reason) => _output.WriteLine($"Passed over: {reason}.");
 
     /// <summary>
-    /// Opens the terminal, with the shell in it, with the one try inside that. A terminal of its own
-    /// opens the shell; the machine's own console comes of starting the shell as a person would.
+    /// Presses the key and waits for the try to finish, pressing again for as long as it has not. A key
+    /// typed into a line the terminal has yet to end never reaches the program on the screen.
     /// </summary>
-    /// <param name="program">The program to start, which is the terminal or the shell.</param>
-    /// <param name="terminal">What that terminal is called here.</param>
-    /// <param name="shell">The shell to start in it.</param>
-    /// <param name="runner">The program that does the one try.</param>
-    /// <param name="log">Where that program writes what it found.</param>
-    /// <returns><c>true</c> when the terminal started.</returns>
-    private static bool Opened(string program, string terminal, string shell, string runner, string log)
+    /// <param name="terminals">The terminals of this machine, which is what presses.</param>
+    /// <param name="terminal">The one that was opened.</param>
+    /// <param name="log">Where the try writes.</param>
+    /// <returns>What the try wrote, or <c>null</c> when it never finished.</returns>
+    private static Dictionary<string, string>? Pressed(Terminals terminals, string terminal, string log)
     {
-        var started = new ProcessStartInfo { FileName = program, UseShellExecute = terminal == Console };
-
-        foreach (var word in Words(terminal, shell, runner, log))
-        {
-            started.ArgumentList.Add(word);
-        }
-
-        try
-        {
-            using var running = Process.Start(started);
-
-            return running is not null;
-        }
-        catch (Win32Exception)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// The words that open one terminal with one shell running one program in it. Each terminal takes
-    /// what it is to run after a word of its own, and each shell takes it in a spelling of its own.
-    /// </summary>
-    /// <param name="terminal">Which terminal.</param>
-    /// <param name="shell">Which shell.</param>
-    /// <param name="runner">The program to run in it.</param>
-    /// <param name="log">Where that program writes.</param>
-    /// <returns>The words, for the terminal's own program.</returns>
-    private static List<string> Words(string terminal, string shell, string runner, string log)
-    {
-        var shellWords = shell == "cmd"
-            ? new List<string> { "/c", runner, log, terminal, shell }
-            : ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "&", $"'{runner}'", $"'{log}'", terminal, shell];
-
-        if (terminal == Console)
-        {
-            return shellWords;
-        }
-
-        var words = terminal == "wt"
-            ? new List<string> { "new-tab", "--title", $"arlc-{terminal}-{shell}", "--", shell }
-            : ["start", "--", shell];
-
-        words.AddRange(shellWords);
-
-        return words;
-    }
-
-    /// <summary>
-    /// The program one try is started as: the terminal itself, or the shell where the terminal is
-    /// whatever this machine opens a console program in.
-    /// </summary>
-    /// <param name="terminal">Which terminal.</param>
-    /// <param name="shell">Which shell.</param>
-    /// <returns>The path to it, or <c>null</c> when it is not on this machine.</returns>
-    private static string? Opening(string terminal, string shell) =>
-        Found(terminal == Console ? $"{shell}.exe" : $"{terminal}.exe");
-
-    /// <summary>Waits for the try to write its last line, and gives up rather than waiting for good.</summary>
-    /// <param name="log">Where it writes.</param>
-    /// <returns>What it wrote, or <c>null</c> when it never finished.</returns>
-    private static Dictionary<string, string>? Waited(string log)
-    {
-        var deadline = Stopwatch.GetTimestamp() + (Stopwatch.Frequency * Patience);
+        var deadline = Stopwatch.GetTimestamp() + (Stopwatch.Frequency * TimeoutSeconds);
 
         while (Stopwatch.GetTimestamp() < deadline)
         {
-            Thread.Sleep(Glance);
+            terminals.Presses(terminal, Program.TypedLetter);
 
-            if (File.Exists(log) && Read(log) is { } answers && answers.ContainsKey("done"))
+            if (Waited(log, "done", RetryIntervalSeconds) is { } answers)
             {
                 return answers;
             }
+        }
+
+        return null;
+    }
+
+    /// <summary>Waits for the try to write a line down, and gives up rather than waiting for good.</summary>
+    /// <param name="log">Where it writes.</param>
+    /// <param name="name">The line to wait for.</param>
+    /// <param name="patience">How long to wait for it, in seconds.</param>
+    /// <returns>What it has written, or <c>null</c> when that line never came.</returns>
+    private static Dictionary<string, string>? Waited(string log, string name, int patience)
+    {
+        var deadline = Stopwatch.GetTimestamp() + (Stopwatch.Frequency * patience);
+
+        while (Stopwatch.GetTimestamp() < deadline)
+        {
+            if (File.Exists(log) && Read(log) is { } answers && answers.ContainsKey(name))
+            {
+                return answers;
+            }
+
+            Thread.Sleep(PollIntervalMilliseconds);
         }
 
         return null;
@@ -232,27 +174,8 @@ public sealed class CarriesTests
     private static string? Runner()
     {
         var name = typeof(Program).Assembly.GetName().Name;
-        var beside = Path.Combine(AppContext.BaseDirectory, $"{name}.exe");
+        var beside = Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? $"{name}.exe" : $"{name}");
 
         return File.Exists(beside) ? beside : null;
-    }
-
-    /// <summary>Where a program is, along the path and in the places installers put terminals.</summary>
-    /// <param name="program">What it is called.</param>
-    /// <returns>The path to it, or <c>null</c> when it is not on this machine.</returns>
-    private static string? Found(string program)
-    {
-        foreach (var place in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
-        {
-            if (place.Length > 0 && File.Exists(Path.Combine(place, program)))
-            {
-                return Path.Combine(place, program);
-            }
-        }
-
-        var files = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-        var installedPath = Path.Combine(files, "WezTerm", program);
-
-        return File.Exists(installedPath) ? installedPath : null;
     }
 }

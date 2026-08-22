@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Arlecchino.Commander.Files.Tty;
@@ -10,7 +9,8 @@ namespace Arlecchino.Commander.Tests.Carries;
 
 /// <summary>
 /// One handover, run inside a terminal that has just been opened for it. The test opens the terminal,
-/// starts this in it, and reads back what this wrote down.
+/// starts this in it, and reads back what this wrote down; what differs by machine is
+/// <see cref="RealTerminal"/>.
 /// </summary>
 internal static class Program
 {
@@ -18,100 +18,73 @@ internal static class Program
     internal const int Answer = 7;
 
     /// <summary>The key pressed at the real terminal once the program has the screen.</summary>
-    private const char TypedLetter = 'q';
+    internal const char TypedLetter = 'q';
+
+    /// <summary>What the program that took the screen says once it has it.</summary>
+    internal const string Marker = "the screen belongs to this program now";
 
     /// <summary>How long the program is given to settle into the screen before the key, in milliseconds.</summary>
-    private const int Settling = 400;
-
-    /// <summary>The keyboard of the real terminal, as this machine numbers the three streams.</summary>
-    private const int Keyboard = -10;
-
-    /// <summary>The screen of the real terminal.</summary>
-    private const int Screen = -11;
+    private const int DelayMilliseconds = 400;
 
     /// <summary>How much is taken off the made terminal at once.</summary>
     private const int Mouthful = 32768;
 
-    /// <summary>
-    /// A program that takes the screen, waits to be told something, and says whether it was told the right
-    /// thing. Nothing has to be installed for it: every machine that has this terminal has PowerShell.
-    /// </summary>
-    private static string Drawing =>
-        "powershell -NoProfile -c \"[Console]::Write([char]27 + '[?1049h'); " +
-        "Write-Host 'the screen belongs to this program now'; $key = [Console]::ReadKey($true); " +
-        "[Console]::Write([char]27 + '[?1049l'); " +
-        $"if ($key.KeyChar -eq '{TypedLetter}') {{ exit {Answer} }} else {{ exit 8 }}\"";
-
     /// <summary>Runs the one handover and writes down what came of it.</summary>
-    /// <param name="args">Where to write it, and what the terminal and the shell around it are called.</param>
+    /// <param name="args">Where to write it, and what the terminal and the shell it runs in are called.</param>
     /// <returns>Nought when the screen went to the program and came back.</returns>
     private static int Main(string[] args)
     {
-        var log = args.Length > 0 ? args[0] : Path.Combine(Path.GetTempPath(), "carries.log");
-        var lines = new StringBuilder();
+        var roll = new Roll(args.Length > 0 ? args[0] : Path.Combine(Path.GetTempPath(), "carries.log"));
+        var realTerminal = RealTerminal.OfThisMachine();
 
-        lines.AppendLine($"terminal={(args.Length > 1 ? args[1] : "?")}");
-        lines.AppendLine($"shell={(args.Length > 2 ? args[2] : "?")}");
-        lines.AppendLine($"host={Host()}");
+        roll.Says($"terminal={(args.Length > 1 ? args[1] : "?")}");
+        roll.Says($"shell={(args.Length > 2 ? args[2] : "?")}");
+        roll.Says($"host={Host()}");
+        roll.Says(realTerminal.Works ? "console=yes" : "console=no");
 
-        var keyboard = GetStdHandle(Keyboard);
-        var screen = GetStdHandle(Screen);
-        bool read = GetConsoleMode(keyboard, out var typing);
-        bool drawn = GetConsoleMode(screen, out var drawing);
-        var keyboardPage = GetConsoleCP();
-        var screenPage = GetConsoleOutputCP();
+        var firstState = realTerminal.State();
 
-        lines.AppendLine(Answered(read, drawn));
-        lines.AppendLine($"before={typing:X4}/{drawing:X4} pages={keyboardPage}/{screenPage}");
+        roll.Says($"before={firstState}");
 
-        using var terminal = Ttys.Local.Open(Drawing, Directory.GetCurrentDirectory());
+        using var terminal = Ttys.Local.Open(realTerminal.Drawing, Directory.GetCurrentDirectory());
 
         if (terminal is null || Owed(terminal) is not { } owed)
         {
-            lines.AppendLine("claimed=no");
+            roll.Says("claimed=no");
 
-            return Done(log, lines, 1);
+            return Done(roll, 1);
         }
 
-        lines.AppendLine("claimed=yes");
-        lines.AppendLine($"owed={owed.Length}");
+        roll.Says($"owed={owed.Length}");
+        roll.Says("claimed=yes");
 
-        var pressing = new Thread(() =>
-        {
-            Thread.Sleep(Settling);
-            Press(keyboard);
-        })
-        {
-            IsBackground = true,
-        };
-
-        pressing.Start();
+        Pressing(realTerminal).Start();
         terminal.Carry(owed, owed.Length);
 
-        lines.AppendLine($"outcome={terminal.Wait()}");
+        roll.Says($"outcome={terminal.Wait()}");
 
-        _ = GetConsoleMode(keyboard, out var typingNow);
-        _ = GetConsoleMode(screen, out var drawingNow);
+        var lastState = realTerminal.State();
 
-        lines.AppendLine($"after={typingNow:X4}/{drawingNow:X4} pages={GetConsoleCP()}/{GetConsoleOutputCP()}");
-        lines.AppendLine((!read || typing == typingNow) && (!drawn || drawing == drawingNow)
-            ? "modes=put back"
-            : "modes=left changed");
-        lines.AppendLine(keyboardPage == GetConsoleCP() && screenPage == GetConsoleOutputCP()
-            ? "pages=put back"
-            : "pages=left changed");
+        roll.Says($"after={lastState}");
+        roll.Says(firstState == lastState ? "modes=put back" : "modes=left changed");
 
-        return Done(log, lines, 0);
+        return Done(roll, 0);
     }
 
     /// <summary>
-    /// Whether there is a terminal here at all, which the modes answer only where there is one to ask.
-    /// A console never opened is worth telling apart from a handover that went wrong.
+    /// Presses the key once the program that took the screen has had a moment to ask for one. It is a
+    /// thread of its own because the handover holds the one it is started from until the program ends.
     /// </summary>
-    /// <param name="read">Whether the keyboard said what modes it is in.</param>
-    /// <param name="drawn">Whether the screen did.</param>
-    /// <returns>The line to write down.</returns>
-    private static string Answered(bool read, bool drawn) => read && drawn ? "console=yes" : "console=no";
+    /// <param name="realTerminal">The real terminal, which is what the key is pressed at.</param>
+    /// <returns>The thread, not yet started.</returns>
+    private static Thread Pressing(RealTerminal realTerminal) => new(() =>
+    {
+        Thread.Sleep(DelayMilliseconds);
+        realTerminal.Presses(TypedLetter);
+    })
+    {
+        IsBackground = true,
+    };
 
     /// <summary>
     /// Reads the program until it asks for the screen, keeping what it is owed: the instruction it asked
@@ -153,28 +126,6 @@ internal static class Program
         }
     }
 
-    /// <summary>
-    /// Presses a key at the real terminal, as the person watching it would. It goes into the keyboard the
-    /// handover is carrying, so a program that answers to it is a program the keyboard is reaching.
-    /// </summary>
-    /// <param name="keyboard">The real terminal's keyboard.</param>
-    private static void Press(IntPtr keyboard)
-    {
-        var press = new Record
-        {
-            Kind = 1,
-            Down = 1,
-            Times = 1,
-            Letter = TypedLetter,
-        };
-
-        _ = WriteConsoleInputW(keyboard, ref press, 1, out _);
-
-        press.Down = 0;
-
-        _ = WriteConsoleInputW(keyboard, ref press, 1, out _);
-    }
-
     /// <summary>Which terminal this turned out to be running in, as the terminal itself says.</summary>
     /// <returns>The name it goes by.</returns>
     private static string Host()
@@ -184,64 +135,45 @@ internal static class Program
             return "Windows Terminal";
         }
 
-        return Environment.GetEnvironmentVariable("TERM_PROGRAM") is { Length: > 0 } name ? name : "?";
+        if (Environment.GetEnvironmentVariable("TERM_PROGRAM") is { Length: > 0 } named)
+        {
+            return named;
+        }
+
+        return Environment.GetEnvironmentVariable("TERM") is { Length: > 0 } kind ? kind : "?";
     }
 
-    /// <summary>Writes the log, whose last line is what says it is whole rather than half written.</summary>
-    /// <param name="log">Where to write.</param>
-    /// <param name="lines">What to write.</param>
+    /// <summary>Writes the last line, which is what says the roll is whole rather than half written.</summary>
+    /// <param name="roll">The roll the try has been writing.</param>
     /// <param name="outcome">What to exit with.</param>
     /// <returns>The outcome, so that this can be returned from where it is called.</returns>
-    private static int Done(string log, StringBuilder lines, int outcome)
+    private static int Done(Roll roll, int outcome)
     {
-        lines.AppendLine("done");
-
-        File.WriteAllText(log, lines.ToString());
+        roll.Says("done");
 
         return outcome;
     }
 
-    /// <summary>One event in a console's keyboard, of the one kind that is ever written back into it.</summary>
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Record
+    /// <summary>
+    /// What the try writes down, kept on disk as each line is written rather than at the end. The test
+    /// outside watches it for the line that says the screen has gone, and presses a key when it comes.
+    /// </summary>
+    private sealed class Roll
     {
-        /// <summary>Which kind of event this is.</summary>
-        public ushort Kind;
+        private readonly StringBuilder _lines = new();
+        private readonly string _log;
 
-        /// <summary>Room the machine leaves between the kind and the rest.</summary>
-        public ushort Gap;
+        /// <summary>Puts the roll where the test is looking for it.</summary>
+        /// <param name="log">Where to write.</param>
+        internal Roll(string log) => _log = log;
 
-        /// <summary>Whether the key is going down rather than coming up.</summary>
-        public int Down;
+        /// <summary>Writes one line down.</summary>
+        /// <param name="line">The line.</param>
+        internal void Says(string line)
+        {
+            _ = _lines.AppendLine(line);
 
-        /// <summary>How many times over.</summary>
-        public ushort Times;
-
-        /// <summary>Which key it is, which nothing here says.</summary>
-        public ushort Key;
-
-        /// <summary>Where on the keyboard it sits, which nothing here says either.</summary>
-        public ushort Place;
-
-        /// <summary>What letter it stands for.</summary>
-        public ushort Letter;
-
-        /// <summary>Which of shift, control and the rest were held with it.</summary>
-        public uint HeldKeys;
+            File.WriteAllText(_log, _lines.ToString());
+        }
     }
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr GetStdHandle(int number);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool GetConsoleMode(IntPtr handle, out uint modes);
-
-    [DllImport("kernel32.dll")]
-    private static extern uint GetConsoleCP();
-
-    [DllImport("kernel32.dll")]
-    private static extern uint GetConsoleOutputCP();
-
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern bool WriteConsoleInputW(IntPtr handle, ref Record press, uint count, out uint part);
 }

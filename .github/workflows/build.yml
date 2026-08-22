@@ -38,12 +38,25 @@ jobs:
 
           ./aot/arlc --frame 120x30 --left . --right src
 
-  # Giving the screen to a command is done to a real terminal, so it is tried in one. The console this
-  # machine opens a program in is the only terminal a build server has — Windows Terminal and WezTerm
-  # draw themselves a window, and nobody is logged in here to be shown one — so those tries say so and
-  # are passed over, which the detailed logger prints alongside the ones that ran.
   terminals:
     runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Give the screen away and take it back
+        run: >
+          dotnet test tests/Arlecchino.Commander.Tests.Carries/Arlecchino.Commander.Tests.Carries.csproj
+          --configuration Release --logger "console;verbosity=detailed"
+
+  terminals-mac:
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v7
