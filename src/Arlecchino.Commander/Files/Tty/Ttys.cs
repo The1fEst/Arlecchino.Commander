@@ -12,11 +12,7 @@ public abstract class Ttys
     /// The way this machine makes one. It is decided the once, here and nowhere else, so that a dialect
     /// is added by writing one rather than by finding every place that asks what machine this is.
     /// </summary>
-    public static Ttys Local { get; } = OperatingSystem.IsLinux()
-        ? PosixTtys.Linux
-        : OperatingSystem.IsWindows()
-            ? WindowsTtys.Instance
-            : ForeignTtys.Instance;
+    public static Ttys Local { get; } = Pick();
 
     /// <summary>Whether a terminal can be made here at all.</summary>
     public abstract bool Works { get; }
@@ -26,4 +22,19 @@ public abstract class Ttys
     /// <param name="folder">The folder to run it in.</param>
     /// <returns>The terminal, or <c>null</c> when none could be had.</returns>
     public abstract Tty? Open(string command, string folder);
+
+    private static Ttys Pick()
+    {
+        if (OperatingSystem.IsLinux())
+        {
+            return LinuxTtys.Instance;
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            return MacTtys.Instance;
+        }
+
+        return OperatingSystem.IsWindows() ? WindowsTtys.Instance : ForeignTtys.Instance;
+    }
 }

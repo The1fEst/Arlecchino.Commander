@@ -6,12 +6,13 @@ using System.Text;
 namespace Arlecchino.Commander.Files.Tty;
 
 /// <summary>
-/// The calls a terminal of one's own is made of. They are the same on every POSIX machine; what differs
-/// from one to the next is the numbers they take, which <see cref="Numbers"/> holds.
+/// The calls a terminal of one's own is made of that are reached alike on every POSIX machine. What is
+/// not — the numbers they take, and the one call a machine may spell otherwise — is <see cref="PosixTtys"/>.
 /// </summary>
 internal static class Posix
 {
-    private const string Library = "libc";
+    /// <summary>Where all of these live, on every machine that has them.</summary>
+    internal const string Library = "libc";
 
     /// <summary>Opened for both reading and writing, which every end of a terminal is.</summary>
     internal const int ReadWrite = 2;
@@ -90,14 +91,6 @@ internal static class Posix
     /// <returns>How many have something to say, nought when the time ran out.</returns>
     [DllImport(Library, EntryPoint = "poll", SetLastError = true)]
     internal static extern int Poll([In] [Out] Watch[] watches, uint count, int milliseconds);
-
-    /// <summary>Asks a terminal about its window, or tells it.</summary>
-    /// <param name="handle">The terminal.</param>
-    /// <param name="request">Which of the two.</param>
-    /// <param name="window">The size, read or written.</param>
-    /// <returns>Nought when it worked.</returns>
-    [DllImport(Library, EntryPoint = "ioctl", SetLastError = true)]
-    internal static extern int Sizing(int handle, nuint request, ref Window window);
 
     /// <summary>Reads the modes a terminal is in.</summary>
     /// <param name="handle">The terminal.</param>

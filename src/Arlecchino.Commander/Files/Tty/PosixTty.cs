@@ -29,16 +29,16 @@ public sealed class PosixTty : Tty
     private readonly Lock _lock = new();
     private readonly IntPtr _taking = Marshal.AllocHGlobal(Mouthful);
     private readonly IntPtr _giving = Marshal.AllocHGlobal(Mouthful);
-    private readonly Numbers _numbers;
+    private readonly PosixTtys _dialect;
     private readonly int _child;
 
     private int _end;
     private bool _ended;
     private int _outcome;
 
-    private PosixTty(Numbers numbers, int end, int child)
+    private PosixTty(PosixTtys dialect, int end, int child)
     {
-        _numbers = numbers;
+        _dialect = dialect;
         _end = end;
         _child = child;
     }
@@ -52,7 +52,7 @@ public sealed class PosixTty : Tty
     /// <summary>Nothing is written back either, the pair having been hushed when it was opened.</summary>
     public override bool Echoes => false;
 
-    /// <summary>The newline, which is what the line discipline of a pair gathers a line up to.</summary>
+    /// <summary>The newline, which is what the line discipline of a pair gathers a line as far as.</summary>
     public override byte Enter => (byte)'\n';
 
     /// <inheritdoc/>
@@ -81,13 +81,13 @@ public sealed class PosixTty : Tty
     }
 
     /// <summary>Opens a pair and starts the command at the far end of it.</summary>
-    /// <param name="numbers">What this kind of machine takes.</param>
+    /// <param name="dialect">The machine whose way of making one this is.</param>
     /// <param name="command">What was typed.</param>
     /// <param name="folder">The folder to run it in.</param>
     /// <returns>The terminal, or <c>null</c> when none could be had.</returns>
-    public static PosixTty? Open(Numbers numbers, string command, string folder)
+    public static PosixTty? Open(PosixTtys dialect, string command, string folder)
     {
-        var end = Posix.OpenTerminal(Posix.ReadWrite | numbers.NotMine);
+        var end = Posix.OpenTerminal(Posix.ReadWrite | dialect.NotMine);
 
         if (end < 0)
         {
@@ -103,10 +103,8 @@ public sealed class PosixTty : Tty
             return null;
         }
 
-        Hush(numbers, end);
-
-        var window = Asked(numbers);
-        var child = Start(numbers, far, command, folder, window);
+        var window = Asked(dialect);
+        var child = Start(dialect, far, command, folder, window);
 
         if (child <= 0)
         {
@@ -115,7 +113,9 @@ public sealed class PosixTty : Tty
             return null;
         }
 
-        var terminal = new PosixTty(numbers, end, child);
+        Hush(dialect, end);
+
+        var terminal = new PosixTty(dialect, end, child);
 
         terminal.Resize(window.Columns, window.Rows);
 
@@ -123,13 +123,13 @@ public sealed class PosixTty : Tty
     }
 
     /// <summary>How large the real terminal's window is, which the made one is given to begin with.</summary>
-    /// <param name="numbers">What this kind of machine takes.</param>
+    /// <param name="dialect">The machine whose way of making one this is.</param>
     /// <returns>The window.</returns>
-    internal static Posix.Window Asked(Numbers numbers)
+    internal static Posix.Window Asked(PosixTtys dialect)
     {
         var window = default(Posix.Window);
 
-        if (Posix.Sizing(1, numbers.AsksWindow, ref window) == 0 && window is { Rows: > 0, Columns: > 0 })
+        if (dialect.Sizing(1, dialect.AsksWindow, ref window) == 0 && window is { Rows: > 0, Columns: > 0 })
         {
             return window;
         }
@@ -139,7 +139,7 @@ public sealed class PosixTty : Tty
 
     /// <summary>How large the real terminal's window is now.</summary>
     /// <returns>The window.</returns>
-    internal Posix.Window Real() => Asked(_numbers);
+    internal Posix.Window Real() => Asked(_dialect);
 
     /// <inheritdoc/>
     public override int Read(byte[] buffer)
@@ -193,7 +193,7 @@ public sealed class PosixTty : Tty
                 Rows = (ushort)Math.Clamp(rows, 1, ushort.MaxValue),
             };
 
-            _ = Posix.Sizing(_end, _numbers.TellsWindow, ref window);
+            _ = _dialect.Sizing(_end, _dialect.TellsWindow, ref window);
         }
     }
 
@@ -253,12 +253,12 @@ public sealed class PosixTty : Tty
     }
 
     /// <summary>
-    /// Stops the pair writing back whatever is typed at it. What is typed here is answered into a dialog
-    /// and is a password more often than not, and echoed it would land in the roll for anyone to read.
+    /// Stops the pair writing back whatever is typed at it, which is a password more often than not. It
+    /// is said after the command has the far end, since opening that end may set the modes back.
     /// </summary>
-    /// <param name="numbers">What this kind of machine takes.</param>
+    /// <param name="dialect">The machine whose way of making one this is.</param>
     /// <param name="end">The near end, through which the pair's modes are reached.</param>
-    private static void Hush(Numbers numbers, int end)
+    private static void Hush(PosixTtys dialect, int end)
     {
         var modes = Marshal.AllocHGlobal(Posix.ModesRoom);
 
@@ -269,9 +269,9 @@ public sealed class PosixTty : Tty
                 return;
             }
 
-            var line = (uint)Marshal.ReadInt32(modes, numbers.LineModesAt);
+            var line = (uint)Marshal.ReadInt32(modes, dialect.LineModesAt);
 
-            Marshal.WriteInt32(modes, numbers.LineModesAt, (int)(line & ~Posix.Echoes));
+            Marshal.WriteInt32(modes, dialect.LineModesAt, (int)(line & ~Posix.Echoes));
             _ = Posix.WriteModes(end, Posix.Instant, modes);
         }
         finally
@@ -284,13 +284,13 @@ public sealed class PosixTty : Tty
     /// Starts the shell with the command in it, with the far end of the pair for all three of its streams.
     /// A library too old to know how to make a session is asked again without one.
     /// </summary>
-    /// <param name="numbers">What this kind of machine takes.</param>
+    /// <param name="dialect">The machine whose way of making one this is.</param>
     /// <param name="far">What the far end of the pair is called.</param>
     /// <param name="command">What was typed.</param>
     /// <param name="folder">The folder to run it in.</param>
     /// <param name="window">How large to say the window is.</param>
     /// <returns>The started program, or nought when nothing started.</returns>
-    private static int Start(Numbers numbers, string far, string command, string folder, Posix.Window window)
+    private static int Start(PosixTtys dialect, string far, string command, string folder, Posix.Window window)
     {
         var blocks = new List<IntPtr>();
         var actions = Marshal.AllocHGlobal(Posix.ModesRoom * 8);
@@ -327,7 +327,7 @@ public sealed class PosixTty : Tty
 
             blocks.Add(shell);
 
-            if (Posix.Attribute(attributes, numbers.OwnSession) == 0 &&
+            if (Posix.Attribute(attributes, dialect.OwnSession) == 0 &&
                 Posix.Spawn(out var child, shell, actions, attributes, words, environment) == 0)
             {
                 return child;
