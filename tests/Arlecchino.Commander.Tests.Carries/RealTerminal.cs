@@ -17,7 +17,17 @@ internal abstract class RealTerminal
             return new WindowsTerminal();
         }
 
-        return OperatingSystem.IsMacOS() ? new MacTerminal() : new NoTerminal();
+        if (OperatingSystem.IsMacOS())
+        {
+            return new MacTerminal();
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            return new LinuxTerminal();
+        }
+
+        return new NoTerminal();
     }
 
     /// <summary>

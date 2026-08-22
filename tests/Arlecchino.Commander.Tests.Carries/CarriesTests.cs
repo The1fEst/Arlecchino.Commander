@@ -44,12 +44,15 @@ public sealed class CarriesTests
     [InlineData("wezterm", "cmd")]
     [InlineData("headless", "zsh")]
     [InlineData("headless", "bash")]
+    [InlineData("headless", "fish")]
     [InlineData("headless", "sh")]
     [InlineData("Terminal", "zsh")]
     [InlineData("Terminal", "bash")]
+    [InlineData("Terminal", "fish")]
     [InlineData("Terminal", "sh")]
     [InlineData("kitty", "zsh")]
     [InlineData("kitty", "bash")]
+    [InlineData("kitty", "fish")]
     [InlineData("kitty", "sh")]
     public void TheScreenIsCarriedThroughAndGivenBack(string terminal, string shell)
     {

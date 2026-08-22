@@ -18,7 +18,17 @@ internal abstract class Terminals : IDisposable
             return new WindowsTerminals();
         }
 
-        return OperatingSystem.IsMacOS() ? new MacTerminals() : new NoTerminals();
+        if (OperatingSystem.IsMacOS())
+        {
+            return new MacTerminals();
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            return new LinuxTerminals();
+        }
+
+        return new NoTerminals();
     }
 
     /// <summary>
