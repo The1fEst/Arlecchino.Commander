@@ -8,6 +8,7 @@ using Arlecchino.Atoms.Local;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Ssh;
 using Arlecchino.Commander.Widgets.Dialogs;
+using Arlecchino.Hosting;
 using Arlecchino.State;
 
 namespace Arlecchino.Commander.Stores;
@@ -27,15 +28,20 @@ public sealed class Runner : IArlecchinoStore
     private const int Dots = 8;
 
     private readonly ArlecchinoState _state;
+    private readonly Handover _handover;
     private readonly Dialogs _dialogs;
     private readonly ConcurrentQueue<string> _pending = new();
 
     private IShellRun? _running;
     private int _draining;
 
-    public Runner(ArlecchinoState state)
+    /// <summary>Gathers what running a command needs.</summary>
+    /// <param name="state">Where the last word said is kept.</param>
+    /// <param name="handover">What lends the terminal to a command that has asked for the screen.</param>
+    public Runner(ArlecchinoState state, Handover handover)
     {
         _state = state;
+        _handover = handover;
         _dialogs = new(state);
     }
 
@@ -85,7 +91,7 @@ public sealed class Runner : IArlecchinoStore
 
         FrameThread.Post(async () =>
         {
-            await SayAsync(source, Prompts.Piped(command), folder);
+            await SayAsync(source, command, folder);
 
             IsRunning = false;
             Asking = "";
@@ -200,8 +206,35 @@ public sealed class Runner : IArlecchinoStore
 
         using (run)
         {
-            await run.ReadAsync(new(Prints, Asks), CancellationToken.None).ConfigureAwait(false);
+            await run.ReadAsync(new(Prints, Asks, Lends), CancellationToken.None).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Steps the screen aside for a command that has claimed it, and waits until it has ended. Lending is
+    /// the drawing thread's to do, and the command is read on another, so the work is handed over.
+    /// </summary>
+    /// <param name="work">Carrying the terminal through, which lasts as long as the command does.</param>
+    /// <returns>A task that ends once the terminal is ours again.</returns>
+    private Task Lends(Action work)
+    {
+        var loan = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        FrameThread.Post(() =>
+        {
+            try
+            {
+                _handover.Give(work);
+                loan.SetResult();
+            }
+            catch (InvalidOperationException failure)
+            {
+                Lines.Add($"[failed] {failure.Message}");
+                loan.SetResult();
+            }
+        });
+
+        return loan.Task;
     }
 
     /// <summary>

@@ -134,9 +134,20 @@ and the number says how old the binary in hand is.
   question opens as a dialog wherever in the application you are, and the dialog is the only way to
   answer it: what is typed there is hidden as it is typed, and nothing of it reaches the command line,
   which goes on being for commands. `x a` brings the question back where the dialog was closed on it.
-  `sudo` is spelled `sudo -S` on the way out, since otherwise it looks for a terminal this application
-  has none of and gives up before it has asked. `x d` says there is no more input, as `Ctrl+D` does at a
-  terminal. Nothing answered is written into the roll: what went is shown as dots.
+  Where there is no terminal to be had — on a server, on a machine that has no such thing — `sudo` is
+  spelled `sudo -S` on the way out, since otherwise it looks for one and gives up before it has asked.
+  `x d` says there is no more input, as `Ctrl+D` does at a terminal. Nothing answered is written into the
+  roll: what went is shown as dots.
+- **Commands that want the screen.** A command runs at a terminal of the application's own making rather
+  than on a pipe, and what it does with that terminal is watched. Nothing is guessed from the name it was
+  typed under — a list of the names of editors is a list that is always one program short. A program that
+  means to draw says so itself in the first thing it writes: it swaps onto the second screen a terminal
+  keeps, or turns the mouse on, or asks the keyboard for the arrows, or simply puts the cursor where it
+  wants it. At that moment the screen steps aside exactly as it does for the editor on `F4`, the program
+  has the keyboard and the terminal to itself, and the panels come back when it ends. An editor typed on
+  the command line, a pager, a list of processes, a box a package manager puts up: all of them work, and
+  none of them are known about. Everything else goes on as it was — the lines land in the roll, and a
+  question opens a dialog.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which.
 - **Hosts from `~/.ssh/config`.** `g n` lists the `Host` entries and opens one, reusing its

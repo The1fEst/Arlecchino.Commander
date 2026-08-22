@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Files.Ssh;
+using Arlecchino.Commander.Files.Tty;
 using Arlecchino.Commander.Files.Watching;
 using Arlecchino.Commander.Files.Work;
 
@@ -135,7 +136,16 @@ public sealed class LocalSource : IFileSource, IWatchesFolder
     /// <inheritdoc/>
     public string Quote(string path) => Shells.Local.Quote(path);
 
-    public IShellRun Start(string command, string folder) => new LocalRun(command, folder);
+    /// <summary>
+    /// Starts a command at a terminal of the application's own making, which is the only way a command
+    /// that wants the whole screen can ask for it. A machine with no such terminal runs it on pipes.
+    /// </summary>
+    /// <param name="command">What was typed.</param>
+    /// <param name="folder">The folder to run it in.</param>
+    /// <returns>The run.</returns>
+    public IShellRun Start(string command, string folder) => TerminalRun.Works
+        ? new TerminalRun(command, folder)
+        : new LocalRun(command, folder);
 
     /// <summary>
     /// Whether the two paths sit on one drive, which is what decides between a rename and a copy.

@@ -19,7 +19,7 @@ public sealed class LocalRun : IShellRun
     public LocalRun(string command, string folder)
     {
         _command = command;
-        _started = Shells.Start(command, folder);
+        _started = Shells.Start(Prompts.Piped(command), folder);
     }
 
     /// <inheritdoc/>

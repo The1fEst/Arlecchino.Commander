@@ -28,7 +28,7 @@ public sealed class RemoteRun : IShellRun
     public RemoteRun(SftpSource source, string command, string folder)
     {
         _source = source;
-        _command = command;
+        _command = Prompts.Piped(command);
         _folder = folder;
     }
 
