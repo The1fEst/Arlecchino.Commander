@@ -1,8 +1,7 @@
 <Solution>
-  <Folder Name="/Arlecchino/Repository/">
-    <File Path="lib/Arlecchino/.editorconfig" />
-    <File Path="lib/Arlecchino/.gitattributes" />
-  </Folder>
+  <Project Path="src/Arlecchino.Commander/Arlecchino.Commander.csproj" />
+  <Project Path="tests/Arlecchino.Commander.Tests/Arlecchino.Commander.Tests.csproj" />
+  <Project Path="tests/Arlecchino.Commander.Tests.Carries/Arlecchino.Commander.Tests.Carries.csproj" />
   <Folder Name="/Repository/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
@@ -10,14 +9,23 @@
     <File Path="Directory.Build.props" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="src/Arlecchino.Commander/Arlecchino.Commander.csproj" />
-  <Project Path="tests/Arlecchino.Commander.Tests/Arlecchino.Commander.Tests.csproj" />
-  <Project Path="tests/Arlecchino.Commander.Tests.Carries/Arlecchino.Commander.Tests.Carries.csproj" />
+  <Folder Name="/Repository/github/">
+    <File Path=".github/workflows/build.yml" />
+    <File Path=".github/workflows/release.yml" />
+  </Folder>
   <Folder Name="/Arlecchino/">
     <Project Path="lib/Arlecchino/src/Arlecchino.Core/Arlecchino.Core.csproj" />
     <Project Path="lib/Arlecchino/src/Arlecchino.Pictures/Arlecchino.Pictures.csproj" />
     <Project Path="lib/Arlecchino/src/Arlecchino/Arlecchino.csproj" />
     <Project Path="lib/Arlecchino/src/Arlecchino.Generators/Arlecchino.Generators.csproj" />
     <Project Path="lib/Arlecchino/src/Arlecchino.Testing/Arlecchino.Testing.csproj" />
+  </Folder>
+  <Folder Name="/Arlecchino/Repository/">
+    <File Path="lib/Arlecchino/.editorconfig" />
+    <File Path="lib/Arlecchino/.gitattributes" />
+  </Folder>
+  <Folder Name="/Arlecchino/Repository/github/">
+    <File Path="lib/Arlecchino/.github/workflows/build.yml" />
+    <File Path="lib/Arlecchino/.github/workflows/release.yml" />
   </Folder>
 </Solution>
