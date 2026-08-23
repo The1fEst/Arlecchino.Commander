@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Arlecchino.Atoms.Local;
+using Arlecchino.Atoms;
 using Arlecchino.Editing;
 using Arlecchino.Hosting;
 using Arlecchino.Input;
@@ -61,7 +61,7 @@ public sealed class CommandLine
     /// How many rows what is typed took, worked out while drawing rather than before. An atom, so the
     /// screen that leaves room for the line can lay itself out again on the frame after it changed.
     /// </summary>
-    public LocalAtom<int> Height { get; } = new(1);
+    public Atom<int> Height { get; } = new(1);
 
     /// <summary>
     /// What is on the line as it stands, for whoever has to answer while it is still being typed — hints

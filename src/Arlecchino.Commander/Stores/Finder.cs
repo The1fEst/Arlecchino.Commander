@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
-using Arlecchino.Atoms.Local;
+using Arlecchino.Atoms.Collections;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.State;
@@ -35,7 +35,7 @@ public sealed class Finder : IArlecchinoStore
     /// What the walk has found so far. A list atom rather than a list, so that a batch landing on the
     /// drawing thread marks the frame stale by itself and the results appear as they are found.
     /// </summary>
-    public LocalAtomsList<Hit> Hits { get; } = new();
+    public AtomsList<Hit> Hits { get; } = new();
 
     public bool IsRunning { get; private set; }
 

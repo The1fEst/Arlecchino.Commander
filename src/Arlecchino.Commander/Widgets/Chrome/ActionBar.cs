@@ -1,5 +1,5 @@
 using System;
-using Arlecchino.Atoms.Local;
+using Arlecchino.Atoms;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Rendering;
 
@@ -27,7 +27,7 @@ public sealed class ActionBar
     ///     How many rows the bar takes, worked out while drawing rather than before. An atom, so the screen
     ///     that leaves room for the bar can lay itself out again on the frame after it changed.
     /// </summary>
-    public LocalAtom<int> Height { get; } = new(1);
+    public Atom<int> Height { get; } = new(1);
 
     /// <summary>
     ///     Draws it, wrapping onto another row whenever the next label would run past the edge. The rows it

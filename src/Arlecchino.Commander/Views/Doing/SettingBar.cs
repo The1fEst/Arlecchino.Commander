@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Arlecchino.Atoms.Local;
+using Arlecchino.Atoms;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Hosting;
@@ -50,7 +50,7 @@ public sealed class SettingBar
     public bool IsTyping => _line.IsTyping;
 
     /// <summary>How many rows a long setting carried the line onto, which the screen leaves room for.</summary>
-    public LocalAtom<int> Height => _line.Height;
+    public Atom<int> Height => _line.Height;
 
     /// <summary>Asks for the line, as the menu entry does when there is no key being pressed.</summary>
     public void Open() => _line.Open();

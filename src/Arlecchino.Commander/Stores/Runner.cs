@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
-using Arlecchino.Atoms.Local;
+using Arlecchino.Atoms.Collections;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Ssh;
 using Arlecchino.Commander.Widgets.Dialogs;
@@ -49,7 +49,7 @@ public sealed class Runner : IArlecchinoStore
     /// What the commands have said, the oldest first, trimmed to the newest two thousand lines. A list
     /// atom, so output landing on the drawing thread marks the frame stale by itself.
     /// </summary>
-    public LocalAtomsList<string> Lines { get; } = new();
+    public AtomsList<string> Lines { get; } = new();
 
     public List<string> History { get; } = [];
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Arlecchino.Atoms.Local;
+using Arlecchino.Atoms;
 using Arlecchino.Editing;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
@@ -67,7 +67,7 @@ public sealed class CommandBar
     public bool IsTyping => _line.IsTyping;
 
     /// <summary>How many rows a long command carried the line onto, which the screen leaves room for.</summary>
-    public LocalAtom<int> Height => _line.Height;
+    public Atom<int> Height => _line.Height;
 
     /// <summary>Asks for the line, as the colon does by itself and as the key of that name does.</summary>
     public void Open() => _line.Open();

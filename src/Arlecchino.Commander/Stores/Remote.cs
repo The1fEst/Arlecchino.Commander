@@ -1,30 +1,29 @@
 using Arlecchino.Atoms;
-using Arlecchino.Atoms.Local;
 using Arlecchino.Commander.Files.Ssh;
 
 namespace Arlecchino.Commander.Stores;
 
 public sealed class Remote : IArlecchinoStore
 {
-    public Atom<string> Scheme { get; } = new LocalAtom<string>("sftp");
+    public Atom<string> Scheme { get; } = new Atom<string>("sftp");
 
-    public Atom<string> Host { get; } = new LocalAtom<string>("");
+    public Atom<string> Host { get; } = new Atom<string>("");
 
-    public Atom<decimal> Port { get; } = new LocalAtom<decimal>(22);
+    public Atom<decimal> Port { get; } = new Atom<decimal>(22);
 
-    public Atom<string> User { get; } = new LocalAtom<string>("");
+    public Atom<string> User { get; } = new Atom<string>("");
 
-    public Atom<string> Password { get; } = new LocalAtom<string>("");
+    public Atom<string> Password { get; } = new Atom<string>("");
 
-    public Atom<string> Folder { get; } = new LocalAtom<string>("/");
+    public Atom<string> Folder { get; } = new Atom<string>("/");
 
-    public Atom<string> KeyFile { get; } = new LocalAtom<string>("");
+    public Atom<string> KeyFile { get; } = new Atom<string>("");
 
-    public Atom<string> Alias { get; } = new LocalAtom<string>("");
+    public Atom<string> Alias { get; } = new Atom<string>("");
 
-    public Atom<bool> Connecting { get; } = new LocalAtom<bool>(false);
+    public Atom<bool> Connecting { get; } = new Atom<bool>(false);
 
-    public Atom<string> Failure { get; } = new LocalAtom<string>("");
+    public Atom<string> Failure { get; } = new Atom<string>("");
 
     public Connection? Ssh { get; set; }
 

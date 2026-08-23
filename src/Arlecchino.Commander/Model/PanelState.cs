@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Arlecchino.Atoms.Local;
+using Arlecchino.Atoms.Collections;
 using Arlecchino.Commander.Files.Sources;
 
 namespace Arlecchino.Commander.Model;
@@ -29,7 +29,7 @@ public sealed class PanelState
     /// frame stale by itself, and one made from anywhere other than the drawing thread is caught rather than
     /// tolerated.
     /// </summary>
-    public LocalAtomsSet<string> Marks { get; } = new(comparer: StringComparer.OrdinalIgnoreCase);
+    public AtomsSet<string> Marks { get; } = new(comparer: StringComparer.OrdinalIgnoreCase);
 
     public bool ShowHidden { get; set; }
 
