@@ -12,7 +12,6 @@ namespace Arlecchino.Commander.Widgets.Panels;
 /// </summary>
 public static class PanelRow
 {
-
     /// <summary>Draws it.</summary>
     /// <param name="row">The row to draw on.</param>
     /// <param name="entry">What is on it.</param>

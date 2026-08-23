@@ -29,7 +29,7 @@ public sealed class Operations : IArlecchinoStore
     public Operations(ArlecchinoState state) => _state = state;
 
     /// <summary>Bumped whenever work finishes, so a screen knows its panels are out of date.</summary>
-    public Atom<int> Revision { get; } = new Atom<int>(0);
+    public Atom<int> Revision { get; } = new(0);
 
     /// <summary>Whether a copy, move or delete is still running in the background.</summary>
     public bool IsBusy => _running is not null;

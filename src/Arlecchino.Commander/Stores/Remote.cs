@@ -5,25 +5,25 @@ namespace Arlecchino.Commander.Stores;
 
 public sealed class Remote : IArlecchinoStore
 {
-    public Atom<string> Scheme { get; } = new Atom<string>("sftp");
+    public Atom<string> Scheme { get; } = new("sftp");
 
-    public Atom<string> Host { get; } = new Atom<string>("");
+    public Atom<string> Host { get; } = new("");
 
-    public Atom<decimal> Port { get; } = new Atom<decimal>(22);
+    public Atom<decimal> Port { get; } = new(22);
 
-    public Atom<string> User { get; } = new Atom<string>("");
+    public Atom<string> User { get; } = new("");
 
-    public Atom<string> Password { get; } = new Atom<string>("");
+    public Atom<string> Password { get; } = new("");
 
-    public Atom<string> Folder { get; } = new Atom<string>("/");
+    public Atom<string> Folder { get; } = new("/");
 
-    public Atom<string> KeyFile { get; } = new Atom<string>("");
+    public Atom<string> KeyFile { get; } = new("");
 
-    public Atom<string> Alias { get; } = new Atom<string>("");
+    public Atom<string> Alias { get; } = new("");
 
-    public Atom<bool> Connecting { get; } = new Atom<bool>(false);
+    public Atom<bool> Connecting { get; } = new(false);
 
-    public Atom<string> Failure { get; } = new Atom<string>("");
+    public Atom<string> Failure { get; } = new("");
 
     public Connection? Ssh { get; set; }
 

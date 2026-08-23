@@ -21,7 +21,7 @@ public sealed class Sessions : IArlecchinoStore
     /// Which session the screen is showing. An atom, so opening a tab or stepping between them marks the
     /// frame stale by itself rather than having to be announced.
     /// </summary>
-    public Atom<int> Open { get; } = new Atom<int>(0);
+    public Atom<int> Open { get; } = new(0);
 
     /// <summary>The session on screen.</summary>
     public Session Current => _sessions[Math.Clamp(Open.Value, 0, _sessions.Count - 1)];
@@ -30,9 +30,9 @@ public sealed class Sessions : IArlecchinoStore
 
     public PanelState Right => Current.Right;
 
-    public Atom<bool> RightIsActive { get; } = new Atom<bool>(false);
+    public Atom<bool> RightIsActive { get; } = new(false);
 
-    public Atom<string> Viewing { get; } = new Atom<string>("");
+    public Atom<string> Viewing { get; } = new("");
 
     public IFileSource ViewingSource { get; set; } = new LocalSource();
 
@@ -42,7 +42,7 @@ public sealed class Sessions : IArlecchinoStore
     /// Counts the times a panel was sent somewhere by a screen other than the panels themselves. That screen
     /// can then put the cursor where it likes, and the panels catch up when they are next drawn.
     /// </summary>
-    public Atom<int> Revision { get; } = new Atom<int>(0);
+    public Atom<int> Revision { get; } = new(0);
 
     public void Moved() => Revision.Value++;
 
