@@ -110,7 +110,7 @@ public sealed class RemoteRun : IShellRun
 
         try
         {
-            if (running.OutputStream is { } output && running.ExtendedOutputStream is { } problem)
+            if (running is { OutputStream: { } output, ExtendedOutputStream: { } problem })
             {
                 _input = Opened(running);
 
