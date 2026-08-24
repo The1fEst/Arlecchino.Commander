@@ -128,7 +128,7 @@ public sealed class Operation
 
     /// <summary>The colors this operation is asked about in.</summary>
     /// <returns>The fill, the text on it, and the band a note sits on.</returns>
-    public (Rgb Fill, Rgb Text, Rgb Band) Tone() => Weight switch
+    public (RGB Fill, RGB Text, RGB Band) Tone() => Weight switch
     {
         Weight.Destroys => (Skin.Danger, new(0xFF, 0xF1, 0xEF), Skin.Blend(Skin.Danger, 0.16, Skin.OverlayInk)),
         Weight.Reversible => (Skin.Calm, new(0xF0, 0xF7, 0xF3), Skin.Blend(Skin.Calm, 0.15, Skin.OverlayInk)),

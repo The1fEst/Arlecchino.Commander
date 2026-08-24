@@ -22,7 +22,7 @@ public static class Breadcrumb
     /// <param name="coat">The surface underneath.</param>
     /// <param name="background">The color of that surface, for the pieces that set their own.</param>
     /// <param name="right">What goes at the right, which the trail makes room for.</param>
-    public static void Draw(SurfaceRegion row, PanelState state, Skin.Coat coat, Rgb background, string right)
+    public static void Draw(SurfaceRegion row, PanelState state, Skin.Coat coat, RGB background, string right)
     {
         var room = Math.Max(0, row.Width - TextWidth.Of(right) - PanelColumns.Gap);
         var trail = Trail(state, coat, background);
@@ -76,7 +76,7 @@ public static class Breadcrumb
     /// <param name="coat">The surface underneath.</param>
     /// <param name="background">The color of that surface.</param>
     /// <returns>The pieces, in the order they are written, in pairs of separator and name.</returns>
-    private static List<(string Text, TermColor Style)> Trail(PanelState state, Skin.Coat coat, Rgb background)
+    private static List<(string Text, TermColor Style)> Trail(PanelState state, Skin.Coat coat, RGB background)
     {
         var pieces = new List<(string, TermColor)>();
         var folder = Paths.Homed(state.Source, state.Folder);

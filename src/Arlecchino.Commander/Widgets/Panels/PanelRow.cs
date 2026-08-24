@@ -65,7 +65,7 @@ public static class PanelRow
     /// <summary>What the surface under a row is, which the spans on it are mixed against.</summary>
     /// <param name="coat">The panel's surface.</param>
     /// <returns>The color.</returns>
-    public static Rgb Under(Skin.Coat coat) => ReferenceEquals(coat, Skin.Lively) ? Skin.LitInk : Skin.UnlitInk;
+    public static RGB Under(Skin.Coat coat) => ReferenceEquals(coat, Skin.Lively) ? Skin.LitInk : Skin.UnlitInk;
 
     private static TermColor Tag(Tone tone, bool cursor, bool chosen, bool marks, Skin.Coat coat)
     {
@@ -117,7 +117,7 @@ public static class PanelRow
                 ? coat.MarkMeta
                 : coat.Meta;
 
-    private static Rgb Back(bool chosen, bool marks, Skin.Coat coat) => chosen
+    private static RGB Back(bool chosen, bool marks, Skin.Coat coat) => chosen
         ? Skin.Chip
         : marks
             ? coat.Band

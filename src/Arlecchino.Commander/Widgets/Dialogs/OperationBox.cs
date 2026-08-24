@@ -157,7 +157,7 @@ public static class OperationBox
         return row + showing + 2;
     }
 
-    private static int Options(SurfaceRegion content, Operation operation, Skin.Coat coat, Rgb fill, int row)
+    private static int Options(SurfaceRegion content, Operation operation, Skin.Coat coat, RGB fill, int row)
     {
         for (var index = 0; index < operation.Options.Count; index++)
         {
@@ -188,7 +188,7 @@ public static class OperationBox
     /// <param name="operation">What is being asked.</param>
     /// <param name="band">The tinted background it sits on.</param>
     /// <param name="row">Which row to start at.</param>
-    private static void Note(SurfaceRegion content, Operation operation, Rgb band, int row)
+    private static void Note(SurfaceRegion content, Operation operation, RGB band, int row)
     {
         if (Said(operation) is not { } label)
         {
@@ -219,8 +219,8 @@ public static class OperationBox
         SurfaceRegion content,
         Operation operation,
         Skin.Coat coat,
-        Rgb fill,
-        Rgb on,
+        RGB fill,
+        RGB on,
         int row)
     {
         if (row >= content.Height)

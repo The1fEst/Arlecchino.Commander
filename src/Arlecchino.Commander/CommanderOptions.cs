@@ -34,7 +34,7 @@ public static class CommanderOptions
     /// </summary>
     /// <param name="background">What the terminal draws behind the text.</param>
     /// <returns>The palette to hand the framework.</returns>
-    private static ThemePalette Worn(Rgb background)
+    private static ThemePalette Worn(RGB background)
     {
         Skin.Wear(background);
 

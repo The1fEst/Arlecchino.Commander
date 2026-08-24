@@ -14,51 +14,51 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 public static class Skin
 {
     /// <summary>The near-black this design was drawn on, kept for a terminal that will not say.</summary>
-    private static readonly Rgb DrawnInk = new(0x14, 0x13, 0x17);
+    private static readonly RGB DrawnInk = new(0x14, 0x13, 0x17);
 
-    private static readonly Dictionary<(Rgb Front, Rgb? Back, TextStyle Style), TermColor> Cache = [];
-    private static readonly Dictionary<Rgb, TerminalColor> Sixteen = [];
-    private static readonly Dictionary<(Rgb Surface, Tone Tone), Rgb> Answers = [];
-    private static readonly Dictionary<Rgb, Coat> Coats = [];
+    private static readonly Dictionary<(RGB Front, RGB? Back, TextStyle Style), TermColor> Cache = [];
+    private static readonly Dictionary<RGB, TerminalColor> Sixteen = [];
+    private static readonly Dictionary<(RGB Surface, Tone Tone), RGB> Answers = [];
+    private static readonly Dictionary<RGB, Coat> Coats = [];
     private static readonly Lock Gate = new();
 
     static Skin() => Wear(DrawnInk);
 
     /// <summary>The terminal's own background, which the base surface leaves alone rather than paints.</summary>
-    public static Rgb Ink { get; private set; }
+    public static RGB Ink { get; private set; }
 
     /// <summary>How far the accent wheel has turned to sit well on the terminal's own color.</summary>
     private static double AccentTurn { get; set; }
 
-    public static Rgb LitInk { get; private set; }
-    public static Rgb UnlitInk { get; private set; }
-    public static Rgb OverlayInk { get; private set; }
-    public static Rgb Chip { get; private set; }
-    public static Rgb Bone { get; private set; }
-    public static Rgb Crimson { get; private set; }
-    public static Rgb Flame { get; private set; }
-    public static Rgb OnCrimson { get; private set; }
-    public static Rgb Coral { get; private set; }
-    public static Rgb Sea { get; private set; }
-    public static Rgb Danger { get; private set; }
-    public static Rgb Calm { get; private set; }
-    public static Rgb CalmText { get; private set; }
-    public static Rgb Amber { get; private set; }
-    public static Rgb AmberRule { get; private set; }
-    public static Rgb Secondary { get; private set; }
-    public static Rgb Stone { get; private set; }
-    public static Rgb Faint { get; private set; }
-    public static Rgb LabelInk { get; private set; }
-    public static Rgb TraceInk { get; private set; }
-    public static Rgb GhostInk { get; private set; }
-    public static Rgb Idle { get; private set; }
+    public static RGB LitInk { get; private set; }
+    public static RGB UnlitInk { get; private set; }
+    public static RGB OverlayInk { get; private set; }
+    public static RGB Chip { get; private set; }
+    public static RGB Bone { get; private set; }
+    public static RGB Crimson { get; private set; }
+    public static RGB Flame { get; private set; }
+    public static RGB OnCrimson { get; private set; }
+    public static RGB Coral { get; private set; }
+    public static RGB Sea { get; private set; }
+    public static RGB Danger { get; private set; }
+    public static RGB Calm { get; private set; }
+    public static RGB CalmText { get; private set; }
+    public static RGB Amber { get; private set; }
+    public static RGB AmberRule { get; private set; }
+    public static RGB Secondary { get; private set; }
+    public static RGB Stone { get; private set; }
+    public static RGB Faint { get; private set; }
+    public static RGB LabelInk { get; private set; }
+    public static RGB TraceInk { get; private set; }
+    public static RGB GhostInk { get; private set; }
+    public static RGB Idle { get; private set; }
 
-    private static Rgb Hairline { get; set; }
-    private static Rgb HairlineDim { get; set; }
-    private static Rgb HairlineOverlay { get; set; }
-    private static Rgb OnBoneMeta { get; set; }
-    private static Rgb OnBoneDate { get; set; }
-    private static Rgb OnBoneName { get; set; }
+    private static RGB Hairline { get; set; }
+    private static RGB HairlineDim { get; set; }
+    private static RGB HairlineOverlay { get; set; }
+    private static RGB OnBoneMeta { get; set; }
+    private static RGB OnBoneDate { get; set; }
+    private static RGB OnBoneName { get; set; }
 
     /// <summary>The base surface, which is the terminal's own and is therefore never filled in.</summary>
     public static Coat Terminal { get; private set; } = null!;
@@ -87,7 +87,7 @@ public static class Skin
     /// application starts, once the terminal has said what color it is.
     /// </summary>
     /// <param name="background">What the terminal draws behind the text.</param>
-    public static void Wear(Rgb background)
+    public static void Wear(RGB background)
     {
         lock (Gate)
         {
@@ -175,7 +175,7 @@ public static class Skin
     /// </summary>
     /// <param name="surface">What is behind the text.</param>
     /// <returns>The colors that read on it.</returns>
-    public static Coat On(Rgb surface)
+    public static Coat On(RGB surface)
     {
         lock (Gate)
         {
@@ -199,7 +199,7 @@ public static class Skin
     /// <param name="text">What the line itself is written in, which the surface under it decides.</param>
     /// <param name="caret">What is behind the symbol the caret stands on.</param>
     /// <returns>The three colors, for <see cref="EntryRow"/> and <see cref="EntryRuns"/>.</returns>
-    public static EntryLook Entry(IArlecchinoColor text, Rgb caret) =>
+    public static EntryLook Entry(IArlecchinoColor text, RGB caret) =>
         new(text, Paint(Ladder(Sea, TextTone), Sea), Paint(Ladder(caret, TextTone), caret));
 
     /// <summary>
@@ -211,7 +211,7 @@ public static class Skin
     /// <param name="back">What is behind them, or nothing to leave the terminal's own showing.</param>
     /// <param name="style">Bold, which is the only weight besides plain that this design uses.</param>
     /// <returns>The style.</returns>
-    public static TermColor Paint(Rgb front, Rgb? back, TextStyle style = TextStyle.None)
+    public static TermColor Paint(RGB front, RGB? back, TextStyle style = TextStyle.None)
     {
         lock (Gate)
         {
@@ -243,7 +243,7 @@ public static class Skin
     /// <param name="alpha">How much of it there is, from 0 to 1.</param>
     /// <param name="back">The color underneath.</param>
     /// <returns>The one color that looks like the two.</returns>
-    public static Rgb Blend(Rgb front, double alpha, Rgb back) => new(
+    public static RGB Blend(RGB front, double alpha, RGB back) => new(
         Mix(front.Red, alpha, back.Red),
         Mix(front.Green, alpha, back.Green),
         Mix(front.Blue, alpha, back.Blue));
@@ -309,7 +309,7 @@ public static class Skin
     /// <param name="surface">What it is read on.</param>
     /// <param name="tone">What the color is for.</param>
     /// <returns>The color to draw in.</returns>
-    private static Rgb Ladder(Rgb surface, Tone tone)
+    private static RGB Ladder(RGB surface, Tone tone)
     {
         lock (Gate)
         {
@@ -341,7 +341,7 @@ public static class Skin
     /// <param name="lowest">The least contrast asked for on that surface.</param>
     /// <param name="highest">The most.</param>
     /// <returns>The color to draw in.</returns>
-    private static Rgb Ladder(Rgb surface, Tone tone, double lowest, double highest)
+    private static RGB Ladder(RGB surface, Tone tone, double lowest, double highest)
     {
         var contrast = Shade.Scaled(tone.Contrast, lowest, highest, surface);
         var hue = tone.Turns ? (tone.Hue + AccentTurn + 360d) % 360d : tone.Hue;
@@ -376,7 +376,7 @@ public static class Skin
     /// </summary>
     /// <param name="colour">The exact color.</param>
     /// <returns>The one of the sixteen to stand in for it.</returns>
-    private static TerminalColor Nearest(Rgb colour)
+    private static TerminalColor Nearest(RGB colour)
     {
         if (Sixteen.TryGetValue(colour, out var chosen))
         {
@@ -420,7 +420,7 @@ public static class Skin
         return Math.Min(distance, 360d - distance) / 360d;
     }
 
-    private static readonly (Rgb Color, TerminalColor Name)[] Plain =
+    private static readonly (RGB Color, TerminalColor Name)[] Plain =
     [
         (new(0x00, 0x00, 0x00), TerminalColor.Black),
         (new(0x80, 0x00, 0x00), TerminalColor.Red),
@@ -446,7 +446,7 @@ public static class Skin
     /// </summary>
     /// <param name="background">The background this coat is worn over.</param>
     /// <param name="own">Whether that background is the terminal's own, which is left unpainted.</param>
-    public sealed class Coat(Rgb background, bool own = false)
+    public sealed class Coat(RGB background, bool own = false)
     {
         /// <summary>Primary text: a file name, a dialog title, what was typed.</summary>
         public TermColor Text => field ??= Paint(On(TextTone), Fill);
@@ -506,15 +506,15 @@ public static class Skin
         public TermColor Rule => field ??= Paint(RuleInk, Fill);
 
         /// <summary>What to fill with, which is nothing at all where the terminal's own is showing.</summary>
-        private Rgb? Fill => own ? null : background;
+        private RGB? Fill => own ? null : background;
 
         /// <summary>
         /// The band a marked row gets: this surface put one step of lightness away from itself and turned
         /// to the accent's hue, so it is found by lightness wherever the terminal happens to be.
         /// </summary>
-        public Rgb Band => field == default ? field = Banded() : field;
+        public RGB Band => field == default ? field = Banded() : field;
 
-        private Rgb Banded()
+        private RGB Banded()
         {
             var surface = Oklch.Of(background);
             var step = Contrast.IsDark(background) ? BandStep : -BandStep;
@@ -527,11 +527,11 @@ public static class Skin
             }).ToRgb();
         }
 
-        private Rgb On(Tone tone) => Ladder(background, tone);
+        private RGB On(Tone tone) => Ladder(background, tone);
 
-        private Rgb OnBand(Tone tone) => Ladder(Band, tone, Qualifier.Contrast, TextTone.Contrast);
+        private RGB OnBand(Tone tone) => Ladder(Band, tone, Qualifier.Contrast, TextTone.Contrast);
 
-        private Rgb RuleInk => background == UnlitInk
+        private RGB RuleInk => background == UnlitInk
             ? HairlineDim
             : background == OverlayInk || background == Chip
                 ? HairlineOverlay

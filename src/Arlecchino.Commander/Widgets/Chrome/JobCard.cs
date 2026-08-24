@@ -228,7 +228,7 @@ public sealed class JobCard
     /// <param name="Progress">How full its bar is, or nothing when it has none.</param>
     /// <param name="Running">Whether the work is still going.</param>
     /// <param name="Rule">The color down its left edge.</param>
-    private sealed record Job(string Title, string Detail, double? Progress, bool Running, Rgb Rule);
+    private sealed record Job(string Title, string Detail, double? Progress, bool Running, RGB Rule);
 
     /// <summary>How much room one card takes, and how its title sits in it.</summary>
     /// <param name="Height">How many rows it is.</param>

@@ -21,7 +21,7 @@ internal static class OperationField
     /// <param name="fill">The color of the operation, which the caret stands on.</param>
     /// <param name="row">The row the label goes on.</param>
     /// <returns>The row after the field.</returns>
-    public static int Draw(SurfaceRegion content, Operation operation, Skin.Coat coat, Rgb fill, int row)
+    public static int Draw(SurfaceRegion content, Operation operation, Skin.Coat coat, RGB fill, int row)
     {
         if (operation.FieldLabel is not { } label)
         {
@@ -57,7 +57,7 @@ internal static class OperationField
         return row + 3;
     }
 
-    private static void Value(SurfaceRegion line, Operation operation, Skin.Coat chip, Rgb fill, int at)
+    private static void Value(SurfaceRegion line, Operation operation, Skin.Coat chip, RGB fill, int at)
     {
         var room = Math.Max(1, line.Width - at - 2);
         var (text, caret, selection) = Shown(operation);
