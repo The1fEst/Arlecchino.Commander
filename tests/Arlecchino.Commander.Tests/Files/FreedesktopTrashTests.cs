@@ -126,4 +126,22 @@ public sealed class FreedesktopTrashTests : IDisposable
         Assert.False(File.Exists(Sidecar("never-was.txt")));
         Assert.Empty(Directory.GetFiles(Path.Combine(_root, "Trash", "info")));
     }
+
+    /// <summary>
+    /// Refuses a path that names nothing where it is handed over, rather than further in where the file
+    /// system is asked about it. Spaces name as little as empty does.
+    /// </summary>
+    /// <param name="path">What was asked to be thrown away.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\t")]
+    public void APathThatNamesNothingIsRefused(string path) =>
+        Assert.Throws<ArgumentException>(() => _trash.TryPut(path));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ATrashFolderThatNamesNothingIsRefused(string root) =>
+        Assert.Throws<ArgumentException>(() => new FreedesktopTrash(root));
 }
