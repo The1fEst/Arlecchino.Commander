@@ -30,7 +30,7 @@ public sealed class WindowsTrash : Trash
     /// <inheritdoc/>
     public override bool TryPut(string path)
     {
-        ArgumentException.ThrowIfNullOrEmpty(path);
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         var item = IntPtr.Zero;
 

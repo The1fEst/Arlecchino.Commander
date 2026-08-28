@@ -22,7 +22,7 @@ public sealed class MacTrash : Trash
     /// <inheritdoc/>
     public override bool TryPut(string path)
     {
-        ArgumentException.ThrowIfNullOrEmpty(path);
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         var manager = Send(Class("NSFileManager"), Selector("defaultManager"));
         var text = SendText(Class("NSString"), Selector("stringWithUTF8String:"), path);

@@ -23,7 +23,7 @@ public sealed class FreedesktopTrash : Trash
     /// <param name="root">The folder holding <c>files</c> and <c>info</c>.</param>
     public FreedesktopTrash(string root)
     {
-        ArgumentException.ThrowIfNullOrEmpty(root);
+        ArgumentException.ThrowIfNullOrWhiteSpace(root);
 
         _root = root;
     }
@@ -37,7 +37,7 @@ public sealed class FreedesktopTrash : Trash
     /// <inheritdoc/>
     public override bool TryPut(string path)
     {
-        ArgumentException.ThrowIfNullOrEmpty(path);
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         var full = Path.GetFullPath(path);
         var name = Path.GetFileName(full);
