@@ -31,7 +31,7 @@ if (args is ["--frame", ..] or ["--tape", ..])
     return;
 }
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = ArlecchinoHost.CreateBuilder(args);
 
 builder.Services
     .AddArlecchino(CommanderOptions.Apply)
