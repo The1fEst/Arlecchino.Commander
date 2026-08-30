@@ -568,6 +568,46 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
+    /// Coming off a server sits behind the leader that put the panel on one. Without a key it is only in
+    /// the menu, a long way round for something done as often as connecting.
+    /// </summary>
+    [Fact]
+    public void DisconnectingIsBehindTheGoingLeader()
+    {
+        _app.Sessions.Left.Connect(new PipingSource(), _app.Folder);
+        _app.Settled();
+
+        _app.Press(ConsoleKey.G);
+
+        Assert.Contains(Loc(LocString.MenuDisconnect), _app.Frame(), StringComparison.Ordinal);
+
+        _app.Press(ConsoleKey.D);
+        _app.Settled();
+
+        Assert.False(_app.Sessions.Left.Source.IsRemote);
+        Assert.Contains(Loc(LocString.SaidDisconnected, Loc(LocString.HeaderLocal)),
+            _app.State.Output,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A panel that is on the disk is not offered the key at all: the leader lists what can be done from
+    /// where the panel is, and there is nothing to come off.
+    /// </summary>
+    [Fact]
+    public void DisconnectingIsNotOfferedOnAPanelOnTheDisk()
+    {
+        _app.Press(ConsoleKey.G);
+
+        Assert.DoesNotContain(Loc(LocString.MenuDisconnect), _app.Frame(), StringComparison.Ordinal);
+
+        _app.Press(ConsoleKey.D);
+        _app.Settled();
+
+        Assert.Equal("", _app.State.Output);
+    }
+
+    /// <summary>
     /// The function keys as a terminal speaking the keyboard protocol really sends them, read off kitty
     /// rather than written from the specification.
     /// </summary>

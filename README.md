@@ -151,7 +151,8 @@ and the number says how old the binary in hand is.
   of its own, and neither the watching nor the handing over knows the difference; macOS has no dialect
   here yet, and runs its commands on pipes until it does.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
-  between the two panels is the same key whichever side is which.
+  between the two panels is the same key whichever side is which. `g d` puts the panel back on the disk
+  when you are done with the server.
 - **Hosts from `~/.ssh/config`.** `g n` lists the `Host` entries and opens one, reusing its
   `HostName`, `User`, `Port` and `IdentityFile`, or the default keys in `~/.ssh` when it names none.
 - **Commands over SSH.** The `Command` menu runs one on the connected host and shows what it said.

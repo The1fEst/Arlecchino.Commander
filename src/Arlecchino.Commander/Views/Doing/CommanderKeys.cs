@@ -132,6 +132,10 @@ public static class CommanderKeys
             Bind.To(Go(ConsoleKey.N),
                 LocString.MenuOpenSavedHost,
                 () => doings.Dialling.OpenSavedHosts(panels.Active)),
+            Bind.When(Go(ConsoleKey.D),
+                LocString.MenuDisconnect,
+                () => panels.Active.Source.IsRemote,
+                () => Disconnected(doings, panels)),
 
             Bind.To(Tab(ConsoleKey.K),
                 LocString.TabsNew,
@@ -329,6 +333,17 @@ public static class CommanderKeys
     private static ViewRoute Closed(Sessions sessions)
     {
         sessions.Close(sessions.Current);
+
+        return ViewRoute.None;
+    }
+
+    /// <summary>Puts the panel back on the disk.</summary>
+    /// <param name="doings">Everything the screen can do.</param>
+    /// <param name="panels">The two panels on screen.</param>
+    /// <returns>Nowhere: coming off a server leaves the panels where they are.</returns>
+    private static ViewRoute Disconnected(Doings doings, Pair panels)
+    {
+        doings.Dialling.Disconnect(panels.Active);
 
         return ViewRoute.None;
     }
