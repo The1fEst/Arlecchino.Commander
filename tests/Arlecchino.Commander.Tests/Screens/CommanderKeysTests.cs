@@ -751,6 +751,22 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
+    /// No key stands for two things. The framework runs the first command that will have the key, so the
+    /// second of a pair is unreachable however its availability is worded.
+    /// </summary>
+    [Fact]
+    public void NoKeyIsBoundTwice()
+    {
+        var duplicates = _app.Navigator.CurrentCommands
+            .GroupBy(command => command.Binding)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key.ToString())
+            .ToList();
+
+        Assert.Empty(duplicates);
+    }
+
+    /// <summary>
     /// The key after a leader belongs to the pair and to nothing else. Were it let through, a letter
     /// pressed after a mistyped leader would run whatever that letter means on its own.
     /// </summary>

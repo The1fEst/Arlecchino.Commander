@@ -216,7 +216,7 @@ public static class CommanderKeys
                 LocString.KeyStop,
                 () => operations.IsBusy || runner.IsRunning,
                 () => Stop(operations, runner)),
-            Bind.When(Execute(ConsoleKey.D),
+            Bind.When(Execute(ConsoleKey.E),
                 LocString.KeyEndInput,
                 () => runner.IsRunning,
                 () => Ended(runner)),

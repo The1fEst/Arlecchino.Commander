@@ -136,7 +136,7 @@ and the number says how old the binary in hand is.
   which goes on being for commands. `x a` brings the question back where the dialog was closed on it.
   Where there is no terminal to be had — on a server, on a machine that has no such thing — `sudo` is
   spelled `sudo -S` on the way out, since otherwise it looks for one and gives up before it has asked.
-  `x d` says there is no more input, as `Ctrl+D` does at a terminal. Nothing answered is written into the
+  `x e` says there is no more input, as `Ctrl+D` does at a terminal. Nothing answered is written into the
   roll: what went is shown as dots.
 - **Commands that want the screen.** A command runs at a terminal of the application's own making rather
   than on a pipe, and what it does with that terminal is watched. Nothing is guessed from the name it was
