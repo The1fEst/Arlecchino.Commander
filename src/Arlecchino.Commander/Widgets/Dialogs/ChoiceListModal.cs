@@ -109,7 +109,7 @@ public sealed class ChoiceListModal : Modal
     {
         var typedSoFar = Picking.Text;
 
-        if (!Edited(frame, key) && frame.Keys.Resolve(key) is { } text && !char.IsControl(text))
+        if (!Edited(frame, key) && KeyText.Resolve(key) is { } text && !char.IsControl(text))
         {
             TextEditing.Insert(Picking.Filter, text);
         }

@@ -23,7 +23,6 @@ public sealed class CommanderFooter
     /// <param name="state">Where the dialog on top and the last word said live.</param>
     /// <param name="settings">What is kept between runs, which the settings line changes.</param>
     /// <param name="keymap">Keys the lines obey.</param>
-    /// <param name="typing">Turns a key press into the character it types.</param>
     /// <param name="terminal">What reaches the clipboard, for the selection that is copied or cut.</param>
     /// <param name="panels">The two panels on screen, which the command line writes the names from.</param>
     /// <param name="keyboard">Every key the screen answers to, which the bar names ten of.</param>
@@ -32,13 +31,12 @@ public sealed class CommanderFooter
         ArlecchinoState state,
         Settings settings,
         ArlecchinoKeymap keymap,
-        KeyText typing,
         IArlecchinoTerminal terminal,
         Pair panels,
         Keyboard keyboard)
     {
-        Setting = new(settings, state, keymap, typing, terminal);
-        Line = new(new(runner.History, typing, keymap, terminal, ':'), runner, state, keymap, panels);
+        Setting = new(settings, state, keymap, terminal);
+        Line = new(new(runner.History, keymap, terminal, ':'), runner, state, keymap, panels);
         _actionBar = new(keyboard);
     }
 

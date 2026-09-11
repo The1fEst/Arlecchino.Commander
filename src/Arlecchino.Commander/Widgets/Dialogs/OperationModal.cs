@@ -79,7 +79,7 @@ public sealed class OperationModal : Modal
 
         if (Asking.ChosenIndex >= 0)
         {
-            Switching(frame, key);
+            Switching(key);
 
             return;
         }
@@ -143,9 +143,9 @@ public sealed class OperationModal : Modal
         Asking.Step(!key.Modifiers.HasFlag(KeyModifiers.Shift));
     }
 
-    private void Switching(ModalFrame frame, KeyPress key)
+    private void Switching(KeyPress key)
     {
-        if (frame.Keys.Resolve(key) == ' ')
+        if (KeyText.Resolve(key) == ' ')
         {
             Asking.Toggle();
         }
@@ -158,7 +158,7 @@ public sealed class OperationModal : Modal
             return;
         }
 
-        if (frame.Keys.Resolve(key) is { } text && !char.IsControl(text))
+        if (KeyText.Resolve(key) is { } text && !char.IsControl(text))
         {
             TextEditing.Insert(Asking.Field, text);
         }

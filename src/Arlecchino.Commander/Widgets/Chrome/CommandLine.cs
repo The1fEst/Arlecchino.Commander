@@ -27,16 +27,11 @@ public sealed class CommandLine
 
     /// <summary>Creates the line.</summary>
     /// <param name="history">Commands run before, shared with whatever else remembers them.</param>
-    /// <param name="keys">
-    /// Turns a key press into the character it types. Asking this rather than reading the key's own
-    /// character is what lets a command be typed with a Cyrillic layout left switched on.
-    /// </param>
     /// <param name="keymap">The keys the application obeys, which the line edits by.</param>
     /// <param name="terminal">What reaches the clipboard, for the selection that is copied or cut.</param>
     /// <param name="opens">The character that asks for the line.</param>
     public CommandLine(
         List<string> history,
-        KeyText keys,
         ArlecchinoKeymap keymap,
         IArlecchinoTerminal terminal,
         char opens)
@@ -44,7 +39,7 @@ public sealed class CommandLine
         _history = history;
         _keymap = keymap;
         _terminal = terminal;
-        _keys = new(keymap, keys, opens);
+        _keys = new(keymap, opens);
         _place = history.Count;
     }
 

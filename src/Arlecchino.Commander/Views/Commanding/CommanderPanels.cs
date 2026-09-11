@@ -4,7 +4,6 @@ using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Hosting;
-using Arlecchino.Input;
 using Arlecchino.Navigation;
 
 namespace Arlecchino.Commander.Views.Commanding;
@@ -20,7 +19,6 @@ public sealed class CommanderPanels : IDisposable
     private readonly Dictionary<Session, (FilePanel Left, FilePanel Right)> _panes = [];
     private readonly Sessions _sessions;
     private readonly Settings _settings;
-    private readonly KeyText _typing;
     private readonly IArlecchinoTerminal _terminal;
     private int _moves;
     private int _width;
@@ -32,21 +30,18 @@ public sealed class CommanderPanels : IDisposable
     /// <param name="operations">What carries file work out, whose count tells the panels to read again.</param>
     /// <param name="settings">What is kept between runs, which a panel reads itself by.</param>
     /// <param name="keymap">Keys the panels obey.</param>
-    /// <param name="typing">Turns a key press into the character it types.</param>
     /// <param name="terminal">Reached for the clipboard by the search that runs while you type.</param>
     public CommanderPanels(
         Sessions sessions,
         Operations operations,
         Settings settings,
         ArlecchinoKeymap keymap,
-        KeyText typing,
         IArlecchinoTerminal terminal)
     {
         _sessions = sessions;
         _operations = operations;
         _settings = settings;
         _keymap = keymap;
-        _typing = typing;
         _terminal = terminal;
 
         _width = operations.Revision.Value;
@@ -152,7 +147,7 @@ public sealed class CommanderPanels : IDisposable
 
         FilePanel Built(PanelState state)
         {
-            return new(state, _keymap, _typing, _terminal, _settings, _operations)
+            return new(state, _keymap, _terminal, _settings, _operations)
             {
                 OnOpenFile = entry => OnOpenFile?.Invoke(entry) ?? ViewRoute.None,
                 OnGroup = marking => OnGroup?.Invoke(marking)

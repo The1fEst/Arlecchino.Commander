@@ -12,7 +12,6 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 internal sealed class SearchLine
 {
     private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
     private readonly IArlecchinoTerminal _terminal;
     private readonly Action<string> _look;
 
@@ -20,16 +19,11 @@ internal sealed class SearchLine
 
     /// <summary>Puts a search over a panel.</summary>
     /// <param name="keymap">The keys the application obeys, which the line is edited by.</param>
-    /// <param name="keys">
-    /// Turns a key press into the character it types, so a name is spelled the same with a Cyrillic
-    /// layout switched on.
-    /// </param>
     /// <param name="terminal">Reached for the clipboard when what is spelled is copied or cut.</param>
     /// <param name="look">What to do with the letters so far, which is to go and find them.</param>
-    public SearchLine(ArlecchinoKeymap keymap, KeyText keys, IArlecchinoTerminal terminal, Action<string> look)
+    public SearchLine(ArlecchinoKeymap keymap, IArlecchinoTerminal terminal, Action<string> look)
     {
         _keymap = keymap;
-        _keys = keys;
         _terminal = terminal;
         _look = look;
     }
@@ -93,7 +87,7 @@ internal sealed class SearchLine
         if (key.Modifiers.HasFlag(KeyModifiers.Control) ||
             key.Modifiers.HasFlag(KeyModifiers.Alt) ||
             key.Modifiers.HasFlag(KeyModifiers.Super) ||
-            _keys.Resolve(key) is not { } text ||
+            KeyText.Resolve(key) is not { } text ||
             char.IsControl(text))
         {
             _running = false;

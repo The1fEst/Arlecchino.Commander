@@ -66,13 +66,11 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         _surface = surface;
         _keys = keys;
 
-        var typing = KeyText.For(options.TextInput);
-
-        _panels = new(sessions, operations, settings, options.Keymap, typing, terminal);
+        _panels = new(sessions, operations, settings, options.Keymap, terminal);
 
         var panels = _panels.Panels;
 
-        _footer = new(runner, state, settings, options.Keymap, typing, terminal, panels, keyboard);
+        _footer = new(runner, state, settings, options.Keymap, terminal, panels, keyboard);
 
         var doings = new Doings(
             new(state),

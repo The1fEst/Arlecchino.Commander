@@ -28,22 +28,17 @@ public sealed class SettingBar
     /// <param name="settings">What can be set, and what each of them is now.</param>
     /// <param name="state">Where what happened is said.</param>
     /// <param name="keymap">Keys to obey.</param>
-    /// <param name="keys">
-    /// Turns a key press into the character it types, so a setting is typed the same with a Cyrillic
-    /// layout left switched on.
-    /// </param>
     /// <param name="terminal">What reaches the clipboard, for the selection that is copied or cut.</param>
     public SettingBar(
         Settings settings,
         ArlecchinoState state,
         ArlecchinoKeymap keymap,
-        KeyText keys,
         IArlecchinoTerminal terminal)
     {
         _settings = settings;
         _state = state;
         _keymap = keymap;
-        _line = new(_history, keys, keymap, terminal, Opener);
+        _line = new(_history, keymap, terminal, Opener);
     }
 
     /// <summary>Whether the line has the keyboard, which is what the panel asks before reading a letter.</summary>

@@ -20,7 +20,6 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
 {
     private readonly PanelState _state;
     private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
     private readonly ListBox<FileEntry> _table;
     private readonly PanelPaint _paint = new();
     private readonly SearchLine _searchLine;
@@ -29,25 +28,19 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// <summary>Creates a panel over one side's state.</summary>
     /// <param name="state">What that side is showing.</param>
     /// <param name="keymap">Keys to obey.</param>
-    /// <param name="keys">
-    /// Turns a key press into the character it types, so the search that runs while you type and the
-    /// marking keys work with a Cyrillic layout switched on.
-    /// </param>
     /// <param name="terminal">Reached for the clipboard when what is being searched for is copied.</param>
     /// <param name="settings">Asked how often a server should be read again, and whether to watch at all.</param>
     /// <param name="operations">Asked whether files are being carried, which a server is not read during.</param>
     public FilePanel(
         PanelState state,
         ArlecchinoKeymap keymap,
-        KeyText keys,
         IArlecchinoTerminal terminal,
         Settings settings,
         Operations operations)
     {
         _state = state;
         _keymap = keymap;
-        _keys = keys;
-        _searchLine = new(keymap, keys, terminal, Nearest);
+        _searchLine = new(keymap, terminal, Nearest);
 
         _table = new(keymap)
         {
@@ -305,7 +298,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
         }
 
         if (key.Modifiers == 0 &&
-            _keys.Resolve(key) is { } marking &&
+            KeyText.Shortcut(key) is { } marking &&
             Marking.Text(marking, _state, _reading.Entries, OnGroup))
         {
             return FocusResult.Handled;
@@ -322,7 +315,7 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     /// <returns>What became of it, or nothing when the key was neither.</returns>
     private FocusResult? Steered(KeyPress key)
     {
-        if (key.Modifiers != 0 || _keys.Resolve(key) is not { } text)
+        if (key.Modifiers != 0 || KeyText.Shortcut(key) is not { } text)
         {
             return null;
         }

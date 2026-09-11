@@ -13,31 +13,26 @@ namespace Arlecchino.Commander.Widgets.Chrome;
 internal sealed class CommandLineKeys
 {
     private readonly ArlecchinoKeymap _keymap;
-    private readonly KeyText _keys;
     private readonly char _opens;
 
     /// <summary>Reads keys by one keymap and one layout.</summary>
     /// <param name="keymap">The keys the application obeys.</param>
-    /// <param name="keys">
-    /// Turns a key press into the character it types. Asking this rather than reading the key's own
-    /// character is what lets a command be typed with a Cyrillic layout left switched on.
-    /// </param>
     /// <param name="opens">The character that asks for the line.</param>
-    public CommandLineKeys(ArlecchinoKeymap keymap, KeyText keys, char opens)
+    public CommandLineKeys(ArlecchinoKeymap keymap, char opens)
     {
         _keymap = keymap;
-        _keys = keys;
         _opens = opens;
     }
 
     /// <summary>
-    /// Whether a key press is the one that asks for the line, read as the character it types rather than as
-    /// a key. Shift is forgiven, since the characters this is asked about are typed with it held.
+    /// Whether a key press is the one that asks for the line, read as the character it types and as the
+    /// character its key sits at. Shift is forgiven, since the characters this is asked about are typed
+    /// with it held.
     /// </summary>
     /// <param name="key">The key that arrived.</param>
     /// <returns><c>true</c> when the line should be opened.</returns>
     public bool Opens(KeyPress key) =>
-        (key.Modifiers & ~KeyModifiers.Shift) == KeyModifiers.None && _keys.Resolve(key) == _opens;
+        (key.Modifiers & ~KeyModifiers.Shift) == KeyModifiers.None && KeyText.Shortcut(key) == _opens;
 
     /// <summary>Whether a key press is the one that recalls a command, and which way it goes.</summary>
     /// <param name="key">The key that arrived.</param>
@@ -74,6 +69,6 @@ internal sealed class CommandLineKeys
         CaretKeys.Moved(text, _keymap, key) ||
         EraseKeys.Erased(text, _keymap, key);
 
-    private bool Text(KeyPress key, CommandLineText text) =>
-        _keys.Resolve(key) is { } character && text.Put(character);
+    private static bool Text(KeyPress key, CommandLineText text) =>
+        KeyText.Resolve(key) is { } character && text.Put(character);
 }
