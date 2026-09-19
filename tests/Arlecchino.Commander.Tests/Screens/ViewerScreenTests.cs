@@ -57,6 +57,64 @@ public sealed class ViewerScreenTests : IDisposable
         Assert.True(_app.Shows("pnm, 2×1, drawn as blocks"));
     }
 
+    /// <summary>
+    ///     A document is drawn as what its marks say rather than as the marks. The hashes and the dashes
+    ///     are the file saying how to read it, and a viewer that writes them out has not read it.
+    /// </summary>
+    [Fact]
+    public void ADocumentIsDrawnAsWhatItsMarksSay()
+    {
+        Viewing("notes.md", "# Title\n\n- one\n- two\n");
+
+        Assert.True(_app.Shows("• one"));
+        Assert.DoesNotContain("# Title", _app.Frame(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ADocumentSaysThatIsWhatItIs()
+    {
+        Viewing("notes.md", "# Title\n");
+
+        Assert.True(_app.Shows("markdown"));
+    }
+
+    /// <summary>
+    ///     A picture a document names is looked for beside the document and drawn where it was named. The
+    ///     terminal here speaks no graphics protocol, so what arrives is the half blocks it falls back to.
+    /// </summary>
+    [Fact]
+    public void APictureADocumentNamesIsDrawnFromBesideIt()
+    {
+        _app.Write(
+            "shape.svg",
+            "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'>" +
+            "<rect width='40' height='40' fill='#c9382b'/></svg>");
+
+        Viewing("notes.md", "![the shape](shape.svg)\n");
+
+        Assert.True(_app.Shows("▀"));
+    }
+
+    /// <summary>
+    ///     A document written for a browser names pictures on the web as readily as ones beside it, and
+    ///     fetching such a picture tells whoever wrote the document that the file had been opened.
+    /// </summary>
+    [Fact]
+    public void APictureSomewhereOnTheWebIsNamedRatherThanFetched()
+    {
+        Viewing("notes.md", "![a badge](https://img.example/badge.svg)\n");
+
+        Assert.True(_app.Shows("a badge"));
+    }
+
+    [Fact]
+    public void AFileThatIsMerelyTextIsStillDrawnAsText()
+    {
+        Viewing("notes.txt", "# Title\n");
+
+        Assert.True(_app.Shows("# Title"));
+    }
+
     [Fact]
     public void TheNameOfTheFileIsInTheChrome()
     {

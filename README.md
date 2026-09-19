@@ -113,6 +113,14 @@ and the number says how old the binary in hand is.
   says so; on a server, which says nothing, the folder on screen is read again every few seconds and
   compared with what the panel has, and nothing is asked of it while it is carrying files. The panels of a
   tab that is not on screen stop watching until it is come back to, and `watch off` stops all of it.
+- **A viewer on `F3`.** A file is read without leaving the panels: a picture as a picture, drawn through
+  the terminal's own graphics protocol where there is one and in half-blocks where there is not; a
+  Markdown file as what its marks say — headings, lists, quotes, code blocks, tables and links, wrapped
+  to the panel rather than to the width the file was written at, with the pictures it names read from
+  beside it and drawn in place; anything else as text, and anything with a zero byte in it as a hex dump.
+  A file on a server is read the same way, since what the viewer is handed is a stream either way — and a
+  picture the document names somewhere on the web is named rather than fetched, since fetching it would
+  tell whoever wrote the document that the file had been opened.
 - **A real editor on `F4`.** There is no editor of our own: the terminal is handed to the one the
   settings name — the screen steps aside, the editor gets the keyboard and the screen to itself, and the
   panel is read again when it exits. Files on this machine only; a panel showing a server says so.
