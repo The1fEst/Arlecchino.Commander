@@ -20,7 +20,7 @@ public static class CommanderOptions
         options.Theme = Skin.Palette;
         options.PaletteForBackground = Worn;
         options.CommandPaletteKey = '\0';
-        options.KeysByPosition = true;
+        options.TryKeysByPosition = true;
         options.MinimumWidth = 100;
         options.MinimumHeight = 20;
         options.HorizontalPadding = 0;
