@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
+using Arlecchino.Commander.Widgets.Chrome;
 using Arlecchino.Hosting;
 using Arlecchino.Pictures;
+using Arlecchino.Rendering.Colors;
 using Arlecchino.Rendering.Terminals;
 using Arlecchino.Rendering.Text;
 using Arlecchino.Widgets;
@@ -17,8 +19,9 @@ using Arlecchino.Widgets.Readouts;
 namespace Arlecchino.Commander.Views.Viewing;
 
 /// <summary>
-/// What the viewer puts on screen for a file, and what to call it. A picture is shown as itself, anything
-/// else as text or as a hex dump, and none of that depends on where the file lives.
+/// What the viewer puts on screen for a file, and what to call it. A picture is shown as itself, a
+/// document as what its marks say it is, anything else as text or as a hex dump, and none of that depends
+/// on where the file lives.
 /// </summary>
 public static class Reading
 {
@@ -74,6 +77,19 @@ public static class Reading
             }
 
             var binary = IsBinary(head);
+
+            if (!binary && Written(path))
+            {
+                var document = new MarkdownView(options.Keymap)
+                {
+                    Text = Encoding.UTF8.GetString(head),
+                    Styles = Design,
+                    Pictures = new Illustrations(source, path).Of,
+                };
+
+                return (document, Truncated(Loc(LocString.ViewerMarkdown), head.Length, size), size);
+            }
+
             var text = new TextView(options.Keymap)
             {
                 Text = binary
@@ -100,6 +116,34 @@ public static class Reading
             .ToString()
             .ToLowerInvariant();
 
+    /// <summary>
+    /// Whether a file is a document rather than a file that happens to be text. It is asked of the name,
+    /// since Markdown is text and nothing in the bytes says which of the two a reader is looking at.
+    /// </summary>
+    /// <param name="path">The file, wherever it lives.</param>
+    /// <returns><c>true</c> when it is one.</returns>
+    private static bool Written(string path) =>
+        KindTags.Of(Path.GetExtension(path).ToLowerInvariant()) is "md";
+
+    /// <summary>
+    /// What a document is drawn in, which is the design the rest of the application wears: headings and
+    /// bullets in the accent, a link in the green of a remote path, and code on the chip of a field.
+    /// </summary>
+    private static MarkdownStyles Design => new()
+    {
+        Heading = Skin.Terminal.AccentStrong,
+        Subheading = Skin.Terminal.Strong,
+        Strong = Skin.Terminal.Strong,
+        Emphasis = Skin.Paint(Skin.Bone, null, TextStyle.Italic),
+        Code = Skin.Paint(Skin.Coral, Skin.Chip),
+        Marker = Skin.Terminal.Accent,
+        Quote = Skin.Terminal.Second,
+        Link = Skin.Paint(Skin.Sea, null, TextStyle.Underline),
+        Url = Skin.Terminal.Ghost,
+        Rule = Skin.Terminal.Rule,
+        TableHeader = Skin.Terminal.Label,
+    };
+
     private static string Truncated(string kind, int readCount, long size) =>
         readCount < size ? Loc(LocString.ViewerFirst, kind, Sizes.Brief(readCount)) : kind;
 
@@ -111,7 +155,7 @@ public static class Reading
     /// <param name="buffer">What has been read so far, which this adds to.</param>
     /// <param name="limit">How much of the file to have read by the end.</param>
     /// <returns>The bytes.</returns>
-    private static async Task<byte[]> TakeAsync(Stream stream, MemoryStream buffer, long limit)
+    internal static async Task<byte[]> TakeAsync(Stream stream, MemoryStream buffer, long limit)
     {
         var chunk = new byte[ChunkBytes];
 

@@ -151,6 +151,7 @@ ViewerScroll = "↑↓ PgUp PgDn scroll"
 ViewerPicture = "{0}, {1}×{2}, drawn as {3}"
 ViewerHex = "hex"
 ViewerText = "text"
+ViewerMarkdown = "markdown"
 ViewerFirst = "{0}, first {1}"
 ViewerUnreadable = "unreadable"
 
