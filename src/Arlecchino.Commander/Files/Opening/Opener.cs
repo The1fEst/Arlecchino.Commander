@@ -14,25 +14,50 @@ public abstract class Opener
     /// <summary>The one this machine has.</summary>
     public static Opener Current { get; } = Pick();
 
+    /// <summary>Whether there is anything to hand a file to, which the panel asks before it tries.</summary>
+    public abstract bool Works { get; }
+
+    /// <summary>Hands the file over.</summary>
+    /// <param name="path">The file.</param>
+    /// <returns><c>false</c> when nothing here opens it, or what does would not start.</returns>
+    public abstract bool TryOpen(string path);
+
+    private static Opener Pick()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return WindowsOpener.Instance;
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            return MacOpener.Instance;
+        }
+
+        return OperatingSystem.IsLinux() ? FreedesktopOpener.Instance : NoOpener.Instance;
+    }
+}
+
+/// <summary>
+/// An opener that hands the file to a process and does not wait for it: what the file opens in is a
+/// window of its own, and the panels go on while it is up.
+/// </summary>
+public abstract class ProcessOpener : Opener
+{
+    /// <inheritdoc/>
+    public override bool Works => true;
+
     /// <summary>How the file would be started.</summary>
     /// <param name="path">The file.</param>
-    /// <returns>The program and its words, or <c>null</c> when this machine opens nothing.</returns>
-    public abstract ProcessStartInfo? Starting(string path);
+    /// <returns>The program and its words.</returns>
+    public abstract ProcessStartInfo Starting(string path);
 
-    /// <summary>
-    /// Hands the file over and does not wait: what it opens in is a window of its own, and the panels
-    /// go on. What the handler says on the way is read and dropped rather than written into a frame.
-    /// </summary>
-    /// <param name="path">The file.</param>
-    /// <returns><c>false</c> when nothing here opens it, or the handler would not start.</returns>
-    public bool TryOpen(string path)
+    /// <inheritdoc/>
+    public override bool TryOpen(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
-        if (Starting(path) is not { } start)
-        {
-            return false;
-        }
+        var start = Starting(path);
 
         try
         {
@@ -75,21 +100,6 @@ public abstract class Opener
                 .ConfigureAwait(false);
         }
     }
-
-    private static Opener Pick()
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return WindowsOpener.Instance;
-        }
-
-        if (OperatingSystem.IsMacOS())
-        {
-            return MacOpener.Instance;
-        }
-
-        return OperatingSystem.IsLinux() ? FreedesktopOpener.Instance : NoOpener.Instance;
-    }
 }
 
 /// <summary>
@@ -102,5 +112,8 @@ public sealed class NoOpener : Opener
     public static readonly NoOpener Instance = new();
 
     /// <inheritdoc/>
-    public override ProcessStartInfo? Starting(string path) => null;
+    public override bool Works => false;
+
+    /// <inheritdoc/>
+    public override bool TryOpen(string path) => false;
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Arlecchino.Commander.Files.Opening;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Views.Commanding;
 using Arlecchino.Commander.Views.Doing;
@@ -46,6 +47,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
     /// <param name="settings">What is kept between runs, which the settings line changes.</param>
     /// <param name="keys">Asked what a half-typed chord has behind it, which this screen draws itself.</param>
     /// <param name="keyboard">Where this screen leaves its table of keys for the screen that lists them.</param>
+    /// <param name="opener">What hands a file to whatever this machine opens it with.</param>
     public CommanderView(
         Surface surface,
         Sessions sessions,
@@ -61,7 +63,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
         IHostApplicationLifetime lifetime,
         Settings settings,
         CommandKeys keys,
-        Keyboard keyboard)
+        Keyboard keyboard,
+        Opener opener)
     {
         _surface = surface;
         _keys = keys;
@@ -85,7 +88,8 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
             navigation,
             handover,
             settings,
-            _footer.Setting);
+            _footer.Setting,
+            opener);
 
         _panels.OnOpenFile = doings.Open;
         _panels.OnGroup = doings.Group;

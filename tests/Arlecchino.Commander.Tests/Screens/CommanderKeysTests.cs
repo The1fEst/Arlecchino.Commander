@@ -40,17 +40,64 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
-    /// Reading a file is Enter on it, the key that opens whatever the cursor is on. The bar has no key
-    /// spent on it, since the key everyone reaches for already does it.
+    /// Enter on a file hands it to whatever this machine opens it with, which is what the key does in
+    /// every other file manager. The screen stays where it was, the file having gone elsewhere.
     /// </summary>
     [Fact]
-    public void ViewingAFileGoesToTheViewer()
+    public void EnterHandsAFileToTheMachine()
     {
         OnAlpha();
         _app.Press(ConsoleKey.Enter);
         _app.Frame();
 
+        Assert.Equal(ViewKind.Commander, _app.Navigator.CurrentRoute);
+        Assert.Equal(Path.Combine(_app.Folder, "alpha.txt"), Assert.Single(_app.Opener.Paths));
+    }
+
+    /// <summary>Reading a file here is F3, which is where the bar and the menu both say it is.</summary>
+    [Fact]
+    public void ViewingAFileGoesToTheViewer()
+    {
+        OnAlpha();
+        _app.Press(ConsoleKey.F3);
+        _app.Frame();
+
         Assert.Equal(ViewKind.Viewer, _app.Navigator.CurrentRoute);
+        Assert.Empty(_app.Opener.Paths);
+    }
+
+    /// <summary>
+    /// A machine with nothing to hand a file to reads it here instead. Enter doing nothing at all is
+    /// worse than Enter doing the older thing.
+    /// </summary>
+    [Fact]
+    public void AMachineWithNoHandlerReadsTheFileHere()
+    {
+        _app.Opener.Opens = false;
+
+        OnAlpha();
+        _app.Press(ConsoleKey.Enter);
+        _app.Frame();
+
+        Assert.Equal(ViewKind.Viewer, _app.Navigator.CurrentRoute);
+    }
+
+    /// <summary>
+    /// A file on a server is read here whatever the machine has, there being no path on this machine to
+    /// hand over. The viewer is given a stream either way, so a server reads as a disk does.
+    /// </summary>
+    [Fact]
+    public void AFileOnAServerIsReadHere()
+    {
+        _app.Sessions.Left.Connect(new PipingSource(), _app.Folder);
+        _app.Settled();
+
+        OnAlpha();
+        _app.Press(ConsoleKey.Enter);
+        _app.Frame();
+
+        Assert.Equal(ViewKind.Viewer, _app.Navigator.CurrentRoute);
+        Assert.Empty(_app.Opener.Paths);
     }
 
     /// <summary>

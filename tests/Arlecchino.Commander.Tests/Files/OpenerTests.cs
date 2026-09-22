@@ -68,7 +68,7 @@ public sealed class OpenerTests
     [Fact]
     public void AMachineWithNoHandlerOpensNothing()
     {
-        Assert.Null(NoOpener.Instance.Starting(SpacedPath));
+        Assert.False(NoOpener.Instance.Works);
         Assert.False(NoOpener.Instance.TryOpen(SpacedPath));
     }
 }

@@ -1,6 +1,8 @@
+using Arlecchino.Commander.Files.Opening;
 using Arlecchino.Commander.Views;
 using Arlecchino.Hosting;
 using Arlecchino.Navigation;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Arlecchino.Commander;
 
@@ -15,6 +17,8 @@ public static class CommanderScreens
     /// <returns>The same builder.</returns>
     public static ArlecchinoBuilder UseCommanderScreens(this ArlecchinoBuilder builder)
     {
+        builder.Services.TryAddSingleton(Opener.Current);
+
         return builder
             .AddView<NotesView>(Routes.Notifications.Name)
             .AddView<KeysView>(Routes.Help.Name)

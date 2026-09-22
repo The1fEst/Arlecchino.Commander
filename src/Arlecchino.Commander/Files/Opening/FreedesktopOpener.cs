@@ -8,7 +8,7 @@ namespace Arlecchino.Commander.Files.Opening;
 /// The handler the Linux desktops share, which is a program on the path rather than a call. It reads
 /// the <c>.desktop</c> files itself and starts whichever of them claims the type.
 /// </summary>
-public sealed class FreedesktopOpener : Opener
+public sealed class FreedesktopOpener : ProcessOpener
 {
     /// <summary>
     /// What a desktop is asked through, in the order they are tried. The first is what the

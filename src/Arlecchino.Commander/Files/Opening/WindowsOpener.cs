@@ -6,7 +6,7 @@ namespace Arlecchino.Commander.Files.Opening;
 /// What Windows opens a file with, which is no program at all. The association lives in the registry,
 /// and only the shell reads it.
 /// </summary>
-public sealed class WindowsOpener : Opener
+public sealed class WindowsOpener : ProcessOpener
 {
     /// <summary>The one of these there is.</summary>
     public static readonly WindowsOpener Instance = new();

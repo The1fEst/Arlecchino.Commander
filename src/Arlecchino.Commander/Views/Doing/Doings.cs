@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Arlecchino.Commander.Files.Opening;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Dialogs;
@@ -17,6 +18,7 @@ namespace Arlecchino.Commander.Views.Doing;
 public sealed class Doings
 {
     private readonly Finder _finder;
+    private readonly Opener _opener;
     private readonly SettingBar _setting;
     private readonly ArlecchinoState _state;
     private readonly IArlecchinoTerminal _terminal;
@@ -35,6 +37,7 @@ public sealed class Doings
     /// <param name="handover">What lends the terminal to the editor while it runs.</param>
     /// <param name="settings">What is kept between runs, which the editor is named in.</param>
     /// <param name="setting">The line settings are typed on, which one menu entry opens.</param>
+    /// <param name="opener">What hands a file to whatever this machine opens it with.</param>
     public Doings(
         Dialogs dialogs,
         Pair panels,
@@ -48,7 +51,8 @@ public sealed class Doings
         Navigator navigation,
         Handover handover,
         Settings settings,
-        SettingBar setting)
+        SettingBar setting,
+        Opener opener)
     {
         Dialogs = dialogs;
         Panels = panels;
@@ -59,6 +63,7 @@ public sealed class Doings
         _finder = finder;
         _terminal = terminal;
         _setting = setting;
+        _opener = opener;
 
         Files = new(dialogs, operations, state, panels);
         Rights = new(dialogs, runner, state, panels);
@@ -103,20 +108,23 @@ public sealed class Doings
         _setting.Open();
     }
 
-    /// <summary>Reads what is under the cursor.</summary>
-    /// <returns>The reading screen, or nowhere when there is nothing under it.</returns>
+    /// <summary>
+    /// Reads what is under the cursor here rather than in whatever the machine opens it with. A folder
+    /// is entered, since a folder has nothing to read.
+    /// </summary>
+    /// <returns>The reading screen, or nowhere when there is nothing under the cursor.</returns>
     public ViewRoute Read()
     {
         var panel = Panels.Active;
 
-        if (panel.Current is { } current)
+        if (panel.Current is not { } current)
         {
-            return panel.Activate(current);
+            _state.Output = Loc(LocString.SaidNothingToOpen);
+
+            return ViewRoute.None;
         }
 
-        _state.Output = Loc(LocString.SaidNothingToOpen);
-
-        return ViewRoute.None;
+        return current.IsFolder ? panel.Activate(current) : Viewing(panel, current);
     }
 
     /// <summary>
@@ -185,13 +193,36 @@ public sealed class Doings
             : Loc(manyName, targets.Count);
     }
 
-    /// <summary>Opens a file for reading, which is what a panel asks for when Enter lands on one.</summary>
+    /// <summary>
+    /// Hands a file to whatever this machine opens it with, which is what Enter lands on a file for. A
+    /// file on a server, and a machine with no handler of any kind, are read here instead.
+    /// </summary>
     /// <param name="entry">The file.</param>
-    /// <returns>The reading screen.</returns>
+    /// <returns>The reading screen, or nowhere when the file went to a window of its own.</returns>
     public ViewRoute Open(FileEntry entry)
     {
         var panel = Panels.Active;
 
+        if (panel.Source.IsRemote || !_opener.Works)
+        {
+            return Viewing(panel, entry);
+        }
+
+        panel.State.Cursor = entry.Name;
+
+        _state.Output = _opener.TryOpen(entry.Path)
+            ? Loc(LocString.SaidOpened, entry.Name)
+            : Loc(LocString.SaidNothingOpensIt, entry.Name);
+
+        return ViewRoute.None;
+    }
+
+    /// <summary>Takes the screen to the viewer, on the file and the source it is to read.</summary>
+    /// <param name="panel">Which panel the file is in.</param>
+    /// <param name="entry">The file.</param>
+    /// <returns>The reading screen.</returns>
+    private ViewRoute Viewing(FilePanel panel, FileEntry entry)
+    {
         panel.State.Cursor = entry.Name;
         Sessions.Viewing.Value = entry.Path;
         Sessions.ViewingSource = panel.Source;
