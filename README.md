@@ -166,16 +166,25 @@ and the number says how old the binary in hand is.
   question opens a dialog. Linux makes that terminal out of a pair of ends and Windows out of a console
   of its own, and neither the watching nor the handing over knows the difference; macOS has no dialect
   here yet, and runs its commands on pipes until it does.
-- **Archives as folders.** `Enter` on a zip, a tar or a `.7z` walks into it, and the panel browses what
-  is inside exactly as it browses a disk — sizes, dates, sorting, marking and the viewer all of them the
-  same keys. Copying a file or a whole folder out is `F5` onto the other panel, since what the panel is
-  connected to is a source like a server is, and the work does not know the difference. `..` at the top,
-  `h` and `g d` all come back out to the folder the archive is in. Zips and tars the runtime reads
-  itself; `.7z`, `.rar`, `.iso`, and the tars packed with `xz`, `bzip2` or `zstd`, are handed to
-  `bsdtar`, which writes any archive it knows back out as a plain tar — one walk for every format
-  rather than a parser for each. A machine without `bsdtar` is not offered those, and `Enter` hands
-  them to the desktop instead. Nothing is written into an archive: an archive is opened to look in it
-  and to take something out, and a copy going the other way says so rather than half working.
+- **Archives as folders.** `Enter` on an archive walks into it, and the panel browses what is inside
+  exactly as it browses a disk — sizes, dates, sorting, marking and the viewer, all of them the same
+  keys. It is a connection rather than a mode: the panel is on the archive the way another panel is on
+  a server, so `F5` carries a file or a whole folder out of one and `F5` the other way carries one in.
+  `..` at the top, `h` and `g d` all come back out to the folder the archive sits in.
+- **Every format 7-Zip reads.** Zips and tars the runtime reads itself. Everything else is handed to
+  7-Zip, which is the same program on all three platforms and opens far more than an archiver usually
+  does: `.7z` and `.rar`, the tars packed with `xz`, `bzip2` or `zstd`, and the container formats that
+  are archives in all but name — `.iso`, `.deb`, `.rpm`, `.cab`, `.msi`, `.wim`, `.dmg`, `.vhd`,
+  `.squashfs`. A packed tar is unpacked onto a pipe and read as the plain tar it is, so two formats one
+  inside the other are one walk rather than two. A machine without 7-Zip is offered none of those, and
+  `Enter` hands them to the desktop instead.
+- **Writing into an archive, where the format allows it.** `F5` into it, `F8` inside it, `Shift+F6` to
+  rename inside it — 7-Zip rewrites the archive and the panel reads it again. A batch is one run of the
+  program rather than one run a file, and the bar fills from what the program says while it works.
+  Only `.zip`, `.7z` and a plain `.tar` can be written: the two-layer archives and the formats 7-Zip
+  only reads say so before the dialog opens rather than failing once it has been answered. `x z` packs
+  what is marked into an archive of its own, beside the files it was made from, under a name the dialog
+  offers and the ending chooses the format of.
 - **The disks of the machine, on `Ctrl+F1` and `Ctrl+F2`.** A list of what the machine is holding, one
   row to a partition, each saying what it is called, what is on it, how large it is and how much of it
   is left. On Linux it comes from udisks2 over the system bus, which is what a desktop asks, so a stick

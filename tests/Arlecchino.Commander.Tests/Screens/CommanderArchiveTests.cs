@@ -2,6 +2,7 @@ using System;
 using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text;
 using Arlecchino.Commander.Files.Archives;
 using Arlecchino.Commander.Tests.Support;
@@ -95,6 +96,49 @@ public sealed class CommanderArchiveTests : IDisposable
         Assert.True(_app.Until(() => _app.Sessions.Left.Source is not ArchiveSource));
         Assert.Equal(_app.Folder, _app.Sessions.Left.Folder);
     }
+
+    /// <summary>
+    /// The copy key carries a file into the archive the other panel is inside. It is the same key it
+    /// is onto a disk, the panel being connected to the archive as it would be to a server.
+    /// </summary>
+    [Fact]
+    public void TheCopyKeyCarriesAFileIntoTheArchiveTheOtherPanelIsIn()
+    {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
+        var archivePath = Path.Combine(_app.Folder, "writable.7z");
+
+        _app.Write("carried.txt", "carried in");
+        Ran(SevenZip.Starting("a", archivePath, Path.Combine(_app.Folder, "carried.txt")));
+
+        _app.Sessions.Right.Connect(new ArchiveSource(archivePath, SevenZipArchives.Instance), "/");
+        _app.Sessions.Left.GoTo(_app.Folder);
+        _app.Settled();
+
+        Assert.True(_app.Shows("bundle.zip"));
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.F5);
+        _app.Frame();
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => Listed(archivePath).Contains("bundle.zip")));
+    }
+
+    private static void Ran(System.Diagnostics.ProcessStartInfo start)
+    {
+        using var running = System.Diagnostics.Process.Start(start)!;
+
+        running.StandardOutput.ReadToEnd();
+        running.StandardError.ReadToEnd();
+        running.WaitForExit();
+    }
+
+    private static string Listed(string archive) =>
+        string.Join('\n', SevenZipArchives.Instance.Read(archive).Select(static entry => entry.Path));
 
     /// <summary>
     /// What is marked is packed into an archive beside it, under a name the dialog offers and the
