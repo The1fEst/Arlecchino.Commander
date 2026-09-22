@@ -15,6 +15,12 @@ public interface IPacksFiles
     /// <summary>Whether anything can be written here at all, which the work asks before it starts.</summary>
     bool Packs { get; }
 
+    /// <summary>
+    /// Why nothing can be written here, for the keys to say when they refuse. The format and the
+    /// program that owns it are two different reasons, and only the source knows which it is.
+    /// </summary>
+    string Refusal { get; }
+
     /// <summary>Puts files from somewhere else in, under one folder of this source.</summary>
     /// <param name="from">Where the entries live now.</param>
     /// <param name="sources">What to put in.</param>

@@ -99,6 +99,18 @@ public static class Archives
         };
 
     /// <summary>
+    /// Why an archive of this name refuses to be written into. The formats the program rewrites refuse
+    /// only for want of the program, and the rest refuse whether the machine has it or not.
+    /// </summary>
+    /// <param name="path">The file, on this disk.</param>
+    /// <param name="works">Whether the program is on this machine.</param>
+    /// <returns>The words for the bar.</returns>
+    public static string Refusal(string path, bool works) =>
+        Writable(path) && !works
+            ? Loc(LocString.ArchiveNoArchiver, Path.GetFileName(path))
+            : Loc(LocString.ArchiveReadOnly, Path.GetFileName(path));
+
+    /// <summary>
     /// Opens an archive, or hands back nothing when it will not open. A file that names itself an
     /// archive and is not one, or is one that was cut off in the middle, is not worth a dialog.
     /// </summary>

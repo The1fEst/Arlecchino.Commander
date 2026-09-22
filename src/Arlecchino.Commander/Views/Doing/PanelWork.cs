@@ -64,12 +64,12 @@ public abstract class PanelWork
     /// <returns><c>true</c> when nothing can be written there.</returns>
     protected bool Sealed(IFileSource source)
     {
-        if (source is not IPacksFiles { Packs: false })
+        if (source is not IPacksFiles { Packs: false } packer)
         {
             return false;
         }
 
-        State.Output = Loc(LocString.ArchiveReadOnly, source.Label);
+        State.Output = packer.Refusal;
 
         return true;
     }

@@ -261,6 +261,31 @@ public sealed class ArchiveWritingTests : IDisposable
     }
 
     /// <summary>
+    /// A format the program rewrites refuses only for want of the program, and says so. Blaming the
+    /// archive for what the machine is missing sends the reader looking in the wrong place.
+    /// </summary>
+    [Fact]
+    public void AnArchiveRefusedForWantOfTheProgramSaysThat()
+    {
+        Assert.Contains("no 7-Zip", Archives.Refusal("bundle.zip", works: false), StringComparison.Ordinal);
+        Assert.Contains("nothing can be written",
+            Archives.Refusal("bundle.zip", works: true),
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A format the program only reads refuses for itself, whatever the machine is holding. There is
+    /// nothing to install that would make a two-layer archive writable.
+    /// </summary>
+    [Fact]
+    public void AnArchiveTheProgramOnlyReadsRefusesForItself()
+    {
+        Assert.Contains("nothing can be written",
+            Archives.Refusal("source.tar.gz", works: false),
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// What the program refused is reported with what it said about it. Failing quietly would leave
     /// the panel looking unchanged with no reason given for it.
     /// </summary>
