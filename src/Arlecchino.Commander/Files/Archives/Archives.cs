@@ -45,6 +45,19 @@ public static class Archives
     }
 
     /// <summary>
+    /// Whether a file of this name is an archive nothing but 7-Zip reads. The runtime reads zips and
+    /// tars itself, so those are walked into on any machine and these on one that has the program.
+    /// </summary>
+    /// <param name="path">The file, on this disk.</param>
+    /// <returns><c>true</c> when only the program opens it.</returns>
+    public static bool OnlySevenZip(string path)
+    {
+        var name = Path.GetFileName(path).ToLowerInvariant();
+
+        return PackedTarArchives.Names(name) || SevenZipArchives.Names(name);
+    }
+
+    /// <summary>
     /// Makes an archive out of files on the disk. The program is run in the folder they are in, so it
     /// writes them under their own names rather than under the whole path each of them has.
     /// </summary>

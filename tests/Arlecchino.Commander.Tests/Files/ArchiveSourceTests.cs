@@ -268,6 +268,27 @@ public sealed class ArchiveSourceTests : IDisposable
     }
 
     /// <summary>
+    /// Which names are archives the runtime cannot read a word of. These are the ones a machine
+    /// without the program is told about, the rest being walked into whether it has one or not.
+    /// </summary>
+    /// <param name="name">The file.</param>
+    /// <param name="only">Whether nothing but the program opens it.</param>
+    [Theory]
+    [InlineData("bundle.7z", true)]
+    [InlineData("bundle.rar", true)]
+    [InlineData("windows.iso", true)]
+    [InlineData("source.tar.xz", true)]
+    [InlineData("source.tar.zst", true)]
+    [InlineData("bundle.zip", false)]
+    [InlineData("source.tar", false)]
+    [InlineData("source.tar.gz", false)]
+    [InlineData("notes.txt", false)]
+    public void TheFormatsOnlyTheProgramReadsAreKnownByName(string name, bool only)
+    {
+        Assert.Equal(only, Archives.OnlySevenZip(name));
+    }
+
+    /// <summary>
     /// A tar packed with <c>gzip</c> is read as the tar it is. The name ends in both, and the outer
     /// format alone makes a single entry of a whole tree.
     /// </summary>

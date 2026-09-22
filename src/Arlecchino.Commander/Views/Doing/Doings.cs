@@ -226,13 +226,26 @@ public sealed class Doings
         }
 
         panel.State.Cursor = entry.Name;
-
-        _state.Output = _opener.TryOpen(entry.Path)
-            ? Loc(LocString.SaidOpened, entry.Name)
-            : Loc(LocString.SaidNothingOpensIt, entry.Name);
+        _state.Output = Said(entry, _opener.TryOpen(entry.Path));
 
         return ViewRoute.None;
     }
+
+    /// <summary>
+    /// What to say about a file handed to the desktop. An archive is walked into rather than handed
+    /// over, so a machine without 7-Zip says why the archive went to the desktop instead.
+    /// </summary>
+    /// <param name="entry">The file.</param>
+    /// <param name="opened">Whether the machine had anything to open it with.</param>
+    /// <returns>The words for the bar.</returns>
+    private static string Said(FileEntry entry, bool opened) =>
+        (opened, !SevenZip.Works && Archives.OnlySevenZip(entry.Path)) switch
+        {
+            (true, false) => Loc(LocString.SaidOpened, entry.Name),
+            (true, true) => Loc(LocString.SaidOpenedNoArchiver, entry.Name),
+            (false, false) => Loc(LocString.SaidNothingOpensIt, entry.Name),
+            (false, true) => Loc(LocString.SaidNoArchiverOpensIt, entry.Name),
+        };
 
     /// <summary>
     /// Puts a panel inside an archive, at its root. Reading what is in it is a walk of the whole file
