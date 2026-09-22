@@ -30,7 +30,8 @@ public static class Archives
     }
 
     /// <summary>
-    /// Whether a file of this name is an archive, even on a machine without the program to read it. It is what tells a machine without 7-Zip which files it is missing it for.
+    /// Whether a file of this name is an archive, even on a machine without the program to read it. It
+    /// is what tells a machine without 7-Zip which files it is missing it for.
     /// </summary>
     /// <param name="path">The file, on this disk.</param>
     /// <returns><c>true</c> when the name is an archive's.</returns>
