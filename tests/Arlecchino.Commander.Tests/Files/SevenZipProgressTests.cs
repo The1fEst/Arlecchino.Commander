@@ -39,6 +39,21 @@ public sealed class SevenZipProgressTests
     }
 
     /// <summary>
+    /// Unpacking puts a letter of its own before the name, and the first file has no count before it.
+    /// A dash in the name itself is part of the name, only the one standing alone being the letter.
+    /// </summary>
+    /// <param name="line">A line it drew while unpacking.</param>
+    /// <param name="name">The file it names.</param>
+    [Theory]
+    [InlineData(" 13% - a.txt", "a.txt")]
+    [InlineData(" 53% 1 - b.txt", "b.txt")]
+    [InlineData(" 67% 1 - side - b.txt", "side - b.txt")]
+    public void TheFileBeingUnpackedIsRead(string line, string name)
+    {
+        Assert.Equal(name, SevenZipProgress.Step(line)?.Name);
+    }
+
+    /// <summary>
     /// What the program says about itself is not progress. It writes its name, what it is doing and
     /// what it found before it starts, and none of those lines say how far along anything is.
     /// </summary>

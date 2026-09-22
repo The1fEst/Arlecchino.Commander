@@ -188,6 +188,10 @@ and the number says how old the binary in hand is.
   rather than blaming the archive.
 - **Packing and unpacking, behind `a`.** `a p` packs what is marked into an archive of its own, beside
   the files it was made from, under a name the dialog offers and the ending chooses the format of.
+  `a x` unpacks what is marked beside itself and `a e` into the folder the other panel is looking at,
+  each archive in one run of 7-Zip: an archive holding one thing at its top lands as that thing, one
+  holding several lands in a folder named after it, and nothing already in the folder is written over.
+  A tar packed in another format comes out as its files rather than as the tar.
   `a o` walks into the file under the cursor as an archive whatever it is called — 7-Zip tells the
   format by what is inside, so an installer or a document that is a zip underneath opens as well.
 - **The disks of the machine, on `Ctrl+F1` and `Ctrl+F2`.** A list of what the machine is holding, one

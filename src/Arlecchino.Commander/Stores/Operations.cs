@@ -78,6 +78,15 @@ public sealed class Operations : IArlecchinoStore
             Loc(LocString.WorkPacking),
             Sizing(source, sources));
 
+    /// <summary>Unpacks whole archives into a folder, each where it will spill over nothing.</summary>
+    /// <param name="archives">The archives, as paths on this disk.</param>
+    /// <param name="target">The folder on this disk they are unpacked into.</param>
+    public void Unpack(IReadOnlyList<string> archives, string target) =>
+        Start(
+            (outcome, token) => Extraction.UnpackAsync(archives, target, outcome, token),
+            Loc(LocString.WorkUnpacked),
+            Loc(LocString.WorkUnpacking));
+
     public void Rename(IFileSource source, FileEntry entry, string target) =>
         Start(
             (outcome, _) => FileTasks.RenameAsync(source, entry, target, outcome),

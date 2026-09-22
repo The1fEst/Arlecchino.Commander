@@ -85,6 +85,8 @@ public static class Menu
         new(LocString.Rename, doings.Files.Rename),
         new(LocString.MenuMakeFolder, doings.Files.MakeFolder),
         new(LocString.PackVerb, doings.Files.Pack),
+        new(LocString.KeyUnpackHere, () => doings.Files.Unpack(there: false)),
+        new(LocString.KeyUnpackThere, () => doings.Files.Unpack(there: true)),
         new(LocString.Permissions, doings.Rights.Mode),
         new(LocString.MenuOwner, doings.Rights.Owner),
         new(LocString.LinkSymbolic, () => doings.Linking.Make(hard: false)),

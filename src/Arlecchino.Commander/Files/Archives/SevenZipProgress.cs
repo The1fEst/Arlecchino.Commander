@@ -10,9 +10,9 @@ public static class SevenZipProgress
 {
     /// <summary>
     /// The letters the program puts between the count and the name, one for what it is doing to the
-    /// file. Adding, updating and keeping each have a letter of their own, and none of them is a name.
+    /// file. Adding, updating, keeping and unpacking each have a letter of their own.
     /// </summary>
-    private const string Doings = "+U=TA.";
+    private const string Doings = "+U=TA.-";
 
     /// <summary>One line it drew, as how far along it is and what it is on.</summary>
     /// <param name="line">The line, with the backspaces already taken out of it.</param>

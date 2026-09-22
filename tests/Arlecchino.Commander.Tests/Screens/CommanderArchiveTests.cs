@@ -165,6 +165,50 @@ public sealed class CommanderArchiveTests : IDisposable
     }
 
     /// <summary>
+    /// The archive under the cursor is unpacked beside itself, into a folder named after it. It holds
+    /// two things at its top, which spilled loose would be mixed in with what the folder has.
+    /// </summary>
+    [Fact]
+    public void TheArchiveIsUnpackedBesideItself()
+    {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
+        OnTheArchive();
+        _app.Press(ConsoleKey.A);
+        _app.Press(ConsoleKey.X);
+
+        Assert.True(_app.Until(() => File.Exists(Path.Combine(_app.Folder, "bundle", "src", "main.c"))));
+    }
+
+    /// <summary>
+    /// The archive is unpacked into the folder the other panel is looking at, and nothing is written
+    /// beside the archive itself.
+    /// </summary>
+    [Fact]
+    public void TheArchiveIsUnpackedIntoTheOtherPanel()
+    {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
+        var otherFolder = Directory.CreateDirectory(Path.Combine(_app.Folder, "there")).FullName;
+
+        _app.Sessions.Right.GoTo(otherFolder);
+        _app.Settled();
+
+        OnTheArchive();
+        _app.Press(ConsoleKey.A);
+        _app.Press(ConsoleKey.E);
+
+        Assert.True(_app.Until(() => File.Exists(Path.Combine(otherFolder, "bundle", "readme.md"))));
+        Assert.False(Directory.Exists(Path.Combine(_app.Folder, "bundle")));
+    }
+
+    /// <summary>
     /// An archive nothing can be written into says so instead of opening the dialog. A question
     /// answered and then refused is worse than one never asked.
     /// </summary>

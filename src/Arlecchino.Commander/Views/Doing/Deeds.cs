@@ -165,6 +165,56 @@ public sealed class Deeds : PanelWork
     }
 
     /// <summary>
+    /// Unpacks what is marked, beside the archives or into the folder the other panel is looking at.
+    /// 7-Zip unpacks from a disk onto a disk, so both panels have to be on this machine.
+    /// </summary>
+    /// <param name="there">Whether into the other panel's folder rather than this one.</param>
+    public void Unpack(bool there)
+    {
+        var panel = Active;
+        var target = there ? Passive : panel;
+        var sources = panel.Targets();
+
+        if (Nothing(sources))
+        {
+            return;
+        }
+
+        if (panel.Source is not LocalSource || target.Source is not LocalSource)
+        {
+            State.Output = Loc(LocString.SaidUnpacksHereOnly);
+
+            return;
+        }
+
+        if (!SevenZip.Works)
+        {
+            State.Output = Loc(LocString.SaidNoUnarchiver);
+
+            return;
+        }
+
+        var archives = new List<string>(sources.Count);
+
+        foreach (var source in sources)
+        {
+            if (!source.IsFolder)
+            {
+                archives.Add(source.Path);
+            }
+        }
+
+        if (archives.Count == 0)
+        {
+            State.Output = Loc(LocString.SaidNotAnArchive, sources[0].Name);
+
+            return;
+        }
+
+        _operations.Unpack(archives, target.Folder);
+    }
+
+    /// <summary>
     /// What to call the archive before anything is typed: the one file chosen, or the folder they are
     /// all in, with the program's own ending on it.
     /// </summary>
