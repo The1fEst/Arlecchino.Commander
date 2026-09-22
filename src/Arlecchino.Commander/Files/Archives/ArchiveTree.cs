@@ -131,7 +131,7 @@ public sealed class ArchiveTree
     /// </summary>
     /// <param name="path">The path as the archive wrote it.</param>
     /// <returns>The path, or an empty string when nothing is left of it.</returns>
-    private static string Tidied(string path)
+    public static string Tidied(string path)
     {
         var tidiedPath = path.Replace('\\', '/').Trim('/');
 

@@ -1,4 +1,5 @@
 using System;
+using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -27,6 +28,40 @@ public sealed class ArchiveSourceTests : IDisposable
         var path = Path.Combine(_folder, name);
 
         Written(path, entries);
+
+        return path;
+    }
+
+    private string Tarred(string name, params (string Path, string Text)[] entries)
+    {
+        var path = Path.Combine(_folder, name);
+        var loose = Path.Combine(_folder, "loose");
+
+        Directory.CreateDirectory(loose);
+
+        foreach (var (inside, text) in entries)
+        {
+            var file = Path.Combine(loose, inside);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            File.WriteAllText(file, text);
+        }
+
+        using (var writing = File.Create(path))
+        {
+            if (name.EndsWith(".gz", StringComparison.Ordinal))
+            {
+                using var zipping = new GZipStream(writing, CompressionMode.Compress);
+
+                TarFile.CreateFromDirectory(loose, zipping, includeBaseDirectory: false);
+            }
+            else
+            {
+                TarFile.CreateFromDirectory(loose, writing, includeBaseDirectory: false);
+            }
+        }
+
+        Directory.Delete(loose, true);
 
         return path;
     }
@@ -160,8 +195,43 @@ public sealed class ArchiveSourceTests : IDisposable
     [InlineData("bundle.zip")]
     [InlineData("library.jar")]
     [InlineData("package.nupkg")]
+    [InlineData("source.tar")]
+    [InlineData("source.tar.gz")]
+    [InlineData("source.tgz")]
     public void TheArchivesWorthWalkingIntoAreOpened(string name)
     {
         Assert.NotNull(Archives.For(name));
+    }
+
+    /// <summary>
+    /// A tar packed with <c>gzip</c> is read as the tar it is. The name ends in both, and the outer
+    /// format alone makes a single entry of a whole tree.
+    /// </summary>
+    [Fact]
+    public void AGzippedTarIsReadAsTheTarItIs()
+    {
+        Assert.Same(TarArchives.Instance, Archives.For("source.tar.gz"));
+        Assert.Same(TarArchives.Instance, Archives.For("source.tgz"));
+    }
+
+    /// <summary>A tar is walked as a zip is, folders and all, and a file comes out of it whole.</summary>
+    /// <param name="name">What the archive is called, which is what says whether it was packed.</param>
+    [Theory]
+    [InlineData("source.tar")]
+    [InlineData("source.tar.gz")]
+    public async Task ATarIsWalkedAndReadThroughAsAZipIs(string name)
+    {
+        var path = Tarred(name, ("src/main.c", "int main(void){}"), ("readme.md", "hello"));
+
+        using var source = new ArchiveSource(path, TarArchives.Instance);
+        var rows = await source.ListAsync("/", showHidden: true, CancellationToken.None);
+        var names = rows.Where(static row => !row.IsParent).Select(static row => row.Name).Order().ToArray();
+
+        Assert.Equal(["readme.md", "src"], names);
+
+        await using var reading = await source.OpenReadAsync("/src/main.c", CancellationToken.None);
+        using var text = new StreamReader(reading);
+
+        Assert.Equal("int main(void){}", await text.ReadToEndAsync());
     }
 }

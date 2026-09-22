@@ -12,13 +12,22 @@ public static class Archives
     /// <summary>What reads an archive of this name, or nothing when it is not one this opens.</summary>
     /// <param name="path">The file, on this disk.</param>
     /// <returns>The format, or <c>null</c>.</returns>
-    public static ArchiveFormat? For(string path) =>
-        Path.GetExtension(path).ToLowerInvariant() switch
+    public static ArchiveFormat? For(string path)
+    {
+        var name = Path.GetFileName(path).ToLowerInvariant();
+
+        if (TarArchives.Names(name))
+        {
+            return TarArchives.Instance;
+        }
+
+        return Path.GetExtension(name) switch
         {
             ".zip" or ".jar" or ".war" or ".nupkg" or ".whl" or ".appx" or ".msix" or ".vsix" or ".xpi" or
                 ".crx" => ZipArchives.Instance,
             _ => null,
         };
+    }
 
     /// <summary>
     /// Opens an archive, or hands back nothing when it will not open. A file that names itself an

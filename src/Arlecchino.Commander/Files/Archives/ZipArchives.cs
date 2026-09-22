@@ -46,7 +46,7 @@ public sealed class ZipArchives : ArchiveFormat
 
         try
         {
-            if (zip.GetEntry(entry) is not { } found)
+            if (Found(zip, entry) is not { } found)
             {
                 throw new FileNotFoundException(Loc(LocString.ArchiveNoEntry, entry), archive);
             }
@@ -59,6 +59,28 @@ public sealed class ZipArchives : ArchiveFormat
 
             throw;
         }
+    }
+
+    /// <summary>
+    /// The entry of that path, compared as the tree spells a path. A zip made on Windows writes
+    /// backslashes, and one made by hand a leading slash, neither of which the panel asks through.
+    /// </summary>
+    /// <param name="zip">The archive.</param>
+    /// <param name="entry">The path being looked for.</param>
+    /// <returns>The entry, or <c>null</c> when the archive holds no such thing.</returns>
+    private static ZipArchiveEntry? Found(ZipArchive zip, string entry)
+    {
+        var wantedPath = ArchiveTree.Tidied(entry);
+
+        foreach (var candidate in zip.Entries)
+        {
+            if (string.Equals(ArchiveTree.Tidied(candidate.FullName), wantedPath, StringComparison.Ordinal))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
