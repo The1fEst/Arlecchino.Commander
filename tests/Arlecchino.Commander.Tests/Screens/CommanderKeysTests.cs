@@ -322,7 +322,7 @@ public sealed class CommanderKeysTests : IDisposable
     public void EditingWithNoEditorSetSaysSo()
     {
         OnAlpha();
-        _app.Press(ConsoleKey.F3);
+        _app.Press(ConsoleKey.F4);
 
         Assert.Contains("No editor set", _app.Frame(), StringComparison.Ordinal);
     }
@@ -616,8 +616,8 @@ public sealed class CommanderKeysTests : IDisposable
     [Theory]
     [InlineData("\e[P", "Keys")]
     [InlineData("\e[Q", "Tabs")]
-    [InlineData("\e[R", "No editor set")]
-    [InlineData("\e[S", "Find files")]
+    [InlineData("\e[R", "alpha.txt")]
+    [InlineData("\e[S", "No editor set")]
     public void TheFunctionKeysArriveAsTheProtocolSendsThem(string sequence, string expected)
     {
         OnAlpha();
