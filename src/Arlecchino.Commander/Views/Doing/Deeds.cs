@@ -153,7 +153,7 @@ public sealed class Deeds : PanelWork
         Dialogs.Ask(new()
         {
             Title = sources.Count == 1 ? Loc(LocString.PackTitle) : Loc(LocString.PackManyTitle, sources.Count),
-            Key = "x z",
+            Key = "a p",
             Verb = Loc(LocString.PackVerb),
             Weight = Weight.Reversible,
             Items = sources,

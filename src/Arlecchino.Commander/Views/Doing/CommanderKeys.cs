@@ -200,10 +200,6 @@ public static class CommanderKeys
             Bind.To(Execute(ConsoleKey.D),
                 LocString.MenuCompareDirectories,
                 doings.Compare),
-            Marked(Execute(ConsoleKey.Z),
-                LocString.PackVerb,
-                panels,
-                doings.Files.Pack),
             Bind.To(Execute(ConsoleKey.N),
                 LocString.KeyNameOntoLine,
                 () => Named(panels, commandBar)),
@@ -231,6 +227,11 @@ public static class CommanderKeys
                 LocString.KeyAnswer,
                 () => runner.IsAsking,
                 () => Answered(runner)),
+
+            Marked(Archive(ConsoleKey.P),
+                LocString.PackVerb,
+                panels,
+                doings.Files.Pack),
         ];
     }
 
@@ -318,6 +319,14 @@ public static class CommanderKeys
     /// <param name="key">The key that finishes it.</param>
     /// <returns>The chord.</returns>
     private static KeyBinding Execute(ConsoleKey key) => new KeyBinding(ConsoleKey.X).ThenKey(key);
+
+    /// <summary>
+    /// A key behind the <c>a</c> leader, which is the one that packs and unpacks. Every archive has
+    /// its own keys here, whichever panel it is on and whatever it is to become.
+    /// </summary>
+    /// <param name="key">The key that finishes it.</param>
+    /// <returns>The chord.</returns>
+    private static KeyBinding Archive(ConsoleKey key) => new KeyBinding(ConsoleKey.A).ThenKey(key);
 
     /// <summary>
     /// Search as you type, asked for by the slash so that the letters after it are the search and not

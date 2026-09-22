@@ -153,8 +153,8 @@ public sealed class CommanderArchiveTests : IDisposable
         }
 
         _app.Press(ConsoleKey.DownArrow);
-        _app.Press(ConsoleKey.X);
-        _app.Press(ConsoleKey.Z);
+        _app.Press(ConsoleKey.A);
+        _app.Press(ConsoleKey.P);
         _app.Frame();
 
         Assert.Contains("Pack", _app.Frame(), StringComparison.Ordinal);

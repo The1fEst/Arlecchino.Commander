@@ -185,9 +185,9 @@ and the number says how old the binary in hand is.
   Only `.zip`, `.7z` and a plain `.tar` can be written: the two-layer archives and the formats 7-Zip
   only reads say so before the dialog opens rather than failing once it has been answered. A zip or a
   tar on a machine without 7-Zip is still walked into, and a write into it names the missing program
-  rather than blaming the archive. `x z` packs
-  what is marked into an archive of its own, beside the files it was made from, under a name the dialog
-  offers and the ending chooses the format of.
+  rather than blaming the archive.
+- **Packing and unpacking, behind `a`.** `a p` packs what is marked into an archive of its own, beside
+  the files it was made from, under a name the dialog offers and the ending chooses the format of.
 - **The disks of the machine, on `Ctrl+F1` and `Ctrl+F2`.** A list of what the machine is holding, one
   row to a partition, each saying what it is called, what is on it, how large it is and how much of it
   is left. On Linux it comes from udisks2 over the system bus, which is what a desktop asks, so a stick
