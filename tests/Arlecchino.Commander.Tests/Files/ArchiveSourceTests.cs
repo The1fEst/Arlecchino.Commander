@@ -36,12 +36,12 @@ public sealed class ArchiveSourceTests : IDisposable
     /// <returns><c>true</c> when the test is to be passed over.</returns>
     private bool PassedOver()
     {
-        if (ToolArchives.Works)
+        if (SevenZip.Works)
         {
             return false;
         }
 
-        _output.WriteLine($"Passed over: this machine has no {ToolArchives.Program}.");
+        _output.WriteLine("Passed over: this machine has no 7-Zip.");
 
         return true;
     }
@@ -55,9 +55,11 @@ public sealed class ArchiveSourceTests : IDisposable
         return path;
     }
 
-    private string Tarred(string name, params (string Path, string Text)[] entries)
+    /// <summary>The entries written out as a tree of real files, for the programs that pack one.</summary>
+    /// <param name="entries">What to write.</param>
+    /// <returns>The folder they were written into.</returns>
+    private string Loosened(params (string Path, string Text)[] entries)
     {
-        var path = Path.Combine(_folder, name);
         var loose = Path.Combine(_folder, "loose");
 
         Directory.CreateDirectory(loose);
@@ -69,6 +71,14 @@ public sealed class ArchiveSourceTests : IDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(file)!);
             File.WriteAllText(file, text);
         }
+
+        return loose;
+    }
+
+    private string Tarred(string name, params (string Path, string Text)[] entries)
+    {
+        var path = Path.Combine(_folder, name);
+        var loose = Loosened(entries);
 
         using (var writing = File.Create(path))
         {
@@ -100,23 +110,24 @@ public sealed class ArchiveSourceTests : IDisposable
     {
         var plain = Tarred("plain.tar", entries);
         var path = Path.Combine(_folder, name);
-        var start = new ProcessStartInfo(ToolArchives.Program)
-        {
-            UseShellExecute = false,
-            WorkingDirectory = _folder,
-            ArgumentList = { "-c", "-a", "-f", path, "@" + plain },
-        };
 
-        using (var running = Process.Start(start)!)
-        {
-            running.WaitForExit();
-
-            Assert.Equal(0, running.ExitCode);
-        }
-
+        Ran(SevenZip.Starting("a", path, plain));
         File.Delete(plain);
 
         return path;
+    }
+
+    /// <summary>Runs the program and holds it to having worked.</summary>
+    /// <param name="start">What to run.</param>
+    private static void Ran(ProcessStartInfo start)
+    {
+        using var running = Process.Start(start)!;
+
+        running.StandardOutput.ReadToEnd();
+        running.StandardError.ReadToEnd();
+        running.WaitForExit();
+
+        Assert.Equal(0, running.ExitCode);
     }
 
     private static void Written(string path, (string Path, string Text)[] entries)
@@ -272,22 +283,34 @@ public sealed class ArchiveSourceTests : IDisposable
     /// one. Without it, they are not offered at all and the key hands the file to the desktop.
     /// </summary>
     /// <param name="name">The file.</param>
+    /// <param name="packed">Whether it is two formats one inside the other.</param>
     [Theory]
-    [InlineData("source.tar.xz")]
-    [InlineData("source.tar.zst")]
-    [InlineData("bundle.7z")]
-    [InlineData("bundle.rar")]
-    public void TheFormatsTheRuntimeCannotReadGoToAProgram(string name)
+    [InlineData("source.tar.xz", true)]
+    [InlineData("source.tar.zst", true)]
+    [InlineData("bundle.7z", false)]
+    [InlineData("bundle.rar", false)]
+    [InlineData("windows.iso", false)]
+    [InlineData("package.deb", false)]
+    public void TheFormatsTheRuntimeCannotReadGoToTheProgram(string name, bool packed)
     {
-        Assert.Equal(ToolArchives.Works, Archives.For(name) is ToolArchives);
+        var format = Archives.For(name);
+
+        if (!SevenZip.Works)
+        {
+            Assert.Null(format);
+
+            return;
+        }
+
+        Assert.True(packed ? format is PackedTarArchives : format is SevenZipArchives);
     }
 
     /// <summary>
-    /// A packed tar this machine has a program for is walked and read through as any other is. The
-    /// program writes it back out as a plain tar, which is the one walk there is.
+    /// A packed tar is walked and read through as any other is. The program unpacks the outer format
+    /// onto its output and what comes out is a plain tar, which is the one walk there is.
     /// </summary>
     [Fact]
-    public async Task APackedTarIsWalkedThroughTheProgramThatReadsIt()
+    public async Task APackedTarIsWalkedThroughTheProgramThatUnpacksIt()
     {
         if (PassedOver())
         {
@@ -296,7 +319,37 @@ public sealed class ArchiveSourceTests : IDisposable
 
         var path = Repacked("source.tar.xz", ("src/main.c", "int main(void){}"), ("readme.md", "hello"));
 
-        using var source = new ArchiveSource(path, ToolArchives.Instance);
+        using var source = new ArchiveSource(path, PackedTarArchives.Instance);
+        var rows = await source.ListAsync("/", showHidden: true, CancellationToken.None);
+        var names = rows.Where(static row => !row.IsParent).Select(static row => row.Name).Order().ToArray();
+
+        Assert.Equal(["readme.md", "src"], names);
+
+        await using var reading = await source.OpenReadAsync("/src/main.c", CancellationToken.None);
+        using var text = new StreamReader(reading);
+
+        Assert.Equal("int main(void){}", await text.ReadToEndAsync());
+    }
+
+    /// <summary>
+    /// The program's own format is walked and read through by the table of contents it keeps, which is
+    /// asked for and read rather than unpacked.
+    /// </summary>
+    [Fact]
+    public async Task TheProgramsOwnFormatIsWalkedByItsTableOfContents()
+    {
+        if (PassedOver())
+        {
+            return;
+        }
+
+        var loose = Loosened(("src/main.c", "int main(void){}"), ("readme.md", "hello"));
+        var path = Path.Combine(_folder, "bundle.7z");
+
+        Ran(SevenZip.Starting("a", path, Path.Combine(loose, "src"), Path.Combine(loose, "readme.md")));
+        Directory.Delete(loose, true);
+
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
         var rows = await source.ListAsync("/", showHidden: true, CancellationToken.None);
         var names = rows.Where(static row => !row.IsParent).Select(static row => row.Name).Order().ToArray();
 

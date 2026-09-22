@@ -5,34 +5,26 @@ using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO;
 using Arlecchino.Commander.Files.Sources;
-using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Files.Archives;
 
 /// <summary>
-/// The formats the runtime does not read, handed to <c>bsdtar</c>, which writes any archive it knows
-/// back out as a plain tar. What comes back is read by the same walk a tar off the disk is.
+/// A tar packed with something the runtime cannot unpack. The program unpacks it onto its output, and
+/// what comes out is a plain tar read by the same walk a tar off the disk is.
 /// </summary>
-public sealed class ToolArchives : ArchiveFormat
+public sealed class PackedTarArchives : ArchiveFormat
 {
-    /// <summary>The program asked, which reads every format it was built with.</summary>
-    public const string Program = "bsdtar";
-
     /// <summary>The one of these there is.</summary>
-    public static readonly ToolArchives Instance = new();
+    public static readonly PackedTarArchives Instance = new();
 
     /// <summary>The names this reads, the longest first so a double ending is read whole.</summary>
     private static readonly string[] Endings =
     [
-        ".tar.xz", ".tar.bz2", ".tar.zst", ".tar.lz", ".tar.lzma",
+        ".tar.xz", ".tar.bz2", ".tar.zst", ".tar.lz", ".tar.lzma", ".tar.z",
         ".txz", ".tbz2", ".tbz", ".tzst",
-        ".7z", ".rar", ".cab", ".lha", ".lzh", ".iso", ".xar", ".cpio", ".deb", ".rpm",
     ];
 
-    /// <summary>Whether the program is on this machine, without which none of this is offered.</summary>
-    public static bool Works { get; } = Programs.Present([Program]).Count > 0;
-
-    /// <summary>Whether a name is one of the formats handed over.</summary>
+    /// <summary>Whether a name is a packed tar, which is two formats one inside the other.</summary>
     /// <param name="name">The file name, in lower case.</param>
     /// <returns><c>true</c> when it is one.</returns>
     public static bool Names(string name)
@@ -56,12 +48,12 @@ public sealed class ToolArchives : ArchiveFormat
     /// <returns>The entries, in the order the program wrote them out.</returns>
     public override IReadOnlyList<ArchiveEntry> Read(string archive)
     {
-        using var emitting = new Emitting(archive);
-        var entries = TarArchives.Listed(emitting.Reader);
+        using var unpacking = new Unpacking(archive);
+        var entries = TarArchives.Listed(unpacking.Reader);
 
-        if (entries.Count == 0 && emitting.Refused)
+        if (entries.Count == 0 && unpacking.Refused)
         {
-            throw new IOException(Loc(LocString.ArchiveRefused, Program, Path.GetFileName(archive)));
+            throw new IOException(Loc(LocString.ArchiveRefused, SevenZip.Program, Path.GetFileName(archive)));
         }
 
         return entries;
@@ -70,25 +62,25 @@ public sealed class ToolArchives : ArchiveFormat
     /// <inheritdoc/>
     public override Stream Open(string archive, string entry)
     {
-        var emitting = new Emitting(archive);
+        var unpacking = new Unpacking(archive);
 
         try
         {
-            return new LeasedStream(TarArchives.Taken(emitting.Reader, entry, archive), emitting);
+            return new LeasedStream(TarArchives.Taken(unpacking.Reader, entry, archive), unpacking);
         }
         catch
         {
-            emitting.Dispose();
+            unpacking.Dispose();
 
             throw;
         }
     }
 
     /// <summary>
-    /// The program writing an archive back out as a tar, and the reader over what it writes. Giving it
-    /// up stops the program: one that is still writing when the reading stops would wait on the pipe.
+    /// The program unpacking an archive onto its output, and the reader over what it writes. Giving it
+    /// up stops the program: one still writing when the reading stops would wait on the pipe.
     /// </summary>
-    private sealed class Emitting : IDisposable
+    private sealed class Unpacking : IDisposable
     {
         private const int Patience = 5000;
 
@@ -96,17 +88,12 @@ public sealed class ToolArchives : ArchiveFormat
 
         /// <summary>Starts the program on one archive.</summary>
         /// <param name="archive">The archive, as a path on this disk.</param>
-        public Emitting(string archive)
+        public Unpacking(string archive)
         {
-            var start = new ProcessStartInfo(Program)
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                ArgumentList = { "-c", "-f", "-", "@" + archive },
-            };
+            var start = SevenZip.Starting("x", "-so", archive);
 
-            _running = Process.Start(start) ?? throw new IOException(Loc(LocString.ArchiveNoProgram, Program));
+            _running = Process.Start(start) ??
+                throw new IOException(Loc(LocString.ArchiveNoProgram, SevenZip.Program));
 
             try
             {

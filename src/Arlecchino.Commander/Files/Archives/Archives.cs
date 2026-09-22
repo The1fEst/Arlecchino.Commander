@@ -21,9 +21,14 @@ public static class Archives
             return TarArchives.Instance;
         }
 
-        if (ToolArchives.Works && ToolArchives.Names(name))
+        if (SevenZip.Works && PackedTarArchives.Names(name))
         {
-            return ToolArchives.Instance;
+            return PackedTarArchives.Instance;
+        }
+
+        if (SevenZip.Works && SevenZipArchives.Names(name))
+        {
+            return SevenZipArchives.Instance;
         }
 
         return Path.GetExtension(name) switch
