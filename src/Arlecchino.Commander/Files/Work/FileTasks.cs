@@ -140,6 +140,13 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
+        if (to is IPacksFiles { Packs: true } packer)
+        {
+            await packer.PackAsync(from, sources, target, outcome, token).ConfigureAwait(false);
+
+            return;
+        }
+
         foreach (var source in sources)
         {
             await CopyOneAsync(from, source, to, to.Combine(target, source.Name), outcome, token)
@@ -163,7 +170,9 @@ public static class FileTasks
     }
 
     public static Task RenameAsync(IFileSource source, FileEntry entry, string target, Outcome outcome) =>
-        MoveOneAsync(source, entry, source, target, outcome, CancellationToken.None);
+        source is IPacksFiles { Packs: true } packer
+            ? packer.RenameAsync(entry, target, outcome, CancellationToken.None)
+            : MoveOneAsync(source, entry, source, target, outcome, CancellationToken.None);
 
     /// <summary>
     /// Gets rid of what was chosen, either for good or by putting it where it could be fetched back
@@ -181,6 +190,13 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
+        if (source is IPacksFiles { Packs: true } packer)
+        {
+            await packer.RemoveAsync(entries, outcome, token).ConfigureAwait(false);
+
+            return;
+        }
+
         foreach (var entry in entries)
         {
             if (token.IsCancellationRequested)

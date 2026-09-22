@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Ssh;
+using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Files.Archives;
@@ -13,10 +15,11 @@ namespace Arlecchino.Commander.Files.Archives;
 /// An archive browsed as though it were a folder. A panel connects to it exactly as it connects to a
 /// server, which is what lets copying out of one be the same key as copying off a disk.
 /// </summary>
-public sealed class ArchiveSource : IFileSource
+public sealed class ArchiveSource : IFileSource, IPacksFiles
 {
     private readonly ArchiveFormat _format;
-    private readonly ArchiveTree _tree;
+
+    private ArchiveTree _tree;
 
     /// <summary>Opens an archive, reading what is in it once.</summary>
     /// <param name="path">The archive, as a path on this disk.</param>
@@ -125,8 +128,142 @@ public sealed class ArchiveSource : IFileSource
     /// <inheritdoc/>
     public Task MoveAsync(string from, string target, CancellationToken token) => throw ReadOnly();
 
+    /// <summary>
+    /// Whether anything can be written into this archive. Only the three formats the program rewrites
+    /// in place are offered: the two-layer ones and the formats it only reads refuse outright.
+    /// </summary>
+    public bool Packs => SevenZip.Works && Archives.Writable(Path);
+
+    /// <inheritdoc/>
+    public async Task PackAsync(
+        IFileSource from,
+        IReadOnlyList<FileEntry> sources,
+        string folder,
+        Outcome outcome,
+        CancellationToken token)
+    {
+        var (working, names, staged) = await StagedAsync(from, sources, folder, outcome, token)
+            .ConfigureAwait(false);
+
+        try
+        {
+            if (names.Length > 0 && !token.IsCancellationRequested)
+            {
+                await SevenZipWriting.AddAsync(Path, working, names, outcome, token).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            Swept(staged);
+            Reread();
+        }
+    }
+
+    /// <summary>
+    /// What the program is run on: a folder holding the files, and the names to add out of it. The
+    /// program takes files off a disk, so anything not on one is laid out in a folder first.
+    /// </summary>
+    /// <param name="from">Where the entries live now.</param>
+    /// <param name="sources">What is going in.</param>
+    /// <param name="folder">Where they go, as a path inside the archive.</param>
+    /// <param name="outcome">What is being told how it went.</param>
+    /// <param name="token">Gives up the work.</param>
+    /// <returns>The folder to run in, the names to add, and the folder to sweep away at the end.</returns>
+    private static async Task<(string Working, string[] Names, string Staged)> StagedAsync(
+        IFileSource from,
+        IReadOnlyList<FileEntry> sources,
+        string folder,
+        Outcome outcome,
+        CancellationToken token)
+    {
+        var insidePath = ArchiveTree.Tidied(folder);
+
+        if (insidePath.Length == 0 &&
+            from is LocalSource &&
+            System.IO.Path.GetDirectoryName(sources[0].Path) is { Length: > 0 } beside)
+        {
+            return (beside, [.. sources.Select(static entry => entry.Name)], "");
+        }
+
+        var stagedFolder = Directory.CreateTempSubdirectory("commander-packing").FullName;
+        var landing = insidePath.Length == 0
+            ? stagedFolder
+            : Directory.CreateDirectory(System.IO.Path.Combine(
+                    stagedFolder,
+                    insidePath.Replace('/', System.IO.Path.DirectorySeparatorChar)))
+                .FullName;
+
+        using var disk = new LocalSource();
+
+        await FileTasks.CopyAsync(from, sources, disk, landing, outcome, token).ConfigureAwait(false);
+
+        var topNames = insidePath.Length == 0
+            ? sources.Select(static entry => entry.Name).ToArray()
+            : [insidePath.Split('/')[0]];
+
+        return (stagedFolder, topNames, stagedFolder);
+    }
+
+    /// <summary>Gets rid of what was laid out for the program, however the run went.</summary>
+    /// <param name="stagedFolder">The folder, or an empty string when nothing was laid out.</param>
+    private static void Swept(string stagedFolder)
+    {
+        if (stagedFolder.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(stagedFolder, true);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+    }
+
+    /// <inheritdoc/>
+    public async Task RemoveAsync(IReadOnlyList<FileEntry> entries, Outcome outcome, CancellationToken token)
+    {
+        var paths = new string[entries.Count];
+
+        for (var at = 0; at < entries.Count; at++)
+        {
+            paths[at] = ArchiveTree.Tidied(entries[at].Path);
+            outcome.Reached(entries[at].Name);
+        }
+
+        await SevenZipWriting.RemoveAsync(Path, paths, outcome, token).ConfigureAwait(false);
+
+        Reread();
+    }
+
+    /// <inheritdoc/>
+    public async Task RenameAsync(FileEntry entry, string target, Outcome outcome, CancellationToken token)
+    {
+        outcome.Reached(entry.Name);
+
+        await SevenZipWriting
+            .RenameAsync(Path, ArchiveTree.Tidied(entry.Path), ArchiveTree.Tidied(target), outcome, token)
+            .ConfigureAwait(false);
+
+        Reread();
+    }
+
     /// <inheritdoc/>
     public void Dispose() { }
+
+    /// <summary>
+    /// Reads the table of contents again, the archive having been rewritten under it. The panel asks
+    /// this source for the folder again when the work finishes, and would be given the old table.
+    /// </summary>
+    private void Reread()
+    {
+        try
+        {
+            _tree = new(_format.Read(Path));
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or
+                                          UnauthorizedAccessException or NotSupportedException) { }
+    }
 
     private IOException ReadOnly() => new(Loc(LocString.ArchiveReadOnly, Label));
 }

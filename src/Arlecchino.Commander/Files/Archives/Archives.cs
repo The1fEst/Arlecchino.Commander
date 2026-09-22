@@ -40,6 +40,20 @@ public static class Archives
     }
 
     /// <summary>
+    /// Whether an archive of this name can be written into. The program rewrites these three in place;
+    /// a format packed inside another it refuses outright, and the rest it only ever reads.
+    /// </summary>
+    /// <param name="path">The file, on this disk.</param>
+    /// <returns><c>true</c> when files can be put in, taken out and renamed.</returns>
+    public static bool Writable(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".zip" or ".jar" or ".war" or ".nupkg" or ".whl" or ".appx" or ".msix" or ".vsix" or ".xpi" or
+                ".crx" or ".7z" or ".tar" => true,
+            _ => false,
+        };
+
+    /// <summary>
     /// Opens an archive, or hands back nothing when it will not open. A file that names itself an
     /// archive and is not one, or is one that was cut off in the middle, is not worth a dialog.
     /// </summary>
