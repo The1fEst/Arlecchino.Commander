@@ -1,4 +1,5 @@
 using System;
+using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -93,6 +94,37 @@ public sealed class CommanderArchiveTests : IDisposable
 
         Assert.True(_app.Until(() => _app.Sessions.Left.Source is not ArchiveSource));
         Assert.Equal(_app.Folder, _app.Sessions.Left.Folder);
+    }
+
+    /// <summary>
+    /// An archive nothing can be written into says so instead of opening the dialog. A question
+    /// answered and then refused is worse than one never asked.
+    /// </summary>
+    [Fact]
+    public void AnArchiveThatCannotBeWrittenIntoRefusesBeforeTheDialog()
+    {
+        var packedPath = Path.Combine(_app.Folder, "bundle.tar.gz");
+        var loose = Directory.CreateTempSubdirectory("commander-packed").FullName;
+
+        File.WriteAllText(Path.Combine(loose, "inside.txt"), "what is in it");
+
+        using (var file = File.Create(packedPath))
+        using (var zipping = new GZipStream(file, CompressionMode.Compress))
+        {
+            TarFile.CreateFromDirectory(loose, zipping, includeBaseDirectory: false);
+        }
+
+        Directory.Delete(loose, true);
+
+        _app.Sessions.Left.Connect(new ArchiveSource(packedPath, TarArchives.Instance), "/");
+
+        Assert.True(_app.Shows("inside.txt"));
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.F8);
+        _app.Frame();
+
+        Assert.Contains("nothing can be written into it", _app.State.Output, StringComparison.Ordinal);
     }
 
     /// <summary>

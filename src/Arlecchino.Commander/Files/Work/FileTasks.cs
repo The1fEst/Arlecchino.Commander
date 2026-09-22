@@ -162,6 +162,19 @@ public static class FileTasks
         Outcome outcome,
         CancellationToken token)
     {
+        if (!ReferenceEquals(from, to) &&
+            (to is IPacksFiles { Packs: true } || from is IPacksFiles { Packs: true }))
+        {
+            await CopyAsync(from, sources, to, target, outcome, token).ConfigureAwait(false);
+
+            if (!outcome.Failed && !token.IsCancellationRequested)
+            {
+                await DeleteAsync(from, sources, toTrash: false, outcome, token).ConfigureAwait(false);
+            }
+
+            return;
+        }
+
         foreach (var source in sources)
         {
             await MoveOneAsync(from, source, to, to.Combine(target, source.Name), outcome, token)

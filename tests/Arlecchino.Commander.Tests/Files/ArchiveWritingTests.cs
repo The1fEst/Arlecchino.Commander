@@ -147,6 +147,64 @@ public sealed class ArchiveWritingTests : IDisposable
     }
 
     /// <summary>
+    /// A move out of an archive takes the entry out of it as well as copying it, which a move that was
+    /// only a copy would not. What is left behind is the rest of the archive.
+    /// </summary>
+    [Fact]
+    public async Task AMoveOutOfTheArchiveTakesTheEntryOutOfIt()
+    {
+        if (PassedOver())
+        {
+            return;
+        }
+
+        var path = Archive("bundle.7z");
+        var landing = Directory.CreateDirectory(Path.Combine(_folder, "out")).FullName;
+
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
+        using var disk = new LocalSource();
+        var outcome = new Outcome();
+        var rows = await source.ListAsync("/tree", showHidden: true, CancellationToken.None);
+        var goneFile = rows.Single(static row => row.Name == "gone.txt");
+
+        await FileTasks.MoveAsync(source, [goneFile], disk, landing, outcome, CancellationToken.None);
+
+        Assert.False(outcome.Failed);
+        Assert.Equal("gone", await File.ReadAllTextAsync(Path.Combine(landing, "gone.txt")));
+        Assert.Equal(["kept.txt"], await Inside(source, "/tree"));
+    }
+
+    /// <summary>
+    /// A move into an archive puts the file in and takes it off the disk. The two halves are one key,
+    /// and a move that left the file where it was would be a copy under another name.
+    /// </summary>
+    [Fact]
+    public async Task AMoveIntoTheArchiveTakesTheFileOffTheDisk()
+    {
+        if (PassedOver())
+        {
+            return;
+        }
+
+        var path = Archive("bundle.7z");
+        var beside = Path.Combine(_folder, "added.txt");
+
+        await File.WriteAllTextAsync(beside, "added");
+
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
+        using var disk = new LocalSource();
+        var outcome = new Outcome();
+        var entries = await disk.ListAsync(_folder, showHidden: false, CancellationToken.None);
+        var file = entries.Single(static entry => entry.Name == "added.txt");
+
+        await FileTasks.MoveAsync(disk, [file], source, "/tree", outcome, CancellationToken.None);
+
+        Assert.False(outcome.Failed);
+        Assert.Equal(["added.txt", "gone.txt", "kept.txt"], await Inside(source, "/tree"));
+        Assert.False(File.Exists(beside));
+    }
+
+    /// <summary>
     /// The formats the program will not rewrite are known before anything is tried. A two-layer archive
     /// reads perfectly well and refuses every write, which is worth knowing before the dialog opens.
     /// </summary>

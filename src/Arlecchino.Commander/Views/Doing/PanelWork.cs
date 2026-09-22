@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Widgets.Panels;
 using Arlecchino.Commander.Widgets.Dialogs;
@@ -51,6 +52,24 @@ public abstract class PanelWork
         }
 
         State.Output = Loc(LocString.SaidNothingSelected);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Whether a source refuses to be written into, said out loud when it does. It is asked before the
+    /// dialog rather than after, since an archive nothing can be written into will not change its mind.
+    /// </summary>
+    /// <param name="source">Where the work would be done.</param>
+    /// <returns><c>true</c> when nothing can be written there.</returns>
+    protected bool Sealed(IFileSource source)
+    {
+        if (source is not IPacksFiles { Packs: false })
+        {
+            return false;
+        }
+
+        State.Output = Loc(LocString.ArchiveReadOnly, source.Label);
 
         return true;
     }

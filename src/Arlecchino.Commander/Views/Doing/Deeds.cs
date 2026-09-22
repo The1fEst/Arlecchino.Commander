@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -33,7 +34,7 @@ public sealed class Deeds : PanelWork
         var to = Passive;
         var sources = from.Targets();
 
-        if (Nothing(sources))
+        if (Nothing(sources) || Sealed(to.Source))
         {
             return;
         }
@@ -64,7 +65,7 @@ public sealed class Deeds : PanelWork
         var to = Passive;
         var sources = from.Targets();
 
-        if (Nothing(sources))
+        if (Nothing(sources) || Sealed(to.Source) || Sealed(from.Source))
         {
             return;
         }
@@ -93,7 +94,7 @@ public sealed class Deeds : PanelWork
     {
         var panel = Active;
 
-        if (panel.Current is not { IsParent: false } current)
+        if (panel.Current is not { IsParent: false } current || Sealed(panel.Source))
         {
             return;
         }
@@ -123,6 +124,13 @@ public sealed class Deeds : PanelWork
     public void MakeFolder()
     {
         var panel = Active;
+
+        if (panel.Source is IPacksFiles)
+        {
+            State.Output = Loc(LocString.ArchiveNoFolders, panel.Source.Label);
+
+            return;
+        }
 
         Dialogs.Ask(new()
         {
@@ -155,7 +163,7 @@ public sealed class Deeds : PanelWork
         var panel = Active;
         var sources = panel.Targets();
 
-        if (Nothing(sources))
+        if (Nothing(sources) || Sealed(panel.Source))
         {
             return;
         }
