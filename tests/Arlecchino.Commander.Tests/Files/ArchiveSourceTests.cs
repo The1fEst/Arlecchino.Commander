@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
@@ -10,6 +11,7 @@ using Arlecchino.Commander.Files.Archives;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Work;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Arlecchino.Commander.Tests.Files;
 
@@ -21,7 +23,28 @@ public sealed class ArchiveSourceTests : IDisposable
 {
     private readonly string _folder = Directory.CreateTempSubdirectory("commander-archive").FullName;
 
+    private readonly ITestOutputHelper _output;
+
+    public ArchiveSourceTests(ITestOutputHelper output) => _output = output;
+
     public void Dispose() => Directory.Delete(_folder, true);
+
+    /// <summary>
+    /// Whether the machine running the tests has the program the packed formats are handed to. Without
+    /// it there is nothing to hold to account, and the run says so rather than failing.
+    /// </summary>
+    /// <returns><c>true</c> when the test is to be passed over.</returns>
+    private bool PassedOver()
+    {
+        if (ToolArchives.Works)
+        {
+            return false;
+        }
+
+        _output.WriteLine($"Passed over: this machine has no {ToolArchives.Program}.");
+
+        return true;
+    }
 
     private string Zipped(string name, params (string Path, string Text)[] entries)
     {
@@ -62,6 +85,36 @@ public sealed class ArchiveSourceTests : IDisposable
         }
 
         Directory.Delete(loose, true);
+
+        return path;
+    }
+
+    /// <summary>
+    /// A tar packed with something the runtime cannot unpack, made by the same program that reads it.
+    /// Writing one by hand would be writing the format this is meant to be testing the reading of.
+    /// </summary>
+    /// <param name="name">What the archive is called, which is what says how it is packed.</param>
+    /// <param name="entries">What to put in it.</param>
+    /// <returns>The archive, as a path on this disk.</returns>
+    private string Repacked(string name, params (string Path, string Text)[] entries)
+    {
+        var plain = Tarred("plain.tar", entries);
+        var path = Path.Combine(_folder, name);
+        var start = new ProcessStartInfo(ToolArchives.Program)
+        {
+            UseShellExecute = false,
+            WorkingDirectory = _folder,
+            ArgumentList = { "-c", "-a", "-f", path, "@" + plain },
+        };
+
+        using (var running = Process.Start(start)!)
+        {
+            running.WaitForExit();
+
+            Assert.Equal(0, running.ExitCode);
+        }
+
+        File.Delete(plain);
 
         return path;
     }
@@ -212,6 +265,63 @@ public sealed class ArchiveSourceTests : IDisposable
     {
         Assert.Same(TarArchives.Instance, Archives.For("source.tar.gz"));
         Assert.Same(TarArchives.Instance, Archives.For("source.tgz"));
+    }
+
+    /// <summary>
+    /// The formats the runtime cannot read are handed to a program that can, on a machine that has
+    /// one. Without it, they are not offered at all and the key hands the file to the desktop.
+    /// </summary>
+    /// <param name="name">The file.</param>
+    [Theory]
+    [InlineData("source.tar.xz")]
+    [InlineData("source.tar.zst")]
+    [InlineData("bundle.7z")]
+    [InlineData("bundle.rar")]
+    public void TheFormatsTheRuntimeCannotReadGoToAProgram(string name)
+    {
+        Assert.Equal(ToolArchives.Works, Archives.For(name) is ToolArchives);
+    }
+
+    /// <summary>
+    /// A packed tar this machine has a program for is walked and read through as any other is. The
+    /// program writes it back out as a plain tar, which is the one walk there is.
+    /// </summary>
+    [Fact]
+    public async Task APackedTarIsWalkedThroughTheProgramThatReadsIt()
+    {
+        if (PassedOver())
+        {
+            return;
+        }
+
+        var path = Repacked("source.tar.xz", ("src/main.c", "int main(void){}"), ("readme.md", "hello"));
+
+        using var source = new ArchiveSource(path, ToolArchives.Instance);
+        var rows = await source.ListAsync("/", showHidden: true, CancellationToken.None);
+        var names = rows.Where(static row => !row.IsParent).Select(static row => row.Name).Order().ToArray();
+
+        Assert.Equal(["readme.md", "src"], names);
+
+        await using var reading = await source.OpenReadAsync("/src/main.c", CancellationToken.None);
+        using var text = new StreamReader(reading);
+
+        Assert.Equal("int main(void){}", await text.ReadToEndAsync());
+    }
+
+    /// <summary>A file the program will not read opens as nothing, rather than as an empty archive.</summary>
+    [Fact]
+    public void AFileTheProgramWillNotReadOpensAsNothing()
+    {
+        if (PassedOver())
+        {
+            return;
+        }
+
+        var path = Path.Combine(_folder, "broken.7z");
+
+        File.WriteAllText(path, "this is not an archive of any kind");
+
+        Assert.Null(Archives.Open(path));
     }
 
     /// <summary>A tar is walked as a zip is, folders and all, and a file comes out of it whole.</summary>

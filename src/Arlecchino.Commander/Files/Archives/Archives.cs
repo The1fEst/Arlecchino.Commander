@@ -21,6 +21,11 @@ public static class Archives
             return TarArchives.Instance;
         }
 
+        if (ToolArchives.Works && ToolArchives.Names(name))
+        {
+            return ToolArchives.Instance;
+        }
+
         return Path.GetExtension(name) switch
         {
             ".zip" or ".jar" or ".war" or ".nupkg" or ".whl" or ".appx" or ".msix" or ".vsix" or ".xpi" or

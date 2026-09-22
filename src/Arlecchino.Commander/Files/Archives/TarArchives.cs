@@ -39,6 +39,18 @@ public sealed class TarArchives : ArchiveFormat
     public override IReadOnlyList<ArchiveEntry> Read(string archive)
     {
         using var reader = Reading(archive);
+
+        return Listed(reader);
+    }
+
+    /// <summary>
+    /// Everything a reader has left in it. It stands apart so that an archive some program unpacked
+    /// into a tar for us is read by the same walk as a tar off the disk.
+    /// </summary>
+    /// <param name="reader">The reader, which is walked to its end.</param>
+    /// <returns>The entries, in the order the archive wrote them.</returns>
+    public static List<ArchiveEntry> Listed(TarReader reader)
+    {
         var entries = new List<ArchiveEntry>();
 
         while (reader.GetNextEntry(copyData: false) is { } entry)
@@ -54,6 +66,27 @@ public sealed class TarArchives : ArchiveFormat
     }
 
     /// <summary>
+    /// Reads through a reader until the entry turns up and hands back its bytes. The reader is left
+    /// where it stopped, since what comes back is only readable while the reader is open.
+    /// </summary>
+    /// <param name="reader">The reader, walked from where it is.</param>
+    /// <param name="entry">The entry, as its path inside the archive.</param>
+    /// <param name="archive">The archive, named in the complaint when there is no such entry.</param>
+    /// <returns>The bytes of that entry.</returns>
+    public static Stream Taken(TarReader reader, string entry, string archive)
+    {
+        while (reader.GetNextEntry(copyData: false) is { } found)
+        {
+            if (Same(found.Name, entry) && found.DataStream is { } data)
+            {
+                return data;
+            }
+        }
+
+        throw new FileNotFoundException(Loc(LocString.ArchiveNoEntry, entry), archive);
+    }
+
+    /// <summary>
     /// Reads through the archive until the entry turns up, and hands back its bytes with the reader
     /// still open behind them. A tar holds each file where it lies, so this is the only way to one.
     /// </summary>
@@ -66,15 +99,7 @@ public sealed class TarArchives : ArchiveFormat
 
         try
         {
-            while (reader.GetNextEntry(copyData: false) is { } found)
-            {
-                if (Same(found.Name, entry) && found.DataStream is { } data)
-                {
-                    return new LeasedStream(data, reader);
-                }
-            }
-
-            throw new FileNotFoundException(Loc(LocString.ArchiveNoEntry, entry), archive);
+            return new LeasedStream(Taken(reader, entry, archive), reader);
         }
         catch
         {
