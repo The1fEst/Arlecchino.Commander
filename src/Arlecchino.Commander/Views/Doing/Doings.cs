@@ -239,7 +239,7 @@ public sealed class Doings
     /// <param name="opened">Whether the machine had anything to open it with.</param>
     /// <returns>The words for the bar.</returns>
     private static string Said(FileEntry entry, bool opened) =>
-        (opened, !SevenZip.Works && Archives.OnlySevenZip(entry.Path)) switch
+        (opened, !SevenZip.Works && Archives.Names(entry.Path)) switch
         {
             (true, false) => Loc(LocString.SaidOpened, entry.Name),
             (true, true) => Loc(LocString.SaidOpenedNoArchiver, entry.Name),
@@ -288,6 +288,13 @@ public sealed class Doings
         if (panel.Source.IsRemote)
         {
             _state.Output = Loc(LocString.SaidArchivesHereOnly);
+
+            return;
+        }
+
+        if (!SevenZip.Works)
+        {
+            _state.Output = Loc(LocString.SaidNoArchiverToEnter, current.Name);
 
             return;
         }

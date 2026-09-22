@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using Arlecchino.Commander.Files.Sources;
@@ -8,8 +7,8 @@ using Arlecchino.Commander.Files.Sources;
 namespace Arlecchino.Commander.Files.Archives;
 
 /// <summary>
-/// Everything the program reads that holds a table of contents of its own: its own format, and the
-/// dozen container formats nothing else here opens. It is asked for the table, then for one entry.
+/// Everything the program reads that holds a table of contents of its own: zips, plain tars, its own
+/// format and the container formats. It is asked for the table, then for one entry.
 /// </summary>
 public sealed class SevenZipArchives : ArchiveFormat
 {
@@ -17,11 +16,12 @@ public sealed class SevenZipArchives : ArchiveFormat
     public static readonly SevenZipArchives Instance = new();
 
     /// <summary>
-    /// The names this reads. They are the formats the program opens that the runtime cannot, less the
-    /// disk images whose names are shared with things that are not archives at all.
+    /// The names this reads. They are the formats the program opens in one run, less the disk images
+    /// whose names are shared with things that are not archives, and the documents that are zips.
     /// </summary>
     private static readonly string[] Endings =
     [
+        ".zip", ".jar", ".war", ".nupkg", ".whl", ".appx", ".msix", ".vsix", ".xpi", ".crx", ".tar",
         ".7z", ".rar", ".cab", ".lzh", ".lha", ".arj", ".xar", ".cpio", ".deb", ".rpm",
         ".iso", ".udf", ".wim", ".swm", ".esd", ".msi", ".msp", ".chm", ".dmg", ".squashfs", ".cramfs",
         ".vhd", ".vhdx", ".vmdk", ".vdi", ".qcow", ".qcow2",
@@ -106,16 +106,7 @@ public sealed class SevenZipArchives : ArchiveFormat
         /// <inheritdoc/>
         public void Dispose()
         {
-            try
-            {
-                if (!_running.HasExited)
-                {
-                    _running.Kill(entireProcessTree: true);
-                }
-            }
-            catch (Exception error) when (error is InvalidOperationException or Win32Exception or
-                                              NotSupportedException) { }
-
+            SevenZip.Stop(_running);
             _running.Dispose();
         }
     }

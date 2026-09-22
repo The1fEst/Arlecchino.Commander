@@ -53,6 +53,11 @@ public sealed class CommanderArchiveTests : IDisposable
     [Fact]
     public void EnterOnAnArchiveWalksIntoIt()
     {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
         OnTheArchive();
         _app.Press(ConsoleKey.Enter);
 
@@ -66,6 +71,11 @@ public sealed class CommanderArchiveTests : IDisposable
     [Fact]
     public void AFolderInsideTheArchiveIsWalkedInto()
     {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
         OnTheArchive();
         _app.Press(ConsoleKey.Enter);
 
@@ -86,6 +96,11 @@ public sealed class CommanderArchiveTests : IDisposable
     [Fact]
     public void LeavingTheRootPutsThePanelBackOnTheArchive()
     {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
         OnTheArchive();
         _app.Press(ConsoleKey.Enter);
 
@@ -215,6 +230,11 @@ public sealed class CommanderArchiveTests : IDisposable
     [Fact]
     public void AnArchiveThatCannotBeWrittenIntoRefusesBeforeTheDialog()
     {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
         var packedPath = Path.Combine(_app.Folder, "bundle.tar.gz");
         var loose = Directory.CreateTempSubdirectory("commander-packed").FullName;
 
@@ -228,7 +248,7 @@ public sealed class CommanderArchiveTests : IDisposable
 
         Directory.Delete(loose, true);
 
-        _app.Sessions.Left.Connect(new ArchiveSource(packedPath, TarArchives.Instance), "/");
+        _app.Sessions.Left.Connect(new ArchiveSource(packedPath, PackedTarArchives.Instance), "/");
 
         Assert.True(_app.Shows("inside.txt"));
 
@@ -246,6 +266,11 @@ public sealed class CommanderArchiveTests : IDisposable
     [Fact]
     public void AnArchiveUnderAnyNameIsWalkedIntoByTheKey()
     {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
         var folder = Directory.CreateDirectory(Path.Combine(_app.Folder, "unnamed")).FullName;
 
         File.Copy(Path.Combine(_app.Folder, "bundle.zip"), Path.Combine(folder, "bundle.data"));
@@ -266,6 +291,11 @@ public sealed class CommanderArchiveTests : IDisposable
     [Fact]
     public void AFileThatIsNoArchiveSaysSo()
     {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
         var folder = Directory.CreateDirectory(Path.Combine(_app.Folder, "plain")).FullName;
 
         File.WriteAllText(Path.Combine(folder, "notes.txt"), "nothing packed in here");
@@ -288,6 +318,11 @@ public sealed class CommanderArchiveTests : IDisposable
     [Fact]
     public void AFileInsideTheArchiveIsReadInTheViewer()
     {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
         OnTheArchive();
         _app.Press(ConsoleKey.Enter);
 

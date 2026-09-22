@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.Versioning;
@@ -52,6 +53,24 @@ public static class SevenZip
         }
 
         return start;
+    }
+
+    /// <summary>
+    /// Stops a run of the program if it is still going. One still writing to a pipe that is no longer
+    /// read would wait on it for as long as the application runs.
+    /// </summary>
+    /// <param name="running">The run.</param>
+    public static void Stop(Process running)
+    {
+        try
+        {
+            if (!running.HasExited)
+            {
+                running.Kill(entireProcessTree: true);
+            }
+        }
+        catch (Exception error) when (error is InvalidOperationException or Win32Exception or
+                                          NotSupportedException) { }
     }
 
     private static string Found()

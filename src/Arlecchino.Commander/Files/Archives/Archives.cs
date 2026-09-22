@@ -9,8 +9,8 @@ using Arlecchino.Commander.Model;
 namespace Arlecchino.Commander.Files.Archives;
 
 /// <summary>
-/// Which files are archives that can be walked into, and what reads each of them. The document formats
-/// that are zips underneath are left out, since what anyone means by opening one is the document.
+/// Which files are archives that can be walked into, and what reads each of them. Every one is read by
+/// 7-Zip, so a machine without it walks into none of them.
 /// </summary>
 public static class Archives
 {
@@ -19,38 +19,22 @@ public static class Archives
     /// <returns>The format, or <c>null</c>.</returns>
     public static ArchiveFormat? For(string path)
     {
-        var name = Path.GetFileName(path).ToLowerInvariant();
-
-        if (TarArchives.Names(name))
+        if (!SevenZip.Works || !Names(path))
         {
-            return TarArchives.Instance;
+            return null;
         }
 
-        if (SevenZip.Works && PackedTarArchives.Names(name))
-        {
-            return PackedTarArchives.Instance;
-        }
-
-        if (SevenZip.Works && SevenZipArchives.Names(name))
-        {
-            return SevenZipArchives.Instance;
-        }
-
-        return Path.GetExtension(name) switch
-        {
-            ".zip" or ".jar" or ".war" or ".nupkg" or ".whl" or ".appx" or ".msix" or ".vsix" or ".xpi" or
-                ".crx" => ZipArchives.Instance,
-            _ => null,
-        };
+        return PackedTarArchives.Names(Path.GetFileName(path).ToLowerInvariant())
+            ? PackedTarArchives.Instance
+            : SevenZipArchives.Instance;
     }
 
     /// <summary>
-    /// Whether a file of this name is an archive nothing but 7-Zip reads. The runtime reads zips and
-    /// tars itself, so those are walked into on any machine and these on one that has the program.
+    /// Whether a file of this name is an archive, even on a machine without the program to read it. It is what tells a machine without 7-Zip which files it is missing it for.
     /// </summary>
     /// <param name="path">The file, on this disk.</param>
-    /// <returns><c>true</c> when only the program opens it.</returns>
-    public static bool OnlySevenZip(string path)
+    /// <returns><c>true</c> when the name is an archive's.</returns>
+    public static bool Names(string path)
     {
         var name = Path.GetFileName(path).ToLowerInvariant();
 
@@ -99,18 +83,6 @@ public static class Archives
         };
 
     /// <summary>
-    /// Why an archive of this name refuses to be written into. The formats the program rewrites refuse
-    /// only for want of the program, and the rest refuse whether the machine has it or not.
-    /// </summary>
-    /// <param name="path">The file, on this disk.</param>
-    /// <param name="works">Whether the program is on this machine.</param>
-    /// <returns>The words for the bar.</returns>
-    public static string Refusal(string path, bool works) =>
-        Writable(path) && !works
-            ? Loc(LocString.ArchiveNoArchiver, Path.GetFileName(path))
-            : Loc(LocString.ArchiveReadOnly, Path.GetFileName(path));
-
-    /// <summary>
     /// Opens an archive, or hands back nothing when it will not open. A file that names itself an
     /// archive and is not one, or is one that was cut off in the middle, is not worth a dialog.
     /// </summary>
@@ -120,12 +92,11 @@ public static class Archives
 
     /// <summary>
     /// What reads a file as an archive whatever it is called. 7-Zip tells a format by what is in the
-    /// file, and without it the zip is the one worth trying, being what most unnamed archives are.
+    /// file, so a name that says nothing is handed to it as a single-layer archive.
     /// </summary>
     /// <param name="path">The file, on this disk.</param>
     /// <returns>The format to try.</returns>
-    public static ArchiveFormat Fallback(string path) =>
-        For(path) ?? (SevenZip.Works ? SevenZipArchives.Instance : ZipArchives.Instance);
+    public static ArchiveFormat Fallback(string path) => For(path) ?? SevenZipArchives.Instance;
 
     /// <summary>Opens an archive with a format already chosen, or hands back nothing.</summary>
     /// <param name="path">The file, on this disk.</param>

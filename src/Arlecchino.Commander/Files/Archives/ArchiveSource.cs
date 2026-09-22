@@ -132,13 +132,7 @@ public sealed class ArchiveSource : IFileSource, IPacksFiles
     /// Whether anything can be written into this archive. Only the three formats the program rewrites
     /// in place are offered: the two-layer ones and the formats it only reads refuse outright.
     /// </summary>
-    public bool Packs => SevenZip.Works && Archives.Writable(Path);
-
-    /// <summary>
-    /// Why nothing can be written into this archive. A format the program rewrites is refused only
-    /// because the program is not on this machine, which is worth saying rather than blaming the file.
-    /// </summary>
-    public string Refusal => Archives.Refusal(Path, SevenZip.Works);
+    public bool Packs => Archives.Writable(Path);
 
     /// <inheritdoc/>
     public async Task PackAsync(
@@ -271,5 +265,5 @@ public sealed class ArchiveSource : IFileSource, IPacksFiles
                                           UnauthorizedAccessException or NotSupportedException) { }
     }
 
-    private IOException ReadOnly() => new(Refusal);
+    private IOException ReadOnly() => new(Loc(LocString.ArchiveReadOnly, Label));
 }

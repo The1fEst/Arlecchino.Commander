@@ -93,20 +93,6 @@ public sealed class ExtractionTests : IDisposable
         Assert.Equal(stem, Extraction.Stem(archive));
     }
 
-    /// <param name="archive">What the archive is called.</param>
-    /// <param name="packed">Whether it is a tar inside another format.</param>
-    [Theory]
-    [InlineData("bundle.tar.gz", true)]
-    [InlineData("bundle.TGZ", true)]
-    [InlineData("bundle.tar.zst", true)]
-    [InlineData("bundle.tar", false)]
-    [InlineData("bundle.zip", false)]
-    [InlineData("bundle.7z", false)]
-    public void ATarInsideAnotherFormatIsKnownByName(string archive, bool packed)
-    {
-        Assert.Equal(packed, Extraction.Packed(archive));
-    }
-
     /// <summary>A zip with several things at its top is unpacked into a folder named after it.</summary>
     [Fact]
     public async Task AZipIsUnpackedIntoAFolderNamedAfterIt()

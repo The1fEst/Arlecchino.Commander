@@ -146,9 +146,14 @@ public sealed class ArchiveSourceTests : IDisposable
     [Fact]
     public async Task TheRootOfTheArchiveListsWhatIsInIt()
     {
+        if (PassedOver())
+        {
+            return;
+        }
+
         var path = Zipped("bundle.zip", ("readme.md", "hello"), ("src/main.c", "int main(void){}"));
 
-        using var source = new ArchiveSource(path, ZipArchives.Instance);
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
         var rows = await source.ListAsync("/", showHidden: true, CancellationToken.None);
         var names = rows.Where(static row => !row.IsParent).Select(static row => row.Name).Order().ToArray();
 
@@ -163,9 +168,14 @@ public sealed class ArchiveSourceTests : IDisposable
     [Fact]
     public async Task AFileIsReadOutOfTheArchive()
     {
+        if (PassedOver())
+        {
+            return;
+        }
+
         var path = Zipped("bundle.zip", ("src/main.c", "int main(void){}"));
 
-        using var source = new ArchiveSource(path, ZipArchives.Instance);
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
 
         await using var reading = await source.OpenReadAsync("/src/main.c", CancellationToken.None);
         using var text = new StreamReader(reading);
@@ -174,15 +184,20 @@ public sealed class ArchiveSourceTests : IDisposable
     }
 
     /// <summary>
-    /// The archive stays open behind the stream. A zip unpacks as it is read, so closing it on the way
-    /// out of the call that opened the entry would leave the reader with nothing to read from.
+    /// The program stays running behind the stream. It writes the entry as it is read, so stopping it
+    /// on the way out of the call that opened the entry would leave the reader with nothing to read.
     /// </summary>
     [Fact]
     public async Task TheArchiveOutlivesTheStreamTakenOutOfIt()
     {
+        if (PassedOver())
+        {
+            return;
+        }
+
         var path = Zipped("bundle.zip", ("long.txt", new('x', 200_000)));
 
-        using var source = new ArchiveSource(path, ZipArchives.Instance);
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
 
         await using var reading = await source.OpenReadAsync("/long.txt", CancellationToken.None);
         var copy = new MemoryStream();
@@ -199,11 +214,16 @@ public sealed class ArchiveSourceTests : IDisposable
     [Fact]
     public async Task AFolderIsCarriedOutOfTheArchiveOntoTheDisk()
     {
+        if (PassedOver())
+        {
+            return;
+        }
+
         var path = Zipped("bundle.zip", ("src/main.c", "int main(void){}"), ("src/deep/other.c", "void f(){}"));
         var landing = Directory.CreateDirectory(Path.Combine(_folder, "out")).FullName;
         var outcome = new Outcome();
 
-        using var source = new ArchiveSource(path, ZipArchives.Instance);
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
         using var disk = new LocalSource();
 
         var rows = await source.ListAsync("/", showHidden: true, CancellationToken.None);
@@ -222,9 +242,14 @@ public sealed class ArchiveSourceTests : IDisposable
     [Fact]
     public async Task NothingCanBeWrittenIntoAnArchive()
     {
+        if (PassedOver())
+        {
+            return;
+        }
+
         var path = Zipped("bundle.zip", ("readme.md", "hello"));
 
-        using var source = new ArchiveSource(path, ZipArchives.Instance);
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
         var error = await Assert.ThrowsAsync<IOException>(() => source.CreateAsync("/new.txt", CancellationToken.None));
 
         Assert.Contains("bundle.zip", error.Message, StringComparison.Ordinal);
@@ -255,64 +280,46 @@ public sealed class ArchiveSourceTests : IDisposable
         Assert.Null(Archives.For(name));
     }
 
-    [Theory]
-    [InlineData("bundle.zip")]
-    [InlineData("library.jar")]
-    [InlineData("package.nupkg")]
-    [InlineData("source.tar")]
-    [InlineData("source.tar.gz")]
-    [InlineData("source.tgz")]
-    public void TheArchivesWorthWalkingIntoAreOpened(string name)
-    {
-        Assert.NotNull(Archives.For(name));
-    }
-
     /// <summary>
-    /// Which names are archives the runtime cannot read a word of. These are the ones a machine
-    /// without the program is told about, the rest being walked into whether it has one or not.
+    /// Which names are archives, even on a machine without the program to read them. These are
+    /// the ones a machine without it is told it is missing the program for.
     /// </summary>
     /// <param name="name">The file.</param>
-    /// <param name="only">Whether nothing but the program opens it.</param>
+    /// <param name="archive">Whether the name is an archive's.</param>
     [Theory]
+    [InlineData("bundle.zip", true)]
+    [InlineData("library.jar", true)]
+    [InlineData("package.nupkg", true)]
+    [InlineData("source.tar", true)]
+    [InlineData("source.tar.gz", true)]
+    [InlineData("source.tgz", true)]
     [InlineData("bundle.7z", true)]
-    [InlineData("bundle.rar", true)]
     [InlineData("windows.iso", true)]
-    [InlineData("source.tar.xz", true)]
-    [InlineData("source.tar.zst", true)]
-    [InlineData("bundle.zip", false)]
-    [InlineData("source.tar", false)]
-    [InlineData("source.tar.gz", false)]
     [InlineData("notes.txt", false)]
-    public void TheFormatsOnlyTheProgramReadsAreKnownByName(string name, bool only)
+    [InlineData("notes.docx", false)]
+    public void ArchivesAreKnownByName(string name, bool archive)
     {
-        Assert.Equal(only, Archives.OnlySevenZip(name));
+        Assert.Equal(archive, Archives.Names(name));
     }
 
     /// <summary>
-    /// A tar packed with <c>gzip</c> is read as the tar it is. The name ends in both, and the outer
-    /// format alone makes a single entry of a whole tree.
-    /// </summary>
-    [Fact]
-    public void AGzippedTarIsReadAsTheTarItIs()
-    {
-        Assert.Same(TarArchives.Instance, Archives.For("source.tar.gz"));
-        Assert.Same(TarArchives.Instance, Archives.For("source.tgz"));
-    }
-
-    /// <summary>
-    /// The formats the runtime cannot read are handed to a program that can, on a machine that has
-    /// one. Without it, they are not offered at all and the key hands the file to the desktop.
+    /// Every archive is handed to the program, on a machine that has it: a tar packed in another format
+    /// to the two runs that unpack it onto a pipe, and the rest to one. Without it, none is offered.
     /// </summary>
     /// <param name="name">The file.</param>
     /// <param name="packed">Whether it is two formats one inside the other.</param>
     [Theory]
+    [InlineData("source.tar.gz", true)]
+    [InlineData("source.tgz", true)]
     [InlineData("source.tar.xz", true)]
     [InlineData("source.tar.zst", true)]
+    [InlineData("bundle.zip", false)]
+    [InlineData("source.tar", false)]
     [InlineData("bundle.7z", false)]
     [InlineData("bundle.rar", false)]
     [InlineData("windows.iso", false)]
     [InlineData("package.deb", false)]
-    public void TheFormatsTheRuntimeCannotReadGoToTheProgram(string name, bool packed)
+    public void EveryArchiveGoesToTheProgram(string name, bool packed)
     {
         var format = Archives.For(name);
 
@@ -405,9 +412,14 @@ public sealed class ArchiveSourceTests : IDisposable
     [InlineData("source.tar.gz")]
     public async Task ATarIsWalkedAndReadThroughAsAZipIs(string name)
     {
+        if (PassedOver())
+        {
+            return;
+        }
+
         var path = Tarred(name, ("src/main.c", "int main(void){}"), ("readme.md", "hello"));
 
-        using var source = new ArchiveSource(path, TarArchives.Instance);
+        using var source = new ArchiveSource(path, Archives.For(path)!);
         var rows = await source.ListAsync("/", showHidden: true, CancellationToken.None);
         var names = rows.Where(static row => !row.IsParent).Select(static row => row.Name).Order().ToArray();
 

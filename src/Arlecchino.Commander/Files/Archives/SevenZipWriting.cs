@@ -80,8 +80,8 @@ public static class SevenZipWriting
 
             await using (token.Register(() =>
                              {
-                                 Stopped(outer);
-                                 Stopped(inner);
+                                 SevenZip.Stop(outer);
+                                 SevenZip.Stop(inner);
                              })
                              .ConfigureAwait(false))
             {
@@ -132,7 +132,7 @@ public static class SevenZipWriting
         }
         catch
         {
-            Stopped(outer);
+            SevenZip.Stop(outer);
 
             throw;
         }
@@ -154,7 +154,7 @@ public static class SevenZipWriting
         }
         catch (IOException)
         {
-            Stopped(outer);
+            SevenZip.Stop(outer);
         }
         finally
         {
@@ -228,7 +228,7 @@ public static class SevenZipWriting
             var watching = WatchedAsync(running.StandardOutput, outcome, batchBytes);
             var complaintText = running.StandardError.ReadToEndAsync(CancellationToken.None);
 
-            await using (token.Register(() => Stopped(running)).ConfigureAwait(false))
+            await using (token.Register(() => SevenZip.Stop(running)).ConfigureAwait(false))
             {
                 await running.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             }
@@ -356,18 +356,5 @@ public static class SevenZipWriting
         }
 
         return Loc(LocString.ArchiveSaidNothing);
-    }
-
-    private static void Stopped(Process running)
-    {
-        try
-        {
-            if (!running.HasExited)
-            {
-                running.Kill(entireProcessTree: true);
-            }
-        }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception or
-                                          NotSupportedException) { }
     }
 }

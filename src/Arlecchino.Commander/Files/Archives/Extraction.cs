@@ -67,7 +67,7 @@ public static class Extraction
             outcome.Reached(name);
             Directory.CreateDirectory(landing);
 
-            await (Packed(name)
+            await (PackedTarArchives.Names(name.ToLowerInvariant())
                     ? SevenZipWriting.ExtractPackedAsync(archive, landing, batchBytes, outcome, token)
                     : SevenZipWriting.ExtractAsync(archive, landing, batchBytes, outcome, token))
                 .ConfigureAwait(false);
@@ -116,21 +116,6 @@ public static class Extraction
         }
 
         return stem.Length > 0 ? stem : "archive";
-    }
-
-    /// <summary>
-    /// Whether an archive is a tar packed inside another format, which one run of the program only
-    /// takes the outer layer off.
-    /// </summary>
-    /// <param name="archive">What the archive is called.</param>
-    /// <returns><c>true</c> when it takes two runs.</returns>
-    internal static bool Packed(string archive)
-    {
-        var name = archive.ToLowerInvariant();
-
-        return PackedTarArchives.Names(name) ||
-               name.EndsWith(".tar.gz", StringComparison.Ordinal) ||
-               name.EndsWith(".tgz", StringComparison.Ordinal);
     }
 
     /// <summary>The names at the top of an archive, each once, however many entries lie under it.</summary>
