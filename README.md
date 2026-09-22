@@ -62,10 +62,10 @@ and the number says how old the binary in hand is.
 
 ## What it does
 
-- **Two panels.** `Tab` switches between them, `Enter` opens, `Space` marks. The panel that has the focus
-  is the one the operations work from. The cursor moves on `j` and `k` as well as the arrows, and `h` and
-  `l` — `←` and `→` too — leave the folder and enter the one under the cursor, which is where those keys
-  are worth more than on swapping panels.
+- **Two panels.** `Tab` switches between them, `Enter` enters a folder and opens a file, `Space` marks.
+  The panel that has the focus is the one the operations work from. The cursor moves on `j` and `k` as
+  well as the arrows, and `h` and `l` — `←` and `→` too — leave the folder and enter the one under the
+  cursor, which is where those keys are worth more than on swapping panels.
 - **Sorting, behind `s`.** `s h` `s j` `s k` order the panel by name, size or date, and `s l` turns the
   order around whichever column it is on. A click on a column head does the same.
 - **The function keys.** `F2` tabs, `F3` view, `F4` edit, `F5` copy, `F6` move, `Shift+F6` rename,
@@ -113,6 +113,14 @@ and the number says how old the binary in hand is.
   says so; on a server, which says nothing, the folder on screen is read again every few seconds and
   compared with what the panel has, and nothing is asked of it while it is carrying files. The panels of a
   tab that is not on screen stop watching until it is come back to, and `watch off` stops all of it.
+- **Opening a file where the rest of the desktop would.** `Enter` on a file hands it to whatever this
+  machine keeps for files of its kind — the picture to a picture viewer, the PDF to a reader, the video
+  to a player — through `xdg-open` on Linux, `open` on macOS and the association the shell reads on
+  Windows. Nothing is guessed from the extension: the desktop already knows which program claimed the
+  type, and a list of extensions written out here would be a list that is always one program short. What
+  opens is a window of its own, so the panels go on rather than waiting on it. A panel showing a server
+  has no path on this machine to hand over, and a machine with no such handler at all has nothing to hand
+  it to; both read the file here instead, which is what `F3` does everywhere.
 - **A viewer on `F3`.** A file is read without leaving the panels: a picture as a picture, drawn through
   the terminal's own graphics protocol where there is one and in half-blocks where there is not; a
   Markdown file as what its marks say — headings, lists, quotes, code blocks, tables and links, wrapped
