@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Work;
@@ -14,6 +15,8 @@ namespace Arlecchino.Commander.Files.Archives;
 /// </summary>
 public static class SevenZipWriting
 {
+    private const int Block = 512;
+
     /// <summary>Adds what is on the disk to an archive.</summary>
     /// <param name="archive">The archive, as a path on this disk.</param>
     /// <param name="folder">The folder the names are under, which the program is run in.</param>
@@ -27,7 +30,7 @@ public static class SevenZipWriting
         string[] names,
         Outcome outcome,
         CancellationToken token) =>
-        RanAsync(archive, folder, outcome, token, ["a", "--", archive, .. names]);
+        RanAsync(archive, folder, outcome, token, ["a", "-bsp1", "--", archive, .. names]);
 
     /// <summary>Takes entries out of an archive.</summary>
     /// <param name="archive">The archive, as a path on this disk.</param>
@@ -86,7 +89,7 @@ public static class SevenZipWriting
             using var running = Process.Start(start) ??
                                 throw new IOException(Loc(LocString.ArchiveNoProgram, SevenZip.Program));
 
-            var saidText = running.StandardOutput.ReadToEndAsync(CancellationToken.None);
+            var watching = WatchedAsync(running.StandardOutput, outcome);
             var complaintText = running.StandardError.ReadToEndAsync(CancellationToken.None);
 
             await using (token.Register(() => Stopped(running)).ConfigureAwait(false))
@@ -94,7 +97,7 @@ public static class SevenZipWriting
                 await running.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             }
 
-            await saidText.ConfigureAwait(false);
+            await watching.ConfigureAwait(false);
 
             if (running.ExitCode != 0 && !token.IsCancellationRequested)
             {
@@ -108,6 +111,92 @@ public static class SevenZipWriting
         {
             outcome.Failing(Path.GetFileName(archive), error.Message);
         }
+    }
+
+    /// <summary>
+    /// Reads what the program writes while it works, and tells the outcome how far along it is. It
+    /// draws over one line rather than writing a line a step, so a step ends where the erasing begins.
+    /// </summary>
+    /// <param name="reading">What the program is writing.</param>
+    /// <param name="outcome">What is being told how far along it is.</param>
+    /// <returns>A task that finishes when the program has closed its output.</returns>
+    private static async Task WatchedAsync(StreamReader reading, Outcome outcome)
+    {
+        var buffer = new char[Block];
+        var line = new StringBuilder();
+        var reachedBytes = 0L;
+        var erasing = false;
+
+        while (await reading.ReadAsync(buffer, CancellationToken.None).ConfigureAwait(false) is var read &&
+               read > 0)
+        {
+            for (var at = 0; at < read; at++)
+            {
+                var letter = buffer[at];
+
+                if (letter is '\r' or '\n')
+                {
+                    reachedBytes = Stepped(line.ToString(), outcome, reachedBytes);
+                    line.Clear();
+                    erasing = false;
+
+                    continue;
+                }
+
+                if (letter is not '\b')
+                {
+                    line.Append(letter);
+                    erasing = false;
+
+                    continue;
+                }
+
+                if (!erasing)
+                {
+                    reachedBytes = Stepped(line.ToString(), outcome, reachedBytes);
+                    erasing = true;
+                }
+
+                if (line.Length > 0)
+                {
+                    line.Length--;
+                }
+            }
+        }
+
+        Stepped(line.ToString(), outcome, reachedBytes);
+    }
+
+    /// <summary>
+    /// Puts one drawn line on the outcome. The program counts in percentages and the bar counts in
+    /// bytes, so the percentage is turned back into the bytes the work was measured at.
+    /// </summary>
+    /// <param name="line">The line, rebuilt.</param>
+    /// <param name="outcome">What is being told how far along it is.</param>
+    /// <param name="reachedBytes">How many bytes the last line accounted for.</param>
+    /// <returns>How many are accounted for now.</returns>
+    private static long Stepped(string line, Outcome outcome, long reachedBytes)
+    {
+        if (SevenZipProgress.Step(line) is not var (percent, name))
+        {
+            return reachedBytes;
+        }
+
+        if (name.Length > 0)
+        {
+            outcome.Reached(name);
+        }
+
+        var wantedBytes = outcome.PlannedBytes * percent / 100;
+
+        if (wantedBytes > reachedBytes)
+        {
+            outcome.Moved(wantedBytes - reachedBytes);
+
+            return wantedBytes;
+        }
+
+        return reachedBytes;
     }
 
     /// <summary>

@@ -83,6 +83,12 @@ public sealed class Outcome
         }
     }
 
+    /// <summary>
+    /// How many bytes the work was measured at. A source that carries a batch itself is told how far
+    /// along it is as a percentage, and this is what turns that back into the bytes the bar counts.
+    /// </summary>
+    public long PlannedBytes => Plan.Bytes;
+
     public void Planning(Tally total)
     {
         lock (_gate)

@@ -147,6 +147,43 @@ public sealed class ArchiveWritingTests : IDisposable
     }
 
     /// <summary>
+    /// The bar fills from what the program says while it works. It rewrites the archive itself, so
+    /// without reading what it writes there is nothing at all to show until it has finished.
+    /// </summary>
+    [Fact]
+    public async Task TheBarFillsFromWhatTheProgramSaysWhileItPacks()
+    {
+        if (PassedOver())
+        {
+            return;
+        }
+
+        var path = Archive("bundle.7z");
+        var bytes = new byte[8 * 1024 * 1024];
+
+        Random.Shared.NextBytes(bytes);
+
+        foreach (var name in new[] { "one.bin", "two.bin", "three.bin" })
+        {
+            await File.WriteAllBytesAsync(Path.Combine(_folder, name), bytes);
+        }
+
+        using var source = new ArchiveSource(path, SevenZipArchives.Instance);
+        using var disk = new LocalSource();
+        var outcome = new Outcome();
+        var entries = await disk.ListAsync(_folder, showHidden: false, CancellationToken.None);
+        var files = entries.Where(static entry => entry.Name.EndsWith(".bin", StringComparison.Ordinal))
+            .ToArray();
+
+        outcome.Planning(await FileTasks.MeasureAsync(disk, files, CancellationToken.None));
+
+        await FileTasks.CopyAsync(disk, files, source, "/", outcome, CancellationToken.None);
+
+        Assert.False(outcome.Failed);
+        Assert.True(outcome.Progress > 0, $"The bar never moved: {outcome.Progress}.");
+    }
+
+    /// <summary>
     /// A move out of an archive takes the entry out of it as well as copying it, which a move that was
     /// only a copy would not. What is left behind is the rest of the archive.
     /// </summary>
