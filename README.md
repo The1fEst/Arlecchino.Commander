@@ -176,13 +176,16 @@ and the number says how old the binary in hand is.
   does: `.7z` and `.rar`, the tars packed with `xz`, `bzip2` or `zstd`, and the container formats that
   are archives in all but name — `.iso`, `.deb`, `.rpm`, `.cab`, `.msi`, `.wim`, `.dmg`, `.vhd`,
   `.squashfs`. A packed tar is unpacked onto a pipe and read as the plain tar it is, so two formats one
-  inside the other are one walk rather than two. A machine without 7-Zip is offered none of those, and
-  `Enter` hands them to the desktop instead.
+  inside the other are one walk rather than two. A machine without 7-Zip is offered none of those:
+  `Enter` hands them to the desktop instead, and the bar says which program the machine is short of
+  rather than leaving the key looking broken.
 - **Writing into an archive, where the format allows it.** `F5` into it, `F8` inside it, `Shift+F6` to
   rename inside it — 7-Zip rewrites the archive and the panel reads it again. A batch is one run of the
   program rather than one run a file, and the bar fills from what the program says while it works.
   Only `.zip`, `.7z` and a plain `.tar` can be written: the two-layer archives and the formats 7-Zip
-  only reads say so before the dialog opens rather than failing once it has been answered. `x z` packs
+  only reads say so before the dialog opens rather than failing once it has been answered. A zip or a
+  tar on a machine without 7-Zip is still walked into, and a write into it names the missing program
+  rather than blaming the archive. `x z` packs
   what is marked into an archive of its own, beside the files it was made from, under a name the dialog
   offers and the ending chooses the format of.
 - **The disks of the machine, on `Ctrl+F1` and `Ctrl+F2`.** A list of what the machine is holding, one
