@@ -116,13 +116,23 @@ public static class Archives
     /// </summary>
     /// <param name="path">The file, on this disk.</param>
     /// <returns>The source to connect a panel to, or <c>null</c>.</returns>
-    public static ArchiveSource? Open(string path)
-    {
-        if (For(path) is not { } format)
-        {
-            return null;
-        }
+    public static ArchiveSource? Open(string path) => For(path) is { } format ? Open(path, format) : null;
 
+    /// <summary>
+    /// What reads a file as an archive whatever it is called. 7-Zip tells a format by what is in the
+    /// file, and without it the zip is the one worth trying, being what most unnamed archives are.
+    /// </summary>
+    /// <param name="path">The file, on this disk.</param>
+    /// <returns>The format to try.</returns>
+    public static ArchiveFormat Fallback(string path) =>
+        For(path) ?? (SevenZip.Works ? SevenZipArchives.Instance : ZipArchives.Instance);
+
+    /// <summary>Opens an archive with a format already chosen, or hands back nothing.</summary>
+    /// <param name="path">The file, on this disk.</param>
+    /// <param name="format">What reads it.</param>
+    /// <returns>The source to connect a panel to, or <c>null</c>.</returns>
+    public static ArchiveSource? Open(string path, ArchiveFormat format)
+    {
         try
         {
             return new(path, format);

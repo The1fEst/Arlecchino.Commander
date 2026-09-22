@@ -213,9 +213,9 @@ public sealed class Doings
     {
         var panel = Panels.Active;
 
-        if (!panel.Source.IsRemote && Archives.For(entry.Path) is not null)
+        if (!panel.Source.IsRemote && Archives.For(entry.Path) is { } format)
         {
-            EnterArchive(panel, entry);
+            EnterArchive(panel, entry, format);
 
             return ViewRoute.None;
         }
@@ -253,10 +253,11 @@ public sealed class Doings
     /// </summary>
     /// <param name="panel">Which panel.</param>
     /// <param name="entry">The archive.</param>
-    private void EnterArchive(FilePanel panel, FileEntry entry)
+    /// <param name="format">What reads it.</param>
+    private void EnterArchive(FilePanel panel, FileEntry entry, ArchiveFormat format)
     {
         Answers.From(
-            () => Task.Run(() => Archives.Open(entry.Path)),
+            () => Task.Run(() => Archives.Open(entry.Path, format)),
             source =>
             {
                 if (source is null)
@@ -269,6 +270,29 @@ public sealed class Doings
                 panel.State.Cursor = "";
                 panel.Connect(source, RemotePaths.Root);
             });
+    }
+
+    /// <summary>
+    /// Walks into the file under the cursor as an archive, whatever it is called. A file whose name
+    /// says nothing of what it holds is only ever handed to the desktop by Enter.
+    /// </summary>
+    public void EnterAnyArchive()
+    {
+        var panel = Panels.Active;
+
+        if (panel.Current is not { IsParent: false, IsFolder: false } current)
+        {
+            return;
+        }
+
+        if (panel.Source.IsRemote)
+        {
+            _state.Output = Loc(LocString.SaidArchivesHereOnly);
+
+            return;
+        }
+
+        EnterArchive(panel, current, Archives.Fallback(current.Path));
     }
 
     /// <summary>

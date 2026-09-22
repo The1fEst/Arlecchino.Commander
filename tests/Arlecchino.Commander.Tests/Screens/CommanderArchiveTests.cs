@@ -196,6 +196,48 @@ public sealed class CommanderArchiveTests : IDisposable
     }
 
     /// <summary>
+    /// An archive under a name that says nothing of it is walked into when asked for by the key. Enter
+    /// hands such a file to the desktop, having no way of telling it from any other.
+    /// </summary>
+    [Fact]
+    public void AnArchiveUnderAnyNameIsWalkedIntoByTheKey()
+    {
+        var folder = Directory.CreateDirectory(Path.Combine(_app.Folder, "unnamed")).FullName;
+
+        File.Copy(Path.Combine(_app.Folder, "bundle.zip"), Path.Combine(folder, "bundle.data"));
+        _app.Sessions.Left.GoTo(folder);
+
+        Assert.True(_app.Until(() => _app.Shows("bundle.data")));
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.A);
+        _app.Press(ConsoleKey.O);
+
+        Assert.True(_app.Until(() => _app.Sessions.Left.Source is ArchiveSource));
+        Assert.Equal("bundle.data", _app.Sessions.Left.Source.Label);
+        Assert.True(_app.Shows("readme.md"));
+    }
+
+    /// <summary>A file that is no archive under any reading says so, and the panel stays where it was.</summary>
+    [Fact]
+    public void AFileThatIsNoArchiveSaysSo()
+    {
+        var folder = Directory.CreateDirectory(Path.Combine(_app.Folder, "plain")).FullName;
+
+        File.WriteAllText(Path.Combine(folder, "notes.txt"), "nothing packed in here");
+        _app.Sessions.Left.GoTo(folder);
+
+        Assert.True(_app.Until(() => _app.Shows("notes.txt")));
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.A);
+        _app.Press(ConsoleKey.O);
+
+        Assert.True(_app.Until(() => _app.State.Output.Contains("would not open", StringComparison.Ordinal)));
+        Assert.IsNotType<ArchiveSource>(_app.Sessions.Left.Source);
+    }
+
+    /// <summary>
     /// A file inside an archive has no path on this machine, so it is read in the viewer rather than
     /// handed to whatever opens files of its kind.
     /// </summary>

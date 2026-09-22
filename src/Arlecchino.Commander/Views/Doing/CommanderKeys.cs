@@ -232,6 +232,9 @@ public static class CommanderKeys
                 LocString.PackVerb,
                 panels,
                 doings.Files.Pack),
+            Bind.To(Archive(ConsoleKey.O),
+                LocString.KeyEnterArchive,
+                doings.EnterAnyArchive),
         ];
     }
 

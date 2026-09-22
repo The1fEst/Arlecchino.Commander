@@ -188,6 +188,8 @@ and the number says how old the binary in hand is.
   rather than blaming the archive.
 - **Packing and unpacking, behind `a`.** `a p` packs what is marked into an archive of its own, beside
   the files it was made from, under a name the dialog offers and the ending chooses the format of.
+  `a o` walks into the file under the cursor as an archive whatever it is called — 7-Zip tells the
+  format by what is inside, so an installer or a document that is a zip underneath opens as well.
 - **The disks of the machine, on `Ctrl+F1` and `Ctrl+F2`.** A list of what the machine is holding, one
   row to a partition, each saying what it is called, what is on it, how large it is and how much of it
   is left. On Linux it comes from udisks2 over the system bus, which is what a desktop asks, so a stick
