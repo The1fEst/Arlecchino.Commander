@@ -17,14 +17,14 @@ public sealed class SevenZipTests : IDisposable
 
     /// <summary>
     /// A copy the installer put in its own folder is found by its whole path, since the bare name
-    /// does not run. The first folder without it is passed over for the next.
+    /// does not run. A folder the registry names that holds no copy is passed over for the next.
     /// </summary>
     [Fact]
     public void ACopyTheInstallerKeptOffThePathIsFound()
     {
-        var empty = Directory.CreateDirectory(Path.Combine(_folder, "Program Files")).FullName;
-        var holding = Directory.CreateDirectory(Path.Combine(_folder, "Program Files (x86)")).FullName;
-        var program = Path.Combine(Directory.CreateDirectory(Path.Combine(holding, "7-Zip")).FullName, "7z.exe");
+        var empty = Directory.CreateDirectory(Path.Combine(_folder, "Tools", "7-Zip")).FullName;
+        var holding = Directory.CreateDirectory(Path.Combine(_folder, "Program Files", "7-Zip")).FullName;
+        var program = Path.Combine(holding, "7z.exe");
 
         File.WriteAllText(program, "");
 

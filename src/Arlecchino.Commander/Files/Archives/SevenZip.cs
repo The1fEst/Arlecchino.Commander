@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.Versioning;
+using System.Security;
 using Arlecchino.Commander.Model;
+using Microsoft.Win32;
 
 namespace Arlecchino.Commander.Files.Archives;
 
@@ -61,22 +64,58 @@ public static class SevenZip
             }
         }
 
-        if (!OperatingSystem.IsWindows())
-        {
-            return "";
-        }
-
-        return InstallerPath([
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-        ]);
+        return OperatingSystem.IsWindows() ? InstallerPath(InstallFolders()) : "";
     }
 
     /// <summary>
-    /// Where the Windows installer puts the program, which it leaves off the path. A machine that has
-    /// 7-Zip usually has it only there, where a search of the path never looks.
+    /// The folders the Windows installer may have put the program in, off the path. The registry key
+    /// the installer writes comes first, and the usual folder for programs after it.
     /// </summary>
-    /// <param name="folders">The folders programs are installed into.</param>
+    /// <returns>The folders, the ones the registry names first.</returns>
+    [SupportedOSPlatform("windows")]
+    internal static List<string> InstallFolders()
+    {
+        var folders = new List<string>();
+
+        foreach (var hive in (RegistryHive[])[RegistryHive.CurrentUser, RegistryHive.LocalMachine])
+        {
+            foreach (var view in (RegistryView[])[RegistryView.Registry64, RegistryView.Registry32])
+            {
+                try
+                {
+                    using var root = RegistryKey.OpenBaseKey(hive, view);
+                    using var key = root.OpenSubKey(@"Software\7-Zip");
+
+                    foreach (var name in (string[])["Path64", "Path"])
+                    {
+                        if (key?.GetValue(name) is string { Length: > 0 } folder)
+                        {
+                            folders.Add(folder);
+                        }
+                    }
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or
+                                                  SecurityException) { }
+            }
+        }
+
+        foreach (var special in (Environment.SpecialFolder[])
+                 [
+                     Environment.SpecialFolder.ProgramFiles,
+                     Environment.SpecialFolder.ProgramFilesX86,
+                 ])
+        {
+            if (Environment.GetFolderPath(special) is { Length: > 0 } programs)
+            {
+                folders.Add(Path.Combine(programs, "7-Zip"));
+            }
+        }
+
+        return folders;
+    }
+
+    /// <summary>The program in the first of these folders that holds it.</summary>
+    /// <param name="folders">The folders 7-Zip may be installed in.</param>
     /// <returns>The whole path to the program, or an empty string when it is in none of them.</returns>
     internal static string InstallerPath(IReadOnlyList<string> folders)
     {
@@ -87,7 +126,7 @@ public static class SevenZip
                 continue;
             }
 
-            var path = Path.Combine(folder, "7-Zip", "7z.exe");
+            var path = Path.Combine(folder, "7z.exe");
 
             if (File.Exists(path))
             {
