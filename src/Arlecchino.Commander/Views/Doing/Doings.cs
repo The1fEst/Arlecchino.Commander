@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Arlecchino.Commander.Files.Disks;
 using Arlecchino.Commander.Files.Opening;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
@@ -275,11 +276,23 @@ public sealed class Doings
             });
     }
 
-    /// <summary>Sends a panel to another drive.</summary>
+    /// <summary>Sends a panel to another disk, chosen out of what the machine is holding.</summary>
     /// <param name="panel">Which panel.</param>
-    public void ChooseDrive(FilePanel panel)
+    public void ChooseDrive(FilePanel panel) => PlaceList.Open(this, panel);
+
+    /// <summary>Sends a panel to a place, or says why it cannot go there.</summary>
+    /// <param name="panel">Which panel.</param>
+    /// <param name="place">Where it is going.</param>
+    public void ShowPlace(FilePanel panel, Place place)
     {
-        Dialogs.Pick(Loc(LocString.PickDrive), Listing.Drives(), panel.GoTo);
+        if (!place.IsMounted)
+        {
+            _state.Output = Loc(LocString.SaidPlaceNotMounted, place.Label);
+
+            return;
+        }
+
+        panel.GoTo(place.Path);
     }
 
     /// <summary>Shows or stops showing the hidden files of a panel.</summary>
