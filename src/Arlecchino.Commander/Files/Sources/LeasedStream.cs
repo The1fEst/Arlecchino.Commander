@@ -1,20 +1,21 @@
+using System;
 using System.IO;
 
 namespace Arlecchino.Commander.Files.Sources;
 
 /// <summary>
-/// A stream that holds an SFTP session for as long as it is open and gives it back when it closes, since a
-/// transfer occupies its session from the first byte to the last.
+/// A stream that holds something open for as long as it is open and gives it up when it closes: an SFTP
+/// session, which a transfer occupies from the first byte to the last, or the archive it is unpacking.
 /// </summary>
 public sealed class LeasedStream : Stream
 {
     private readonly Stream _inner;
-    private readonly SftpPool.Lease _lease;
+    private readonly IDisposable _lease;
 
     /// <summary>Wraps the stream.</summary>
     /// <param name="inner">The stream to read or write through.</param>
-    /// <param name="lease">The session it belongs to.</param>
-    public LeasedStream(Stream inner, SftpPool.Lease lease)
+    /// <param name="lease">What it is reading out of, given up when it closes.</param>
+    public LeasedStream(Stream inner, IDisposable lease)
     {
         _inner = inner;
         _lease = lease;

@@ -1,7 +1,10 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
+using Arlecchino.Commander.Files.Archives;
 using Arlecchino.Commander.Files.Disks;
 using Arlecchino.Commander.Files.Opening;
+using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Model;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Widgets.Dialogs;
@@ -210,6 +213,13 @@ public sealed class Doings
     {
         var panel = Panels.Active;
 
+        if (!panel.Source.IsRemote && Archives.For(entry.Path) is not null)
+        {
+            EnterArchive(panel, entry);
+
+            return ViewRoute.None;
+        }
+
         if (panel.Source.IsRemote || !_opener.Works)
         {
             return Viewing(panel, entry);
@@ -222,6 +232,47 @@ public sealed class Doings
             : Loc(LocString.SaidNothingOpensIt, entry.Name);
 
         return ViewRoute.None;
+    }
+
+    /// <summary>
+    /// Puts a panel inside an archive, at its root. Reading what is in it is a walk of the whole file
+    /// on some formats, so it is done off the drawing thread like any other reading.
+    /// </summary>
+    /// <param name="panel">Which panel.</param>
+    /// <param name="entry">The archive.</param>
+    private void EnterArchive(FilePanel panel, FileEntry entry)
+    {
+        Answers.From(
+            () => Task.Run(() => Archives.Open(entry.Path)),
+            source =>
+            {
+                if (source is null)
+                {
+                    _state.Output = Loc(LocString.SaidNotAnArchive, entry.Name);
+
+                    return;
+                }
+
+                panel.State.Cursor = "";
+                panel.Connect(source, RemotePaths.Root);
+            });
+    }
+
+    /// <summary>
+    /// Takes a panel out of an archive, back to the folder the archive sits in and onto the archive
+    /// itself. A panel anywhere else has nothing above where it is, and stays there.
+    /// </summary>
+    public void LeaveArchive()
+    {
+        var panel = Panels.Active;
+
+        if (panel.Source is not ArchiveSource archive)
+        {
+            return;
+        }
+
+        panel.State.Cursor = archive.Label;
+        panel.Connect(new LocalSource(), archive.Folder);
     }
 
     /// <summary>Takes the screen to the viewer, on the file and the source it is to read.</summary>

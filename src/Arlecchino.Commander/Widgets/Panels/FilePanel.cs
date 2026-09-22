@@ -67,6 +67,12 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     public Func<FileEntry, ViewRoute>? OnOpenFile { get; init; }
 
     /// <summary>
+    /// Asked for when the panel is told to leave a folder that has nothing above it. A disk answers
+    /// nothing there, and an archive answers the folder it is sitting in.
+    /// </summary>
+    public Action? OnLeaveTop { get; init; }
+
+    /// <summary>
     /// Asked for a shell pattern when <c>+</c> or <c>-</c> is typed. The panel cannot open a box of
     /// its own, so the screen holding it does the asking and calls <see cref="MarkGroup"/> back.
     /// </summary>
@@ -193,6 +199,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
         _reading.Stop();
         _state.Connect(source, folder);
         Reload();
+
+        _table.SelectedIndex = 0;
     }
 
     /// <summary>Reads the folder and lands on it, saying meanwhile that it is being waited for.</summary>
@@ -259,6 +267,13 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
         if (!entry.IsFolder)
         {
             return OnOpenFile?.Invoke(entry) ?? ViewRoute.None;
+        }
+
+        if (entry is { IsParent: true, Path.Length: 0 })
+        {
+            OnLeaveTop?.Invoke();
+
+            return ViewRoute.None;
         }
 
         Enter(entry.Path, entry.IsParent);
@@ -350,6 +365,8 @@ public sealed class FilePanel : IArlecchinoInteractiveWidget, IDisposable
     {
         if (_state.Source.Parent(_state.Folder) is not { } parent)
         {
+            OnLeaveTop?.Invoke();
+
             return;
         }
 

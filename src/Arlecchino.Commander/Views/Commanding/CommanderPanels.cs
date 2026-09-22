@@ -65,6 +65,9 @@ public sealed class CommanderPanels : IDisposable
     /// <summary>What marking a group of files on a panel, or taking the marks off again, comes to.</summary>
     public Action<bool>? OnGroup { get; set; }
 
+    /// <summary>What leaving a folder with nothing above it comes to, which is how an archive is left.</summary>
+    public Action? OnLeaveTop { get; set; }
+
     /// <summary>The side the open tab was left on, which the focus belongs to.</summary>
     public FilePanel Working => _sessions.RightIsActive.Value ? Panels.Right : Panels.Left;
 
@@ -150,7 +153,8 @@ public sealed class CommanderPanels : IDisposable
             return new(state, _keymap, _terminal, _settings, _operations)
             {
                 OnOpenFile = entry => OnOpenFile?.Invoke(entry) ?? ViewRoute.None,
-                OnGroup = marking => OnGroup?.Invoke(marking)
+                OnGroup = marking => OnGroup?.Invoke(marking),
+                OnLeaveTop = () => OnLeaveTop?.Invoke(),
             };
         }
 

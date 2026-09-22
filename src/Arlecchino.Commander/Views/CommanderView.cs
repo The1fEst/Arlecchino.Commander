@@ -97,6 +97,7 @@ public sealed class CommanderView : IArlecchinoView, IDisposable
 
         _panels.OnOpenFile = doings.Open;
         _panels.OnGroup = doings.Group;
+        _panels.OnLeaveTop = doings.LeaveArchive;
 
         _card = new(runner, state);
         _layout = new(panels, sessions, _footer, options.Keymap);
