@@ -166,6 +166,13 @@ and the number says how old the binary in hand is.
   question opens a dialog. Linux makes that terminal out of a pair of ends and Windows out of a console
   of its own, and neither the watching nor the handing over knows the difference; macOS has no dialect
   here yet, and runs its commands on pipes until it does.
+- **The disks of the machine, on `Ctrl+F1` and `Ctrl+F2`.** A list of what the machine is holding, one
+  row to a partition, each saying what it is called, what is on it, how large it is and how much of it
+  is left. On Linux it comes from udisks2 over the system bus, which is what a desktop asks, so a stick
+  that was pushed in a moment ago is in the list before anything has mounted it — and opening it is what
+  mounts it. What the service says to keep back is kept back, so the boot partition is not offered, and
+  a disk laid out in subvolumes is one row rather than one row for every place it is mounted. Windows
+  and macOS, and a Linux machine running no udisks2, answer with the volumes they have already mounted.
 - **Servers.** A panel connects over SFTP or FTP and browses it exactly as it browses a disk; copying
   between the two panels is the same key whichever side is which. `g d` puts the panel back on the disk
   when you are done with the server.
