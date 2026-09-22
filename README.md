@@ -166,6 +166,16 @@ and the number says how old the binary in hand is.
   question opens a dialog. Linux makes that terminal out of a pair of ends and Windows out of a console
   of its own, and neither the watching nor the handing over knows the difference; macOS has no dialect
   here yet, and runs its commands on pipes until it does.
+- **Archives as folders.** `Enter` on a zip, a tar or a `.7z` walks into it, and the panel browses what
+  is inside exactly as it browses a disk — sizes, dates, sorting, marking and the viewer all of them the
+  same keys. Copying a file or a whole folder out is `F5` onto the other panel, since what the panel is
+  connected to is a source like a server is, and the work does not know the difference. `..` at the top,
+  `h` and `g d` all come back out to the folder the archive is in. Zips and tars the runtime reads
+  itself; `.7z`, `.rar`, `.iso`, and the tars packed with `xz`, `bzip2` or `zstd`, are handed to
+  `bsdtar`, which writes any archive it knows back out as a plain tar — one walk for every format
+  rather than a parser for each. A machine without `bsdtar` is not offered those, and `Enter` hands
+  them to the desktop instead. Nothing is written into an archive: an archive is opened to look in it
+  and to take something out, and a copy going the other way says so rather than half working.
 - **The disks of the machine, on `Ctrl+F1` and `Ctrl+F2`.** A list of what the machine is holding, one
   row to a partition, each saying what it is called, what is on it, how large it is and how much of it
   is left. On Linux it comes from udisks2 over the system bus, which is what a desktop asks, so a stick
