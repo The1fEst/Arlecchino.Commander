@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
 
@@ -34,10 +35,19 @@ public sealed class UDisks : Disks
     public static readonly UDisks Instance = new();
 
     /// <summary>
+    /// Which object each device is, from the last reading. Mounting names an object rather than a
+    /// device, and the list is read again every time it is opened, so it is never older than the list.
+    /// </summary>
+    private Dictionary<string, string> _objects = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// Whether the service is on this machine at all, answered by looking for the file the bus would
     /// start it from. Opening the bus to ask would be a connection made for a question with no answer.
     /// </summary>
     public static bool Answers { get; } = Installed();
+
+    /// <inheritdoc/>
+    public override bool Mounts => true;
 
     /// <inheritdoc/>
     public override async Task<IReadOnlyList<Place>> ReadAsync()
@@ -48,9 +58,14 @@ public sealed class UDisks : Disks
 
             await connection.ConnectAsync().ConfigureAwait(false);
 
-            return await connection
-                .CallMethodAsync(Asking(connection), static (message, _) => Placed(message))
+            var objects = new Dictionary<string, string>(StringComparer.Ordinal);
+            var places = await connection
+                .CallMethodAsync(Asking(connection), (message, _) => Placed(message, objects))
                 .ConfigureAwait(false);
+
+            Volatile.Write(ref _objects, objects);
+
+            return places;
         }
         catch (Exception error) when (error is DBusExceptionBase or IOException or SocketException or
                                           ArgumentException)
@@ -60,19 +75,52 @@ public sealed class UDisks : Disks
     }
 
     /// <summary>
+    /// Asks the service to mount a partition. It is the service that decides whether to: a stick in an
+    /// active session is allowed outright, and a disk that was in the machine all along asks first.
+    /// </summary>
+    /// <param name="place">Which place, which has to have come from the last reading.</param>
+    /// <returns>Where it landed, or an empty string when it was refused.</returns>
+    public override async Task<string> TryMountAsync(Place place)
+    {
+        if (!Volatile.Read(ref _objects).TryGetValue(place.Device, out var path))
+        {
+            return "";
+        }
+
+        try
+        {
+            using var connection = new DBusConnection(DBusAddress.System!);
+
+            await connection.ConnectAsync().ConfigureAwait(false);
+
+            return await connection
+                .CallMethodAsync(Mounting(connection, path),
+                    static (message, _) =>
+                        message.GetBodyReader().ReadString())
+                .ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DBusExceptionBase or IOException or SocketException or
+                                          ArgumentException)
+        {
+            return "";
+        }
+    }
+
+    /// <summary>
     /// Reads what the service said into the places worth offering. The reply holds every object it knows
     /// about, of which a partition carrying a file system is the only kind a panel could be sent to.
     /// </summary>
     /// <param name="message">The reply, whose body is <c>a{oa{sa{sv}}}</c>.</param>
+    /// <param name="objects">Filled in with the object each device is, which mounting one needs.</param>
     /// <returns>The places, in the order the service listed them.</returns>
-    private static List<Place> Placed(Message message)
+    private static List<Place> Placed(Message message, Dictionary<string, string> objects)
     {
-        var devices = new List<BlockDevice>();
+        var devices = new List<(string Object, BlockDevice Device)>();
         var removable = new Dictionary<string, bool>(StringComparer.Ordinal);
         var reader = message.GetBodyReader();
-        var objects = reader.ReadDictionaryStart();
+        var listing = reader.ReadDictionaryStart();
 
-        while (reader.HasNext(objects))
+        while (reader.HasNext(listing))
         {
             var path = reader.ReadObjectPathAsString();
             var interfaces = reader.ReadDictionaryStart();
@@ -107,15 +155,18 @@ public sealed class UDisks : Disks
 
             if (device.IsFilesystem)
             {
-                devices.Add(device);
+                devices.Add((path, device));
             }
         }
 
         var places = new List<Place>(devices.Count);
 
-        foreach (var device in devices)
+        foreach (var (path, device) in devices)
         {
-            places.Add(device.Place(removable.GetValueOrDefault(device.Drive)));
+            var place = device.Place(removable.GetValueOrDefault(device.Drive));
+
+            objects[place.Device] = path;
+            places.Add(place);
         }
 
         return places;
@@ -132,6 +183,20 @@ public sealed class UDisks : Disks
         using var writer = connection.GetMessageWriter();
 
         writer.WriteMethodCallHeader(Service, Root, ObjectManager, "GetManagedObjects");
+
+        return writer.CreateMessage();
+    }
+
+    /// <summary>Writes the request to mount one partition, with no options of our own.</summary>
+    /// <param name="connection">The bus the message is going out on.</param>
+    /// <param name="path">The object the partition is.</param>
+    /// <returns>The message, ready to send.</returns>
+    private static MessageBuffer Mounting(DBusConnection connection, string path)
+    {
+        using var writer = connection.GetMessageWriter();
+
+        writer.WriteMethodCallHeader(Service, path, FilesystemInterface, "Mount", "a{sv}");
+        writer.WriteDictionary(new Dictionary<string, VariantValue>());
 
         return writer.CreateMessage();
     }

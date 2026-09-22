@@ -39,6 +39,7 @@ public sealed class Doings
     /// <param name="settings">What is kept between runs, which the editor is named in.</param>
     /// <param name="setting">The line settings are typed on, which one menu entry opens.</param>
     /// <param name="opener">What hands a file to whatever this machine opens it with.</param>
+    /// <param name="disks">What the machine has to put a panel on.</param>
     public Doings(
         Dialogs dialogs,
         Pair panels,
@@ -53,10 +54,12 @@ public sealed class Doings
         Handover handover,
         Settings settings,
         SettingBar setting,
-        Opener opener)
+        Opener opener,
+        Disks disks)
     {
         Dialogs = dialogs;
         Panels = panels;
+        Disks = disks;
 
         Sessions = sessions;
         Navigation = navigation;
@@ -78,6 +81,9 @@ public sealed class Doings
 
     /// <summary>The two panels on screen.</summary>
     public Pair Panels { get; }
+
+    /// <summary>What the machine has to put a panel on.</summary>
+    public Disks Disks { get; }
 
     /// <summary>Every tab and which one is open.</summary>
     public Sessions Sessions { get; }
@@ -280,19 +286,44 @@ public sealed class Doings
     /// <param name="panel">Which panel.</param>
     public void ChooseDrive(FilePanel panel) => PlaceList.Open(this, panel);
 
-    /// <summary>Sends a panel to a place, or says why it cannot go there.</summary>
+    /// <summary>
+    /// Sends a panel to a place, mounting it first when it is in the machine and is not mounted. The
+    /// mounting is asked for rather than done here, since what answers it is a service and a password.
+    /// </summary>
     /// <param name="panel">Which panel.</param>
     /// <param name="place">Where it is going.</param>
     public void ShowPlace(FilePanel panel, Place place)
     {
-        if (!place.IsMounted)
+        if (place.IsMounted)
+        {
+            panel.GoTo(place.Path);
+
+            return;
+        }
+
+        if (!Disks.Mounts)
         {
             _state.Output = Loc(LocString.SaidPlaceNotMounted, place.Label);
 
             return;
         }
 
-        panel.GoTo(place.Path);
+        _state.Output = Loc(LocString.SaidMounting, place.Label);
+
+        Answers.From(
+            () => Disks.TryMountAsync(place),
+            path =>
+            {
+                if (path.Length == 0)
+                {
+                    _state.Output = Loc(LocString.SaidCouldNotMount, place.Label);
+
+                    return;
+                }
+
+                _state.Output = Loc(LocString.SaidMounted, place.Label, path);
+                panel.GoTo(path);
+            });
     }
 
     /// <summary>Shows or stops showing the hidden files of a panel.</summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using Arlecchino.Commander.Files.Disks;
 using Arlecchino.Commander.Files.Opening;
 using Arlecchino.Commander.Stores;
 using Arlecchino.Commander.Views;
@@ -46,6 +47,7 @@ public sealed class ScreenApp : IDisposable
                 CommanderOptions.Apply(builder.Options);
                 builder.Services.AddSingleton<IHostApplicationLifetime>(new Lifetime());
                 builder.Services.AddSingleton<Opener>(Opener);
+                builder.Services.AddSingleton<Disks>(Disks);
 
                 builder
                     .AddGeneratedViews()
@@ -61,6 +63,9 @@ public sealed class ScreenApp : IDisposable
 
     /// <summary>What this application hands a file to, which writes the path down and starts nothing.</summary>
     public NotedOpener Opener { get; } = new();
+
+    /// <summary>What this application is told the machine is holding, which a test fills in.</summary>
+    public NotedDisks Disks { get; } = new();
 
     /// <summary>A folder of its own, gone when the test is.</summary>
     public string Folder { get; }

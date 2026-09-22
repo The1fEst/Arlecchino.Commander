@@ -15,9 +15,17 @@ public abstract class Disks
     /// <summary>The one this machine has.</summary>
     public static Disks Current { get; } = Pick();
 
+    /// <summary>Whether a place that is not mounted could be mounted from here.</summary>
+    public abstract bool Mounts { get; }
+
     /// <summary>Every place a panel could be sent, in the order they are offered.</summary>
     /// <returns>The places, or nothing at all when the machine would not say.</returns>
     public abstract Task<IReadOnlyList<Place>> ReadAsync();
+
+    /// <summary>Mounts a place that is in the machine and is not mounted.</summary>
+    /// <param name="place">Which place.</param>
+    /// <returns>Where it landed, or an empty string when it was refused.</returns>
+    public abstract Task<string> TryMountAsync(Place place);
 
     /// <summary>
     /// How much room is left on a place, asked of the mount point itself. A path under it would answer
@@ -55,6 +63,12 @@ public sealed class MountedDisks : Disks
 {
     /// <summary>The one of these there is.</summary>
     public static readonly MountedDisks Instance = new();
+
+    /// <inheritdoc/>
+    public override bool Mounts => false;
+
+    /// <inheritdoc/>
+    public override Task<string> TryMountAsync(Place place) => Task.FromResult("");
 
     /// <inheritdoc/>
     public override Task<IReadOnlyList<Place>> ReadAsync()

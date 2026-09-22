@@ -18,7 +18,7 @@ public static class PlaceList
     public static void Open(Doings doings, FilePanel panel)
     {
         Answers.From(
-            Disks.Current.ReadAsync,
+            doings.Disks.ReadAsync,
             places => doings.Dialogs.Pick(
                 Loc(LocString.PickDrive),
                 Rows(doings, panel, places),

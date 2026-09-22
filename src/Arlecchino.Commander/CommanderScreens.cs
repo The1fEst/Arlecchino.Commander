@@ -1,3 +1,4 @@
+using Arlecchino.Commander.Files.Disks;
 using Arlecchino.Commander.Files.Opening;
 using Arlecchino.Commander.Views;
 using Arlecchino.Hosting;
@@ -18,6 +19,7 @@ public static class CommanderScreens
     public static ArlecchinoBuilder UseCommanderScreens(this ArlecchinoBuilder builder)
     {
         builder.Services.TryAddSingleton(Opener.Current);
+        builder.Services.TryAddSingleton(Disks.Current);
 
         return builder
             .AddView<NotesView>(Routes.Notifications.Name)
