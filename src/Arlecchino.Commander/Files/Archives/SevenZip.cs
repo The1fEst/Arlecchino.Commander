@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Files.Archives;
@@ -15,7 +18,10 @@ public static class SevenZip
     /// </summary>
     private static readonly string[] Names = ["7zz", "7z", "7za"];
 
-    /// <summary>What it is called on this machine, or an empty string when it is not on it.</summary>
+    /// <summary>
+    /// What it is called on this machine, or an empty string when it is not on it. A name on the path
+    /// is run by its name, and a copy the installer kept off the path by its whole path.
+    /// </summary>
     public static string Program { get; } = Found();
 
     /// <summary>Whether the program is here at all, without which none of this is offered.</summary>
@@ -52,6 +58,40 @@ public static class SevenZip
             if (Programs.Present([name]).Count > 0)
             {
                 return name;
+            }
+        }
+
+        if (!OperatingSystem.IsWindows())
+        {
+            return "";
+        }
+
+        return InstallerPath([
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+        ]);
+    }
+
+    /// <summary>
+    /// Where the Windows installer puts the program, which it leaves off the path. A machine that has
+    /// 7-Zip usually has it only there, where a search of the path never looks.
+    /// </summary>
+    /// <param name="folders">The folders programs are installed into.</param>
+    /// <returns>The whole path to the program, or an empty string when it is in none of them.</returns>
+    internal static string InstallerPath(IReadOnlyList<string> folders)
+    {
+        foreach (var folder in folders)
+        {
+            if (folder.Length == 0)
+            {
+                continue;
+            }
+
+            var path = Path.Combine(folder, "7-Zip", "7z.exe");
+
+            if (File.Exists(path))
+            {
+                return path;
             }
         }
 
