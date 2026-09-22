@@ -97,6 +97,30 @@ public sealed class CommanderArchiveTests : IDisposable
     }
 
     /// <summary>
+    /// What is marked is packed into an archive beside it, under a name the dialog offers and the
+    /// keyboard can change. The archive is made where the files are rather than on the other panel.
+    /// </summary>
+    [Fact]
+    public void WhatIsMarkedIsPackedIntoAnArchiveBesideIt()
+    {
+        if (!SevenZip.Works)
+        {
+            return;
+        }
+
+        _app.Press(ConsoleKey.DownArrow);
+        _app.Press(ConsoleKey.X);
+        _app.Press(ConsoleKey.Z);
+        _app.Frame();
+
+        Assert.Contains("Pack", _app.Frame(), StringComparison.Ordinal);
+
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => File.Exists(Path.Combine(_app.Folder, "bundle.7z"))));
+    }
+
+    /// <summary>
     /// An archive nothing can be written into says so instead of opening the dialog. A question
     /// answered and then refused is worse than one never asked.
     /// </summary>

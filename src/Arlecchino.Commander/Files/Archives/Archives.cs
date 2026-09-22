@@ -1,5 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Arlecchino.Commander.Files.Work;
+using Arlecchino.Commander.Model;
 
 namespace Arlecchino.Commander.Files.Archives;
 
@@ -37,6 +42,33 @@ public static class Archives
                 ".crx" => ZipArchives.Instance,
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// Makes an archive out of files on the disk. The program is run in the folder they are in, so it
+    /// writes them under their own names rather than under the whole path each of them has.
+    /// </summary>
+    /// <param name="sources">What to put in it.</param>
+    /// <param name="folder">The folder they are in.</param>
+    /// <param name="archive">The archive to make, as a path on this disk.</param>
+    /// <param name="outcome">What is being told how it went.</param>
+    /// <param name="token">Gives up the work.</param>
+    /// <returns>A task that finishes when the program has.</returns>
+    public static Task PackAsync(
+        IReadOnlyList<FileEntry> sources,
+        string folder,
+        string archive,
+        Outcome outcome,
+        CancellationToken token)
+    {
+        var names = new string[sources.Count];
+
+        for (var at = 0; at < sources.Count; at++)
+        {
+            names[at] = sources[at].Name;
+        }
+
+        return SevenZipWriting.AddAsync(archive, folder, names, outcome, token);
     }
 
     /// <summary>

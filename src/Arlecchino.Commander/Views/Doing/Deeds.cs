@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
+using Arlecchino.Commander.Files.Archives;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
@@ -118,6 +120,84 @@ public sealed class Deeds : PanelWork
                 _operations.Rename(panel.Source, current, panel.Source.Combine(panel.Folder, asking.Value));
             },
         });
+    }
+
+    /// <summary>
+    /// Makes an archive out of what is marked, beside the files it is made of. The program packs files
+    /// off a disk, so a panel on a server or inside an archive says so rather than staging the lot.
+    /// </summary>
+    public void Pack()
+    {
+        var panel = Active;
+        var sources = panel.Targets();
+
+        if (Nothing(sources))
+        {
+            return;
+        }
+
+        if (panel.Source is not LocalSource)
+        {
+            State.Output = Loc(LocString.SaidPacksHereOnly);
+
+            return;
+        }
+
+        if (!SevenZip.Works)
+        {
+            State.Output = Loc(LocString.SaidNoArchiver);
+
+            return;
+        }
+
+        Dialogs.Ask(new()
+        {
+            Title = sources.Count == 1 ? Loc(LocString.PackTitle) : Loc(LocString.PackManyTitle, sources.Count),
+            Key = "x z",
+            Verb = Loc(LocString.PackVerb),
+            Weight = Weight.Reversible,
+            Items = sources,
+            FieldLabel = Loc(LocString.PackInto),
+            Value = Named(panel, sources),
+            FieldHint = Loc(LocString.PackHint),
+            Confirm = asking => Packing(panel, sources, asking.Value),
+        });
+    }
+
+    /// <summary>
+    /// What to call the archive before anything is typed: the one file chosen, or the folder they are
+    /// all in, with the program's own ending on it.
+    /// </summary>
+    /// <param name="panel">Where the files are.</param>
+    /// <param name="sources">What is going in.</param>
+    /// <returns>The name.</returns>
+    private static string Named(FilePanel panel, IReadOnlyList<FileEntry> sources)
+    {
+        var stem = sources.Count == 1
+            ? Path.GetFileNameWithoutExtension(sources[0].Name)
+            : panel.Source.NameOf(panel.Folder);
+
+        return $"{(stem.Length > 0 ? stem : "archive")}.7z";
+    }
+
+    /// <summary>Starts the packing, once there is a name to write it under.</summary>
+    /// <param name="panel">Where the files are.</param>
+    /// <param name="sources">What is going in.</param>
+    /// <param name="name">What was typed, a name or a whole path.</param>
+    private void Packing(FilePanel panel, IReadOnlyList<FileEntry> sources, string name)
+    {
+        if (name.Trim() is not { Length: > 0 } wanted)
+        {
+            State.Output = Loc(LocString.SaidNameNeeded);
+
+            return;
+        }
+
+        var archive = Path.IsPathRooted(wanted) ? wanted : panel.Source.Combine(panel.Folder, wanted);
+
+        panel.State.Cursor = panel.Source.NameOf(archive);
+
+        _operations.Pack(panel.Source, sources, panel.Folder, archive);
     }
 
     /// <summary>Makes a folder where the panel is looking.</summary>

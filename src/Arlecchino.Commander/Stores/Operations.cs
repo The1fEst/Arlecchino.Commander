@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Arlecchino.Atoms;
+using Arlecchino.Commander.Files.Archives;
 using Arlecchino.Commander.Files.Sources;
 using Arlecchino.Commander.Files.Work;
 using Arlecchino.Commander.Model;
@@ -60,6 +61,22 @@ public sealed class Operations : IArlecchinoStore
             Loc(LocString.WorkMoved),
             Loc(LocString.WorkMoving),
             Sizing(from, sources));
+
+    /// <summary>Makes an archive out of what was chosen, beside the files it is made of.</summary>
+    /// <param name="source">Where the entries live, which has to be a disk on this machine.</param>
+    /// <param name="sources">What goes in it.</param>
+    /// <param name="folder">The folder they are in.</param>
+    /// <param name="archive">The archive to make, as a path on this disk.</param>
+    public void Pack(
+        IFileSource source,
+        IReadOnlyList<FileEntry> sources,
+        string folder,
+        string archive) =>
+        Start(
+            (outcome, token) => Archives.PackAsync(sources, folder, archive, outcome, token),
+            Loc(LocString.WorkPacked),
+            Loc(LocString.WorkPacking),
+            Sizing(source, sources));
 
     public void Rename(IFileSource source, FileEntry entry, string target) =>
         Start(
