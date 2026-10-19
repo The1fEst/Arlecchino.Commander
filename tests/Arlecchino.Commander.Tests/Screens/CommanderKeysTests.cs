@@ -101,6 +101,138 @@ public sealed class CommanderKeysTests : IDisposable
     }
 
     /// <summary>
+    /// Enter on a file with files marked hands over every marked file, as F5 and F8 act on the marks.
+    /// A marked folder or archive is left alone, those being walked into rather than handed over.
+    /// </summary>
+    [Fact]
+    public void EnterHandsEveryMarkedFileToTheMachine()
+    {
+        _app.Write("beta.txt", "three");
+        _app.Write("bundle.zip", "four");
+        Assert.True(_app.Until(() => _app.Frame().Contains("bundle.zip", StringComparison.Ordinal)));
+
+        _app.Sessions.Left.Marks.Add("alpha.txt");
+        _app.Sessions.Left.Marks.Add("beta.txt");
+        _app.Sessions.Left.Marks.Add("bundle.zip");
+        _app.Sessions.Left.Marks.Add("nested");
+
+        OnAlpha();
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => _app.Frame().Contains("Opened 2 files", StringComparison.Ordinal)));
+        Assert.Equal(
+            [Path.Combine(_app.Folder, "alpha.txt"), Path.Combine(_app.Folder, "beta.txt")],
+            _app.Opener.Paths);
+    }
+
+    /// <summary>
+    /// The marks win over the cursor even when one file is marked, and a file nothing opens is counted
+    /// out rather than reported as opened.
+    /// </summary>
+    [Theory]
+    [InlineData(new[] { "beta.txt" }, new string[0], "Opened beta.txt")]
+    [InlineData(new[] { "alpha.txt", "beta.txt" }, new[] { "beta.txt" }, "Opened 1 of 2 files")]
+    public void EnterSaysWhatTheMarkedFilesCameTo(string[] markedNames, string[] refusedNames, string message)
+    {
+        _app.Write("beta.txt", "three");
+        Assert.True(_app.Until(() => _app.Frame().Contains("beta.txt", StringComparison.Ordinal)));
+
+        foreach (var name in markedNames)
+        {
+            _app.Sessions.Left.Marks.Add(name);
+        }
+
+        foreach (var name in refusedNames)
+        {
+            _app.Opener.RefusedPaths.Add(Path.Combine(_app.Folder, name));
+        }
+
+        OnAlpha();
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => _app.Frame().Contains(message, StringComparison.Ordinal)));
+        Assert.Equal(markedNames.Select(name => Path.Combine(_app.Folder, name)), _app.Opener.Paths);
+    }
+
+    /// <summary>
+    /// With only folders and archives marked, Enter on a file still acts on the marks, as F5 and F8 do,
+    /// and says why nothing went rather than opening the unmarked file under the cursor.
+    /// </summary>
+    [Fact]
+    public void EnterWithOnlyFoldersMarkedOpensNothing()
+    {
+        _app.Sessions.Left.Marks.Add("nested");
+
+        OnAlpha();
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.Contains("No marked files to open", _app.Frame(), StringComparison.Ordinal);
+        Assert.Empty(_app.Opener.Paths);
+    }
+
+    /// <summary>
+    /// On a server, or on a machine with nothing to hand files to, marked files cannot go anywhere, so
+    /// Enter says so rather than reading the unmarked file under the cursor.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void EnterWithMarksWhereNothingOpensOpensNothing(bool isRemote)
+    {
+        if (isRemote)
+        {
+            _app.Sessions.Left.Connect(new PipingSource(), _app.Folder);
+            _app.Settled();
+        }
+        else
+        {
+            _app.Opener.Opens = false;
+        }
+
+        _app.Sessions.Left.Marks.Add("alpha.txt");
+
+        OnAlpha();
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.Contains("Can't open marked files here", _app.Frame(), StringComparison.Ordinal);
+        Assert.Equal(ViewKind.Commander, _app.Navigator.CurrentRoute);
+        Assert.Empty(_app.Opener.Paths);
+    }
+
+    /// <summary>
+    /// Enough files at once asks first, so a stray Enter does not bury the screen in windows. Nothing is
+    /// handed over until the dialog is gone through with.
+    /// </summary>
+    [Fact]
+    public void EnterAsksBeforeHandingOverManyFiles()
+    {
+        var names = Enumerable.Range(0, 10).Select(index => $"many{index}.txt").ToArray();
+
+        foreach (var name in names)
+        {
+            _app.Write(name, "many");
+        }
+
+        Assert.True(_app.Until(() => _app.Frame().Contains(names[^1], StringComparison.Ordinal)));
+
+        foreach (var name in names)
+        {
+            _app.Sessions.Left.Marks.Add(name);
+        }
+
+        OnAlpha();
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.Contains("Open 10 files", _app.Frame(), StringComparison.Ordinal);
+        Assert.Empty(_app.Opener.Paths);
+
+        _app.Press(ConsoleKey.Enter);
+
+        Assert.True(_app.Until(() => _app.Frame().Contains("Opened 10 files", StringComparison.Ordinal)));
+        Assert.Equal(10, _app.Opener.Paths.Count);
+    }
+
+    /// <summary>
     /// Every operation is asked through the same dialog, so every one of them names itself, says what
     /// it will act on, and offers the same two keys to answer with.
     /// </summary>

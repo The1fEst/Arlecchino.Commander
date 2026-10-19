@@ -14,6 +14,9 @@ public sealed class NotedOpener : Opener
     /// <summary>Whether this one opens anything, which a test turns off to stand for a bare machine.</summary>
     public bool Opens { get; set; } = true;
 
+    /// <summary>Paths this one fails to open while opening the rest, as a file with no handler would.</summary>
+    public HashSet<string> RefusedPaths { get; } = [];
+
     /// <summary>Every path handed over, in the order it was.</summary>
     public IReadOnlyList<string> Paths => _paths;
 
@@ -25,6 +28,6 @@ public sealed class NotedOpener : Opener
     {
         _paths.Add(path);
 
-        return Opens;
+        return Opens && !RefusedPaths.Contains(path);
     }
 }

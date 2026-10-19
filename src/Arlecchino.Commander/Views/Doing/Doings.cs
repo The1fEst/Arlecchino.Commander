@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Arlecchino.Commander.Files.Archives;
@@ -21,6 +22,8 @@ namespace Arlecchino.Commander.Views.Doing;
 /// </summary>
 public sealed class Doings
 {
+    private const int OpenCountToConfirm = 10;
+
     private readonly Finder _finder;
     private readonly Opener _opener;
     private readonly SettingBar _setting;
@@ -205,13 +208,29 @@ public sealed class Doings
 
     /// <summary>
     /// Hands a file to whatever this machine opens it with, which is what Enter lands on a file for. A
-    /// file on a server, and a machine with no handler of any kind, are read here instead.
+    /// file on a server, and a machine with no handler of any kind, are read here instead. With files
+    /// marked, every marked file is handed over rather than the one under the cursor, and where nothing
+    /// can be handed over nothing is opened.
     /// </summary>
     /// <param name="entry">The file.</param>
     /// <returns>The reading screen, or nowhere when the file went to a window of its own.</returns>
     public ViewRoute Open(FileEntry entry)
     {
         var panel = Panels.Active;
+
+        if (panel.State.Marks.Count > 0)
+        {
+            if (panel.Source.IsRemote || !_opener.Works)
+            {
+                _state.Output = Loc(LocString.SaidMarkedFilesNotOpened);
+
+                return ViewRoute.None;
+            }
+
+            OpenMany(GetMarkedFiles(panel));
+
+            return ViewRoute.None;
+        }
 
         if (!panel.Source.IsRemote && Archives.For(entry.Path) is { } format)
         {
@@ -229,6 +248,93 @@ public sealed class Doings
         _state.Output = Said(entry, _opener.TryOpen(entry.Path));
 
         return ViewRoute.None;
+    }
+
+    /// <summary>
+    /// The marked files Enter hands to the desktop together. Folders and archives are left out, since
+    /// Enter walks into those rather than handing them over.
+    /// </summary>
+    /// <param name="panel">Which panel.</param>
+    /// <returns>The files, or none when only folders and archives are marked.</returns>
+    private static List<FileEntry> GetMarkedFiles(FilePanel panel)
+    {
+        var files = new List<FileEntry>();
+
+        foreach (var target in panel.Targets())
+        {
+            if (!target.IsFolder && Archives.For(target.Path) is null)
+            {
+                files.Add(target);
+            }
+        }
+
+        return files;
+    }
+
+    /// <summary>
+    /// Hands several files to the desktop, asking first when there are enough of them that a stray
+    /// Enter would bury the screen in windows.
+    /// </summary>
+    /// <param name="files">The files.</param>
+    private void OpenMany(List<FileEntry> files)
+    {
+        if (files.Count == 0)
+        {
+            _state.Output = Loc(LocString.SaidNoMarkedFiles);
+
+            return;
+        }
+
+        if (files.Count < OpenCountToConfirm)
+        {
+            OpenEach(files);
+
+            return;
+        }
+
+        Dialogs.Ask(new()
+        {
+            Title = Loc(LocString.OpenManyTitle, files.Count),
+            Key = "Enter",
+            Verb = Loc(LocString.OpenVerb),
+            Weight = Weight.Reversible,
+            Items = files,
+            Confirm = _ => OpenEach(files),
+        });
+    }
+
+    /// <summary>
+    /// Hands each file over and says how many went. Every hand-over starts a process, so a long list is
+    /// started off the drawing thread.
+    /// </summary>
+    /// <param name="files">The files.</param>
+    private void OpenEach(List<FileEntry> files)
+    {
+        Answers.From(
+            () => Task.Run(() =>
+            {
+                var openedCount = 0;
+
+                foreach (var file in files)
+                {
+                    openedCount += _opener.TryOpen(file.Path) ? 1 : 0;
+                }
+
+                return openedCount;
+            }),
+            openedCount =>
+            {
+                if (files.Count == 1)
+                {
+                    _state.Output = Said(files[0], openedCount == 1);
+
+                    return;
+                }
+
+                _state.Output = openedCount == files.Count
+                    ? Loc(LocString.SaidOpenedMany, openedCount)
+                    : Loc(LocString.SaidOpenedSome, openedCount, files.Count);
+            });
     }
 
     /// <summary>
