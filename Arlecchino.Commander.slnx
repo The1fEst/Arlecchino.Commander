@@ -24,6 +24,7 @@
   <Folder Name="/Arlecchino/Repository/">
     <File Path="lib/Arlecchino/.editorconfig" />
     <File Path="lib/Arlecchino/.gitattributes" />
+    <Project Path="lib/Arlecchino/samples/Arlecchino.Sample/Arlecchino.Sample.csproj" />
   </Folder>
   <Folder Name="/Arlecchino/Repository/github/">
     <File Path="lib/Arlecchino/.github/workflows/build.yml" />
